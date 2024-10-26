@@ -32,22 +32,6 @@
             font-family: 'Cinzel', serif;
         }
 
-        .checkbox-group input[type="checkbox"] {
-            margin-top: 0.5rem;
-            width: 20px; /* Increase size */
-            height: 20px; /* Increase size */
-            border-radius: 50%; /* Make circular */
-            appearance: none; /* Remove default styling */
-            border: 2px solid #c19a6b; /* Border color */
-            outline: none; /* Remove outline */
-            cursor: pointer; /* Pointer cursor on hover */
-        }
-
-        .checkbox-group input[type="checkbox"]:checked {
-            background-color: #c19a6b; /* Brown when filled */
-            border: 2px solid #c19a6b; /* Keep border color */
-        }
-
         body {
             font-family: 'Cinzel', serif;
             overflow-x: hidden;
@@ -249,14 +233,9 @@
                 <div class="parchment-cell">
                     <strong>Offense:</strong><br>
                     Speed: 30 ft.<br>
-                    Melee: Dagger <span id="melee-attack-bonus">+8</span> (1d4<span id="melee-damage-bonus">+1</span>/x3)<br>
-                    Ranged: Bomb <span id="bombs-per-day">12</span>/day +<span id="bomb-attack-bonus">8</span> (3d6<span id="bomb-damage-bonus">+5</span> fire, DC <span id="bomb-dc">17</span>)<br>
+                    Melee: Dagger <span id="melee-attack-bonus">+3</span> (1d4<span id="melee-damage-bonus">+0</span>/x3)<br>
+                    Ranged: Bomb +<span id="bomb-attack-bonus">7</span> (3d6<span id="bomb-damage-bonus">+5</span> fire, DC <span id="bomb-dc">17</span>)<br>
                     <strong>Special Attacks:</strong><br>
-                    <br>Bombs per day:
-                    <div class="checkbox-group" id="bomb-checkboxes">
-                        <!-- Bomb checkboxes will be generated dynamically -->
-                    </div>
-                    <br>
                 </div>
             </section>
 
@@ -266,22 +245,8 @@
                 <div class="parchment-cell">
                     <strong>Known Spells:</strong>
                     <ul class="list-disc list-inside mt-2">
-                        <div class="checkbox-group">
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                        </div>
                         <li><strong>1st Level:</strong> Comprehend Languages, Detect Secret Doors, Endure Elements, Identify</li>
-                        <div class="checkbox-group">
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                            <input type="checkbox" /> 
-                        </div>
                         <li><strong>2nd Level:</strong> Cure Moderate Wounds, Delay Poison</li>
-
                         <!-- Add more spells as needed -->
                     </ul>
                 </div>
@@ -297,7 +262,7 @@
                 </div>
                 <div class="parchment-cell">
                     <strong>Combat:</strong><br>
-                    Base Atk +5; CMB <span id="cmb">+5</span>; CMD <span id="cmd">21</span>
+                    Base Atk +3; CMB <span id="cmb">+3</span>; CMD <span id="cmd">17</span>
                 </div>
                 <div class="parchment-cell">
                     <strong>Feats:</strong>
@@ -566,19 +531,8 @@
 
             // Base combat stats
             const baseCombat = {
-                baseAtk: 5,
-                cmb: 5,
-                cmd: 21,
-                meleeAttackBonus: 8,
-                meleeDamageBonus: 1,
-                bombAttackBonus: 8
+                baseAtk: 3, // Corrected from 5 to 3
             };
-
-            // Bomb stats
-            const alchemistLevel = 5;
-            const baseBombsPerDay = alchemistLevel + abilityModifier(baseAttributes.int);
-            const baseBombDamageBonus = abilityModifier(baseAttributes.int);
-            const baseBombDC = 10 + Math.floor(alchemistLevel / 2) + abilityModifier(baseAttributes.int);
 
             // Function to update the displayed values
             function updateStats() {
@@ -630,24 +584,15 @@
                 document.getElementById('spellcraft').textContent = '+' + (baseSkills.spellcraft + intSkillAdjustment);
 
                 // Update Bomb stats
+                const alchemistLevel = 5;
                 const bombsPerDay = alchemistLevel + intMod;
                 const bombDamageBonus = intMod;
                 const bombDC = 10 + Math.floor(alchemistLevel / 2) + intMod;
-                const bombAttackBonus = baseCombat.baseAtk + dexMod + (/* any other modifiers */ 0);
+                const bombAttackBonus = baseCombat.baseAtk + dexMod;
 
-                document.getElementById('bombs-per-day').textContent = bombsPerDay;
                 document.getElementById('bomb-damage-bonus').textContent = (bombDamageBonus >= 0 ? '+' : '') + bombDamageBonus;
                 document.getElementById('bomb-dc').textContent = bombDC;
                 document.getElementById('bomb-attack-bonus').textContent = (bombAttackBonus >= 0 ? '+' : '') + bombAttackBonus;
-
-                // Update Bomb checkboxes
-                const bombCheckboxesDiv = document.getElementById('bomb-checkboxes');
-                bombCheckboxesDiv.innerHTML = '';
-                for (let i = 0; i < bombsPerDay; i++) {
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    bombCheckboxesDiv.appendChild(checkbox);
-                }
 
                 // Update the button appearance
                 const button = document.getElementById('int-cognatogen-button');
