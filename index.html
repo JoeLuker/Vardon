@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aaron's Pathfinder PC Sheet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Tailwind CSS CDN with custom configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts with preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Pirata+One&family=Bilbo+Swash+Caps&display=swap" rel="stylesheet">
+
+    <!-- Custom Fonts and Styles -->
+    <style>
+        @font-face {
+            font-family: 'Morris';
+            src: url('https://cdn.statically.io/gh/EmmesCodes/Tipografias/dae9f5bb/MorrisInitials.ttf');
+            font-display: swap;
+        }
+
+        /* Root Variables */
+        :root {
+            --fontSize: calc((1vw + 1vh) * 0.75);
+        }
+
+        /* Global Styles */
+        * {
+            box-sizing: border-box;
+            font-family: 'Cinzel', serif;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 0.5rem;
+            width: 20px; /* Increase size */
+            height: 20px; /* Increase size */
+            border-radius: 50%; /* Make circular */
+            appearance: none; /* Remove default styling */
+            border: 2px solid #c19a6b; /* Border color */
+            outline: none; /* Remove outline */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        .checkbox-group input[type="checkbox"]:checked {
+            background-color: #c19a6b; /* Brown when filled */
+            border: 2px solid #c19a6b; /* Keep border color */
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            overflow-x: hidden;
+            background-image: url('https://images.unsplash.com/photo-1546484396-fb3fc6f95f98');
+            background-size: cover;
+            background-repeat: repeat;
+            position: relative;
+        }
+
+        /* Parchment Background Layer */
+        #parchment {
+            position: fixed;
+            inset: 0;
+            background: #fffef0;
+            filter: url(#wavy2);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Content Container */
+        .content-container {
+            position: relative;
+            z-index: 20;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header Styling */
+        header h1 {
+            font-size: 2.5rem;
+            color: #c19a6b;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #c19a6b;
+        }
+
+        /* Section Headers */
+        section h2 {
+            font-size: 1.75rem;
+            color: #c19a6b;
+            border-bottom: 2px solid #c19a6b;
+            padding-bottom: 0.3rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Parchment Cell Styling */
+        .parchment-cell {
+            background: rgba(255, 254, 240, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        /* Table Header and Cell Classes for DRYness */
+        .table-header {
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            border: 1px solid #c19a6b; /* border */
+            background-color: #f3e5ab; /* bg-yellow-200 */
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .table-cell {
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            border: 1px solid #c19a6b; /* border */
+            text-align: center;
+        }
+
+        .table-special {
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            border: 1px solid #c19a6b; /* border */
+            text-align: left;
+        }
+
+        /* Button Styling */
+        .mutagen-button {
+            margin-top: 0.5rem;
+            margin-right: 0.5rem;
+            background-color: #4caf50; /* Green */
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .mutagen-button:hover {
+            background-color: #45a049;
+        }
+
+        .mutagen-button.active {
+            background-color: #d32f2f; /* Red when active */
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 640px) {
+            .content-container {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            section h2 {
+                font-size: 1.5rem;
+            }
+
+            .parchment-cell {
+                padding: 0.5rem;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            table {
+                font-size: 0.875rem; /* Adjust table font size for smaller screens */
+            }
+
+            .mutagen-button {
+                margin-top: 0.5rem;
+                margin-right: 0.25rem;
+                padding: 0.5rem;
+            }
+        }
+    </style>
+
+    <!-- SVG Filter for Wavy Effect -->
+    <svg style="display: none;">
+        <filter id="wavy2">
+            <feTurbulence x="0" y="0" baseFrequency="0.02" numOctaves="5" seed="1" />
+            <feDisplacementMap in="SourceGraphic" scale="20" />
+        </filter>
+    </svg>
+</head>
+<body>
+    <!-- Parchment Background -->
+
+    <!-- Main Content -->
+    <main class="pt-20">
+        <div class="content-container">
+            <!-- Navigation Bar -->
+            <nav class="fixed top-0 left-0 w-full flex items-center justify-between flex-wrap bg-yellow-700 p-4 rounded-b-lg shadow-md z-50">
+                <div class="flex items-center flex-shrink-0 text-white mr-6">
+                    <span class="font-semibold text-xl tracking-tight">PC Sheet</span>
+                </div>
+                <button id="nav-toggle" class="block lg:hidden text-yellow-200 hover:text-white focus:outline-none" aria-controls="nav-content" aria-expanded="false">
+                    <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" aria-hidden="true">
+                        <title>Menu</title>
+                        <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/>
+                    </svg>
+                </button>
+                <div class="w-full block flex-grow lg:flex lg:items-center lg:w-auto hidden" id="nav-content">
+                    <div class="text-sm lg:flex-grow">
+                        <a href="#def-off" class="block mt-4 lg:inline-block lg:mt-0 text-yellow-200 hover:text-white mr-4">
+                            Defense & Offense
+                        </a>
+                        <a href="#equipment" class="block mt-4 lg:inline-block lg:mt-0 text-yellow-200 hover:text-white mr-4">
+                            Equipment
+                        </a>
+                        <a href="#spells" class="block mt-4 lg:inline-block lg:mt-0 text-yellow-200 hover:text-white mr-4">
+                            Spells
+                        </a>
+                        <a href="#statistics" class="block mt-4 lg:inline-block lg:mt-0 text-yellow-200 hover:text-white mr-4">
+                            Statistics
+                        </a>
+                        <a href="#class-features" class="block mt-4 lg:inline-block lg:mt-0 text-yellow-200 hover:text-white">
+                            Class Features
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <h1>Magaambyan Mindchemist</h1>
+                <p>Level 5 Mindchemist | Tengu</p>
+                <p><strong>Player Name:</strong> Aaron</p>
+            </header>
+
+            <!-- Defense & Offense -->
+            <section id="def-off">
+                <h2>Defense & Offense</h2>
+                <div class="parchment-cell">
+                    <strong>Defense:</strong><br>
+                    AC: <span id="ac">19</span> (Touch <span id="touch">14</span>, Flat-Footed <span id="flat-footed">15</span>)<br>
+                    HP: <input type="number" value="35" class="w-20 p-1 border border-yellow-300 rounded text-center bg-yellow-100 inline-block" /><br>
+                    Fort: +6<br>
+                    Ref: +8<br>
+                    Will: +2<br>
+                </div>
+                <div class="parchment-cell">
+                    <strong>Offense:</strong><br>
+                    Speed: 30 ft.<br>
+                    Melee: Dagger +8 (1d4+1/x3)<br>
+                    Ranged: Bomb 12/day +8 (3d6+5 fire, DC 17)<br>
+                    <strong>Special Attacks:</strong><br>
+                    <!-- <button class="mutagen-button" onclick="toggleCognatogen()">Cognatogen (Use)</button>
+                    <button class="mutagen-button" onclick="toggleMutagen()">Mutagen (Use)</button> -->
+                    <br>Bombs per day:
+                    <div class="checkbox-group">
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                        <input type="checkbox" /> 
+                    </div>
+                    <br>
+                </div>
+            </section>
+
+            <!-- Spells -->
+            <section id="spells">
+                <h2>Spells</h2>
+                <div class="parchment-cell">
+                    <strong>Known Spells:</strong>
+                    <ul class="list-disc list-inside mt-2">
+                        <div class="checkbox-group">
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                        </div>
+                        <li><strong>1st Level:</strong> Comprehend Languages, Detect Secret Doors, Endure Elements, Identify</li>
+                        <div class="checkbox-group">
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                            <input type="checkbox" /> 
+                        </div>
+                        <li><strong>2nd Level:</strong> Cure Moderate Wounds, Delay Poison</li>
+
+                        <!-- Add more spells as needed -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Statistics -->
+            <section id="statistics">
+                <h2>Statistics</h2>
+                <div class="parchment-cell">
+                    <strong>Attributes:</strong><br>
+                    Str <span id="str">10</span>, Dex <span id="dex">18</span>, Con <span id="con">10</span>, Int <span id="int">21</span>, Wis <span id="wis">10</span>, Cha <span id="cha">8</span>
+                </div>
+                <div class="parchment-cell">
+                    <strong>Combat:</strong><br>
+                    Base Atk +5; CMB +5; CMD 21
+                </div>
+                <div class="parchment-cell">
+                    <strong>Feats:</strong>
+                    <ul class="list-disc list-inside mt-2">
+                        <li>Extra Bombs</li>
+                        <li>Rapid Shot</li>
+                        <li>Precise Shot</li>
+                        <li>Two Weapon Fighting</li>
+                        <li>Throw Anything<sup>b</sup></li>
+                        <!-- Additional feats can be added here -->
+                    </ul>
+                </div>
+                <div class="parchment-cell">
+                    <strong>Skills:</strong>
+                    <ul class="list-disc list-inside mt-2">
+                        <li>Appraise +11</li>
+                        <li>Craft (alchemy) +15</li>
+                        <li>Disable Device +13</li>
+                        <li>Knowledge (engineering) +12</li>
+                        <li>Knowledge (local) +9</li>
+                        <li>Perception +9</li>
+                        <li>Sleight of Hand +13</li>
+                        <li>Spellcraft +15</li>
+                        <li>Stealth +10</li>
+                        <li>Survival +9</li>
+                        <!-- Include Perfect Recall notes if applicable -->
+                    </ul>
+                </div>
+                <div class="parchment-cell">
+                    <strong>Languages:</strong><br>
+                    Aklo, Common, Giant, Halfling, Orc, [Additional Language]
+                </div>
+            </section>
+
+            <!-- Class Features -->
+            <section id="class-features">
+                <h2>Class Features</h2>
+                <div class="parchment-cell">
+                    <strong>Ability Bonus Progression (ABP) Buffs:</strong><br>
+                    <ul class="list-disc list-inside mt-2">
+                        <li>Resistance +1 (1st level)</li>
+                        <li>Armor Attunement +1, Weapon Attunement +1 (2nd level)</li>
+                        <li>Deflection +1 (3rd level)</li>
+                        <li>Mental Prowess +2 (INT) (4th level)</li>
+                        <li>Physical Prowess +2 (DEX) (5th level)</li>
+                    </ul>
+                </div>
+                <div class="parchment-cell">
+                    <strong>Discoveries:</strong>
+                    <ul class="list-disc list-inside mt-2">
+                        <li>Mutagen</li>
+                        <li>???</li>
+                        <li>???</li>
+                        <!-- Add more discoveries relevant to level 5 Mindchemist -->
+                    </ul>
+                </div>
+
+                <!-- New Spells Per Day Table -->
+                <div class="parchment-cell overflow-x-auto">
+                    <h3 class="text-xl font-bold mb-4">Spells Per Day</h3>
+                    <table class="min-w-full bg-white border border-yellow-300">
+                        <thead>
+                            <tr>
+                                <th class="table-header">Level</th>
+                                <th class="table-header">Base Attack Bonus</th>
+                                <th class="table-header">Fort Save</th>
+                                <th class="table-header">Ref Save</th>
+                                <th class="table-header">Will Save</th>
+                                <th class="table-header">Special</th>
+                                <th class="table-header">1st</th>
+                                <th class="table-header">2nd</th>
+                                <th class="table-header">3rd</th>
+                                <th class="table-header">4th</th>
+                                <th class="table-header">5th</th>
+                                <th class="table-header">6th</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Level 1 -->
+                            <tr>
+                                <td class="table-cell">1st</td>
+                                <td class="table-cell">+0</td>
+                                <td class="table-cell">+2</td>
+                                <td class="table-cell">+2</td>
+                                <td class="table-cell">+0</td>
+                                <td class="table-special">
+                                    Alchemy, bomb 1d6, Brew Potion, mutagen, Throw Anything
+                                </td>
+                                <td class="table-cell">1</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                            </tr>
+                            <!-- Level 2 -->
+                            <tr>
+                                <td class="table-cell">2nd</td>
+                                <td class="table-cell">+1</td>
+                                <td class="table-cell">+3</td>
+                                <td class="table-cell">+3</td>
+                                <td class="table-cell">+0</td>
+                                <td class="table-special">
+                                    Discovery, poison resistance +2, Perfect Recall
+                                </td>
+                                <td class="table-cell">2</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                            </tr>
+                            <!-- Level 3 -->
+                            <tr>
+                                <td class="table-cell">3rd</td>
+                                <td class="table-cell">+2</td>
+                                <td class="table-cell">+3</td>
+                                <td class="table-cell">+3</td>
+                                <td class="table-cell">+1</td>
+                                <td class="table-special">
+                                    Bomb 2d6, swift alchemy
+                                </td>
+                                <td class="table-cell">3</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                            </tr>
+                            <!-- Level 4 -->
+                            <tr>
+                                <td class="table-cell">4th</td>
+                                <td class="table-cell">+3</td>
+                                <td class="table-cell">+4</td>
+                                <td class="table-cell">+4</td>
+                                <td class="table-cell">+1</td>
+                                <td class="table-special">
+                                    Discovery
+                                </td>
+                                <td class="table-cell">3</td>
+                                <td class="table-cell">1</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                            </tr>
+                            <!-- Level 5 -->
+                            <tr>
+                                <td class="table-cell">5th</td>
+                                <td class="table-cell">+3</td>
+                                <td class="table-cell">+4</td>
+                                <td class="table-cell">+4</td>
+                                <td class="table-cell">+1</td>
+                                <td class="table-special">
+                                    Bomb 3d6, poison resistance +4
+                                </td>
+                                <td class="table-cell">4</td>
+                                <td class="table-cell">2</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                                <td class="table-cell">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Equipment -->
+            <section id="equipment">
+                <h2>Equipment</h2>
+                <div class="parchment-cell">
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>Mithral Chainshirt</li>
+                        <li>Masterwork Dagger</li>
+                        <li>Cloak of Resistance +1</li>
+                        <li>Alchemist's Kit</li>
+                        <li>Alchemist's Fire (2)</li>
+                        <li>Acid (2)</li>
+                        <li>Oil of Tanglefoot (2 doses)</li>
+                        <li>
+                            Potions:
+                            <ul class="list-circle list-inside ml-5 space-y-1">
+                                <li>Cure Moderate Wounds</li>
+                                <li>Delay Poison</li>
+                                <li>Lesser Restoration</li>
+                                <li>Remove Disease</li>
+                            </ul>
+                        </li>
+                        <li>
+                            Formula Book (contains all prepared formulae including:
+                            <ul class="list-circle list-inside ml-5 space-y-1">
+                                <li>1st Level: Comprehend Languages, Detect Secret Doors, Endure Elements, Identify</li>
+                                <li>2nd Level: Cure Moderate Wounds, Delay Poison</li>
+                            </ul>
+                        </li>
+                        <li>34 gp</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="text-center text-sm text-yellow-700 border-t-4 border-yellow-600 pt-4">
+                <p>&copy; 2024 Pathfinder PC Sheet</p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- JavaScript for Dynamic Height and Interactions -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+s
+            const sections = document.querySelectorAll('section h2');
+
+            sections.forEach(header => {
+                header.setAttribute('tabindex', '0');
+                header.setAttribute('role', 'button');
+                header.setAttribute('aria-expanded', 'true');
+                header.setAttribute('aria-controls', `${header.parentElement.id}-content`);
+
+                header.addEventListener('click', () => {
+                    toggleSection(header.parentElement.id);
+                });
+
+                header.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSection(header.parentElement.id);
+                    }
+                });
+            });
+
+            function toggleSection(id) {
+                const cells = document.getElementById(id).querySelectorAll('.parchment-cell');
+                cells.forEach(cell => {
+                    const isHidden = cell.classList.toggle('hidden');
+                    const header = document.getElementById(id).querySelector('h2');
+                    header.setAttribute('aria-expanded', !isHidden);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
