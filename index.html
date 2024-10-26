@@ -249,23 +249,12 @@
                 <div class="parchment-cell">
                     <strong>Offense:</strong><br>
                     Speed: 30 ft.<br>
-                    Melee: Dagger +8 (1d4+1/x3)<br>
-                    Ranged: Bomb 12/day +8 (3d6+5 fire, DC 17)<br>
+                    Melee: Dagger <span id="melee-attack-bonus">+8</span> (1d4<span id="melee-damage-bonus">+1</span>/x3)<br>
+                    Ranged: Bomb <span id="bombs-per-day">12</span>/day +<span id="bomb-attack-bonus">8</span> (3d6<span id="bomb-damage-bonus">+5</span> fire, DC <span id="bomb-dc">17</span>)<br>
                     <strong>Special Attacks:</strong><br>
                     <br>Bombs per day:
-                    <div class="checkbox-group">
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
-                        <input type="checkbox" /> 
+                    <div class="checkbox-group" id="bomb-checkboxes">
+                        <!-- Bomb checkboxes will be generated dynamically -->
                     </div>
                     <br>
                 </div>
@@ -301,13 +290,14 @@
             <!-- Statistics -->
             <section id="statistics">
                 <h2>Statistics</h2>
+                <button id="int-cognatogen-button" class="mutagen-button">Intelligence Cognatogen</button>
                 <div class="parchment-cell">
                     <strong>Attributes:</strong><br>
                     Str <span id="str">10</span>, Dex <span id="dex">18</span>, Con <span id="con">10</span>, Int <span id="int">21</span>, Wis <span id="wis">10</span>, Cha <span id="cha">8</span>
                 </div>
                 <div class="parchment-cell">
                     <strong>Combat:</strong><br>
-                    Base Atk +5; CMB +5; CMD 21
+                    Base Atk +5; CMB <span id="cmb">+5</span>; CMD <span id="cmd">21</span>
                 </div>
                 <div class="parchment-cell">
                     <strong>Feats:</strong>
@@ -321,14 +311,14 @@
                 <div class="parchment-cell">
                     <strong>Skills:</strong>
                     <ul class="list-disc list-inside mt-2">
-                        <li>Appraise +11</li>
-                        <li>Craft (alchemy) +15</li>
+                        <li>Appraise <span id="appraise">+11</span></li>
+                        <li>Craft (alchemy) <span id="craft-alchemy">+15</span></li>
                         <li>Disable Device +13</li>
-                        <li>Knowledge (engineering) +12</li>
-                        <li>Knowledge (local) +9</li>
+                        <li>Knowledge (engineering) <span id="knowledge-engineering">+12</span></li>
+                        <li>Knowledge (local) <span id="knowledge-local">+9</span></li>
                         <li>Perception +9</li>
                         <li>Sleight of Hand +13</li>
-                        <li>Spellcraft +15</li>
+                        <li>Spellcraft <span id="spellcraft">+15</span></li>
                         <li>Stealth +10</li>
                         <li>Survival +9</li>
                         <!-- Include Perfect Recall notes if applicable -->
@@ -546,6 +536,138 @@
                     header.setAttribute('aria-expanded', !isHidden);
                 });
             }
+
+            // Code for the Intelligence Cognatogen
+            let cognatogenActive = false;
+
+            // Base attributes
+            const baseAttributes = {
+                str: 10,
+                dex: 18,
+                con: 10,
+                int: 21,
+                wis: 10,
+                cha: 8
+            };
+
+            // Function to calculate ability modifier
+            function abilityModifier(score) {
+                return Math.floor((score - 10) / 2);
+            }
+
+            // Base skill modifiers
+            const baseSkills = {
+                appraise: 11,
+                craftAlchemy: 15,
+                knowledgeEngineering: 12, // includes Perfect Recall
+                knowledgeLocal: 9,        // includes Perfect Recall
+                spellcraft: 15
+            };
+
+            // Base combat stats
+            const baseCombat = {
+                baseAtk: 5,
+                cmb: 5,
+                cmd: 21,
+                meleeAttackBonus: 8,
+                meleeDamageBonus: 1,
+                bombAttackBonus: 8
+            };
+
+            // Bomb stats
+            const alchemistLevel = 5;
+            const baseBombsPerDay = alchemistLevel + abilityModifier(baseAttributes.int);
+            const baseBombDamageBonus = abilityModifier(baseAttributes.int);
+            const baseBombDC = 10 + Math.floor(alchemistLevel / 2) + abilityModifier(baseAttributes.int);
+
+            // Function to update the displayed values
+            function updateStats() {
+                let str = baseAttributes.str;
+                let int = baseAttributes.int;
+
+                if (cognatogenActive) {
+                    str -= 2; // Apply penalty
+                    int += 4; // Apply bonus
+                }
+
+                // Update attributes
+                document.getElementById('str').textContent = str;
+                document.getElementById('int').textContent = int;
+
+                // Calculate modifiers
+                const strMod = abilityModifier(str);
+                const intMod = abilityModifier(int);
+                const dexMod = abilityModifier(baseAttributes.dex);
+
+                // Update CMB and CMD
+                let cmb = baseCombat.baseAtk + strMod;
+                let cmd = 10 + baseCombat.baseAtk + strMod + dexMod;
+
+                document.getElementById('cmb').textContent = (cmb >= 0 ? '+' : '') + cmb;
+                document.getElementById('cmd').textContent = cmd;
+
+                // Update Melee attack and damage
+                let meleeAttackBonus = baseCombat.baseAtk + strMod; // Simplified calculation
+                let meleeDamageBonus = strMod;
+
+                document.getElementById('melee-attack-bonus').textContent = (meleeAttackBonus >= 0 ? '+' : '') + meleeAttackBonus;
+                document.getElementById('melee-damage-bonus').textContent = (meleeDamageBonus >= 0 ? '+' : '') + meleeDamageBonus;
+
+                // Update skills
+                // Adjust Int-based skills
+                const intSkillAdjustment = intMod - abilityModifier(baseAttributes.int);
+                const doubleIntMod = intMod * 2;
+                const baseDoubleIntMod = abilityModifier(baseAttributes.int) * 2;
+                const intSkillAdjustmentDouble = doubleIntMod - baseDoubleIntMod;
+
+                // Knowledge skills get double the Int modifier
+                document.getElementById('knowledge-engineering').textContent = '+' + (baseSkills.knowledgeEngineering + intSkillAdjustmentDouble);
+                document.getElementById('knowledge-local').textContent = '+' + (baseSkills.knowledgeLocal + intSkillAdjustmentDouble);
+
+                // Other Int-based skills
+                document.getElementById('appraise').textContent = '+' + (baseSkills.appraise + intSkillAdjustment);
+                document.getElementById('craft-alchemy').textContent = '+' + (baseSkills.craftAlchemy + intSkillAdjustment);
+                document.getElementById('spellcraft').textContent = '+' + (baseSkills.spellcraft + intSkillAdjustment);
+
+                // Update Bomb stats
+                const bombsPerDay = alchemistLevel + intMod;
+                const bombDamageBonus = intMod;
+                const bombDC = 10 + Math.floor(alchemistLevel / 2) + intMod;
+                const bombAttackBonus = baseCombat.baseAtk + dexMod + (/* any other modifiers */ 0);
+
+                document.getElementById('bombs-per-day').textContent = bombsPerDay;
+                document.getElementById('bomb-damage-bonus').textContent = (bombDamageBonus >= 0 ? '+' : '') + bombDamageBonus;
+                document.getElementById('bomb-dc').textContent = bombDC;
+                document.getElementById('bomb-attack-bonus').textContent = (bombAttackBonus >= 0 ? '+' : '') + bombAttackBonus;
+
+                // Update Bomb checkboxes
+                const bombCheckboxesDiv = document.getElementById('bomb-checkboxes');
+                bombCheckboxesDiv.innerHTML = '';
+                for (let i = 0; i < bombsPerDay; i++) {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    bombCheckboxesDiv.appendChild(checkbox);
+                }
+
+                // Update the button appearance
+                const button = document.getElementById('int-cognatogen-button');
+                if (cognatogenActive) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            }
+
+            // Add event listener to the button
+            const cognatogenButton = document.getElementById('int-cognatogen-button');
+            cognatogenButton.addEventListener('click', () => {
+                cognatogenActive = !cognatogenActive;
+                updateStats();
+            });
+
+            // Initialize stats
+            updateStats();
+
         });
     </script>
 </body>
