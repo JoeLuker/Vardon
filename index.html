@@ -252,8 +252,6 @@
                     Melee: Dagger +8 (1d4+1/x3)<br>
                     Ranged: Bomb 12/day +8 (3d6+5 fire, DC 17)<br>
                     <strong>Special Attacks:</strong><br>
-                    <!-- <button class="mutagen-button" onclick="toggleCognatogen()">Cognatogen (Use)</button>
-                    <button class="mutagen-button" onclick="toggleMutagen()">Mutagen (Use)</button> -->
                     <br>Bombs per day:
                     <div class="checkbox-group">
                         <input type="checkbox" /> 
@@ -314,11 +312,9 @@
                 <div class="parchment-cell">
                     <strong>Feats:</strong>
                     <ul class="list-disc list-inside mt-2">
+                        <li>Tengu Wings</li>
                         <li>Extra Bombs</li>
-                        <li>Rapid Shot</li>
-                        <li>Precise Shot</li>
                         <li>Two Weapon Fighting</li>
-                        <li>Throw Anything<sup>b</sup></li>
                         <!-- Additional feats can be added here -->
                     </ul>
                 </div>
@@ -361,13 +357,13 @@
                     <strong>Discoveries:</strong>
                     <ul class="list-disc list-inside mt-2">
                         <li>Mutagen</li>
-                        <li>???</li>
-                        <li>???</li>
-                        <!-- Add more discoveries relevant to level 5 Mindchemist -->
+                        <li>Infusion</li>
+                        <li>Precise Bombs</li>
+                        <li>Explosive Bomb</li>
                     </ul>
                 </div>
 
-                <!-- New Spells Per Day Table -->
+                <!-- Updated Spells Per Day Table -->
                 <div class="parchment-cell overflow-x-auto">
                     <h3 class="text-xl font-bold mb-4">Spells Per Day</h3>
                     <table class="min-w-full bg-white border border-yellow-300">
@@ -413,7 +409,7 @@
                                 <td class="table-cell">+3</td>
                                 <td class="table-cell">+0</td>
                                 <td class="table-special">
-                                    Discovery, poison resistance +2, Perfect Recall
+                                    Discovery, Perfect Recall
                                 </td>
                                 <td class="table-cell">2</td>
                                 <td class="table-cell">-</td>
@@ -464,7 +460,7 @@
                                 <td class="table-cell">+4</td>
                                 <td class="table-cell">+1</td>
                                 <td class="table-special">
-                                    Bomb 3d6, poison resistance +4
+                                    Bomb 3d6
                                 </td>
                                 <td class="table-cell">4</td>
                                 <td class="table-cell">2</td>
@@ -521,7 +517,7 @@
     <!-- JavaScript for Dynamic Height and Interactions -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-s
+
             const sections = document.querySelectorAll('section h2');
 
             sections.forEach(header => {
