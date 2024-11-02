@@ -98,6 +98,12 @@
         <div class="mb-4">
             Speed: 30 ft.<br>
             Ranged: Bomb {formatModifier(bombAttackBonus)} 
+            {#if rapidShotActive}
+                /{formatModifier(bombAttackBonus)} 
+            {/if}
+            {#if twoWeaponFightingActive}
+                /{formatModifier(bombAttackBonus)} 
+            {/if}
             ({baseStats.bombDamage || '1d6'}{formatModifier(bombDamageBonus)} fire, DC {bombDC})
         </div>
             
