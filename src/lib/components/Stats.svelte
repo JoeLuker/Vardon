@@ -27,6 +27,13 @@
             >
                 Intelligence Cognatogen
             </button>
+            <button 
+                class="mutagen-button" 
+                class:active={stats.dexMutagenActive}
+                on:click={() => character.toggleDexMutagen()}
+            >
+                Dexterity Mutagen
+            </button>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

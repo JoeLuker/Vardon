@@ -225,18 +225,21 @@ function createCharacterStore() {
         };
     }
 
-    function calculateAC(abilityScores, baseAC = 10) {
+    function calculateAC(abilityScores, state) {
         if (!abilityScores?.dex) {
             return { normal: 10, touch: 10, flatFooted: 10 };
         }
-
+    
         const abpBonuses = getABPBonuses(effectiveABPLevel);
         const dexMod = calculateModifier(abilityScores.dex);
         
+        // Add natural armor bonus if either cognatogen or mutagen is active
+        const naturalArmorBonus = (state?.cognatogenActive || state?.dexMutagenActive) ? 2 : 0;
+        
         return {
-            normal: baseAC + dexMod + abpBonuses.armor + abpBonuses.deflection + (abpBonuses.toughening || 0),
-            touch: baseAC + dexMod + abpBonuses.deflection,
-            flatFooted: baseAC + abpBonuses.armor + abpBonuses.deflection + (abpBonuses.toughening || 0)
+            normal: 10 + dexMod + abpBonuses.armor + abpBonuses.deflection + (abpBonuses.toughening || 0) + naturalArmorBonus,
+            touch: 10 + dexMod + abpBonuses.deflection,
+            flatFooted: 10 + abpBonuses.armor + abpBonuses.deflection + (abpBonuses.toughening || 0) + naturalArmorBonus
         };
     }
 
@@ -346,7 +349,8 @@ function createCharacterStore() {
             const ranks = parseInt(skill.ranks) || 0;
 
             const isKnowledgeSkill = skillName.toLowerCase().includes("knowledge");
-            const additionalMod = isKnowledgeSkill ? abilityMod : 0;
+            const BreadthofKnowledgeBonus = 2;
+            const additionalMod = isKnowledgeSkill ? abilityMod + BreadthofKnowledgeBonus : 0;
             
             return ranks + abilityMod + classSkillBonus + additionalMod;
         },
@@ -404,6 +408,32 @@ function createCharacterStore() {
                 } else {
                     newState.currentAttributes = { ...state.baseAttributes };
                 }
+                // If mutagen was active, deactivate it as they can't stack
+                if (newState.dexMutagenActive) {
+                    newState.dexMutagenActive = false;
+                }
+                return newState;
+            });
+        },
+
+        toggleDexMutagen: () => {
+            store.update(state => {
+                const newState = { ...state };
+                newState.dexMutagenActive = !state.dexMutagenActive;
+                
+                newState.currentAttributes = { ...state.currentAttributes };
+                if (newState.dexMutagenActive) {
+                    newState.currentAttributes.dex += 4;
+                    newState.currentAttributes.wis -= 2;
+                } else {
+                    newState.currentAttributes = { ...state.baseAttributes };
+                }
+                
+                // If cognatogen was active, deactivate it as they can't stack
+                if (newState.cognatogenActive) {
+                    newState.cognatogenActive = false;
+                }
+                
                 return newState;
             });
         },
