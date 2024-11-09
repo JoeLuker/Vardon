@@ -1,6 +1,7 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,6 +14,63 @@
 
 :root {
 	--fontSize: calc((1vw + 1vh) * 0.75);
+	
+	/* Primary Theme Colors */
+	--color-parchment: #fffef0;
+	--color-parchment-dark: #f3e5ab;
+	
+	/* Primary Brand Colors */
+	--color-primary: #c19a6b;
+	--color-primary-dark: #a67b4b;
+	--color-primary-light: #d4b38d;
+	
+	/* State Colors */
+	--color-success: var(--color-primary);
+	--color-danger: #ef4444;
+	--color-warning: #f59e0b;
+	
+	/* Text Colors */
+	--color-text: #2d2d2d;
+	--color-text-muted: #666666;
+	
+	/* Elevation Shadows */
+	--shadow-sm: 0 1px 2px rgba(193, 154, 107, 0.05);
+	--shadow-md: 0 4px 6px rgba(193, 154, 107, 0.1);
+	--shadow-lg: 0 10px 15px rgba(193, 154, 107, 0.1);
+	
+	/* Component Specific */
+	--input-bg: var(--color-parchment);
+	--button-focus-ring: var(--color-primary-light);
+	
+	/* Spacing Scale */
+	--space-xs: 0.25rem;
+	--space-sm: 0.5rem;
+	--space-md: 1rem;
+	--space-lg: 1.5rem;
+	--space-xl: 2rem;
+	
+	/* Border Radius */
+	--radius-sm: 0.25rem;
+	--radius-md: 0.375rem;
+	--radius-lg: 0.5rem;
+	
+	/* Typography Scale */
+	--text-xs: 0.75rem;
+	--text-sm: 0.875rem;
+	--text-md: 1rem;
+	--text-lg: 1.125rem;
+	--text-xl: 1.25rem;
+	--text-2xl: 1.5rem;
+	
+	/* Transitions */
+	--transition-fast: 150ms;
+	--transition-base: 200ms;
+	--transition-slow: 300ms;
+	--transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+	
+	--color-danger-hover: #dc2626; /* slightly darker red */
+	
+	--color-primary-border: rgba(193, 154, 107, 0.3);
 }
 
 * {
@@ -47,7 +105,8 @@ body {
 }
 
 .parchment-cell {
-	@apply mb-4 rounded-lg bg-[#fffef0]/90 p-4 shadow-md;
+	@apply mb-4 rounded-lg p-4 shadow-md;
+	background-color: rgb(255 254 240 / 0.9);
 }
 
 /* Updated section header styling */
@@ -58,7 +117,8 @@ body {
 /* Add hover and focus states for better accessibility */
 .section-header:hover,
 .section-header:focus-visible {
-	@apply border-[#a67b4b] bg-[#fffef0]/10 text-[#a67b4b] outline-none;
+	@apply border-[#a67b4b] text-[#a67b4b] outline-none;
+	background-color: rgb(255 254 240 / 0.1);
 }
 
 /* Add focus ring for keyboard navigation */
@@ -80,35 +140,30 @@ body {
 
 /* Updated mutagen button styling */
 .mutagen-button {
-	@apply mr-2 mt-2 rounded bg-green-500 px-4 py-2 text-white transition-colors;
-}
-
-.mutagen-button:hover {
-	@apply bg-green-600;
-}
-
-.mutagen-button:focus-visible {
-	@apply outline-none ring-2 ring-green-500 ring-offset-2;
+	@apply rounded px-4 py-2 text-white transition-all duration-200
+	bg-[var(--color-success)] hover:bg-[var(--color-primary-dark)]
+	focus:outline-none focus:ring-2 focus:ring-[var(--button-focus-ring)] focus:ring-offset-2;
 }
 
 .mutagen-button.active {
-	@apply bg-red-600;
+	@apply bg-[var(--color-danger)] hover:opacity-90;
 }
 
-.mutagen-button.active:hover {
-	@apply bg-red-700;
+.stat-input,
+.consumable-input {
+	@apply rounded border bg-[var(--input-bg)] p-2 text-center transition-colors
+	border-[var(--color-primary-border)]
+	focus:border-[var(--color-primary)] focus:outline-none 
+	focus:ring-2;
+	--tw-ring-color: rgb(var(--color-primary-light) / 0.5);
 }
 
 .stat-input {
-	@apply inline-block w-20 rounded border border-yellow-300 bg-yellow-100 p-1 text-center transition-colors;
-}
-
-.stat-input:focus {
-	@apply border-yellow-400 outline-none ring-2 ring-yellow-300 ring-offset-2;
+	@apply w-20;
 }
 
 .consumable-input {
-	@apply inline-block w-16 rounded border border-yellow-300 bg-yellow-100 p-1 text-center;
+	@apply w-16;
 }
 
 .skill-list {
@@ -187,11 +242,13 @@ body {
 /* Form elements styling */
 input[type='number'] {
 	-moz-appearance: textfield;
+	appearance: textfield;
 }
 
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
 	-webkit-appearance: none;
+	appearance: none;
 	margin: 0;
 }
 
@@ -231,4 +288,59 @@ input[type='number']::-webkit-inner-spin-button {
 	button:not(.mutagen-button) {
 		@apply cursor-default hover:bg-transparent focus:ring-0;
 	}
+}
+
+/* Base Component Styles */
+.card {
+	@apply rounded-[var(--radius-lg)] p-[var(--space-md)]
+	shadow-[var(--shadow-md)] transition-shadow hover:shadow-[var(--shadow-lg)];
+	background-color: rgb(255 254 240 / 0.9);
+}
+
+.section-title {
+	@apply mb-[var(--space-md)] text-[var(--text-2xl)] font-bold;
+}
+
+.button-base {
+	@apply rounded-[var(--radius-md)] px-[var(--space-md)] py-[var(--space-sm)]
+	font-medium transition-all duration-200 
+	focus:outline-none focus:ring-2 focus:ring-[var(--button-focus-ring)] focus:ring-offset-2;
+}
+
+.button-primary {
+	@apply button-base bg-[var(--color-primary)] text-white 
+	hover:bg-[var(--color-primary-dark)] active:transform active:scale-95;
+}
+
+.button-secondary {
+	@apply button-base border border-[var(--color-primary)] text-[var(--color-primary)];
+	&:hover {
+		background-color: rgb(193 154 107 / 0.1);
+	}
+}
+
+.input-base {
+	@apply rounded-md bg-white px-3 py-2 transition-colors 
+	focus:border-[var(--color-primary)] focus:outline-none focus:ring-2;
+	border: 1px solid rgb(193 154 107 / 0.3);
+	&:focus {
+		--tw-ring-color: rgb(193 154 107 / 0.5);
+	}
+}
+
+.fade-enter {
+	@apply transition-opacity duration-200 ease-in-out;
+}
+
+.slide-enter {
+	@apply transform transition-all duration-200 ease-in-out;
+}
+
+.hover-scale {
+	@apply transition-transform duration-[var(--transition-base)] 
+	hover:scale-105 active:scale-100;
+}
+
+.active-scale {
+	@apply transition-transform active:scale-95;
 }

@@ -1,83 +1,83 @@
-<script>
-    import { character } from '$lib/stores/character';
-    import ResourceTracker from './ResourceTracker.svelte';
-    import { slide } from 'svelte/transition';
-    
-    $: stats = $character || {};
-    $: currentAttributes = stats.currentAttributes || {};
-    $: baseStats = stats.baseStats || {};
-    $: spellSlots = getSpellSlotsDisplay($character);
-    $: spellDCs = getSpellDCs($character);
-
-    console.log('baseStats', baseStats);
-    
-    function getSpellSlotsDisplay() {
-        if (!stats.baseStats?.baseSpells) return {};
-        
-        // Get calculated slots including bonuses
-        const slots = character.getSpellSlots(stats);
-        
-        // Convert to display format
-        return Object.entries(slots).reduce((acc, [level, slotInfo]) => {
-            acc[level] = {
-                total: slotInfo.max,
-                remaining: slotInfo.remaining,
-                base: baseStats.baseSpells[level] || 0,
-                bonus: slotInfo.max - (baseStats.baseSpells[level] || 0)
-            };
-            return acc;
-        }, {});
-    }
-    
-    function getSpellDCs() {
-        return Object.keys(baseStats.baseSpells || {}).reduce((acc, level) => {
-            acc[level] = character.getSpellDC(parseInt(level), stats);
-            return acc;
-        }, {});
-    }
-</script>
-
-<div class="parchment-cell" transition:slide>
-    <strong class="block mb-2">Spell Slots</strong>
-    {#each Object.entries(spellSlots) as [level, data]}
-        <div class="mb-6">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-lg font-semibold">
-                    Level {level} Spells (DC {spellDCs[level]})
-                </span>
-                <div class="text-sm text-gray-600">
-                    Base: {data.base} + Bonus: {data.bonus}
-                </div>
-            </div>
-            
-            <ResourceTracker
-                label={`Level ${level}`}
-                total={data.total}
-                used={data.total - data.remaining}
-                onToggle={(remaining) => {
-                    character.useSpellSlot(parseInt(level), remaining);
-                }}
-            />
-            
-            <div class="text-sm text-gray-600 ml-2">
-                {data.remaining} of {data.total} remaining
-            </div>
-        </div>
-    {/each}
-    
-    {#if stats.knownSpells}
-        <div class="mt-6">
-            <strong class="block mb-2">Known Spells</strong>
-            {#each Object.entries(stats.knownSpells) as [level, spells]}
-                <div class="mb-2">
-                    <strong class="text-[#c19a6b]">Level {level}:</strong>
-                    <ul class="list-disc list-inside ml-4">
-                        {#each spells as spell}
-                            <li>{spell}</li>
-                        {/each}
-                    </ul>
-                </div>
-            {/each}
-        </div>
-    {/if}
-</div>
+<script lang="ts">
+	import { spells } from '$lib/stores/base/spells';
+	import { totalSlots, spellDCs } from '$lib/stores/derived/spellCalculations';
+	import ResourceTracker from './ResourceTracker.svelte';
+	import { slide } from 'svelte/transition';
+	import { rootStore } from '$lib/stores/base/root';
+	import type { SpellSlot } from '$lib/types/character';
+	
+	$: characterId = $rootStore.character?.id;
+	
+	async function handleSpellSlotToggle(level: number, remaining: number) {
+	  if (!characterId) return;
+	  await spells.updateSpellSlot(characterId, level, remaining);
+	}
+  
+	function getSpellLevelInfo(level: number, data: SpellSlot) {
+	  return {
+		base: data.total - (data.bonus || 0),
+		bonus: data.bonus || 0,
+		total: data.total,
+		remaining: data.remaining,
+		dc: $spellDCs[level] || (10 + level)
+	  };
+	}
+  </script>
+  
+  <div class="parchment-cell" transition:slide>
+	<strong class="mb-2 block">Spell Slots</strong>
+	{#each Object.entries($totalSlots) as [level, data]}
+	  {@const info = getSpellLevelInfo(parseInt(level), data)}
+	  <div class="mb-6">
+		<div class="mb-2 flex items-center justify-between">
+		  <span class="text-lg font-semibold">
+			Level {level} Spells (DC {info.dc})
+		  </span>
+		  <div class="text-sm text-gray-600">
+			Base: {info.base} + Bonus: {info.bonus}
+		  </div>
+		</div>
+  
+		<ResourceTracker
+		  label={`Level ${level}`}
+		  total={info.total}
+		  used={info.total - info.remaining}
+		  onToggle={(remaining) => handleSpellSlotToggle(parseInt(level), remaining)}
+		/>
+  
+		<div class="ml-2 text-sm text-gray-600">
+		  {info.remaining} of {info.total} remaining
+		</div>
+	  </div>
+	{/each}
+  
+	{#if $spells.knownSpells}
+	  <div class="mt-6">
+		<strong class="mb-2 block">Known Spells</strong>
+		{#each Object.entries($spells.knownSpells) as [level, knownSpells]}
+		  <div class="mb-2">
+			<strong class="text-[#c19a6b]">Level {level}:</strong>
+			<ul class="ml-4 list-inside list-disc">
+			  {#each knownSpells as spell}
+				<li>{spell}</li>
+			  {/each}
+			</ul>
+		  </div>
+		{/each}
+	  </div>
+	{/if}
+  
+	{#if $spells.errors?.length}
+	  <div class="mt-4 rounded bg-red-100 p-2 text-red-700">
+		{#each $spells.errors as error}
+		  <p>{error}</p>
+		{/each}
+	  </div>
+	{/if}
+  </div>
+  
+  <style lang="postcss">
+	.parchment-cell {
+	  @apply bg-amber-50 rounded-lg p-6 shadow-lg;
+	}
+  </style>

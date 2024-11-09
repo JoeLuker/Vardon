@@ -1,52 +1,80 @@
-<!-- src/routes/+page.svelte -->
-<script>
-    import { character } from '$lib/stores/character';
-    import Nav from '$lib/components/Nav.svelte';
-    import Stats from '$lib/components/Stats.svelte';
-    import Combat from '$lib/components/Combat.svelte';
-    import Equipment from '$lib/components/Equipment.svelte';
-    import Spells from '$lib/components/Spells.svelte';
-    import ClassTable from '$lib/components/ClassTable.svelte';
-    import Discoveries from '$lib/components/Discoveries.svelte';
-    import Feats from '$lib/components/Feats.svelte';
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { initializeApp } from '$lib/services/root';
+	import { rootStore } from '$lib/stores/base/root';
+	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte';
+	import Nav from '$lib/components/Nav.svelte';
+	import Stats from '$lib/components/Stats.svelte';
+	import Combat from '$lib/components/Combat.svelte';
+	import Equipment from '$lib/components/Equipment.svelte';
+	import Spells from '$lib/components/Spells.svelte';
+	import ClassTable from '$lib/components/ClassTable.svelte';
+	import Discoveries from '$lib/components/Discoveries.svelte';
+	import Feats from '$lib/components/Feats.svelte';
+	import Skills from '$lib/components/Skills.svelte';
 
-    let mobileMenuOpen = false;
+	let mobileMenuOpen = false;
+	let loadingMessage = 'Loading character data...';
+	let loadingProgress: number | null = null;
+
+
+
+	onMount(async () => {
+		try {
+			loadingMessage = 'Initializing application...';
+			loadingProgress = 0;
+
+			const updateProgress = (progress: number) => {
+				loadingProgress = progress;
+				if (progress < 90) {
+					setTimeout(() => updateProgress(progress + 10), 200);
+				}
+			};
+
+			updateProgress(0);
+			await initializeApp();
+			loadingProgress = 100;
+		} catch (error) {
+			console.error('Failed to initialize app:', error);
+			rootStore.addError(error instanceof Error ? error.message : 'Unknown error');
+		}
+	});
 </script>
 
-<svelte:head>
-    <title>Vardon Salvador | Character Sheet</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
-</svelte:head>
-
 <div class="pt-20">
-    <Nav bind:mobileMenuOpen />
-    
-    <main class="content-container">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl text-[#c19a6b]">Vardon Salvador</h1>
-            <p class="text-[#c19a6b] text-xl mt-2">Magaambayan Mindchemist</p>
-            <p class="text-[#c19a6b] mt-1">Level 5 Alchemist | Tengu </p>
-            <p class="text-[#c19a6b] mt-2"><strong>Player:</strong> Aaron</p>
-        </header>
+	<LoadingOverlay 
+		isLoading={$rootStore.isLoading} 
+		message={loadingMessage} 
+		progress={loadingProgress} 
+	/>
 
-        <Stats />
-        <Combat />
-        <Equipment />
-        <Spells />
-        <Discoveries />
-        <Feats />
+	{#if $rootStore.errors.length > 0}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-red-500/30">
+			<div class="rounded-lg bg-white px-4 py-2 text-red-500 shadow-lg">
+				{#each $rootStore.errors as error}
+					<p>{error}</p>
+				{/each}
+			</div>
+		</div>
+	{:else}
+		<Nav bind:mobileMenuOpen />
 
-        <button 
-            class="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            on:click={() => {
-                if (confirm('Are you sure you want to reset all values?')) {
-                    character.reset();
-                }
-            }}
-        >
-            Reset Sheet
-        </button>
-    </main>
+		<main class="content-container">
+			<header class="mb-8 text-center">
+				<h1 class="text-4xl text-[#c19a6b]">Vardon Salvador</h1>
+				<p class="mt-2 text-xl text-[#c19a6b]">Magaambayan Mindchemist</p>
+				<p class="mt-1 text-[#c19a6b]">Level 5 Alchemist | Tengu</p>
+				<p class="mt-2 text-[#c19a6b]"><strong>Player:</strong> Aaron</p>
+			</header>
+
+			<Stats />
+			<Skills />
+			<Combat />
+			<Equipment />
+			<Spells />
+			<ClassTable />
+			<Discoveries />
+			<Feats />
+		</main>
+	{/if}
 </div>

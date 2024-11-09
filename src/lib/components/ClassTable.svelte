@@ -1,46 +1,76 @@
-<script>
-    import { character } from '$lib/stores/character';
-    import { slide } from 'svelte/transition';
-    
-    let showTables = true;
-    
-    $: stats = $character || {};
-    $: currentAttributes = stats.currentAttributes || {};
-    $: baseStats = stats.baseStats || {};
-    $: spellSlots = $character ? calculateSpellSlots() : {};
-    
-    function calculateSpellSlots() {
-        const intModifier = character.calculateModifier(currentAttributes.int);
-        return Object.entries(baseStats.baseSpells || {}).reduce((acc, [level, base]) => {
-            const numLevel = parseInt(level);
-            let bonus = 0;
-            if (intModifier >= numLevel) {
-                bonus = Math.floor((intModifier - numLevel) / 4) + 1;
-            }
-            acc[level] = {
-                base,
-                bonus,
-                total: base + bonus,
-                used: stats.spellSlots?.[level]?.used ?? 0
-            };
-            return acc;
-        }, {});
-    }
-</script>
+<script lang="ts">
+	import { totalSlots } from '$lib/stores/derived/spellCalculations';
+	import { slide } from 'svelte/transition';
 
-<section id="class-features">
-    <h2 class="section-header w-full text-left">
-        Class Features & Spells Per Day
-    </h2>
-    
-    {#if showTables}
-        <div class="parchment-cell" transition:slide>
-            <h3 class="font-bold text-lg mb-2">Spells Per Day</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full border border-[#c19a6b]">
-                    <!-- Rest of the table code remains the same -->
-                </table>
-            </div>
-        </div>
-    {/if}
-</section>
+	let showTables = true;
+  
+	const baseStats = {
+	  bab: 3,
+	  fort: 4,
+	  ref: 4,
+	  will: 1,
+	  bombDamage: '3d6',
+	  special: [
+		'Alchemy',
+		'Bomb 3d6',
+		'Cognatogen',
+		'Throw Anything',
+		'Perfect Recall',
+		'Discovery',
+		'Swift Alchemy'
+	  ]
+	};
+  </script>
+  
+  <section id="class-features">
+	<h2 class="section-header w-full text-left">Class Features & Spells Per Day</h2>
+  
+	{#if showTables}
+	  <div class="parchment-cell" transition:slide>
+		<h3 class="mb-2 text-lg font-bold">Spells Per Day</h3>
+		<div class="overflow-x-auto">
+		  <table class="min-w-full border border-[#c19a6b]">
+			<thead>
+			  <tr>
+				<th class="table-header">Level</th>
+				<th class="table-header">Base</th>
+				<th class="table-header">Bonus</th>
+				<th class="table-header">Total</th>
+				<th class="table-header">DC</th>
+			  </tr>
+			</thead>
+			<tbody>
+			  {#each Object.entries($totalSlots) as [level, data]}
+				<tr>
+				  <td class="table-cell">{level}</td>
+				  <td class="table-cell">{data.total - data.bonus}</td>
+				  <td class="table-cell">{data.bonus}</td>
+				  <td class="table-cell">{data.total}</td>
+				  <td class="table-cell">{data.dc}</td>
+				</tr>
+			  {/each}
+			</tbody>
+		  </table>
+		</div>
+  
+		<h3 class="mb-2 mt-6 text-lg font-bold">Class Features</h3>
+		<div class="space-y-2">
+		  {#each baseStats.special as feature}
+			<div class="parchment-cell">
+			  {feature}
+			</div>
+		  {/each}
+		</div>
+	  </div>
+	{/if}
+  </section>
+  
+  <style lang="postcss">
+	.table-header {
+	  @apply border border-[#c19a6b] bg-[#f3e5ab] px-4 py-2 text-center font-bold;
+	}
+  
+	.table-cell {
+	  @apply border border-[#c19a6b] px-4 py-2 text-center;
+	}
+  </style>
