@@ -1,10 +1,11 @@
+// eslint.config.js
 import globals from 'globals';
 import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import sveltePlugin from 'eslint-plugin-svelte';
 import prettier from 'eslint-config-prettier';
 
-/** @type {import('eslint').Linter.FlatConfig[]} */
+/** @type {import('eslint').Linter.Config[]} */
 export default [
 	// Base JavaScript configuration
 	js.configs.recommended,

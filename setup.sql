@@ -1,3 +1,28 @@
+-- Drop triggers first (in reverse order to avoid dependencies)
+DROP TRIGGER IF EXISTS update_character_consumables_timestamp ON character_consumables;
+DROP TRIGGER IF EXISTS update_character_combat_stats_timestamp ON character_combat_stats;
+DROP TRIGGER IF EXISTS update_character_known_spells_timestamp ON character_known_spells;
+DROP TRIGGER IF EXISTS update_character_spell_slots_timestamp ON character_spell_slots;
+DROP TRIGGER IF EXISTS update_character_skills_timestamp ON character_skills;
+DROP TRIGGER IF EXISTS update_character_buffs_timestamp ON character_buffs;
+DROP TRIGGER IF EXISTS update_characters_timestamp ON characters;
+
+-- Drop the update timestamp function
+DROP FUNCTION IF EXISTS update_timestamp;
+
+-- Drop all tables in reverse dependency order
+DROP TABLE IF EXISTS character_consumables;
+DROP TABLE IF EXISTS character_combat_stats;
+DROP TABLE IF EXISTS character_known_spells;
+DROP TABLE IF EXISTS character_spell_slots;
+DROP TABLE IF EXISTS character_skills;
+DROP TABLE IF EXISTS character_buffs;
+DROP TABLE IF EXISTS character_attributes;
+DROP TABLE IF EXISTS characters;
+
+-- Drop extension if it was created for UUID support
+DROP EXTENSION IF EXISTS "uuid-ossp";
+
 -- Supabase AI is experimental and may produce incorrect answers
 -- Always verify the output before executing
 
@@ -14,6 +39,7 @@ CREATE TABLE
     race TEXT NOT NULL,
     LEVEL INTEGER NOT NULL,
     current_hp INTEGER NOT NULL,
+    max_hp INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_offline BOOLEAN DEFAULT FALSE,
@@ -161,14 +187,16 @@ BEGIN
         class,
         race,
         level,
-        current_hp
+        current_hp,
+        max_hp
     ) VALUES (
         user_uuid,
         'Vardon Salvador',
         'Alchemist',
         'Tengu',
         5,
-        45
+        35,
+        35
     );
 
     -- Get the last inserted character ID
@@ -224,3 +252,39 @@ BEGIN
         RAISE NOTICE 'Created character with ID: %', character_id;
     END;
 END $$;
+
+
+
+-- Enable realtime for all relevant tables
+alter publication supabase_realtime add table characters;
+alter publication supabase_realtime add table character_attributes;
+alter publication supabase_realtime add table character_combat_stats;
+alter publication supabase_realtime add table character_consumables;
+
+-- Simple policies that allow all access
+create policy "Public realtime access"
+    on characters for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on character_attributes for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on character_combat_stats for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on character_consumables for all
+    using (true)
+    with check (true);
+
+
+-- Make sure realtime is enabled for the tables
+alter table characters replica identity full;
+alter table character_attributes replica identity full;
+alter table character_combat_stats replica identity full;
+alter table character_consumables replica identity full;

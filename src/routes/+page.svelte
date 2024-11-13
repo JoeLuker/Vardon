@@ -1,80 +1,197 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { initializeApp } from '$lib/services/root';
-	import { rootStore } from '$lib/stores/base/root';
-	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte';
-	import Nav from '$lib/components/Nav.svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
+	import { subscribeToCharacter, updateCharacterField } from '$lib/realtimeClient';
+	import { debounce } from '$lib/utils/debounce';
+	import CharacterHeader from '$lib/components/CharacterHeader.svelte';
+	import HPTracker from '$lib/components/HPTracker.svelte';
 	import Stats from '$lib/components/Stats.svelte';
-	import Combat from '$lib/components/Combat.svelte';
-	import Equipment from '$lib/components/Equipment.svelte';
-	import Spells from '$lib/components/Spells.svelte';
-	import ClassTable from '$lib/components/ClassTable.svelte';
-	import Discoveries from '$lib/components/Discoveries.svelte';
-	import Feats from '$lib/components/Feats.svelte';
-	import Skills from '$lib/components/Skills.svelte';
+	import CombatStats from '$lib/components/CombatStats.svelte';
+	import Consumables from '$lib/components/Consumables.svelte';
+	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte';
+	import type { Character, AttributeKey, ConsumableKey } from '$lib/types/character';
+	import type { RealtimeStatus } from '$lib/realtimeClient';
 
-	let mobileMenuOpen = false;
-	let loadingMessage = 'Loading character data...';
-	let loadingProgress: number | null = null;
+	let { data } = $props<{ data: { character: Character } }>();
 
+	// State
+	let character = $state<Character>(data.character);
+	let isLoading = $state(false);
+	let lastUpdateTime = $state(Date.now());
+	let realtimeStatus = $state<RealtimeStatus>('disconnected');
+	let unsubscribe: (() => void) | undefined;
 
+	// Create debounced update functions
+	const debouncedUpdateField = debounce(updateCharacterField, 300);
 
-	onMount(async () => {
+	// Handle updates
+	async function updateHP(newHP: number) {
 		try {
-			loadingMessage = 'Initializing application...';
-			loadingProgress = 0;
-
-			const updateProgress = (progress: number) => {
-				loadingProgress = progress;
-				if (progress < 90) {
-					setTimeout(() => updateProgress(progress + 10), 200);
-				}
-			};
-
-			updateProgress(0);
-			await initializeApp();
-			loadingProgress = 100;
+			isLoading = true;
+			await debouncedUpdateField('characters', character.id, { current_hp: newHP });
+			character.current_hp = newHP;
+			lastUpdateTime = Date.now();
 		} catch (error) {
-			console.error('Failed to initialize app:', error);
-			rootStore.addError(error instanceof Error ? error.message : 'Unknown error');
+			console.error('Failed to update HP:', error);
+		} finally {
+			isLoading = false;
 		}
+	}
+
+	async function updateAttribute(attr: AttributeKey, value: number) {
+		try {
+			isLoading = true;
+			await debouncedUpdateField('character_attributes', character.id, { [attr]: value });
+			if (character.character_attributes[0]) {
+				character.character_attributes[0][attr] = value;
+			}
+			lastUpdateTime = Date.now();
+		} catch (error) {
+			console.error('Failed to update attribute:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function updateConsumable(type: ConsumableKey, value: number) {
+		try {
+			isLoading = true;
+			await debouncedUpdateField('character_consumables', character.id, { [type]: value });
+			if (character.character_consumables[0]) {
+				character.character_consumables[0][type] = value;
+			}
+			lastUpdateTime = Date.now();
+		} catch (error) {
+			console.error('Failed to update consumable:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function updateBombs(bombs: number) {
+		try {
+			isLoading = true;
+			await debouncedUpdateField('character_combat_stats', character.id, { bombs_left: bombs });
+			if (character.character_combat_stats[0]) {
+				character.character_combat_stats[0].bombs_left = bombs;
+			}
+			lastUpdateTime = Date.now();
+		} catch (error) {
+			console.error('Failed to update bombs:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// Set up realtime subscription
+	onMount(() => {
+		if (browser) {
+			unsubscribe = subscribeToCharacter(character.id, {
+				character: (data) => {
+					// Only update if the change came from another client
+					if (Date.now() - lastUpdateTime > 1000) {
+						character = { ...character, ...data };
+					}
+				},
+				attributes: (data) => {
+					if (Date.now() - lastUpdateTime > 1000 && character.character_attributes[0]) {
+						character.character_attributes[0] = {
+							...character.character_attributes[0],
+							...data
+						};
+					}
+				},
+				combatStats: (data) => {
+					if (Date.now() - lastUpdateTime > 1000 && character.character_combat_stats[0]) {
+						character.character_combat_stats[0] = {
+							...character.character_combat_stats[0],
+							...data
+						};
+					}
+				},
+				consumables: (data) => {
+					if (Date.now() - lastUpdateTime > 1000 && character.character_consumables[0]) {
+						character.character_consumables[0] = {
+							...character.character_consumables[0],
+							...data
+						};
+					}
+				},
+				status: (status) => {
+					realtimeStatus = status;
+				}
+			});
+		}
+	});
+
+	onDestroy(() => {
+		if (unsubscribe) {
+			unsubscribe();
+		}
+	});
+
+	// Derived props
+	let headerProps = $derived({
+		name: character.name,
+		race: character.race,
+		characterClass: character.class,
+		level: character.level
+	});
+
+	let hpProps = $derived({
+		currentHP: character.current_hp,
+		maxHP: character.max_hp,
+		onUpdate: updateHP
+	});
+
+	let combatProps = $derived({
+		bombsLeft: character.character_combat_stats[0]?.bombs_left ?? 0,
+		baseAttackBonus: character.character_combat_stats[0]?.base_attack_bonus ?? 0,
+		onUpdateBombs: updateBombs
+	});
+
+	let consumableProps = $derived({
+		alchemist_fire: character.character_consumables[0]?.alchemist_fire ?? 0,
+		acid: character.character_consumables[0]?.acid ?? 0,
+		tanglefoot: character.character_consumables[0]?.tanglefoot ?? 0,
+		onUpdate: updateConsumable
+	});
+
+	let statsProps = $derived({
+		attributes: character.character_attributes[0] ?? {
+			str: 10,
+			dex: 10,
+			con: 10,
+			int: 10,
+			wis: 10,
+			cha: 10
+		},
+		onUpdateAttribute: updateAttribute
 	});
 </script>
 
-<div class="pt-20">
-	<LoadingOverlay 
-		isLoading={$rootStore.isLoading} 
-		message={loadingMessage} 
-		progress={loadingProgress} 
-	/>
+<LoadingOverlay {isLoading} showDelay={500} />
 
-	{#if $rootStore.errors.length > 0}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-red-500/30">
-			<div class="rounded-lg bg-white px-4 py-2 text-red-500 shadow-lg">
-				{#each $rootStore.errors as error}
-					<p>{error}</p>
-				{/each}
+{#if realtimeStatus === 'disconnected'}
+	<div
+		class="fixed right-4 top-4 z-50 rounded border border-yellow-400 bg-yellow-100 px-4 py-3 text-yellow-700 shadow-lg"
+	>
+		Offline Mode
+	</div>
+{/if}
+
+<div class="mx-auto max-w-2xl space-y-4 p-4 sm:p-6 md:p-8">
+	<div class="grid gap-4 sm:gap-6 md:gap-8">
+		<CharacterHeader {...headerProps} />
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+			<div class="order-1 md:order-none">
+				<HPTracker {...hpProps} />
+			</div>
+			<div class="order-2 md:order-none">
+				<CombatStats {...combatProps} />
 			</div>
 		</div>
-	{:else}
-		<Nav bind:mobileMenuOpen />
-
-		<main class="content-container">
-			<header class="mb-8 text-center">
-				<h1 class="text-4xl text-[#c19a6b]">Vardon Salvador</h1>
-				<p class="mt-2 text-xl text-[#c19a6b]">Magaambayan Mindchemist</p>
-				<p class="mt-1 text-[#c19a6b]">Level 5 Alchemist | Tengu</p>
-				<p class="mt-2 text-[#c19a6b]"><strong>Player:</strong> Aaron</p>
-			</header>
-
-			<Stats />
-			<Skills />
-			<Combat />
-			<Equipment />
-			<Spells />
-			<ClassTable />
-			<Discoveries />
-			<Feats />
-		</main>
-	{/if}
+		<Stats {...statsProps} />
+		<Consumables {...consumableProps} />
+	</div>
 </div>
