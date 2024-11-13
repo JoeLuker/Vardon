@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { subscribeToCharacter, updateCharacterField } from '$lib/realtimeClient';
 	import { debounce } from '$lib/utils/debounce';
@@ -19,7 +18,7 @@
 	let isLoading = $state(false);
 	let lastUpdateTime = $state(Date.now());
 	let realtimeStatus = $state<RealtimeStatus>('disconnected');
-	let unsubscribe: (() => void) | undefined;
+	let unsubscribe = $state<(() => void) | undefined>(undefined);
 
 	// Create debounced update functions
 	const debouncedUpdateField = debounce(updateCharacterField, 300);
@@ -84,11 +83,10 @@
 	}
 
 	// Set up realtime subscription
-	onMount(() => {
+	$effect.pre(() => {
 		if (browser) {
 			unsubscribe = subscribeToCharacter(character.id, {
 				character: (data) => {
-					// Only update if the change came from another client
 					if (Date.now() - lastUpdateTime > 1000) {
 						character = { ...character, ...data };
 					}
@@ -121,16 +119,16 @@
 					realtimeStatus = status;
 				}
 			});
+
+			return () => {
+				if (unsubscribe) {
+					unsubscribe();
+				}
+			};
 		}
 	});
 
-	onDestroy(() => {
-		if (unsubscribe) {
-			unsubscribe();
-		}
-	});
-
-	// Derived props
+	// Derived props using $derived for immutable objects
 	let headerProps = $derived({
 		name: character.name,
 		race: character.race,
@@ -138,26 +136,26 @@
 		level: character.level
 	});
 
-	let hpProps = $derived({
+	let hpProps = $derived.by(() => ({
 		currentHP: character.current_hp,
 		maxHP: character.max_hp,
 		onUpdate: updateHP
-	});
+	}));
 
-	let combatProps = $derived({
+	let combatProps = $derived.by(() => ({
 		bombsLeft: character.character_combat_stats[0]?.bombs_left ?? 0,
 		baseAttackBonus: character.character_combat_stats[0]?.base_attack_bonus ?? 0,
 		onUpdateBombs: updateBombs
-	});
+	}));
 
-	let consumableProps = $derived({
+	let consumableProps = $derived.by(() => ({
 		alchemist_fire: character.character_consumables[0]?.alchemist_fire ?? 0,
 		acid: character.character_consumables[0]?.acid ?? 0,
 		tanglefoot: character.character_consumables[0]?.tanglefoot ?? 0,
 		onUpdate: updateConsumable
-	});
+	}));
 
-	let statsProps = $derived({
+	let statsProps = $derived.by(() => ({
 		attributes: character.character_attributes[0] ?? {
 			str: 10,
 			dex: 10,
@@ -167,7 +165,7 @@
 			cha: 10
 		},
 		onUpdateAttribute: updateAttribute
-	});
+	}));
 </script>
 
 <LoadingOverlay {isLoading} showDelay={500} />

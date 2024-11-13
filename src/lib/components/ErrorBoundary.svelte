@@ -1,11 +1,9 @@
 <!-- src/lib/components/ErrorBoundary.svelte -->
 <script lang="ts">
-	interface Props {
+	let { error, reset } = $props<{
 		error: Error;
 		reset: () => void;
-	}
-
-	let { error, reset }: Props = $props();
+	}>();
 </script>
 
 <div class="rounded border border-red-400 bg-red-100 p-4 text-red-700">

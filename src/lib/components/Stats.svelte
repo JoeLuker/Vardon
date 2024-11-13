@@ -9,8 +9,8 @@
     let editingAttribute = $state<AttributeKey | null>(null);
     let inputValue = $state<number>(0);
 
-    // Derived data
-    let attributesList = $derived([
+    // Use $derived.by for complex derivations
+    let attributesList = $derived.by(() => [
         { key: 'str' as const, label: 'Strength', value: attributes.str },
         { key: 'dex' as const, label: 'Dexterity', value: attributes.dex },
         { key: 'con' as const, label: 'Constitution', value: attributes.con },
@@ -19,7 +19,7 @@
         { key: 'cha' as const, label: 'Charisma', value: attributes.cha }
     ]);
 
-    let modifiers = $derived(
+    let modifiers = $derived.by(() => 
         attributesList.reduce((acc, { key, value }) => ({
             ...acc,
             [key]: Math.floor((value - 10) / 2)
@@ -50,9 +50,9 @@
         editingAttribute = null;
     }
 
-    function formatModifier(num: number): string {
-        return num >= 0 ? `+${num}` : num.toString();
-    }
+    let formatModifier = $derived.by(() => (num: number): string => 
+        num >= 0 ? `+${num}` : num.toString()
+    );
 
     function focusInput(node: HTMLInputElement) {
         node.focus();
@@ -68,7 +68,10 @@
         {#each attributesList as { key, label, value }}
             <div class="p-4 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
                 <div class="flex justify-between items-center mb-2">
-                    <label class="text-sm font-medium text-gray-700">
+                    <label 
+                        for={`${key}-input`}
+                        class="text-sm font-medium text-gray-700"
+                    >
                         {label}
                     </label>
                     <div class="flex gap-1">
@@ -92,6 +95,7 @@
                 <div class="flex items-center gap-2">
                     {#if editingAttribute === key}
                         <input
+                            id={`${key}-input`}
                             type="number"
                             class="input w-20 text-center"
                             value={inputValue}
