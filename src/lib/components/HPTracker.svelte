@@ -2,7 +2,7 @@
 	let { currentHP = $bindable(0), maxHP, onUpdate } = $props<{
 		currentHP: number;
 		maxHP: number;
-		onUpdate: (hp: number) => void;
+		onUpdate: (hp: number) => Promise<void>;
 	}>();
 
 	let isEditing = $state(false);
@@ -13,10 +13,20 @@
 		inputValue = currentHP;
 	});
 
-	function handleQuickUpdate(amount: number) {
+	async function handleQuickUpdate(amount: number) {
 		const newValue = Math.max(0, Math.min(maxHP, currentHP + amount));
-		if (newValue !== currentHP) {
-			onUpdate(newValue);
+		if (newValue === currentHP) return;
+
+		// Optimistically update local state
+		const previousValue = currentHP;
+		currentHP = newValue;
+
+		try {
+			await onUpdate(newValue);
+		} catch (error) {
+			// Revert on failure
+			currentHP = previousValue;
+			console.error('Failed to update HP:', error);
 		}
 	}
 
@@ -25,10 +35,18 @@
 		inputValue = newValue;
 	}
 
-	function handleInputBlur() {
+	async function handleInputBlur() {
 		isEditing = false;
-		if (inputValue !== currentHP) {
-			onUpdate(inputValue);
+		if (inputValue === currentHP) return;
+
+		const previousValue = currentHP;
+		currentHP = inputValue;
+
+		try {
+			await onUpdate(inputValue);
+		} catch (error) {
+			currentHP = previousValue;
+			console.error('Failed to update HP:', error);
 		}
 	}
 
@@ -36,18 +54,25 @@
 		const roll = () => Math.floor(Math.random() * 8) + 1;
 		const healing = type === 'potion' ? roll() + 1 : roll() + 5;
 		const newValue = Math.min(maxHP, currentHP + healing);
-		onUpdate(newValue);
+
+		// Optimistically update
+		const previousValue = currentHP;
+		currentHP = newValue;
+
+		try {
+			await onUpdate(newValue);
+		} catch (error) {
+			currentHP = previousValue;
+			console.error('Failed to heal:', error);
+		}
 	}
 
 	// Complex derivations using $derived.by
 	let hpStats = $derived.by(() => {
 		const percentage = (currentHP / maxHP) * 100;
-		const color = percentage > 75 
-			? 'bg-green-100' 
-			: percentage > 25 
-				? 'bg-yellow-100' 
-				: 'bg-red-100';
-		
+		const color =
+			percentage > 75 ? 'bg-green-100' : percentage > 25 ? 'bg-yellow-100' : 'bg-red-100';
+
 		return {
 			percentage,
 			color
@@ -82,8 +107,8 @@
 	<!-- Quick Actions -->
 	<div class="mb-4 grid grid-cols-4 gap-2">
 		{#each quickActions as { amount, label }}
-			<button 
-				class="btn btn-secondary px-3 py-1 text-sm" 
+			<button
+				class="btn btn-secondary px-3 py-1 text-sm"
 				onclick={() => handleQuickUpdate(amount)}
 				disabled={amount < 0 ? currentHP <= 0 : currentHP >= maxHP}
 			>

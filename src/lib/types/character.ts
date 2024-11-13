@@ -18,8 +18,60 @@ export interface Consumables {
 	tanglefoot: number;
 }
 
+export interface DatabaseCharacterSkill {
+	id: number;
+	character_id: number | null;
+	skill_name: string;
+	ability: string;
+	class_skill: boolean | null;
+	ranks: number;
+	sync_status: string | null;
+	updated_at: string | null;
+}
+
+export interface CharacterSkill {
+	skill_name: string;
+	ability: string;
+	class_skill: boolean | null;
+	ranks: number;
+}
+
 export type AttributeKey = keyof CharacterAttributes;
-export type ConsumableKey = 'alchemist_fire' | 'acid' | 'tanglefoot';
+export type ConsumableKey = keyof Consumables;
+
+export const KNOWN_BUFFS = [
+	'cognatogen',
+	'dex_mutagen',
+	'deadly_aim',
+	'rapid_shot',
+	'two_weapon_fighting'
+] as const;
+
+export type KnownBuffType = (typeof KNOWN_BUFFS)[number];
+
+export interface DatabaseCharacterBuff {
+	id: number;
+	character_id: number | null;
+	buff_type: string;
+	is_active: boolean | null;
+	updated_at: string | null;
+	sync_status: 'synced' | 'pending' | 'conflict' | null;
+}
+
+export interface CharacterBuff extends Omit<DatabaseCharacterBuff, 'buff_type'> {
+	buff_type: KnownBuffType;
+}
+
+export interface SpellSlot {
+	spell_level: number;
+	total: number;
+	remaining: number;
+}
+
+export interface KnownSpell {
+	spell_level: number;
+	spell_name: string;
+}
 
 export interface Character {
 	id: number;
@@ -37,26 +89,54 @@ export interface Character {
 	character_attributes: CharacterAttributes[];
 	character_combat_stats: CombatStats[];
 	character_consumables: Consumables[];
+	character_buffs: DatabaseCharacterBuff[];
+	character_skills: DatabaseCharacterSkill[];
+	character_spell_slots: SpellSlot[];
+	character_known_spells: KnownSpell[];
 }
 
-export interface CharacterWithRelations extends Character {
-	character_buffs: Array<{
-		buff_type: string;
-		is_active: boolean | null;
-	}>;
-	character_spell_slots: Array<{
-		spell_level: number;
-		total: number;
-		remaining: number;
-	}>;
-	character_known_spells: Array<{
-		spell_level: number;
-		spell_name: string;
-	}>;
-	character_skills: Array<{
-		ability: string;
-		class_skill: boolean | null;
-		ranks: number;
-		skill_name: string;
-	}>;
+// Helper type for creating new characters
+export type NewCharacter = Omit<
+	Character,
+	'id' | 'created_at' | 'updated_at' | 'last_synced_at' | 'is_offline'
+>;
+
+// Helper type for updates
+export type CharacterUpdate = Partial<Omit<Character, 'id'>>;
+
+// Helper types for specific updates
+export interface AttributeUpdate extends Partial<CharacterAttributes> {
+	character_id?: number;
 }
+
+export interface CombatStatsUpdate extends Partial<CombatStats> {
+	character_id?: number;
+}
+
+export interface ConsumablesUpdate extends Partial<Consumables> {
+	character_id?: number;
+}
+
+export interface BuffUpdate {
+	character_id?: number;
+	buff_type: KnownBuffType;
+	is_active: boolean;
+}
+
+export interface SkillUpdate extends Partial<CharacterSkill> {
+	character_id?: number;
+	skill_name: string;
+}
+
+// Validation helpers
+export const isKnownBuff = (buff: string): buff is KnownBuffType => {
+	return KNOWN_BUFFS.includes(buff as KnownBuffType);
+};
+
+export const isValidAttributeKey = (key: string): key is AttributeKey => {
+	return ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(key);
+};
+
+export const isValidConsumableKey = (key: string): key is ConsumableKey => {
+	return ['alchemist_fire', 'acid', 'tanglefoot'].includes(key);
+};

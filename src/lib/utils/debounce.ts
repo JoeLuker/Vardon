@@ -4,8 +4,11 @@ export function debounce<T extends (...args: any[]) => Promise<any>>(
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
 	let timeout: ReturnType<typeof setTimeout>;
 	let pendingPromise: Promise<ReturnType<T>> | null = null;
+	let lastArgs: Parameters<T> | null = null;
 
 	return (...args: Parameters<T>): Promise<ReturnType<T>> => {
+		lastArgs = args;
+
 		if (pendingPromise) return pendingPromise;
 
 		pendingPromise = new Promise((resolve, reject) => {
@@ -13,12 +16,15 @@ export function debounce<T extends (...args: any[]) => Promise<any>>(
 
 			timeout = setTimeout(async () => {
 				try {
-					const result = await fn(...args);
-					resolve(result);
+					if (lastArgs) {
+						const result = await fn(...lastArgs);
+						resolve(result);
+					}
 				} catch (err) {
 					reject(err);
 				} finally {
 					pendingPromise = null;
+					lastArgs = null;
 				}
 			}, wait);
 		});

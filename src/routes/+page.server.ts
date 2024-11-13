@@ -18,6 +18,10 @@ export const load: PageServerLoad = async () => {
             ),
             character_consumables (
                 alchemist_fire, acid, tanglefoot
+            ),
+            character_buffs (
+                buff_type,
+                is_active
             )
         `
 		)

@@ -3,7 +3,7 @@
 import { supabase } from '../supabaseClient';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type {
-	CharacterWithRelations,
+	Character,
 	CombatStats,
 	Consumables,
 	CharacterAttributes
@@ -28,7 +28,7 @@ class NotFoundError extends Error {
 }
 
 // Helper function to transform the data
-function transformCharacterData(data: any): CharacterWithRelations {
+function transformCharacterData(data: any): Character {
 	return {
 		...data,
 		character_attributes: data.character_attributes?.[0] || null,
@@ -44,9 +44,9 @@ function transformCharacterData(data: any): CharacterWithRelations {
 /**
  * Fetches a character along with all related data.
  * @param id - The ID of the character to fetch.
- * @returns A promise that resolves to a CharacterWithRelations object.
+ * @returns A promise that resolves to a Character object.
  */
-export async function getCharacter(id: number): Promise<CharacterWithRelations> {
+export async function getCharacter(id: number): Promise<Character> {
 	const { data, error } = await supabase
 		.from('characters')
 		.select(
