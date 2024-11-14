@@ -1,25 +1,20 @@
 <script lang="ts">
     import { slide } from 'svelte/transition';
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
-    import SkillAllocator from './SkillAllocator.svelte';
     import { character, updateSkillRank } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+    import SkillAllocator from './SkillAllocator.svelte';
     import type { BaseSkill } from '$lib/types/character';
 
     let showSkillAllocator = $state(false);
-    let status = $state<'idle' | 'syncing'>('idle');
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
     // Local derivations
     let baseSkills = $derived(character.base_skills ?? []);
     let skillRanks = $derived(character.character_skill_ranks ?? []);
     let classSkillRelations = $derived(character.class_skill_relations ?? []);
-
-    $effect(() => {
-        console.log('Skills data:', {
-            baseSkills,
-            skillRanks,
-            classSkillRelations
-        });
-    });
 
     interface EnhancedSkill extends BaseSkill {
         ranks: number;
@@ -36,21 +31,18 @@
         }))
     );
 
-    let characterId = $derived(character.id);
-
     async function handleSkillSave(updates: Record<number, number>) {
         // Store previous state for rollback
         const previousRanks = [...skillRanks];
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `skills-${character.id}`,
-            execute: async () => {
-                status = 'syncing';
+            status: updateState,
+            operation: async () => {
                 // Update each skill rank
                 for (const [skillId, ranks] of Object.entries(updates)) {
                     await updateSkillRank(Number(skillId), ranks);
                 }
-                status = 'idle';
             },
             optimisticUpdate: () => {
                 if (character.character_skill_ranks) {
@@ -76,7 +68,6 @@
                 }
             },
             rollback: () => {
-                // Restore previous skill states
                 if (character.character_skill_ranks) {
                     character.character_skill_ranks = previousRanks;
                 }
@@ -94,8 +85,11 @@
             class="btn" 
             onclick={() => (showSkillAllocator = true)}
             type="button"
-            disabled={status === 'syncing'}
+            disabled={updateState.status === 'syncing'}
         >
+            {#if updateState.status === 'syncing'}
+                <div class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            {/if}
             Manage Skills
         </button>
     </div>
@@ -128,6 +122,12 @@
             </div>
         {/each}
     </div>
+
+    {#if updateState.error}
+        <div class="mt-4 rounded-md bg-accent/10 p-4 text-sm text-accent">
+            Failed to update skills. Please try again.
+        </div>
+    {/if}
 </section>
 
 {#if showSkillAllocator}
@@ -146,7 +146,7 @@
             class="card relative max-h-[90vh] w-full max-w-4xl overflow-hidden"
         >
             <SkillAllocator 
-                {characterId}
+                characterId={character.id}
                 skills={skillsList}
                 onSave={handleSkillSave} 
             />

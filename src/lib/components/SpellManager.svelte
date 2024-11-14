@@ -1,11 +1,14 @@
 <script lang="ts">
     import { slide } from 'svelte/transition';
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
     import { character, updateSpellSlot } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import type { SpellSlot, KnownSpell } from '$lib/types/character';
     import ResourceTracker from '$lib/components/ResourceTracker.svelte';
 
-    let status = $state<'idle' | 'syncing'>('idle');
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
     // Get and validate spell data
     let spellSlots = $derived(character.character_spell_slots ?? []);
@@ -47,16 +50,15 @@
 
         const previousRemaining = slots.remaining;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `spell-slot-${character.id}-${level}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateSpellSlot(level, remaining);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateSpellSlot(level, remaining),
             optimisticUpdate: () => {
                 if (character.character_spell_slots) {
-                    const slot = character.character_spell_slots.find(s => s.spell_level === level);
+                    const slot = character.character_spell_slots.find(
+                        s => s.spell_level === level
+                    );
                     if (slot) {
                         slot.remaining = remaining;
                     }
@@ -64,7 +66,9 @@
             },
             rollback: () => {
                 if (character.character_spell_slots) {
-                    const slot = character.character_spell_slots.find(s => s.spell_level === level);
+                    const slot = character.character_spell_slots.find(
+                        s => s.spell_level === level
+                    );
                     if (slot) {
                         slot.remaining = previousRemaining;
                     }
@@ -84,19 +88,25 @@
         <div class="flex items-center gap-2">
             <button 
                 class="text-sm text-primary hover:text-primary-dark"
-                disabled={status === 'syncing'}
+                disabled={updateState.status === 'syncing'}
             >
                 Prepare Spells
             </button>
             <div class="h-4 w-px bg-gray-300"></div>
             <button 
                 class="text-sm text-primary hover:text-primary-dark"
-                disabled={status === 'syncing'}
+                disabled={updateState.status === 'syncing'}
             >
                 Rest
             </button>
         </div>
     </div>
+
+    {#if updateState.error}
+        <div class="mb-4 rounded bg-red-100 p-2 text-sm text-red-700">
+            {updateState.error}
+        </div>
+    {/if}
 
     <div class="divide-y divide-gray-100">
         {#each allLevels as level (level)}
@@ -134,7 +144,7 @@
                                 </div>
                                 <button 
                                     class="opacity-0 transition-opacity group-hover:opacity-100"
-                                    disabled={status === 'syncing'}
+                                    disabled={updateState.status === 'syncing'}
                                     aria-label="Cast spell"
                                 >
                                     <span class="rounded-full bg-primary/10 p-1 text-primary 

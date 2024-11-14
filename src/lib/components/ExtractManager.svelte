@@ -1,18 +1,19 @@
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
     import { character, updateExtract } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import type { CharacterExtract } from '$lib/types/character';
 
-    let status = $state<'idle' | 'syncing'>('idle');
     let showPrepareModal = $state(false);
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
-    // Calculate extracts per day based on level and Int modifier
+    // Derived calculations
     let intModifier = $derived(
         Math.floor(((character.character_attributes?.[0]?.int ?? 10) - 10) / 2)
     );
 
-    type ExtractLevel = 1 | 2 | 3 | 4 | 5 | 6;
-    
     let extractsPerDay = $derived({
         1: character.level >= 1 ? 1 + intModifier : 0,
         2: character.level >= 4 ? 1 + intModifier : 0,
@@ -20,7 +21,7 @@
         4: character.level >= 10 ? 1 + intModifier : 0,
         5: character.level >= 13 ? 1 + intModifier : 0,
         6: character.level >= 16 ? 1 + intModifier : 0
-    } as Record<ExtractLevel, number>);
+    } as const);
 
     let extractsByLevel = $derived(() => {
         const grouped: Record<number, CharacterExtract[]> = {};
@@ -50,13 +51,10 @@
 
         const previousState = extract.used;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `extract-${character.id}-${extract.id}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateExtract(extract.id, { used: 1 });
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateExtract(extract.id, { used: 1 }),
             optimisticUpdate: () => {
                 if (character.character_extracts) {
                     const target = character.character_extracts.find(e => e.id === extract.id);
@@ -79,21 +77,18 @@
     async function handleExtractPrepare(extract: CharacterExtract) {
         if (extract.prepared > 0) return;
 
-        const level = extract.extract_level as ExtractLevel;
+        const level = extract.extract_level as keyof typeof extractsPerDay;
         const maxSlotsForLevel = extractsPerDay[level] ?? 0;
-        const preparedCount = (extractsByLevel()[level]?.filter((e: CharacterExtract) => e.prepared > 0).length) ?? 0;
+        const preparedCount = extractsByLevel()[level]?.filter(e => e.prepared > 0).length ?? 0;
         
         if (preparedCount >= maxSlotsForLevel) return;
 
         const previousState = extract.prepared;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `extract-prepare-${character.id}-${extract.id}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateExtract(extract.id, { prepared: 1, used: 0 });
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateExtract(extract.id, { prepared: 1, used: 0 }),
             optimisticUpdate: () => {
                 if (character.character_extracts) {
                     const target = character.character_extracts.find(e => e.id === extract.id);
@@ -118,6 +113,13 @@
         return level === 0 ? 'Cantrips' : `Level ${level}`;
     }
 </script>
+
+{#if updateState.error}
+    <div class="rounded-md bg-accent/10 p-3 text-sm text-accent">
+        Failed to update extract. Please try again.
+    </div>
+{/if}
+
 <div class="card">
     <div class="mb-6 flex items-center justify-between">
         <h2 class="text-xl font-bold">Extracts</h2>
@@ -125,7 +127,7 @@
             <button 
                 class="btn"
                 onclick={() => showPrepareModal = true}
-                disabled={status === 'syncing'}
+                disabled={updateState.status === 'syncing'}
             >
                 Prepare Extracts
             </button>
@@ -133,7 +135,7 @@
             <button 
                 class="text-sm text-primary hover:text-primary-dark"
                 onclick={() => {/* Implement rest functionality */}}
-                disabled={status === 'syncing'}
+                disabled={updateState.status === 'syncing'}
             >
                 Rest
             </button>
@@ -142,7 +144,7 @@
 
     <div class="divide-y divide-gray-100">
         {#each Object.entries(extractsByLevel()) as [level, extracts] (level)}
-            {@const levelNum = Number(level) as ExtractLevel}
+            {@const levelNum = Number(level) as keyof typeof extractsPerDay}
             {@const maxSlots = extractsPerDay[levelNum] ?? 0}
             {@const usedSlots = usedSlotsByLevel()[levelNum] ?? 0}
             
@@ -178,7 +180,7 @@
                                         <button 
                                             class="opacity-0 transition-opacity group-hover:opacity-100"
                                             onclick={() => handleExtractUse(extract)}
-                                            disabled={status === 'syncing'}
+                                            disabled={updateState.status === 'syncing'}
                                         >
                                             <span class="rounded-full bg-primary/10 p-1 text-primary 
                                                        hover:bg-primary/20">
@@ -189,7 +191,7 @@
                                         <button 
                                             class="opacity-0 transition-opacity group-hover:opacity-100"
                                             onclick={() => handleExtractPrepare(extract)}
-                                            disabled={status === 'syncing'}
+                                            disabled={updateState.status === 'syncing'}
                                         >
                                             <span class="rounded-full bg-primary/10 p-1 text-primary 
                                                        hover:bg-primary/20">
@@ -228,7 +230,7 @@
                 </button>
                 <button 
                     class="btn"
-                    disabled={status === 'syncing'}
+                    disabled={updateState.status === 'syncing'}
                 >
                     Prepare
                 </button>

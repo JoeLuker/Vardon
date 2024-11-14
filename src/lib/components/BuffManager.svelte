@@ -1,8 +1,8 @@
 <!-- src/lib/components/BuffManager.svelte -->
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
-    import type { AttributeKey, KnownBuffType } from '$lib/types/character';
     import { character, toggleBuff } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+    import type { AttributeKey, KnownBuffType } from '$lib/types/character';
 
     interface BuffEffect {
         attribute?: AttributeKey;
@@ -21,8 +21,10 @@
         description?: string;
     }
 
-    let status = $state<'idle' | 'syncing' | 'error'>('idle');
-    let error = $state<Error | null>(null);
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
     const buffConfig = $state.raw<Buff[]>([
         {
@@ -77,7 +79,6 @@
         }
     ]);
 
-    // Local derivations
     let activeBuffs = $derived(
         new Set(
             (character.character_buffs ?? [])
@@ -99,41 +100,30 @@
         const buff = buffConfig.find((b) => b.name === buffName);
         if (!buff) return;
 
-        // Store previous buff states for rollback
         const previousBuffStates = new Map(
             character.character_buffs?.map(b => [b.buff_type, b.is_active]) ?? []
         );
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `buff-${character.id}-${buffName}`,
-            execute: async () => {
-                try {
-                    status = 'syncing';
-                    
-                    // Deactivate conflicting buffs first
-                    if (!isCurrentlyActive && buff.conflicts.length > 0) {
-                        for (const conflict of buff.conflicts) {
-                            if (isBuffActive(conflict)) {
-                                await toggleBuff(conflict, false);
-                            }
+            status: updateState,
+            operation: async () => {
+                // Deactivate conflicting buffs first
+                if (!isCurrentlyActive && buff.conflicts.length > 0) {
+                    for (const conflict of buff.conflicts) {
+                        if (isBuffActive(conflict)) {
+                            await toggleBuff(conflict, false);
                         }
                     }
-                    
-                    // Toggle the target buff
-                    await toggleBuff(buffName, !isCurrentlyActive);
-                    
-                    status = 'idle';
-                    error = null;
-                } catch (e) {
-                    status = 'error';
-                    error = e instanceof Error ? e : new Error('Failed to update buff');
-                    throw e;
                 }
+                await toggleBuff(buffName, !isCurrentlyActive);
             },
             optimisticUpdate: () => {
                 if (character.character_buffs) {
                     // Update the target buff
-                    const targetBuff = character.character_buffs.find(b => b.buff_type === buffName);
+                    const targetBuff = character.character_buffs.find(
+                        b => b.buff_type === buffName
+                    );
                     if (targetBuff) {
                         targetBuff.is_active = !isCurrentlyActive;
                     }
@@ -153,7 +143,6 @@
             },
             rollback: () => {
                 if (character.character_buffs) {
-                    // Restore all previous buff states
                     character.character_buffs.forEach(buff => {
                         const previousState = previousBuffStates.get(buff.buff_type);
                         if (previousState !== undefined) {
@@ -169,7 +158,7 @@
 <div class="card space-y-6">
     <div class="section-header">
         <h2>Active Effects</h2>
-        {#if status === 'syncing'}
+        {#if updateState.status === 'syncing'}
             <div class="text-sm text-ink-light">Updating...</div>
         {/if}
     </div>
@@ -185,11 +174,10 @@
                            : 'border-primary/20 hover:border-primary/50'} 
                        {hasActiveConflict(buff) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-102'}"
                 onclick={() => handleBuffToggle(buff.name)}
-                disabled={status === 'syncing' || hasActiveConflict(buff)}
+                disabled={updateState.status === 'syncing' || hasActiveConflict(buff)}
                 aria-label="{isActive ? 'Deactivate' : 'Activate'} {buff.label}"
             >
                 <div class="flex items-start gap-3">
-                    
                     <div class="flex-1">
                         <div class="font-bold">{buff.label}</div>
                         {#if buff.description}
@@ -212,9 +200,9 @@
         {/each}
     </div>
 
-    {#if error}
+    {#if updateState.error}
         <div class="rounded-md bg-accent/10 p-4 text-sm text-accent">
-            {error.message}
+            {updateState.error.message}
         </div>
     {/if}
 </div>

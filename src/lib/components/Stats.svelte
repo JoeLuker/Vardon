@@ -1,14 +1,17 @@
 <!-- src/lib/components/Stats.svelte -->
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
-    import type { AttributeKey } from '$lib/types/character';
     import { character, updateAttribute } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+    import type { AttributeKey } from '$lib/types/character';
     import { calculateCharacterStats } from '$lib/utils/characterCalculations';
     import { getABPBonuses } from '$lib/types/abp';
 
     let editingAttribute = $state<AttributeKey | null>(null);
     let inputValue = $state<number>(0);
-    let status = $state<'idle' | 'syncing'>('idle');
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
     // Calculate all stats
     let stats = $derived(calculateCharacterStats(
@@ -109,13 +112,10 @@
 
         const previousValue = stats.attributes.base[attr];
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `attribute-${character.id}-${attr}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateAttribute(attr, newValue);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateAttribute(attr, newValue),
             optimisticUpdate: () => {
                 if (character.character_attributes?.[0]) {
                     character.character_attributes[0][attr] = newValue;
@@ -135,25 +135,26 @@
     }
 
     async function handleInputBlur() {
-        if (!editingAttribute || inputValue === stats.attributes.base[editingAttribute]) {
+        if (!editingAttribute) return;
+        await handleInputUpdate(editingAttribute, inputValue);
+    }
+
+    async function handleInputUpdate(attr: AttributeKey, value: number) {
+        if (value === stats.attributes.base[attr]) {
             editingAttribute = null;
             return;
         }
 
-        const attr = editingAttribute;
         const previousValue = stats.attributes.base[attr];
         editingAttribute = null;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `attribute-${character.id}-${attr}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateAttribute(attr, inputValue);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateAttribute(attr, value),
             optimisticUpdate: () => {
                 if (character.character_attributes?.[0]) {
-                    character.character_attributes[0][attr] = inputValue;
+                    character.character_attributes[0][attr] = value;
                 }
             },
             rollback: () => {
@@ -189,14 +190,14 @@
                         <button
                             class="btn btn-secondary px-2 py-1 text-xs"
                             onclick={() => handleQuickUpdate(key, -1)}
-                            disabled={value.base <= 1 || status === 'syncing'}
+                            disabled={value.base <= 1 || updateState.status === 'syncing'}
                         >
                             -1
                         </button>
                         <button
                             class="btn btn-secondary px-2 py-1 text-xs"
                             onclick={() => handleQuickUpdate(key, 1)}
-                            disabled={value.base >= 30 || status === 'syncing'}
+                            disabled={value.base >= 30 || updateState.status === 'syncing'}
                         >
                             +1
                         </button>
@@ -222,7 +223,7 @@
                                 class="min-w-[3rem] rounded px-2 py-1 text-center text-2xl font-bold hover:bg-gray-200
                                        focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 onclick={() => startEditing(key)}
-                                disabled={status === 'syncing'}
+                                disabled={updateState.status === 'syncing'}
                             >
                                 {value.base}
                             </button>

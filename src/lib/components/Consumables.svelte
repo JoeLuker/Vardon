@@ -1,13 +1,16 @@
 <!-- src/lib/components/Consumables.svelte -->
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
     import type { ConsumableKey } from '$lib/types/character';
     import { character, updateConsumable } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 
     let editingType = $state<ConsumableKey | null>(null);
-    let inputValue = $state<number>(0);
+    let inputValue = $state(0);
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
-    // Get consumables from shared state
     let consumableValues = $derived({
         alchemist_fire: character.character_consumables?.[0]?.alchemist_fire ?? 0,
         acid: character.character_consumables?.[0]?.acid ?? 0,
@@ -50,25 +53,25 @@
     }
 
     async function handleQuickUpdate(type: ConsumableKey, amount: number) {
-        const config = consumableConfig.find((c) => c.type === type);
-        if (!config) return;
-
         const currentValue = consumableValues[type];
-        const newValue = Math.max(0, Math.min(config.maxStock, currentValue + amount));
+        const newValue = Math.max(0, Math.min(10, currentValue + amount));
         if (newValue === currentValue) return;
 
-        await updateQueue.enqueue({
+        const previousValue = currentValue;
+
+        await executeUpdate({
             key: `consumable-${character.id}-${type}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateConsumable(type, newValue);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateConsumable(type, newValue),
             optimisticUpdate: () => {
-                // State update handled in shared state
+                if (character.character_consumables?.[0]) {
+                    character.character_consumables[0][type] = newValue;
+                }
             },
             rollback: () => {
-                // State rollback handled in shared state
+                if (character.character_consumables?.[0]) {
+                    character.character_consumables[0][type] = previousValue;
+                }
             }
         });
     }
@@ -88,20 +91,22 @@
         }
 
         const type = editingType;
+        const previousValue = consumableValues[type];
         editingType = null;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `consumable-${character.id}-${type}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateConsumable(type, inputValue);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateConsumable(type, inputValue),
             optimisticUpdate: () => {
-                // State update handled in shared state
+                if (character.character_consumables?.[0]) {
+                    character.character_consumables[0][type] = inputValue;
+                }
             },
             rollback: () => {
-                // State rollback handled in shared state
+                if (character.character_consumables?.[0]) {
+                    character.character_consumables[0][type] = previousValue;
+                }
             }
         });
     }
@@ -115,8 +120,8 @@
     }
 
     const quickActions = $state.raw([
-        { amount: -1, label: '-1', getDisabled: (value: number) => value <= 0 },
-        { amount: 1, label: '+1', getDisabled: (value: number) => value >= 10 }
+        { amount: -1, label: '-1', getDisabled: (value: number) => value <= 0 || updateState.status === 'syncing' },
+        { amount: 1, label: '+1', getDisabled: (value: number) => value >= 10 || updateState.status === 'syncing' }
     ]);
 </script>
 
@@ -164,6 +169,7 @@
                                    focus:outline-none focus:ring-2 focus:ring-primary/50"
                             onclick={() => startEditing(type)}
                             aria-label={`Edit ${label} quantity`}
+                            disabled={updateState.status === 'syncing'}
                         >
                             {value}
                         </button>
@@ -178,7 +184,7 @@
                 <button
                     class="btn btn-secondary w-full py-1 text-sm"
                     onclick={() => handleQuickUpdate(type, -1)}
-                    disabled={value === 0}
+                    disabled={value === 0 || updateState.status === 'syncing'}
                 >
                     Use {label}
                 </button>

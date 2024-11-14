@@ -1,20 +1,18 @@
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
     import { character, updateBombs } from '$lib/state/character.svelte';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 
-    let status = $state<'idle' | 'syncing'>('idle');
+    let sliderValue = $state(0);
     let isEditing = $state(false);
-    let inputValue = $state(0);
+    let updateState = $state<UpdateState>({
+        status: 'idle',
+        error: null
+    });
 
-    // Derived values
     let bombsLeft = $derived(character.character_combat_stats?.[0]?.bombs_left ?? 0);
     let intModifier = $derived(Math.floor((character.character_attributes?.[0]?.int ?? 10 - 10) / 2));
     let level = $derived(character.level);
-
-    // Calculate max bombs per day
     let maxBombs = $derived(level + intModifier);
-
-    // Calculate bomb damage
     let bombDamage = $derived(`${Math.ceil(level/2)}d6 + ${intModifier}`);
 
     async function handleQuickUpdate(amount: number) {
@@ -23,13 +21,10 @@
 
         const previousValue = bombsLeft;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `bombs-${character.id}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateBombs(newValue);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateBombs(newValue),
             optimisticUpdate: () => {
                 if (character.character_combat_stats?.[0]) {
                     character.character_combat_stats[0].bombs_left = newValue;
@@ -46,11 +41,11 @@
     function handleInputChange(event: Event) {
         const value = (event.target as HTMLInputElement).value;
         const parsed = parseInt(value) || 0;
-        inputValue = Math.max(0, Math.min(maxBombs, parsed));
+        sliderValue = Math.max(0, Math.min(maxBombs, parsed));
     }
 
     async function handleInputBlur() {
-        if (inputValue === bombsLeft) {
+        if (sliderValue === bombsLeft) {
             isEditing = false;
             return;
         }
@@ -58,16 +53,13 @@
         const previousValue = bombsLeft;
         isEditing = false;
 
-        await updateQueue.enqueue({
+        await executeUpdate({
             key: `bombs-${character.id}`,
-            execute: async () => {
-                status = 'syncing';
-                await updateBombs(inputValue);
-                status = 'idle';
-            },
+            status: updateState,
+            operation: () => updateBombs(sliderValue),
             optimisticUpdate: () => {
                 if (character.character_combat_stats?.[0]) {
-                    character.character_combat_stats[0].bombs_left = inputValue;
+                    character.character_combat_stats[0].bombs_left = sliderValue;
                 }
             },
             rollback: () => {
@@ -79,8 +71,8 @@
     }
 
     const quickActions = $state.raw([
-        { amount: -1, label: '-1', disabled: () => bombsLeft <= 0 || status === 'syncing' },
-        { amount: 1, label: '+1', disabled: () => bombsLeft >= maxBombs || status === 'syncing' }
+        { amount: -1, label: '-1', disabled: () => bombsLeft <= 0 || updateState.status === 'syncing' },
+        { amount: 1, label: '+1', disabled: () => bombsLeft >= maxBombs || updateState.status === 'syncing' }
     ]);
 </script>
 
@@ -109,7 +101,7 @@
                         id="bombs-input"
                         type="number"
                         class="input w-20 text-center"
-                        value={inputValue}
+                        value={sliderValue}
                         min="0"
                         max={maxBombs}
                         oninput={handleInputChange}
@@ -121,9 +113,9 @@
                                focus:outline-none focus:ring-2 focus:ring-primary/50"
                         onclick={() => {
                             isEditing = true;
-                            inputValue = bombsLeft;
+                            sliderValue = bombsLeft;
                         }}
-                        disabled={status === 'syncing'}
+                        disabled={updateState.status === 'syncing'}
                     >
                         {bombsLeft}
                     </button>
