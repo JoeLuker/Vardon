@@ -4,7 +4,7 @@
 	import type { Snippet } from 'svelte';
 
 	let { children } = $props<{
-		children?: Snippet;
+		children?: Snippet | undefined; // Fixed to include undefined
 	}>();
 </script>
 

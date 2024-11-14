@@ -1,42 +1,17 @@
 <script lang="ts">
+    import { slide } from 'svelte/transition';
     import { updateQueue } from '$lib/utils/updateQueue.svelte';
     import { character, updateSpellSlot } from '$lib/state/character.svelte';
     import type { SpellSlot, KnownSpell } from '$lib/types/character';
-    import ResourceTracker from './ResourceTracker.svelte';
+    import ResourceTracker from '$lib/components/ResourceTracker.svelte';
 
+    let status = $state<'idle' | 'syncing'>('idle');
 
-    // Type guard for spell slots
-    function isValidSpellSlot(slot: SpellSlot | null): slot is SpellSlot {
-        return (
-            slot !== null &&
-            typeof slot.character_id === 'number' &&
-            typeof slot.spell_level === 'number' &&
-            typeof slot.total === 'number' &&
-            typeof slot.remaining === 'number'
-        );
-    }
+    // Get and validate spell data
+    let spellSlots = $derived(character.character_spell_slots ?? []);
+    let knownSpells = $derived(character.character_known_spells ?? []);
 
-    // Type guard for known spells
-    function isValidKnownSpell(spell: KnownSpell | null): spell is KnownSpell {
-        return (
-            spell !== null &&
-            typeof spell.character_id === 'number' &&
-            typeof spell.spell_level === 'number' &&
-            typeof spell.spell_name === 'string'
-        );
-    }
-
-    // Filter and validate spell slots
-    let spellSlots = $derived(
-        (character.character_spell_slots?.filter(isValidSpellSlot) ?? [])
-    );
-    
-    // Filter and validate known spells
-    let knownSpells = $derived(
-        (character.character_known_spells?.filter(isValidKnownSpell) ?? [])
-    );
-
-    // Group spells by level
+    // Group spells by level for easier display
     let spellsByLevel = $derived(() => {
         const grouped: Record<number, KnownSpell[]> = {};
         for (const spell of knownSpells) {
@@ -58,13 +33,19 @@
         return grouped;
     });
 
-    async function handleSpellSlotToggle(level: number, used: number) {
-        const slots = slotsByLevel();
-        const slot = slots[level];
-        if (!slot) return;
+    // Get unique sorted levels combining both spells and slots
+    let allLevels = $derived(
+        [...new Set([
+            ...Object.keys(spellsByLevel()).map(Number),
+            ...Object.keys(slotsByLevel()).map(Number)
+        ])].sort((a, b) => a - b)
+    );
 
-        const remaining = Math.max(0, slot.total - used);
-        if (remaining === slot.remaining) return;
+    async function handleSlotUpdate(level: number, remaining: number) {
+        const slots = slotsByLevel()[level];
+        if (!slots || remaining === slots.remaining) return;
+
+        const previousRemaining = slots.remaining;
 
         await updateQueue.enqueue({
             key: `spell-slot-${character.id}-${level}`,
@@ -74,49 +55,98 @@
                 status = 'idle';
             },
             optimisticUpdate: () => {
-                // State update handled in shared state
+                if (character.character_spell_slots) {
+                    const slot = character.character_spell_slots.find(s => s.spell_level === level);
+                    if (slot) {
+                        slot.remaining = remaining;
+                    }
+                }
             },
             rollback: () => {
-                // State rollback handled in shared state
+                if (character.character_spell_slots) {
+                    const slot = character.character_spell_slots.find(s => s.spell_level === level);
+                    if (slot) {
+                        slot.remaining = previousRemaining;
+                    }
+                }
             }
         });
     }
 
-    // Format level string for display
     function getSpellLevelDisplay(level: number): string {
         return level === 0 ? 'Cantrips' : `Level ${level} Spells`;
     }
 </script>
 
 <div class="card">
-    <h2 class="mb-4 font-bold">Spells</h2>
-    {#each Object.entries(spellsByLevel()) as [levelStr, spells] (levelStr)}
-        {#if spells.length > 0}
-            {@const level = Number(levelStr)}
-            {@const slots = slotsByLevel()}
-            {@const slot = slots[level]}
-            <div class="mb-6 last:mb-0">
-                <div class="mb-2">
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-xl font-bold">Spells</h2>
+        <div class="flex items-center gap-2">
+            <button 
+                class="text-sm text-primary hover:text-primary-dark"
+                disabled={status === 'syncing'}
+            >
+                Prepare Spells
+            </button>
+            <div class="h-4 w-px bg-gray-300"></div>
+            <button 
+                class="text-sm text-primary hover:text-primary-dark"
+                disabled={status === 'syncing'}
+            >
+                Rest
+            </button>
+        </div>
+    </div>
+
+    <div class="divide-y divide-gray-100">
+        {#each allLevels as level (level)}
+            {@const spells = spellsByLevel()[level] || []}
+            {@const slots = slotsByLevel()[level]}
+            <div class="py-4 first:pt-0 last:pb-0">
+                <div class="mb-4">
                     <h3 class="text-lg font-semibold text-primary">
                         {getSpellLevelDisplay(level)}
                     </h3>
-                    {#if slot}
-                        <ResourceTracker
-                            label={`Level ${level} Slots`}
-                            total={slot.total}
-                            used={slot.total - slot.remaining}
-                            onToggle={(used) => handleSpellSlotToggle(level, used)}
-                        />
+                    {#if slots}
+                        <div class="mt-2 flex flex-wrap gap-2" 
+                             transition:slide|local={{ duration: 200 }}>
+                            <ResourceTracker
+                                label=""
+                                total={slots.total}
+                                used={slots.total - slots.remaining}
+                                onToggle={(remaining) => handleSlotUpdate(level, remaining)}
+                            />
+                            <span class="ml-2 text-sm text-gray-600">
+                                {slots.remaining}/{slots.total} remaining
+                            </span>
+                        </div>
                     {/if}
                 </div>
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {#each spells as spell (spell.spell_name)}
-                        <div class="rounded bg-gray-50 p-3 hover:bg-gray-100">
-                            <div class="font-medium">{spell.spell_name}</div>
+                        <div class="group relative rounded-lg bg-white/50 p-3 shadow-sm 
+                                  transition-all hover:bg-white/75">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h4 class="font-medium">{spell.spell_name}</h4>
+                                    <p class="text-sm text-gray-600">School • Action</p>
+                                </div>
+                                <button 
+                                    class="opacity-0 transition-opacity group-hover:opacity-100"
+                                    disabled={status === 'syncing'}
+                                    aria-label="Cast spell"
+                                >
+                                    <span class="rounded-full bg-primary/10 p-1 text-primary 
+                                               hover:bg-primary/20">
+                                        Cast
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                     {/each}
                 </div>
             </div>
-        {/if}
-    {/each}
+        {/each}
+    </div>
 </div>

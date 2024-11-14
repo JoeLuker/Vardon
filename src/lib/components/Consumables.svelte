@@ -2,81 +2,73 @@
 <script lang="ts">
     import { updateQueue } from '$lib/utils/updateQueue.svelte';
     import type { ConsumableKey } from '$lib/types/character';
-
-    let { characterId, alchemist_fire = $bindable(0), acid = $bindable(0), tanglefoot = $bindable(0), onUpdate } =
-        $props<{
-            characterId: number;
-            alchemist_fire: number;
-            acid: number;
-            tanglefoot: number;
-            onUpdate: (type: ConsumableKey, value: number) => Promise<void>;
-        }>();
+    import { character, updateConsumable } from '$lib/state/character.svelte';
 
     let editingType = $state<ConsumableKey | null>(null);
     let inputValue = $state<number>(0);
 
+    // Get consumables from shared state
+    let consumableValues = $derived({
+        alchemist_fire: character.character_consumables?.[0]?.alchemist_fire ?? 0,
+        acid: character.character_consumables?.[0]?.acid ?? 0,
+        tanglefoot: character.character_consumables?.[0]?.tanglefoot ?? 0
+    });
+
     // Configuration for all consumables
-    const consumableConfig = $state.raw([
+    const consumableConfig = $state([
         {
             type: 'alchemist_fire' as const,
             label: "Alchemist's Fire",
-            getValue: () => alchemist_fire,
-            setValue: (v: number) => (alchemist_fire = v),
             effect: '1d6 fire + 1d6 for 2 rounds',
             maxStock: 10
         },
         {
             type: 'acid' as const,
             label: 'Acid',
-            getValue: () => acid,
-            setValue: (v: number) => (acid = v),
             effect: '1d6 acid',
             maxStock: 10
         },
         {
             type: 'tanglefoot' as const,
             label: 'Tanglefoot',
-            getValue: () => tanglefoot,
-            setValue: (v: number) => (tanglefoot = v),
             effect: 'Target is entangled (Reflex DC 15)',
             maxStock: 10
         }
     ]);
 
     // Derived consumable data with current values
-    let consumables = $derived.by(() =>
+    let consumables = $derived(
         consumableConfig.map((config) => ({
             ...config,
-            value: config.getValue()
+            value: consumableValues[config.type]
         }))
     );
 
     function startEditing(type: ConsumableKey) {
         editingType = type;
-        const config = consumableConfig.find((c) => c.type === type);
-        if (config) {
-            inputValue = config.getValue();
-        }
+        inputValue = consumableValues[type];
     }
 
     async function handleQuickUpdate(type: ConsumableKey, amount: number) {
         const config = consumableConfig.find((c) => c.type === type);
         if (!config) return;
 
-        const currentValue = config.getValue();
+        const currentValue = consumableValues[type];
         const newValue = Math.max(0, Math.min(config.maxStock, currentValue + amount));
         if (newValue === currentValue) return;
 
         await updateQueue.enqueue({
-            key: `consumable-${characterId}-${type}`,
+            key: `consumable-${character.id}-${type}`,
             execute: async () => {
-                await onUpdate(type, newValue);
+                status = 'syncing';
+                await updateConsumable(type, newValue);
+                status = 'idle';
             },
             optimisticUpdate: () => {
-                config.setValue(newValue);
+                // State update handled in shared state
             },
             rollback: () => {
-                config.setValue(currentValue);
+                // State rollback handled in shared state
             }
         });
     }
@@ -90,24 +82,26 @@
         if (!editingType) return;
 
         const config = consumableConfig.find((c) => c.type === editingType);
-        if (!config || inputValue === config.getValue()) {
+        if (!config || inputValue === consumableValues[editingType]) {
             editingType = null;
             return;
         }
 
-        const previousValue = config.getValue();
+        const type = editingType;
         editingType = null;
 
         await updateQueue.enqueue({
-            key: `consumable-${characterId}-${config.type}`,
+            key: `consumable-${character.id}-${type}`,
             execute: async () => {
-                await onUpdate(config.type, inputValue);
+                status = 'syncing';
+                await updateConsumable(type, inputValue);
+                status = 'idle';
             },
             optimisticUpdate: () => {
-                config.setValue(inputValue);
+                // State update handled in shared state
             },
             rollback: () => {
-                config.setValue(previousValue);
+                // State rollback handled in shared state
             }
         });
     }

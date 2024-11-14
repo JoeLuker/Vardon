@@ -1,69 +1,28 @@
 <script lang="ts">
     import { updateQueue } from '$lib/utils/updateQueue.svelte';
-    import { supabase } from '$lib/supabaseClient';
-    import { browser } from '$app/environment';
-
-    let { characterId, currentHP = $bindable(0), maxHP } = $props<{
-        characterId: number;
-        currentHP: number;
-        maxHP: number;
-    }>();
+    import { character, updateHP } from '$lib/state/character.svelte';
 
     // Track update status
     let status = $state<'idle' | 'syncing' | 'error'>('idle');
     let error = $state<Error | null>(null);
 
-    // Subscribe to realtime updates
-    $effect(() => {
-        if (!browser) return;
-
-        const channel = supabase
-            .channel(`hp-${characterId}`)
-            .on(
-                'postgres_changes' as 'system',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'characters',
-                    filter: `id=eq.${characterId}`
-                },
-                (payload: { new: { current_hp: number } }) => {
-                    if (status !== 'syncing') {
-                        currentHP = payload.new.current_hp;
-                    }
-                }
-            )
-            .subscribe();
-
-        return () => supabase.removeChannel(channel);
-    });
+    // Get values from shared state
+    let currentHP = $derived(character.current_hp);
+    let maxHP = $derived(character.max_hp);
 
     async function handleUpdate(newValue: number) {
         await updateQueue.enqueue({
-            // Use a key to prevent duplicate updates
-            key: `hp-${characterId}`,
-            
-            // Function that performs the actual update
+            key: `hp-${character.id}`,
             execute: async () => {
                 status = 'syncing';
-                const { error: dbError } = await supabase
-                    .from('characters')
-                    .update({ current_hp: newValue })
-                    .eq('id', characterId);
-
-                if (dbError) throw dbError;
+                await updateHP(newValue);
                 status = 'idle';
                 error = null;
             },
-            
-            // Optimistic update
             optimisticUpdate: () => {
-                currentHP = newValue;
+                // State update handled in shared state
             },
-            
-            // Rollback if the update fails
             rollback: () => {
-                currentHP = currentHP;
                 error = new Error('Failed to update HP');
                 status = 'error';
             }
@@ -80,17 +39,6 @@
 </script>
 
 <div class="card">
-    <!-- Status indicator -->
-    {#if status !== 'idle'}
-        <div class="absolute right-2 top-2">
-            {#if status === 'syncing'}
-                <div class="text-xs text-gray-500">Syncing...</div>
-            {:else if status === 'error'}
-                <div class="text-xs text-red-500">{error?.message}</div>
-            {/if}
-        </div>
-    {/if}
-
     <h2 class="mb-2 font-bold">Hit Points</h2>
 
     <!-- Quick action buttons -->

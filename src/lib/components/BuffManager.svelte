@@ -1,147 +1,222 @@
+<!-- src/lib/components/BuffManager.svelte -->
 <script lang="ts">
-	import { updateQueue } from '$lib/utils/updateQueue.svelte';
-	import type { AttributeKey, CharacterBuff } from '$lib/types/character';
+    import { updateQueue } from '$lib/utils/updateQueue.svelte';
+    import type { AttributeKey, KnownBuffType } from '$lib/types/character';
+    import { character, toggleBuff } from '$lib/state/character.svelte';
 
-	type BuffEffect = {
-		attribute: AttributeKey;
-		modifier: number;
-	};
+    interface BuffEffect {
+        attribute?: AttributeKey;
+        modifier?: number;
+        attack?: number;
+        damage?: number;
+        extraAttacks?: number;
+        description?: string;
+    }
 
-	type Buff = {
-		name: string;
-		label: string;
-		effects: BuffEffect[];
-		conflicts: string[];
-	};
+    interface Buff {
+        name: KnownBuffType;
+        label: string;
+        effects: BuffEffect[];
+        conflicts: KnownBuffType[];
+        description?: string;
+    }
 
-	let { characterId, activeBuffs, onBuffToggle } = $props<{
-		characterId: number;
-		activeBuffs: CharacterBuff[];
-		onBuffToggle: (buffName: string, active: boolean) => Promise<void>;
-	}>();
+    let status = $state<'idle' | 'syncing' | 'error'>('idle');
+    let error = $state<Error | null>(null);
 
-	// Core buff definitions with their stat modifications
-	const buffConfig = $state.raw<Buff[]>([
-		{
-			name: 'cognatogen',
-			label: 'Intelligence Cognatogen',
-			effects: [
-				{ attribute: 'int', modifier: 4 },
-				{ attribute: 'str', modifier: -2 }
-			],
-			conflicts: ['dex_mutagen']
-		},
-		{
-			name: 'dex_mutagen',
-			label: 'Dexterity Mutagen',
-			effects: [
-				{ attribute: 'dex', modifier: 4 },
-				{ attribute: 'wis', modifier: -2 }
-			],
-			conflicts: ['cognatogen']
-		},
-		{
-			name: 'deadly_aim',
-			label: 'Deadly Aim',
-			effects: [],
-			conflicts: []
-		},
-		{
-			name: 'rapid_shot',
-			label: 'Rapid Shot',
-			effects: [],
-			conflicts: []
-		},
-		{
-			name: 'two_weapon_fighting',
-			label: 'Two-Weapon Fighting',
-			effects: [],
-			conflicts: []
-		}
-	]);
+    const buffConfig = $state.raw<Buff[]>([
+        {
+            name: 'cognatogen',
+            label: 'Intelligence Cognatogen',
+            effects: [
+                { attribute: 'int', modifier: 4, description: 'Intelligence +4' },
+                { attribute: 'str', modifier: -2, description: 'Strength -2' }
+            ],
+            conflicts: ['dex_mutagen'],
+            description: 'Enhances mental acuity at the cost of physical strength'
+        },
+        {
+            name: 'dex_mutagen',
+            label: 'Dexterity Mutagen',
+            effects: [
+                { attribute: 'dex', modifier: 4, description: 'Dexterity +4' },
+                { attribute: 'wis', modifier: -2, description: 'Wisdom -2' }
+            ],
+            conflicts: ['cognatogen'],
+            description: 'Enhances agility at the cost of perception'
+        },
+        {
+            name: 'deadly_aim',
+            label: 'Deadly Aim',
+            effects: [
+                { attack: -2, description: 'Attack -2' },
+                { damage: 4, description: 'Damage +4' }
+            ],
+            conflicts: [],
+            description: 'Trade accuracy for damage with ranged attacks'
+        },
+        {
+            name: 'rapid_shot',
+            label: 'Rapid Shot',
+            effects: [
+                { attack: -2, description: 'Attack -2' },
+                { extraAttacks: 1, description: 'Extra Attack' }
+            ],
+            conflicts: [],
+            description: 'Make an additional ranged attack at a penalty'
+        },
+        {
+            name: 'two_weapon_fighting',
+            label: 'Two-Weapon Fighting',
+            effects: [
+                { attack: -2, description: 'Attack -2' },
+                { extraAttacks: 1, description: 'Extra Attack' }
+            ],
+            conflicts: [],
+            description: 'Fight effectively with a weapon in each hand'
+        }
+    ]);
 
-	// Handle buff activation/deactivation with optimistic updates
-	async function toggleBuff(buffName: string) {
-		const isCurrentlyActive = activeBuffs.some(
-			(b: CharacterBuff) => b.buff_type === buffName && b.is_active
-		);
-		const buff = buffConfig.find((b: Buff) => b.name === buffName);
-		if (!buff) return;
+    // Local derivations
+    let activeBuffs = $derived(
+        new Set(
+            (character.character_buffs ?? [])
+                .filter(b => b.is_active)
+                .map(b => b.buff_type as KnownBuffType)
+        )
+    );
 
-		const previousBuffs = activeBuffs.map((b: CharacterBuff) => ({ ...b }));
+    function isBuffActive(buffName: KnownBuffType): boolean {
+        return activeBuffs.has(buffName);
+    }
 
-		await updateQueue.enqueue({
-			key: `buff-${characterId}-${buffName}`,
-			execute: async () => {
-				if (!isCurrentlyActive && buff.conflicts.length > 0) {
-					for (const conflict of buff.conflicts) {
-						if (activeBuffs.some((b: CharacterBuff) => b.buff_type === conflict && b.is_active)) {
-							await onBuffToggle(conflict, false);
-						}
-					}
-				}
-				await onBuffToggle(buffName, !isCurrentlyActive);
-			},
-			optimisticUpdate: () => {
-				const buffIndex = activeBuffs.findIndex((b: CharacterBuff) => b.buff_type === buffName);
-				if (buffIndex >= 0) {
-					activeBuffs[buffIndex].is_active = !isCurrentlyActive;
-				} else {
-					activeBuffs = [...activeBuffs, {
-						buff_type: buffName,
-						is_active: true,
-						character_id: null,
-						id: Date.now(),
-						updated_at: new Date().toISOString(),
-						sync_status: 'synced'
-					}];
-				}
-			},
-			rollback: () => {
-				activeBuffs = previousBuffs;
-			}
-		});
-	}
+    function hasConflict(buff: Buff): boolean {
+        return !isBuffActive(buff.name) && buff.conflicts.some(c => isBuffActive(c));
+    }
 
-	// Derived values for UI
-	function isBuffActive(buffName: string): boolean {
-		return activeBuffs.some((b: CharacterBuff) => b.buff_type === buffName && b.is_active);
-	}
+    async function handleBuffToggle(buffName: KnownBuffType) {
+        const isCurrentlyActive = isBuffActive(buffName);
+        const buff = buffConfig.find((b) => b.name === buffName);
+        if (!buff) return;
+
+        // Store previous buff states for rollback
+        const previousBuffStates = new Map(
+            character.character_buffs?.map(b => [b.buff_type, b.is_active]) ?? []
+        );
+
+        await updateQueue.enqueue({
+            key: `buff-${character.id}-${buffName}`,
+            execute: async () => {
+                try {
+                    status = 'syncing';
+                    
+                    // Deactivate conflicting buffs first
+                    if (!isCurrentlyActive && buff.conflicts.length > 0) {
+                        for (const conflict of buff.conflicts) {
+                            if (isBuffActive(conflict)) {
+                                await toggleBuff(conflict, false);
+                            }
+                        }
+                    }
+                    
+                    // Toggle the target buff
+                    await toggleBuff(buffName, !isCurrentlyActive);
+                    
+                    status = 'idle';
+                    error = null;
+                } catch (e) {
+                    status = 'error';
+                    error = e instanceof Error ? e : new Error('Failed to update buff');
+                    throw e;
+                }
+            },
+            optimisticUpdate: () => {
+                if (character.character_buffs) {
+                    // Update the target buff
+                    const targetBuff = character.character_buffs.find(b => b.buff_type === buffName);
+                    if (targetBuff) {
+                        targetBuff.is_active = !isCurrentlyActive;
+                    }
+
+                    // Update conflicting buffs
+                    if (!isCurrentlyActive && buff.conflicts.length > 0) {
+                        for (const conflict of buff.conflicts) {
+                            const conflictBuff = character.character_buffs.find(
+                                b => b.buff_type === conflict
+                            );
+                            if (conflictBuff?.is_active) {
+                                conflictBuff.is_active = false;
+                            }
+                        }
+                    }
+                }
+            },
+            rollback: () => {
+                if (character.character_buffs) {
+                    // Restore all previous buff states
+                    character.character_buffs.forEach(buff => {
+                        const previousState = previousBuffStates.get(buff.buff_type);
+                        if (previousState !== undefined) {
+                            buff.is_active = previousState;
+                        }
+                    });
+                }
+            }
+        });
+    }
 </script>
 
 <div class="card space-y-4">
-	<h2 class="font-bold">Active Effects</h2>
+    <h2 class="font-bold">Active Effects</h2>
 
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-		{#each buffConfig as buff (buff.name)}
-			<div class="relative">
-				<button
-					class="w-full rounded-lg border-2 p-3 transition-all duration-200
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {#each buffConfig as buff (buff.name)}
+            {@const isActive = isBuffActive(buff.name)}
+            {@const hasActiveConflict = hasConflict(buff)}
+            
+            <div class="relative">
+                <button
+                    class="group w-full rounded-lg border-2 p-3 transition-all duration-200
                            focus:outline-none focus:ring-2 focus:ring-primary/50
-                           {isBuffActive(buff.name)
-						? 'border-primary bg-primary text-white hover:bg-primary-dark'
-						: 'border-primary text-primary hover:bg-primary/10'}"
-					onclick={() => toggleBuff(buff.name)}
-					disabled={!isBuffActive(buff.name) && buff.conflicts.some((c) => isBuffActive(c))}
-				>
-					<div class="font-bold">{buff.label}</div>
-					{#if isBuffActive(buff.name) && buff.effects.length > 0}
-						<div class="mt-1 space-y-1 text-sm">
-							{#each buff.effects as effect}
-								<div>
-									{effect.attribute.toUpperCase()}: {effect.modifier >= 0 ? '+' : ''}{effect.modifier}
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</button>
+                           {isActive
+                        ? 'border-primary bg-primary text-white hover:bg-primary-dark'
+                        : 'border-primary text-primary hover:bg-primary/10'}"
+                    onclick={() => handleBuffToggle(buff.name)}
+                    disabled={status === 'syncing' || (hasActiveConflict)}
+                    aria-label="{isActive ? 'Deactivate' : 'Activate'} {buff.label}"
+                >
+                    <div class="font-bold">{buff.label}</div>
+                    {#if buff.description}
+                        <div class="mt-1 text-xs opacity-75">{buff.description}</div>
+                    {/if}
+                    {#if isActive && buff.effects.length > 0}
+                        <div class="mt-2 space-y-1 text-sm">
+                            {#each buff.effects as effect}
+                                <div>
+                                    {#if effect.description}
+                                        {effect.description}
+                                    {:else if effect.attribute}
+                                        {effect.attribute.toUpperCase()}: 
+                                        {effect.modifier! >= 0 ? '+' : ''}{effect.modifier}
+                                    {/if}
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                </button>
 
-				{#if !isBuffActive(buff.name) && buff.conflicts.some((c) => isBuffActive(c))}
-					<div class="absolute -right-2 -top-2 rounded-full bg-red-500 px-2 py-1 text-xs text-white">
-						Conflicts
-					</div>
-				{/if}
-			</div>
-		{/each}
-	</div>
+                {#if hasActiveConflict}
+                    <div class="absolute -right-2 -top-2 rounded-full bg-red-500 px-2 py-1 text-xs text-white">
+                        Conflicts
+                    </div>
+                {/if}
+            </div>
+        {/each}
+    </div>
+
+    {#if error}
+        <div class="mt-2 text-sm text-red-600" role="alert">
+            {error.message}
+        </div>
+    {/if}
 </div>

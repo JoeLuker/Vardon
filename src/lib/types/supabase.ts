@@ -56,6 +56,7 @@ export type Database = {
           is_temporary: boolean | null
           str: number
           sync_status: string | null
+          updated_at: string | null
           wis: number
         }
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           is_temporary?: boolean | null
           str: number
           sync_status?: string | null
+          updated_at?: string | null
           wis: number
         }
         Update: {
@@ -82,6 +84,7 @@ export type Database = {
           is_temporary?: boolean | null
           str?: number
           sync_status?: string | null
+          updated_at?: string | null
           wis?: number
         }
         Relationships: [

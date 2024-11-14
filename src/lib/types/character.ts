@@ -63,14 +63,54 @@ export interface CharacterBuff extends Omit<DatabaseCharacterBuff, 'buff_type'> 
 }
 
 export interface SpellSlot {
+	id: number;
+	character_id: number | null;
 	spell_level: number;
 	total: number;
 	remaining: number;
+	updated_at: string | null;
+	sync_status: 'synced' | 'pending' | 'conflict' | null;
 }
 
 export interface KnownSpell {
+	id: number;
+	character_id: number | null;
 	spell_level: number;
 	spell_name: string;
+	created_at: string | null;
+	sync_status: 'synced' | 'pending' | 'conflict' | null;
+}
+
+export interface CharacterDiscovery {
+	id: number;
+	character_id: number | null;
+	discovery_name: string;
+	selected_level: number;
+	properties: Record<string, unknown> | null;
+	updated_at: string | null;
+	sync_status: 'synced' | 'pending' | 'conflict' | null;
+}
+
+export interface CharacterClassFeature {
+	id: number;
+	character_id: number | null;
+	feature_name: string;
+	feature_level: number;
+	active: boolean;
+	properties: Record<string, unknown> | null;
+	updated_at: string | null;
+	sync_status: 'synced' | 'pending' | 'conflict' | null;
+}
+
+export interface CharacterFeat {
+	id: number;
+	character_id: number | null;
+	feat_name: string;
+	feat_type: string;
+	selected_level: number;
+	properties: Record<string, unknown> | null;
+	updated_at: string | null;
+	sync_status: 'synced' | 'pending' | 'conflict' | null;
 }
 
 export interface Character {
@@ -93,6 +133,9 @@ export interface Character {
 	character_skills: DatabaseCharacterSkill[];
 	character_spell_slots: SpellSlot[];
 	character_known_spells: KnownSpell[];
+	character_discoveries: CharacterDiscovery[];
+	character_class_features: CharacterClassFeature[];
+	character_feats: CharacterFeat[];
 }
 
 // Helper type for creating new characters
@@ -140,3 +183,16 @@ export const isValidAttributeKey = (key: string): key is AttributeKey => {
 export const isValidConsumableKey = (key: string): key is ConsumableKey => {
 	return ['alchemist_fire', 'acid', 'tanglefoot'].includes(key);
 };
+
+export interface CharacterSpellSlot {
+    character_id: number;
+    spell_level: number;
+    total: number;
+    remaining: number;
+}
+
+export interface CharacterKnownSpell {
+    character_id: number;
+    spell_level: number;
+    spell_name: string;
+}

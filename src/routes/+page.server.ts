@@ -22,6 +22,21 @@ export const load: PageServerLoad = async () => {
             character_buffs (
                 buff_type,
                 is_active
+            ),
+            character_spell_slots (
+                spell_level, total, remaining
+            ),
+            character_known_spells (
+                spell_level, spell_name
+            ),
+            character_class_features (
+                feature_name, feature_level, active, properties
+            ),
+            character_discoveries (
+                discovery_name, selected_level, properties
+            ),
+            character_feats (
+                feat_name, feat_type, selected_level, properties
             )
         `
 		)
