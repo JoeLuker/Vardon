@@ -7,11 +7,23 @@
     let level = $derived(character.level);
 </script>
 
-<div class="rounded bg-white p-4 shadow">
-    <h1 class="text-2xl font-bold">{name}</h1>
-    <div class="text-gray-600">
-        Level {level}
-        {race}
-        {characterClass}
+<div class="card animate-fade-in">
+    <div class="flex items-start justify-between">
+        <div class="space-y-2">
+            <h1 class="text-3xl font-bold text-primary">{name}</h1>
+            <div class="flex items-center gap-3 text-ink-light">
+                <span class="badge">Level {level}</span>
+                <span class="text-sm">
+                    {race} {characterClass}
+                </span>
+            </div>
+        </div>
+        
+        <div class="flex flex-col items-end gap-2">
+            <div class="rounded-full bg-primary/10 p-2">
+                <!-- Add character avatar or icon here -->
+                <div class="h-12 w-12 rounded-full bg-primary/20"></div>
+            </div>
+        </div>
     </div>
 </div>

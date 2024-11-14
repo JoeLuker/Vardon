@@ -90,7 +90,7 @@
         return activeBuffs.has(buffName);
     }
 
-    function hasConflict(buff: Buff): boolean {
+    function hasActiveConflict(buff: Buff): boolean {
         return !isBuffActive(buff.name) && buff.conflicts.some(c => isBuffActive(c));
     }
 
@@ -166,56 +166,54 @@
     }
 </script>
 
-<div class="card space-y-4">
-    <h2 class="font-bold">Active Effects</h2>
+<div class="card space-y-6">
+    <div class="section-header">
+        <h2>Active Effects</h2>
+        {#if status === 'syncing'}
+            <div class="text-sm text-ink-light">Updating...</div>
+        {/if}
+    </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {#each buffConfig as buff (buff.name)}
             {@const isActive = isBuffActive(buff.name)}
-            {@const hasActiveConflict = hasConflict(buff)}
-            
-            <div class="relative">
-                <button
-                    class="group w-full rounded-lg border-2 p-3 transition-all duration-200
-                           focus:outline-none focus:ring-2 focus:ring-primary/50
-                           {isActive
-                        ? 'border-primary bg-primary text-white hover:bg-primary-dark'
-                        : 'border-primary text-primary hover:bg-primary/10'}"
-                    onclick={() => handleBuffToggle(buff.name)}
-                    disabled={status === 'syncing' || (hasActiveConflict)}
-                    aria-label="{isActive ? 'Deactivate' : 'Activate'} {buff.label}"
-                >
-                    <div class="font-bold">{buff.label}</div>
-                    {#if buff.description}
-                        <div class="mt-1 text-xs opacity-75">{buff.description}</div>
-                    {/if}
-                    {#if isActive && buff.effects.length > 0}
-                        <div class="mt-2 space-y-1 text-sm">
-                            {#each buff.effects as effect}
-                                <div>
-                                    {#if effect.description}
-                                        {effect.description}
-                                    {:else if effect.attribute}
-                                        {effect.attribute.toUpperCase()}: 
-                                        {effect.modifier! >= 0 ? '+' : ''}{effect.modifier}
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
-                </button>
-
-                {#if hasActiveConflict}
-                    <div class="absolute -right-2 -top-2 rounded-full bg-red-500 px-2 py-1 text-xs text-white">
-                        Conflicts
+            <button
+                class="group relative overflow-hidden rounded-lg border-2 p-4 text-left 
+                       transition-all duration-300 focus:outline-none focus:ring-2
+                       {isActive 
+                           ? 'border-primary bg-primary text-white' 
+                           : 'border-primary/20 hover:border-primary/50'} 
+                       {hasActiveConflict(buff) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-102'}"
+                onclick={() => handleBuffToggle(buff.name)}
+                disabled={status === 'syncing' || hasActiveConflict(buff)}
+                aria-label="{isActive ? 'Deactivate' : 'Activate'} {buff.label}"
+            >
+                <div class="flex items-start gap-3">
+                    
+                    <div class="flex-1">
+                        <div class="font-bold">{buff.label}</div>
+                        {#if buff.description}
+                            <div class="mt-1 text-xs opacity-75">{buff.description}</div>
+                        {/if}
+                        {#if isActive && buff.effects.length > 0}
+                            <div class="mt-3 space-y-1">
+                                {#each buff.effects as effect}
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <div class="rounded-full bg-white/20 px-2 py-0.5">
+                                            {effect.description}
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
                     </div>
-                {/if}
-            </div>
+                </div>
+            </button>
         {/each}
     </div>
 
     {#if error}
-        <div class="mt-2 text-sm text-red-600" role="alert">
+        <div class="rounded-md bg-accent/10 p-4 text-sm text-accent">
             {error.message}
         </div>
     {/if}

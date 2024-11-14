@@ -36,21 +36,21 @@
 </script>
 
 <div class="card">
-    <h2 class="mb-4 font-bold">Feats</h2>
+    <h2 class="mb-2 font-bold">Feats</h2>
     {#each Object.entries(featsByType) as [type, typeFeats]}
-        <div class="mb-6 last:mb-0">
-            <h3 class="mb-2 text-lg font-semibold text-primary">
+        <div class="mb-4 last:mb-0">
+            <h3 class="mb-1 text-base font-semibold text-primary">
                 {formatFeatType(type)}
             </h3>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {#each typeFeats as feat (feat.feat_name)}
-                    <div class="rounded bg-gray-50 p-3 hover:bg-gray-100">
-                        <div class="font-medium">{feat.displayName}</div>
+                    <div class="rounded bg-gray-50 p-2 hover:bg-gray-100">
+                        <div class="font-medium leading-tight">{feat.displayName}</div>
                         <div class="text-xs text-gray-500">
-                            Selected at level {feat.selected_level}
+                            Level {feat.selected_level}
                         </div>
                         {#if feat.properties}
-                            <div class="mt-1 text-sm text-gray-600">
+                            <div class="text-xs text-gray-600">
                                 {#each Object.entries(feat.properties) as [key, value]}
                                     <div>{key}: {value}</div>
                                 {/each}

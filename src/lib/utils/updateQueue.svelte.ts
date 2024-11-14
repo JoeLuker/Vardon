@@ -1,106 +1,82 @@
 // src/lib/utils/updateQueue.svelte.ts
 import { browser } from '$app/environment';
 
-export type UpdateStatus = 'success' | 'processing' | 'error' | 'offline' | 'pending';
+export type UpdateStatus = 'idle' | 'processing' | 'error' | 'offline' | 'pending' | 'success';
 
-export type QueuedUpdate<T> = {
-    key?: string;
+export interface QueueUpdate<T = unknown> {
+    key: string;
     execute: () => Promise<T>;
     optimisticUpdate: () => void;
     rollback: () => void;
-};
+}
 
 export class UpdateQueue {
-    private queue = $state<QueuedUpdate<any>[]>([]);
-    private processing = $state(false);
-    private status = $state<UpdateStatus>('success');
+    private status = $state<UpdateStatus>('idle');
     private subscribers = new Set<(status: UpdateStatus) => void>();
-  
+    private pendingUpdates = new Map<string, {
+        timer: NodeJS.Timeout;
+        execute: () => Promise<any>;
+    }>();
+
     constructor() {
         if (browser) {
-            window.addEventListener('online', () => this.processQueue());
-            window.addEventListener('offline', () => this.setStatus('offline'));
+            window.addEventListener('offline', () => {
+                this.status = 'offline';
+                this.subscribers.forEach(fn => fn('offline'));
+            });
         }
     }
 
-    private setStatus(newStatus: UpdateStatus) {
-        this.status = newStatus;
-        this.subscribers.forEach(fn => fn(newStatus));
+    getStats() {
+        return {
+            pending: this.pendingUpdates.size,
+            status: this.status
+        };
     }
 
     subscribe(callback: (status: UpdateStatus) => void) {
         this.subscribers.add(callback);
-        callback(this.status); // Initial call
-        
-        return () => {
-            this.subscribers.delete(callback);
-        };
+        callback(this.status);
+        return () => this.subscribers.delete(callback);
     }
   
-    async enqueue<T>({
-        key,
-        execute,
-        optimisticUpdate,
-        rollback
-    }: QueuedUpdate<T>): Promise<T> {
+    async enqueue<T>({ key, execute, optimisticUpdate, rollback }: QueueUpdate<T>): Promise<T> {
+        // Apply optimistic update immediately
         optimisticUpdate();
-  
-        if (key) {
-            this.queue = this.queue.filter(u => u.key !== key);
+
+        // If there's a pending update for this key, cancel it
+        const pending = this.pendingUpdates.get(key);
+        if (pending) {
+            clearTimeout(pending.timer);
+            this.pendingUpdates.delete(key);
         }
-  
+
         try {
-            this.setStatus('processing');
+            // Set up debounced execution
+            await new Promise(resolve => {
+                const timer = setTimeout(resolve, 250);
+                this.pendingUpdates.set(key, { timer, execute });
+            });
+
+            // Execute the update
+            this.status = 'processing';
             const result = await execute();
-            this.setStatus('success');
+            this.status = 'idle';
+            
             return result;
         } catch (error) {
-            if (navigator.onLine) {
-                rollback();
-                this.setStatus('error');
-            } else {
-                this.queue = [...this.queue, { key, execute, optimisticUpdate, rollback }];
-                this.setStatus('offline');
-            }
+            rollback();
+            this.status = navigator.onLine ? 'error' : 'offline';
             throw error;
+        } finally {
+            this.pendingUpdates.delete(key);
         }
     }
-  
-    private async processQueue() {
-        if (this.processing || this.queue.length === 0) return;
-        
-        this.processing = true;
-        this.setStatus('processing');
-  
-        const updates = [...this.queue];
-        this.queue = [];
-  
-        for (const update of updates) {
-            try {
-                await update.execute();
-            } catch (error) {
-                update.rollback();
-                this.setStatus('error');
-            }
-        }
-  
-        this.processing = false;
-        if (this.status !== 'error') {
-            this.setStatus('success');
-        }
-    }
-  
-    getStatus(): UpdateStatus {
-        return this.status;
-    }
-  
-    getStats() {
-        return {
-            pending: this.queue.length,
-            status: this.status
-        };
+
+    destroy() {
+        this.pendingUpdates.forEach(({ timer }) => clearTimeout(timer));
+        this.pendingUpdates.clear();
     }
 }
 
-// Create and export a single instance
 export const updateQueue = new UpdateQueue();

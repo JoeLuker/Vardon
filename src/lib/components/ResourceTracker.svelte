@@ -32,6 +32,7 @@
         const newUsed = newUsedSlots.filter(Boolean).length;
         onToggle(total - newUsed);
     }
+
 </script>
 
 <div class="card space-y-2">

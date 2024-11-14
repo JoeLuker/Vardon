@@ -40,11 +40,13 @@ export type AttributeKey = keyof CharacterAttributes;
 export type ConsumableKey = keyof Consumables;
 
 export const KNOWN_BUFFS = [
-	'cognatogen',
-	'dex_mutagen',
-	'deadly_aim',
-	'rapid_shot',
-	'two_weapon_fighting'
+    'cognatogen',
+    'dex_mutagen',
+    'str_mutagen',  // Added
+    'con_mutagen',  // Added
+    'deadly_aim',
+    'rapid_shot',
+    'two_weapon_fighting'
 ] as const;
 
 export type KnownBuffType = (typeof KNOWN_BUFFS)[number];
@@ -113,6 +115,29 @@ export interface CharacterFeat {
 	sync_status: 'synced' | 'pending' | 'conflict' | null;
 }
 
+export interface BaseSkill {
+    id: number;
+    name: string;
+    ability: string;
+    trained_only: boolean | null;
+    armor_check_penalty: boolean | null;
+}
+
+export interface CharacterSkillRank {
+    id: number;
+    character_id: number | null;
+    skill_id: number | null;
+    ranks: number;
+    sync_status: string | null;
+    updated_at: string | null;
+}
+
+export interface ClassSkillRelation {
+    id: number;
+    class_name: string;
+    skill_id: number | null;
+}
+
 export interface Character {
 	id: number;
 	name: string;
@@ -130,12 +155,16 @@ export interface Character {
 	character_combat_stats: CombatStats[];
 	character_consumables: Consumables[];
 	character_buffs: DatabaseCharacterBuff[];
-	character_skills: DatabaseCharacterSkill[];
+	character_skill_ranks: CharacterSkillRank[];
 	character_spell_slots: SpellSlot[];
 	character_known_spells: KnownSpell[];
 	character_discoveries: CharacterDiscovery[];
 	character_class_features: CharacterClassFeature[];
 	character_feats: CharacterFeat[];
+	character_extracts: CharacterExtract[];
+	character_equipment: CharacterEquipment[];
+	base_skills?: BaseSkill[];
+	class_skill_relations?: ClassSkillRelation[];
 }
 
 // Helper type for creating new characters
@@ -166,9 +195,10 @@ export interface BuffUpdate {
 	is_active: boolean;
 }
 
-export interface SkillUpdate extends Partial<CharacterSkill> {
+export interface SkillUpdate {
 	character_id?: number;
-	skill_name: string;
+	skill_id: number;
+	ranks: number;
 }
 
 // Validation helpers
@@ -195,4 +225,47 @@ export interface CharacterKnownSpell {
     character_id: number;
     spell_level: number;
     spell_name: string;
+}
+
+export interface CharacterExtract {
+    id: number;
+    character_id: number | null;
+    extract_name: string;
+    extract_level: number;
+    prepared: number;
+    used: number;
+    created_at: string | null;
+    updated_at: string | null;
+    sync_status: string | null;
+}
+
+export interface SkillView {
+    character_id: number;
+    skill_id: number;
+    skill_name: string;
+    ability: string;
+    trained_only: boolean;
+    armor_check_penalty: boolean;
+    ranks: number;
+    is_class_skill: boolean;
+}
+
+export interface CharacterEquipment {
+    id: number;
+    character_id: number | null;
+    name: string;
+    type: string;
+    equipped: boolean;
+    properties: CharacterEquipmentProperties;
+    updated_at: string | null;
+    sync_status: 'synced' | 'pending' | 'conflict' | null;
+}
+
+export interface CharacterEquipmentProperties {
+    armor_check_penalty?: number;
+    skill_bonus?: {
+        skill: string;
+        value: number;
+    };
+    [key: string]: unknown;
 }

@@ -5,18 +5,27 @@ import type {
     Character, 
     AttributeKey, 
     ConsumableKey,
-    KnownBuffType,
     CharacterBuff,
     SpellSlot,
     KnownSpell,
     CharacterDiscovery,
     CharacterClassFeature,
     CharacterFeat,
-    DatabaseCharacterSkill
+    CharacterExtract,
+    BaseSkill,
+    CharacterSkillRank,
+    ClassSkillRelation
 } from '$lib/types/character';
 
+import { updateQueue } from '$lib/utils/updateQueue.svelte';
+import { createOptimisticUpdate, type OptimisticUpdateConfig } from '$lib/utils/optimisticUpdate';
+
 // Single source of truth for character data
-const character = $state<Character>({} as Character);
+const character = $state<Character & {
+    base_skills?: BaseSkill[];
+    character_skill_ranks?: CharacterSkillRank[];
+    class_skill_relations?: ClassSkillRelation[];
+}>({} as Character);
 
 // Core update functions
 async function updateBombs(bombs: number) {
@@ -46,24 +55,12 @@ async function updateAttribute(attr: AttributeKey, value: number) {
     if (error) throw error;
 }
 
-async function updateSkills(skillRanks: Record<string, number>) {
-    for (const [skillName, ranks] of Object.entries(skillRanks)) {
-        const { error } = await supabase
-            .from('character_skills')
-            .update({ ranks })
-            .eq('character_id', character.id)
-            .eq('skill_name', skillName);
-        
-        if (error) throw error;
-    }
-}
-
-async function toggleBuff(buffType: KnownBuffType, isActive: boolean) {
+async function updateSkillRank(skillId: number, ranks: number) {
     const { error } = await supabase
-        .from('character_buffs')
-        .update({ is_active: isActive })
+        .from('character_skill_ranks')
+        .update({ ranks })
         .eq('character_id', character.id)
-        .eq('buff_type', buffType);
+        .eq('skill_id', skillId);
     
     if (error) throw error;
 }
@@ -87,12 +84,32 @@ async function updateSpellSlot(level: number, remaining: number) {
     if (error) throw error;
 }
 
+async function updateExtract(extractId: number, updates: Omit<Partial<CharacterExtract>, 'id'>) {
+    const { error } = await supabase
+        .from('character_extracts')
+        .update({
+            ...updates,
+            prepared: typeof updates.prepared === 'number' ? updates.prepared : 0,
+            used: typeof updates.used === 'number' ? updates.used : 0,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', extractId);
+    
+    if (error) throw error;
+}
+
 function initializeCharacter(data: Character) {
     if (!data) {
         throw new Error('Character data is required');
     }
     
-    Object.assign(character, data);
+    // Ensure we're copying all the skill-related data with default empty arrays
+    Object.assign(character, {
+        ...data,
+        base_skills: data.base_skills || [],
+        character_skill_ranks: data.character_skill_ranks || [],
+        class_skill_relations: data.class_skill_relations || []
+    });
     
     if (browser) {
         return setupRealtimeSubscription(data.id);
@@ -164,15 +181,29 @@ function setupRealtimeSubscription(characterId: number) {
         .on('postgres_changes', {
             event: '*',
             schema: 'public',
-            table: 'character_skills',
-            filter: `character_id=eq.${characterId}`
+            table: 'base_skills',
         }, (payload) => {
-            if (character.character_skills) {
-                const index = character.character_skills.findIndex(
-                    s => s.skill_name === (payload.new as DatabaseCharacterSkill).skill_name
+            if (character.base_skills) {
+                const index = character.base_skills.findIndex(
+                    s => s.id === (payload.new as BaseSkill).id
                 );
                 if (index >= 0) {
-                    character.character_skills[index] = payload.new as DatabaseCharacterSkill;
+                    character.base_skills[index] = payload.new as BaseSkill;
+                }
+            }
+        })
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'character_skill_ranks',
+            filter: `character_id=eq.${characterId}`
+        }, (payload) => {
+            if (character.character_skill_ranks) {
+                const index = character.character_skill_ranks.findIndex(
+                    s => s.skill_id === (payload.new as CharacterSkillRank).skill_id
+                );
+                if (index >= 0) {
+                    character.character_skill_ranks[index] = payload.new as CharacterSkillRank;
                 }
             }
         })
@@ -256,11 +287,99 @@ function setupRealtimeSubscription(characterId: number) {
                 }
             }
         })
+        // Add new skill-related subscriptions
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'class_skill_relations',
+            filter: `class_name=eq.${character.class}`
+        }, (payload) => {
+            if (character.class_skill_relations) {
+                switch (payload.eventType) {
+                    case 'INSERT':
+                        character.class_skill_relations.push(payload.new as ClassSkillRelation);
+                        break;
+                    case 'UPDATE':
+                        const updateIndex = character.class_skill_relations.findIndex(
+                            relation => relation.id === (payload.new as ClassSkillRelation).id
+                        );
+                        if (updateIndex >= 0) {
+                            character.class_skill_relations[updateIndex] = payload.new as ClassSkillRelation;
+                        }
+                        break;
+                    case 'DELETE':
+                        const deleteIndex = character.class_skill_relations.findIndex(
+                            relation => relation.id === (payload.old as ClassSkillRelation).id
+                        );
+                        if (deleteIndex >= 0) {
+                            character.class_skill_relations.splice(deleteIndex, 1);
+                        }
+                        break;
+                }
+            }
+        })
         .subscribe();
 
     return () => {
         supabase.removeChannel(channel);
     };
+}
+// Add this helper function
+export async function enqueueCharacterUpdate<T>({ 
+    key, 
+    execute, 
+    optimisticUpdate, 
+    rollback 
+}: OptimisticUpdateConfig<T>) {
+    return updateQueue.enqueue(
+        createOptimisticUpdate({
+            key,
+            execute,
+            optimisticUpdate,
+            rollback
+        })
+    );
+}
+
+// Add new skill data fetching function
+async function fetchSkillData(characterId: number) {
+    const [baseSkillsResult, skillRanksResult, classSkillsResult] = await Promise.all([
+        supabase.from('base_skills').select('*'),
+        supabase.from('character_skill_ranks').select('*').eq('character_id', characterId),
+        supabase.from('class_skill_relations').select('*').eq('class_name', character.class)
+    ]);
+
+    if (baseSkillsResult.error) throw baseSkillsResult.error;
+    if (skillRanksResult.error) throw skillRanksResult.error;
+    if (classSkillsResult.error) throw classSkillsResult.error;
+
+    character.base_skills = baseSkillsResult.data;
+    character.character_skill_ranks = skillRanksResult.data;
+    character.class_skill_relations = classSkillsResult.data;
+}
+
+// Add helper functions
+function isClassSkill(skillId: number): boolean {
+    return character.class_skill_relations?.some(
+        relation => relation.skill_id === skillId
+    ) ?? false;
+}
+
+function getSkillRanks(skillId: number): number {
+    return character.character_skill_ranks?.find(
+        rank => rank.skill_id === skillId
+    )?.ranks ?? 0;
+}
+
+// Add this function before the exports
+async function toggleBuff(buffType: string, isActive: boolean) {
+    const { error } = await supabase
+        .from('character_buffs')
+        .update({ is_active: isActive })
+        .eq('character_id', character.id)
+        .eq('buff_type', buffType);
+    
+    if (error) throw error;
 }
 
 // Export only what's necessary
@@ -269,9 +388,13 @@ export {
     updateBombs,
     updateConsumable,
     updateAttribute,
-    updateSkills,
-    toggleBuff,
+    updateSkillRank,
     updateHP,
     updateSpellSlot,
-    initializeCharacter
+    initializeCharacter,
+    updateExtract,
+    fetchSkillData,
+    isClassSkill,
+    getSkillRanks,
+    toggleBuff
 };

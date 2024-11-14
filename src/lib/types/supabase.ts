@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      base_skills: {
+        Row: {
+          ability: string
+          armor_check_penalty: boolean | null
+          created_at: string | null
+          id: number
+          name: string
+          trained_only: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          ability: string
+          armor_check_penalty?: boolean | null
+          created_at?: string | null
+          id?: never
+          name: string
+          trained_only?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          ability?: string
+          armor_check_penalty?: boolean | null
+          created_at?: string | null
+          id?: never
+          name?: string
+          trained_only?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       character_abp_bonuses: {
         Row: {
           bonus_type: string
@@ -246,6 +276,113 @@ export type Database = {
           },
         ]
       }
+      character_corruption_manifestations: {
+        Row: {
+          character_id: number | null
+          corruption_id: number | null
+          created_at: string | null
+          gift_active: boolean | null
+          id: number
+          manifestation_name: string
+          min_manifestation_level: number | null
+          prerequisite_manifestation: string | null
+          stain_active: boolean | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          character_id?: number | null
+          corruption_id?: number | null
+          created_at?: string | null
+          gift_active?: boolean | null
+          id?: never
+          manifestation_name: string
+          min_manifestation_level?: number | null
+          prerequisite_manifestation?: string | null
+          stain_active?: boolean | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          character_id?: number | null
+          corruption_id?: number | null
+          created_at?: string | null
+          gift_active?: boolean | null
+          id?: never
+          manifestation_name?: string
+          min_manifestation_level?: number | null
+          prerequisite_manifestation?: string | null
+          stain_active?: boolean | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_corruption_manifestations_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_corruption_manifestations_corruption_id_fkey"
+            columns: ["corruption_id"]
+            isOneToOne: false
+            referencedRelation: "character_corruptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_corruptions: {
+        Row: {
+          blood_consumed: number | null
+          blood_required: number | null
+          character_id: number | null
+          corruption_stage: number | null
+          corruption_type: string
+          created_at: string | null
+          id: number
+          last_feed_date: string | null
+          manifestation_level: number | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          blood_consumed?: number | null
+          blood_required?: number | null
+          character_id?: number | null
+          corruption_stage?: number | null
+          corruption_type: string
+          created_at?: string | null
+          id?: never
+          last_feed_date?: string | null
+          manifestation_level?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          blood_consumed?: number | null
+          blood_required?: number | null
+          character_id?: number | null
+          corruption_stage?: number | null
+          corruption_type?: string
+          created_at?: string | null
+          id?: never
+          last_feed_date?: string | null
+          manifestation_level?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_corruptions_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_discoveries: {
         Row: {
           character_id: number | null
@@ -318,6 +455,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "character_equipment_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_extracts: {
+        Row: {
+          character_id: number | null
+          created_at: string | null
+          extract_level: number
+          extract_name: string
+          id: number
+          prepared: number
+          sync_status: string | null
+          updated_at: string | null
+          used: number
+        }
+        Insert: {
+          character_id?: number | null
+          created_at?: string | null
+          extract_level: number
+          extract_name: string
+          id?: never
+          prepared?: number
+          sync_status?: string | null
+          updated_at?: string | null
+          used?: number
+        }
+        Update: {
+          character_id?: number | null
+          created_at?: string | null
+          extract_level?: number
+          extract_name?: string
+          id?: never
+          prepared?: number
+          sync_status?: string | null
+          updated_at?: string | null
+          used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_extracts_character_id_fkey"
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
@@ -401,44 +582,55 @@ export type Database = {
           },
         ]
       }
-      character_skills: {
+      character_skill_ranks: {
         Row: {
-          ability: string
           character_id: number | null
-          class_skill: boolean | null
+          created_at: string | null
           id: number
           ranks: number
-          skill_name: string
+          skill_id: number | null
           sync_status: string | null
           updated_at: string | null
         }
         Insert: {
-          ability: string
           character_id?: number | null
-          class_skill?: boolean | null
+          created_at?: string | null
           id?: never
           ranks?: number
-          skill_name: string
+          skill_id?: number | null
           sync_status?: string | null
           updated_at?: string | null
         }
         Update: {
-          ability?: string
           character_id?: number | null
-          class_skill?: boolean | null
+          created_at?: string | null
           id?: never
           ranks?: number
-          skill_name?: string
+          skill_id?: number | null
           sync_status?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "character_skills_character_id_fkey"
+            foreignKeyName: "character_skill_ranks_character_id_fkey"
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_skill_ranks_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "base_skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_skill_ranks_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "character_skill_view"
+            referencedColumns: ["skill_id"]
           },
         ]
       }
@@ -525,9 +717,68 @@ export type Database = {
         }
         Relationships: []
       }
+      class_skill_relations: {
+        Row: {
+          class_name: string
+          created_at: string | null
+          id: number
+          skill_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_name: string
+          created_at?: string | null
+          id?: never
+          skill_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_name?: string
+          created_at?: string | null
+          id?: never
+          skill_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_skill_relations_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "base_skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_skill_relations_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "character_skill_view"
+            referencedColumns: ["skill_id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      character_skill_view: {
+        Row: {
+          ability: string | null
+          armor_check_penalty: boolean | null
+          character_id: number | null
+          is_class_skill: boolean | null
+          ranks: number | null
+          skill_id: number | null
+          skill_name: string | null
+          trained_only: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_skill_ranks_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       uuid_generate_v1: {

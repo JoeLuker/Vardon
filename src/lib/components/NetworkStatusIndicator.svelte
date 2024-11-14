@@ -1,12 +1,11 @@
-<!-- src/lib/components/NetworkStatusIndicator.svelte -->
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
-    import type { UpdateStatus } from '$lib/utils/updateQueue.svelte';
+    import { updateQueue } from '../utils/updateQueue.svelte';
+    import type { UpdateStatus } from '../utils/updateQueue.svelte';
     
-    let status = $state<UpdateStatus>('success');
+    let status = $state<UpdateStatus>('idle');
     let stats = $state({
         pending: 0,
-        status: 'success' as UpdateStatus
+        status: 'idle' as UpdateStatus
     });
 
     // Subscribe to status updates
@@ -18,43 +17,47 @@
     });
 
     // Get appropriate status message and style
-    let statusConfig = $derived(() => {
+    let statusConfig = $derived({
+        message: getStatusMessage(),
+        class: getStatusClass()
+    });
+
+    function getStatusMessage(): string {
         switch (status) {
             case 'pending':
-                return {
-                    message: `${stats.pending} updates pending...`,
-                    class: 'bg-yellow-500'
-                };
+                return `${stats.pending} updates pending...`;
             case 'processing':
-                return {
-                    message: 'Processing updates...',
-                    class: 'bg-blue-500'
-                };
+                return 'Processing updates...';
             case 'success':
-                return {
-                    message: 'All changes saved',
-                    class: 'bg-green-500'
-                };
+                return 'All changes saved';
             case 'error':
-                return {
-                    message: 'Error saving changes',
-                    class: 'bg-red-500'
-                };
+                return 'Error saving changes';
             case 'offline':
-                return {
-                    message: `${stats.pending} changes pending sync`,
-                    class: 'bg-gray-500'
-                };
+                return `${stats.pending} changes pending sync`;
             default:
-                return {
-                    message: '',
-                    class: 'bg-gray-500'
-                };
+                return '';
         }
-    });
+    }
+
+    function getStatusClass(): string {
+        switch (status) {
+            case 'pending':
+                return 'bg-yellow-500';
+            case 'processing':
+                return 'bg-blue-500';
+            case 'success':
+                return 'bg-green-500';
+            case 'error':
+                return 'bg-red-500';
+            case 'offline':
+                return 'bg-gray-500';
+            default:
+                return 'bg-gray-500';
+        }
+    }
 </script>
 
-{#if status !== 'success' || stats.pending > 0}
+{#if status !== 'idle' || stats.pending > 0}
     <div
         class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-2 text-white shadow-lg transition-all duration-300 {statusConfig.class}"
         role="status"
