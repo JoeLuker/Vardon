@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { updateQueue } from '$lib/utils/updateQueue.svelte';
 	import type { CharacterSkill } from '$lib/types/character';
 
 	type SkillGrid = Record<string, boolean[]>;
 
-	let { skills, pointsPerLevel = 9, classLevel = 5, onSave } = $props<{
+	let { characterId, skills, pointsPerLevel = 9, classLevel = 5, onSave } = $props<{
+		characterId: number;
 		skills: CharacterSkill[];
 		pointsPerLevel?: number;
 		classLevel?: number;
@@ -57,15 +59,26 @@
 
 	async function handleSave() {
 		isSaving = true;
-		try {
-			const newRanks = Object.entries(skillGrid).reduce((acc, [skillName, levels]) => {
-				acc[skillName] = levels.filter(Boolean).length;
-				return acc;
-			}, {} as Record<string, number>);
+		const newRanks = Object.entries(skillGrid).reduce((acc, [skillName, levels]) => {
+			acc[skillName] = levels.filter(Boolean).length;
+			return acc;
+		}, {} as Record<string, number>);
 
-			await onSave(newRanks);
-		} catch (error) {
-			console.error('Failed to save skill ranks:', error);
+		const previousGrid = { ...skillGrid };
+
+		try {
+			await updateQueue.enqueue({
+				key: `skill-allocation-${characterId}`,
+				execute: async () => {
+					await onSave(newRanks);
+				},
+				optimisticUpdate: () => {
+					// Update is handled in parent component
+				},
+				rollback: () => {
+					skillGrid = previousGrid;
+				}
+			});
 		} finally {
 			isSaving = false;
 		}

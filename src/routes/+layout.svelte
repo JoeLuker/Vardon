@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import NetworkStatusIndicator from '$lib/components/NetworkStatusIndicator.svelte';
 	import type { Snippet } from 'svelte';
 
 	let { children } = $props<{
@@ -20,6 +21,7 @@
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		{@render children?.()}
 	</div>
+	<NetworkStatusIndicator />
 </div>
 
 <style lang="postcss">

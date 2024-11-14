@@ -134,20 +134,24 @@ export async function updateCharacterField(
 ) {
 	console.log(`Updating ${table} for character ${characterId}:`, updates);
 	
-	const query = supabase.from(table).update(updates);
+	// Create the base query without select() first
+	const baseQuery = supabase
+		.from(table)
+		.update(updates);
 	
 	// Add appropriate filters based on table
 	if (table === 'characters') {
-		query.eq('id', characterId);
+		baseQuery.eq('id', characterId);
 	} else if (table === 'character_buffs') {
-		query
+		baseQuery
 			.eq('character_id', characterId)
 			.eq('buff_type', updates.buff_type as string);
 	} else {
-		query.eq('character_id', characterId);
+		baseQuery.eq('character_id', characterId);
 	}
 
-	const { error, data } = await query;
+	// Add select() at the end and execute the query
+	const { error, data } = await baseQuery.select();
 	
 	if (error) {
 		console.error(`Error updating ${table}:`, error);

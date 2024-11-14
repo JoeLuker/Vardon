@@ -397,8 +397,26 @@ alter table character_attributes replica identity full;
 alter table character_combat_stats replica identity full;
 alter table character_consumables replica identity full;
 
--- Enable realtime for character_buffs table
+
+
+
+
+
+
+
+-- Add these to enable realtime for new tables:
+alter publication supabase_realtime add table character_abp_bonuses;
+alter publication supabase_realtime add table character_equipment;
+alter publication supabase_realtime add table character_class_features;
+alter publication supabase_realtime add table character_discoveries;
+alter publication supabase_realtime add table character_feats;
+
+-- Add these tables to realtime publication
 alter publication supabase_realtime add table character_buffs;
+alter publication supabase_realtime add table character_skills;
+alter publication supabase_realtime add table character_spell_slots;
+alter publication supabase_realtime add table character_known_spells;
+
 
 -- Add policy for character_buffs
 create policy "Public realtime access"
@@ -409,19 +427,6 @@ create policy "Public realtime access"
 -- Enable full replica identity for character_buffs
 alter table character_buffs replica identity full;
 
-
-
-
--- Add these table definitions after the existing ones:
-
-
-
--- Add these to enable realtime for new tables:
-alter publication supabase_realtime add table character_abp_bonuses;
-alter publication supabase_realtime add table character_equipment;
-alter publication supabase_realtime add table character_class_features;
-alter publication supabase_realtime add table character_discoveries;
-alter publication supabase_realtime add table character_feats;
 
 -- Add policies for new tables:
 create policy "Public realtime access"

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { updateQueue } from '$lib/utils/updateQueue.svelte';
 	import type { AttributeKey, CharacterBuff } from '$lib/types/character';
 
 	type BuffEffect = {
@@ -13,7 +14,8 @@
 		conflicts: string[];
 	};
 
-	let { activeBuffs, onBuffToggle } = $props<{
+	let { characterId, activeBuffs, onBuffToggle } = $props<{
+		characterId: number;
 		activeBuffs: CharacterBuff[];
 		onBuffToggle: (buffName: string, active: boolean) => Promise<void>;
 	}>();
@@ -66,43 +68,39 @@
 		const buff = buffConfig.find((b: Buff) => b.name === buffName);
 		if (!buff) return;
 
-		// Store previous state for rollback
 		const previousBuffs = activeBuffs.map((b: CharacterBuff) => ({ ...b }));
 
-		// Optimistically update local state
-		const buffIndex = activeBuffs.findIndex((b: CharacterBuff) => b.buff_type === buffName);
-		if (buffIndex >= 0) {
-			activeBuffs[buffIndex].is_active = !isCurrentlyActive;
-		} else {
-			activeBuffs = [
-				...activeBuffs,
-				{
-					buff_type: buffName,
-					is_active: true,
-					character_id: null,
-					id: Date.now(),
-					updated_at: new Date().toISOString(),
-					sync_status: 'synced'
-				}
-			];
-		}
-
-		try {
-			// Deactivate conflicting buffs if activating
-			if (!isCurrentlyActive && buff.conflicts.length > 0) {
-				for (const conflict of buff.conflicts) {
-					if (activeBuffs.some((b: CharacterBuff) => b.buff_type === conflict && b.is_active)) {
-						await onBuffToggle(conflict, false);
+		await updateQueue.enqueue({
+			key: `buff-${characterId}-${buffName}`,
+			execute: async () => {
+				if (!isCurrentlyActive && buff.conflicts.length > 0) {
+					for (const conflict of buff.conflicts) {
+						if (activeBuffs.some((b: CharacterBuff) => b.buff_type === conflict && b.is_active)) {
+							await onBuffToggle(conflict, false);
+						}
 					}
 				}
+				await onBuffToggle(buffName, !isCurrentlyActive);
+			},
+			optimisticUpdate: () => {
+				const buffIndex = activeBuffs.findIndex((b: CharacterBuff) => b.buff_type === buffName);
+				if (buffIndex >= 0) {
+					activeBuffs[buffIndex].is_active = !isCurrentlyActive;
+				} else {
+					activeBuffs = [...activeBuffs, {
+						buff_type: buffName,
+						is_active: true,
+						character_id: null,
+						id: Date.now(),
+						updated_at: new Date().toISOString(),
+						sync_status: 'synced'
+					}];
+				}
+			},
+			rollback: () => {
+				activeBuffs = previousBuffs;
 			}
-
-			await onBuffToggle(buffName, !isCurrentlyActive);
-		} catch (error) {
-			// Revert on failure
-			activeBuffs = previousBuffs;
-			console.error('Failed to toggle buff:', error);
-		}
+		});
 	}
 
 	// Derived values for UI

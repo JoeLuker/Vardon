@@ -1,33 +1,47 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import SkillAllocator from './SkillAllocator.svelte';
+	import { updateQueue } from '$lib/utils/updateQueue.svelte';
 	import type { CharacterSkill } from '$lib/types/character';
+	import SkillAllocator from './SkillAllocator.svelte';
 
-	type SkillsProps = {
+	let { characterId, skills = [], onUpdateSkills } = $props<{
+		characterId: number;
 		skills: CharacterSkill[];
 		onUpdateSkills: (skillRanks: Record<string, number>) => Promise<void>;
-	};
-
-	let { skills = [], onUpdateSkills }: SkillsProps = $props();
+	}>();
 	let showSkillAllocator = $state(false);
 
 	let skillsList = $derived.by(() =>
-		skills.map((skill) => ({
+		skills.map((skill: CharacterSkill) => ({
 			...skill,
 			displayName: skill.skill_name
 				.replace(/([A-Z])/g, ' $1')
 				.split(' ')
-				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+				.map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
 				.join(' ')
 		}))
 	);
 
 	async function handleSkillSave(newRanks: Record<string, number>) {
-		try {
-			await onUpdateSkills(newRanks);
-		} finally {
-			showSkillAllocator = false;
-		}
+		const previousSkills = [...skills];
+
+		await updateQueue.enqueue({
+			key: `skills-${characterId}`,
+			execute: async () => {
+				await onUpdateSkills(newRanks);
+			},
+			optimisticUpdate: () => {
+				skills = skills.map((skill: CharacterSkill) => ({
+					...skill,
+					ranks: newRanks[skill.skill_name] ?? skill.ranks
+				}));
+			},
+			rollback: () => {
+				skills = previousSkills;
+			}
+		});
+
+		showSkillAllocator = false;
 	}
 </script>
 
@@ -82,7 +96,7 @@
 		<div
 			class="card relative max-h-[90vh] w-full max-w-4xl overflow-hidden"
 		>
-			<SkillAllocator {skills} onSave={handleSkillSave} />
+			<SkillAllocator {characterId} {skills} onSave={handleSkillSave} />
 		</div>
 	</div>
 {/if}
