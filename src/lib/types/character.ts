@@ -139,32 +139,32 @@ export interface ClassSkillRelation {
 }
 
 export interface Character {
-	id: number;
-	name: string;
-	class: string;
-	race: string;
-	level: number;
-	current_hp: number;
-	max_hp: number;
-	is_offline: boolean | null;
-	created_at: string | null;
-	updated_at: string | null;
-	last_synced_at: string | null;
-	user_id: string | null;
-	character_attributes: CharacterAttributes[];
-	character_combat_stats: CombatStats[];
-	character_consumables: Consumables[];
-	character_buffs: DatabaseCharacterBuff[];
-	character_skill_ranks: CharacterSkillRank[];
-	character_spell_slots: SpellSlot[];
-	character_known_spells: KnownSpell[];
-	character_discoveries: CharacterDiscovery[];
-	character_class_features: CharacterClassFeature[];
-	character_feats: CharacterFeat[];
-	character_extracts: CharacterExtract[];
-	character_equipment: CharacterEquipment[];
-	base_skills?: BaseSkill[];
-	class_skill_relations?: ClassSkillRelation[];
+    id: number;
+    name: string;
+    class: string;
+    race: string;
+    level: number;
+    current_hp: number;
+    max_hp: number;
+    is_offline: boolean | null;
+    created_at: string | null;
+    updated_at: string | null;
+    last_synced_at: string | null;
+    user_id: string | null;
+    character_attributes: CharacterAttributes[];
+    character_combat_stats: CombatStats[];
+    character_consumables: Consumables[];
+    character_buffs: DatabaseCharacterBuff[];
+    character_skill_ranks: CharacterSkillRank[];
+    character_spell_slots: SpellSlot[];
+    character_known_spells: KnownSpell[];
+    character_discoveries: CharacterDiscovery[];
+    character_class_features: CharacterClassFeature[];
+    character_feats: CharacterFeat[];
+    character_extracts: CharacterExtract[];
+    character_equipment: CharacterEquipment[];
+    base_skills?: BaseSkill[];
+    class_skill_relations?: ClassSkillRelation[];
 }
 
 // Helper type for creating new characters
