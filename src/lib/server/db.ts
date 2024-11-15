@@ -199,7 +199,7 @@ export async function updateBuff(id: number, buffType: string, isActive: boolean
  */
 export async function updateSkill(id: number, skillName: string, ranks: number): Promise<void> {
 	const { error } = await supabase
-		.from('character_skills')
+		.from('character_skill_ranks')
 		.update({ ranks })
 		.eq('character_id', id)
 		.eq('skill_name', skillName)

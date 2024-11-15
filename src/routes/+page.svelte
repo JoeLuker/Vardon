@@ -2,7 +2,7 @@
 <script lang="ts">
     import CharacterHeader from '$lib/components/CharacterHeader.svelte';
     import HPTracker from '$lib/components/HPTracker.svelte';
-    import Stats from '$lib/components/Stats.svelte';
+    import Attributes from '$lib/components/Attributes.svelte';
     import Skills from '$lib/components/Skills.svelte';
     import CombatStats from '$lib/components/CombatStats.svelte';
     import BombTracker from '$lib/components/BombTracker.svelte';
@@ -41,7 +41,7 @@
 
         <!-- Attributes & Skills -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <Stats />
+            <Attributes />
             <Skills />
         </div>
 

@@ -23,9 +23,18 @@ export async function executeUpdate<T>({
         await updateQueue.enqueue({
             key,
             execute: async () => {
-                status.status = 'syncing';
-                await operation();
-                status.status = 'idle';
+                let syncingTimeout = setTimeout(() => {
+                    status.status = 'syncing';
+                }, 1000);
+
+                try {
+                    await operation();
+                    clearTimeout(syncingTimeout);
+                    status.status = 'idle';
+                } catch (error) {
+                    clearTimeout(syncingTimeout);
+                    throw error;
+                }
             },
             optimisticUpdate,
             rollback: () => {

@@ -23,7 +23,7 @@
     ]);
 
     function getHPColor(percentage: number): string {
-        if (percentage <= 20) return 'bg-accent';
+        if (percentage <= 20) return 'bg-red-500';
         if (percentage <= 40) return 'bg-orange-500';
         if (percentage <= 60) return 'bg-yellow-500';
         if (percentage <= 80) return 'bg-emerald-500';
@@ -137,19 +137,22 @@
 
 <style>
     input[type="range"]::-webkit-slider-thumb {
-        width: 0;
-        height: 0;
         -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        opacity: 0;
     }
 
     input[type="range"]::-moz-range-thumb {
-        width: 0;
-        height: 0;
+        width: 16px;
+        height: 16px;
+        opacity: 0;
         border: 0;
     }
     
     input[type="range"]::-ms-thumb {
-        width: 0;
-        height: 0;
+        width: 16px;
+        height: 16px;
+        opacity: 0;
     }
 </style>

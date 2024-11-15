@@ -1,3 +1,5 @@
+import type { Json } from "./supabase";
+
 export interface CharacterAttributes {
 	str: number;
 	dex: number;
@@ -10,6 +12,15 @@ export interface CharacterAttributes {
 export interface CombatStats {
 	bombs_left: number;
 	base_attack_bonus: number;
+	initiative: number;
+	cmb: number;
+	cmd: number;
+	ac: number;
+	touch_ac: number;
+	flat_footed_ac: number;
+	fortitude: number;
+	reflex: number;
+	will: number;
 }
 
 export interface Consumables {
@@ -42,14 +53,41 @@ export type ConsumableKey = keyof Consumables;
 export const KNOWN_BUFFS = [
     'cognatogen',
     'dex_mutagen',
-    'str_mutagen',  // Added
-    'con_mutagen',  // Added
+    'str_mutagen',
+    'con_mutagen',
     'deadly_aim',
     'rapid_shot',
-    'two_weapon_fighting'
+    'two_weapon_fighting',
+    'encumbered',
+    'improved_initiative',
+    'shield_of_faith',
+    'mage_armor',
+    'barkskin',
+    'bulls_strength',
+    'enlarge_person',
+    'resistance',
+    'divine_favor',
+    'owl_wisdom'
 ] as const;
 
-export type KnownBuffType = (typeof KNOWN_BUFFS)[number];
+export type KnownBuffType = 
+  | 'cognatogen' 
+  | 'dex_mutagen' 
+  | 'str_mutagen' 
+  | 'con_mutagen'
+  | 'deadly_aim'
+  | 'rapid_shot'
+  | 'two_weapon_fighting'
+  | 'encumbered'
+  | 'improved_initiative'
+  | 'shield_of_faith'
+  | 'mage_armor'
+  | 'barkskin'
+  | 'bulls_strength'
+  | 'enlarge_person'
+  | 'resistance'
+  | 'divine_favor'
+  | 'owl_wisdom';
 
 export interface DatabaseCharacterBuff {
 	id: number;
@@ -99,7 +137,7 @@ export interface CharacterClassFeature {
 	feature_name: string;
 	feature_level: number;
 	active: boolean;
-	properties: Record<string, unknown> | null;
+	properties: Json | null;
 	updated_at: string | null;
 	sync_status: 'synced' | 'pending' | 'conflict' | null;
 }
