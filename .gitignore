@@ -28,6 +28,7 @@ package-lock.json
 
 new-output.txt
 old-output.txt
+temp-pf-output.txt
 
 .vscode/settings.json
 

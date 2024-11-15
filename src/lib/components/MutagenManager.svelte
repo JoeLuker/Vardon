@@ -110,10 +110,10 @@
             {@const isActive = activeBuffs.has(mutagen.buffType)}
             <button
                 class="group w-full rounded-lg border-2 p-3 transition-all duration-200
-                       focus:outline-none focus:ring-2 focus:ring-primary/50
+                       focus:outline-none focus:ring-2 focus:ring-primary-300/50
                        {isActive
-                    ? 'border-primary bg-primary text-white hover:bg-primary-dark'
-                    : 'border-primary text-primary hover:bg-primary/10'}"
+                    ? 'border-primary-300 bg-primary-300 text-white hover:bg-primary-400'
+                    : 'border-primary-300 text-primary-300 hover:bg-primary-300/10'}"
                 onclick={() => handleMutagenToggle(mutagen)}
                 disabled={updateState.status === 'syncing'}
             >

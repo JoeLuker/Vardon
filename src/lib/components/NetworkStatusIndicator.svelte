@@ -7,10 +7,27 @@
         pending: 0,
         status: 'idle' as UpdateStatus
     });
+    let showProcessing = $state(false);
+    let processingTimer: number | undefined;
 
     // Subscribe to status updates
     $effect(() => {
         return updateQueue.subscribe((newStatus) => {
+            // Clear any existing timer
+            if (processingTimer) {
+                clearTimeout(processingTimer);
+                processingTimer = undefined;
+            }
+
+            // For processing status, set a timer before showing
+            if (newStatus === 'processing') {
+                processingTimer = setTimeout(() => {
+                    showProcessing = true;
+                }, 1000) as unknown as number;
+            } else {
+                showProcessing = false;
+            }
+
             status = newStatus;
             stats = updateQueue.getStats();
         });
@@ -27,7 +44,7 @@
             case 'pending':
                 return `${stats.pending} updates pending...`;
             case 'processing':
-                return 'Processing updates...';
+                return showProcessing ? 'Processing updates...' : '';
             case 'success':
                 return 'All changes saved';
             case 'error':
@@ -57,13 +74,15 @@
     }
 </script>
 
-{#if status !== 'idle' || stats.pending > 0}
+{#if (status !== 'idle' && status !== 'processing') || 
+      (status === 'processing' && showProcessing) || 
+      stats.pending > 0}
     <div
         class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-2 text-white shadow-lg transition-all duration-300 {statusConfig.class}"
         role="status"
         aria-live="polite"
     >
-        {#if status === 'processing' || status === 'pending'}
+        {#if (status === 'processing' && showProcessing) || status === 'pending'}
             <div class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
         {/if}
         <span class="text-sm">{statusConfig.message}</span>

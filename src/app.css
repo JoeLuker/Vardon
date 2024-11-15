@@ -1,153 +1,103 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Pirata+One&family=Bilbo+Swash+Caps&display=swap');
 
-/* Base Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer base {
-  html {
-    @apply bg-parchment text-ink scroll-smooth;
-  }
+	body {
+		@apply bg-yellow-50 overflow-x-hidden text-yellow-900;
+		background-image: url('https://images.unsplash.com/photo-1546484396-fb3fc6f95f98');
+		background-size: cover;
+		background-repeat: repeat;
+		background-attachment: fixed;
+	}
 
-  body {
-    @apply font-serif antialiased;
-  }
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		@apply font-pirata text-yellow-900;
+	}
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-serif text-primary;
-  }
+	input,
+	select,
+	textarea {
+		@apply bg-yellow-50/90 border border-yellow-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500;
+	}
+
+	button {
+		@apply transition-colors duration-200;
+	}
 }
 
-/* Component Base Styles */
 @layer components {
-  .card {
-    @apply relative overflow-hidden rounded-lg border border-primary/10 
-           bg-white/90 p-4 shadow-lg backdrop-blur-sm transition-all 
-           hover:shadow-xl animate-fade-in;
-  }
+	.parchment-cell {
+		@apply bg-yellow-50/95 p-4 rounded-lg shadow-md mb-4 border border-yellow-200/50 backdrop-blur-sm;
+	}
 
-  .input {
-    @apply w-full rounded-md border border-primary/20 bg-white/80 px-4 py-2 
-           shadow-sm backdrop-blur-sm transition-all duration-200 
-           placeholder:text-gray-400 focus:border-primary 
-           focus:outline-none focus:ring-2 focus:ring-primary/50;
-  }
+	.stat-label {
+		@apply font-pirata text-yellow-800 text-sm;
+	}
 
-  .btn {
-    @apply inline-flex items-center justify-center rounded-md bg-primary 
-           px-4 py-2 font-serif text-white shadow-sm transition-all 
-           duration-200 hover:bg-primary-dark focus:outline-none 
-           focus:ring-2 focus:ring-primary/50 active:translate-y-px 
-           disabled:opacity-50 disabled:cursor-not-allowed;
-  }
+	.stat-value {
+		@apply font-bold text-yellow-900 text-lg;
+	}
 
-  .btn-secondary {
-    @apply border-2 border-primary bg-transparent text-primary 
-           hover:bg-primary/10 disabled:border-primary/50 
-           disabled:text-primary/50;
-  }
+	.primary-button {
+		@apply bg-yellow-700 text-yellow-50 px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
 
-  .btn-danger {
-    @apply bg-accent hover:bg-accent-dark focus:ring-accent/50;
-  }
+	.secondary-button {
+		@apply bg-yellow-100 text-yellow-800 px-4 py-2 rounded hover:bg-yellow-200 border border-yellow-300;
+	}
 
-  .section-header {
-    @apply mb-6 flex items-center justify-between border-b-2 
-           border-primary/20 pb-3 text-2xl font-bold text-primary;
-  }
+	.danger-button {
+		@apply bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200 border border-red-300;
+	}
 
-  .stat-block {
-    @apply rounded-lg bg-white/50 p-4 shadow-sm transition-all 
-           duration-200 hover:bg-white/70;
-  }
+	.input-group {
+		@apply flex flex-col space-y-1;
+	}
 
-  .badge {
-    @apply inline-flex items-center rounded-full bg-primary/10 px-2.5 
-           py-0.5 text-xs font-medium text-primary;
-  }
+	.input-label {
+		@apply text-sm font-medium text-yellow-800;
+	}
 
-  .btn-xs {
-    @apply px-2 py-1 text-xs;
-  }
+	.badge {
+		@apply px-2 py-1 rounded-full text-xs font-medium;
+	}
 
-  .btn-sm {
-    @apply px-3 py-1.5 text-sm;
-  }
+	.badge-primary {
+		@apply bg-yellow-200 text-yellow-800;
+	}
 
-  .btn-icon {
-    @apply p-1.5 rounded-full hover:bg-primary/10 transition-colors;
-  }
+	.badge-secondary {
+		@apply bg-yellow-100 text-yellow-700;
+	}
 }
 
-/* Custom Scrollbar */
-@layer utilities {
-  .scrollbar-themed {
-    scrollbar-width: thin;
-    scrollbar-color: theme(colors.primary.DEFAULT) theme(colors.parchment.DEFAULT);
-  }
-
-  .scrollbar-themed::-webkit-scrollbar {
-    @apply w-2 h-2;
-  }
-
-  .scrollbar-themed::-webkit-scrollbar-track {
-    @apply bg-parchment rounded-full;
-  }
-
-  .scrollbar-themed::-webkit-scrollbar-thumb {
-    @apply bg-primary/50 rounded-full hover:bg-primary;
-  }
+:root {
+	--primary-color: #c19a6b;
+	--background-color: #2c1810;
+	--text-color: #2c1810;
+	--font-size-base: calc((1vw + 1vh) * 0.75);
 }
 
-/* Interactive Elements */
-@layer utilities {
-  .interactive {
-    @apply transition-all duration-200 hover:scale-105 active:scale-95;
-  }
-
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/50;
-  }
-
-  .hover-trigger .hover-target {
-    @apply opacity-0 transition-opacity duration-200;
-  }
-
-  .hover-trigger:hover .hover-target {
-    @apply opacity-100;
-  }
+/* Custom styles that can't be easily replicated with Tailwind */
+.checkbox-group input[type='checkbox'] {
+	appearance: none;
+	width: 1.25rem;
+	height: 1.25rem;
+	border: 2px solid var(--primary-color);
+	border-radius: 50%;
+	outline: none;
+	cursor: pointer;
+	vertical-align: middle;
 }
 
-/* Status Indicators */
-@layer utilities {
-  .status-dot {
-    @apply absolute -right-1 -top-1 h-3 w-3 rounded-full shadow-lg;
-  }
-
-  .status-dot-success {
-    @apply bg-green-500;
-  }
-
-  .status-dot-warning {
-    @apply bg-yellow-500;
-  }
-
-  .status-dot-error {
-    @apply bg-red-500;
-  }
-}
-
-/* Layout Utilities */
-@layer utilities {
-  .center-absolute {
-    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
-  }
-
-  .glass-effect {
-    @apply bg-white/80 backdrop-blur-sm;
-  }
-
-  .responsive-grid {
-    @apply grid gap-3;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  }
+.checkbox-group input[type='checkbox']:checked {
+	background-color: var(--primary-color);
 }

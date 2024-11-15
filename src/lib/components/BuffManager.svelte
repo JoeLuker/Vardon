@@ -170,8 +170,8 @@
                 class="group relative overflow-hidden rounded-lg border-2 p-4 text-left 
                        transition-all duration-300 focus:outline-none focus:ring-2
                        {isActive 
-                           ? 'border-primary bg-primary text-white' 
-                           : 'border-primary/20 hover:border-primary/50'} 
+                           ? 'border-primary-300 bg-primary-300 text-white' 
+                           : 'border-primary-300/20 hover:border-primary-300/50 bg-white'} 
                        {hasActiveConflict(buff) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-102'}"
                 onclick={() => handleBuffToggle(buff.name)}
                 disabled={updateState.status === 'syncing' || hasActiveConflict(buff)}
