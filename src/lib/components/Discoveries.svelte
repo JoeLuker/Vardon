@@ -1,14 +1,14 @@
 <script lang="ts">
     import { character } from '$lib/state/character.svelte';
-    import type { CharacterDiscovery } from '$lib/types/character';
+    import type { DatabaseCharacterDiscovery } from '$lib/types/character';
 
-    interface TransformedDiscovery extends CharacterDiscovery {
+    interface TransformedDiscovery extends DatabaseCharacterDiscovery {
         displayName: string;
     }
 
     // Transform discoveries for display
     let discoveryList = $derived(
-        (character.character_discoveries ?? []).map((discovery: CharacterDiscovery): TransformedDiscovery => ({
+        (character.character_discoveries ?? []).map((discovery: DatabaseCharacterDiscovery): TransformedDiscovery => ({
             ...discovery,
             displayName: discovery.discovery_name
                 .replace(/([A-Z])/g, ' $1')

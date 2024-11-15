@@ -3,7 +3,7 @@
     import { character } from '$lib/state/character.svelte';
     import { type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
-    import type { CharacterClassFeature } from '$lib/types/character';
+    import type { DatabaseCharacterClassFeature } from '$lib/types/character';
     import type { Json } from '$lib/types/supabase';
 
     let updateState = $state<UpdateState>({
@@ -12,7 +12,7 @@
     });
 
     let showAddModal = $state(false);
-    let editingFeature = $state<Partial<CharacterClassFeature> | null>(null);
+    let editingFeature = $state<Partial<DatabaseCharacterClassFeature> | null>(null);
 
     let featureList = $derived([...(character.character_class_features ?? [])].sort((a, b) => a.feature_level - b.feature_level));
 
@@ -49,13 +49,13 @@
 
             if (error) throw error;
 
-            const savedFeature = data as CharacterClassFeature;
+            const savedFeature = data as DatabaseCharacterClassFeature;
 
             if (character.character_class_features) {
                 if (isNew) {
                     character.character_class_features.push(savedFeature);
                 } else {
-                    const index = character.character_class_features.findIndex(f => f.id === savedFeature.id);
+                    const index = character.character_class_features.findIndex((f: DatabaseCharacterClassFeature) => f.id === savedFeature.id);
                     if (index >= 0) {
                         character.character_class_features[index] = savedFeature;
                     }
@@ -71,7 +71,7 @@
         }
     }
 
-    async function deleteFeature(feature: CharacterClassFeature) {
+    async function deleteFeature(feature: DatabaseCharacterClassFeature) {
         if (!confirm(`Are you sure you want to delete ${feature.feature_name}?`)) return;
 
         const previousFeatures = [...(character.character_class_features ?? [])];
@@ -86,7 +86,7 @@
 
             if (character.character_class_features) {
                 character.character_class_features = character.character_class_features.filter(
-                    f => f.id !== feature.id
+                    (f: DatabaseCharacterClassFeature) => f.id !== feature.id
                 );
             }
         } catch (err) {

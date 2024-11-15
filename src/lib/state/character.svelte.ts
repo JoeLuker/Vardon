@@ -1,31 +1,66 @@
 // src/lib/state/character.svelte.ts
 import { browser } from '$app/environment';
 import { supabase } from '$lib/supabaseClient';
+import type { Database } from '$lib/types/supabase';
 import type { 
     Character, 
-    AttributeKey, 
-    ConsumableKey,
-    CharacterBuff,
-    SpellSlot,
-    KnownSpell,
-    CharacterDiscovery,
-    CharacterClassFeature,
-    CharacterFeat,
-    CharacterExtract,
-    BaseSkill,
+    CharacterBuff, 
     CharacterSkillRank,
-    ClassSkillRelation
+    DatabaseBaseSkill,
+    DatabaseCharacterAttribute,
+    DatabaseClassSkillRelation,
+    DbTables,
+    SkillRankSource,
+    AttributeKey,
+    ConsumableKey
 } from '$lib/types/character';
-
-import { updateQueue } from '$lib/utils/updateQueue.svelte';
+import { 
+    isKnownBuff, 
+    isValidSkillRankSource 
+} from '$lib/types/character';
 import { createOptimisticUpdate, type OptimisticUpdateConfig } from '$lib/utils/optimisticUpdate';
+import { updateQueue } from '$lib/utils/updateQueue.svelte';
 
+type Tables = Database['public']['Tables']
+
+
+// Add these type aliases
+type DatabaseCharacterBuff = Tables['character_buffs']['Row'];
+type DatabaseCharacterSkillRank = Tables['character_skill_ranks']['Row'];
 // Single source of truth for character data
-const character = $state<Character & {
-    base_skills?: BaseSkill[];
-    character_skill_ranks?: CharacterSkillRank[];
-    class_skill_relations?: ClassSkillRelation[];
-}>({} as Character);
+const character = $state<Character>({
+    // Initialize with empty character data
+    id: 0,
+    name: '',
+    race: '',
+    class: '',
+    level: 1,
+    current_hp: 0,
+    max_hp: 0,
+    created_at: null,
+    updated_at: null,
+    last_synced_at: null,
+    is_offline: null,
+    user_id: null,
+    // Initialize all optional arrays
+    base_skills: [] as DatabaseBaseSkill[],
+    character_skill_ranks: [] as CharacterSkillRank[],
+    class_skill_relations: [] as DatabaseClassSkillRelation[],
+    character_attributes: [] as DatabaseCharacterAttribute[],
+    character_buffs: [] as CharacterBuff[],
+    character_combat_stats: [] as DbTables['character_combat_stats']['Row'][],
+    character_consumables: [] as DbTables['character_consumables']['Row'][],
+    character_spell_slots: [] as DbTables['character_spell_slots']['Row'][],
+    character_known_spells: [] as DbTables['character_known_spells']['Row'][],
+    character_class_features: [] as DbTables['character_class_features']['Row'][],
+    character_discoveries: [] as DbTables['character_discoveries']['Row'][],
+    character_feats: [] as DbTables['character_feats']['Row'][],
+    character_extracts: [] as DbTables['character_extracts']['Row'][],
+    character_favored_class_bonuses: [] as DbTables['character_favored_class_bonuses']['Row'][],
+    character_abp_bonuses: [] as DbTables['character_abp_bonuses']['Row'][],
+    character_corruption_manifestations: [] as DbTables['character_corruption_manifestations']['Row'][],
+    character_corruptions: [] as DbTables['character_corruptions']['Row'][]
+} satisfies Character);
 
 // Core update functions
 async function updateBombs(bombs: number) {
@@ -84,7 +119,7 @@ async function updateSpellSlot(level: number, remaining: number) {
     if (error) throw error;
 }
 
-async function updateExtract(extractId: number, updates: Omit<Partial<CharacterExtract>, 'id'>) {
+async function updateExtract(extractId: number, updates: Omit<Partial<Tables['character_extracts']['Row']>, 'id'>) {
     const { error } = await supabase
         .from('character_extracts')
         .update({
@@ -98,18 +133,30 @@ async function updateExtract(extractId: number, updates: Omit<Partial<CharacterE
     if (error) throw error;
 }
 
-function initializeCharacter(data: Character) {
+function initializeCharacter(data: Tables['characters']['Row'] & Partial<Character>) {
     if (!data) {
         throw new Error('Character data is required');
     }
     
-    // Ensure we're copying all the skill-related data with default empty arrays
-    Object.assign(character, {
+    const fullCharacter: Character = {
         ...data,
         base_skills: data.base_skills || [],
         character_skill_ranks: data.character_skill_ranks || [],
-        class_skill_relations: data.class_skill_relations || []
-    });
+        class_skill_relations: data.class_skill_relations || [],
+        character_attributes: data.character_attributes || [],
+        character_buffs: data.character_buffs || [],
+        character_combat_stats: data.character_combat_stats || [],
+        character_consumables: data.character_consumables || [],
+        character_spell_slots: data.character_spell_slots || [],
+        character_known_spells: data.character_known_spells || [],
+        character_class_features: data.character_class_features || [],
+        character_discoveries: data.character_discoveries || [],
+        character_feats: data.character_feats || [],
+        character_extracts: data.character_extracts || [],
+        character_favored_class_bonuses: data.character_favored_class_bonuses || []
+    };
+    
+    Object.assign(character, fullCharacter);
     
     if (browser) {
         return setupRealtimeSubscription(data.id);
@@ -170,10 +217,17 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.character_buffs) {
                 const index = character.character_buffs.findIndex(
-                    b => b.buff_type === (payload.new as CharacterBuff).buff_type
+                    b => b.buff_type === (payload.new as DatabaseCharacterBuff).buff_type
                 );
                 if (index >= 0) {
-                    character.character_buffs[index] = payload.new as CharacterBuff;
+                    // Assert the payload as CharacterBuff after validating buff_type
+                    const newBuff = payload.new as DatabaseCharacterBuff;
+                    if (isKnownBuff(newBuff.buff_type)) {
+                        character.character_buffs[index] = {
+                            ...newBuff,
+                            buff_type: newBuff.buff_type
+                        } as CharacterBuff;
+                    }
                 }
             }
         })
@@ -185,10 +239,10 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.base_skills) {
                 const index = character.base_skills.findIndex(
-                    s => s.id === (payload.new as BaseSkill).id
+                    s => s.id === (payload.new as Tables['base_skills']['Row']).id
                 );
                 if (index >= 0) {
-                    character.base_skills[index] = payload.new as BaseSkill;
+                    character.base_skills[index] = payload.new as Tables['base_skills']['Row'];
                 }
             }
         })
@@ -199,11 +253,17 @@ function setupRealtimeSubscription(characterId: number) {
             filter: `character_id=eq.${characterId}`
         }, (payload) => {
             if (character.character_skill_ranks) {
-                const index = character.character_skill_ranks.findIndex(
-                    s => s.skill_id === (payload.new as CharacterSkillRank).skill_id
-                );
-                if (index >= 0) {
-                    character.character_skill_ranks[index] = payload.new as CharacterSkillRank;
+                const newRank = payload.new as DatabaseCharacterSkillRank;
+                if (isValidSkillRankSource(newRank.source)) {
+                    const index = character.character_skill_ranks.findIndex(
+                        s => s.skill_id === newRank.skill_id
+                    );
+                    if (index >= 0) {
+                        character.character_skill_ranks[index] = {
+                            ...newRank,
+                            source: newRank.source
+                        } as CharacterSkillRank;
+                    }
                 }
             }
         })
@@ -216,10 +276,10 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.character_spell_slots) {
                 const index = character.character_spell_slots.findIndex(
-                    s => s.spell_level === (payload.new as SpellSlot).spell_level
+                    s => s.spell_level === (payload.new as Tables['character_spell_slots']['Row']).spell_level
                 );
                 if (index >= 0) {
-                    character.character_spell_slots[index] = payload.new as SpellSlot;
+                    character.character_spell_slots[index] = payload.new as Tables['character_spell_slots']['Row'];
                 }
             }
         })
@@ -232,10 +292,10 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.character_known_spells) {
                 const index = character.character_known_spells.findIndex(
-                    s => s.spell_name === (payload.new as KnownSpell).spell_name
+                    s => s.spell_name === (payload.new as Tables['character_known_spells']['Row']).spell_name
                 );
                 if (index >= 0) {
-                    character.character_known_spells[index] = payload.new as KnownSpell;
+                    character.character_known_spells[index] = payload.new as Tables['character_known_spells']['Row'];
                 }
             }
         })
@@ -248,10 +308,10 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.character_class_features) {
                 const index = character.character_class_features.findIndex(
-                    f => f.feature_name === (payload.new as CharacterClassFeature).feature_name
+                    f => f.feature_name === (payload.new as Tables['character_class_features']['Row']).feature_name
                 );
                 if (index >= 0) {
-                    character.character_class_features[index] = payload.new as CharacterClassFeature;
+                    character.character_class_features[index] = payload.new as Tables['character_class_features']['Row'];
                 }
             }
         })
@@ -264,10 +324,10 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.character_discoveries) {
                 const index = character.character_discoveries.findIndex(
-                    d => d.discovery_name === (payload.new as CharacterDiscovery).discovery_name
+                    d => d.discovery_name === (payload.new as Tables['character_discoveries']['Row']).discovery_name
                 );
                 if (index >= 0) {
-                    character.character_discoveries[index] = payload.new as CharacterDiscovery;
+                    character.character_discoveries[index] = payload.new as Tables['character_discoveries']['Row'];
                 }
             }
         })
@@ -280,10 +340,10 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (character.character_feats) {
                 const index = character.character_feats.findIndex(
-                    f => f.feat_name === (payload.new as CharacterFeat).feat_name
+                    f => f.feat_name === (payload.new as Tables['character_feats']['Row']).feat_name
                 );
                 if (index >= 0) {
-                    character.character_feats[index] = payload.new as CharacterFeat;
+                    character.character_feats[index] = payload.new as Tables['character_feats']['Row'];
                 }
             }
         })
@@ -297,24 +357,42 @@ function setupRealtimeSubscription(characterId: number) {
             if (character.class_skill_relations) {
                 switch (payload.eventType) {
                     case 'INSERT':
-                        character.class_skill_relations.push(payload.new as ClassSkillRelation);
+                        character.class_skill_relations.push(payload.new as Tables['class_skill_relations']['Row']);
                         break;
                     case 'UPDATE':
                         const updateIndex = character.class_skill_relations.findIndex(
-                            relation => relation.id === (payload.new as ClassSkillRelation).id
+                            relation => relation.id === (payload.new as Tables['class_skill_relations']['Row']).id
                         );
                         if (updateIndex >= 0) {
-                            character.class_skill_relations[updateIndex] = payload.new as ClassSkillRelation;
+                            character.class_skill_relations[updateIndex] = payload.new as Tables['class_skill_relations']['Row'];
                         }
                         break;
                     case 'DELETE':
                         const deleteIndex = character.class_skill_relations.findIndex(
-                            relation => relation.id === (payload.old as ClassSkillRelation).id
+                            relation => relation.id === (payload.old as Tables['class_skill_relations']['Row']).id
                         );
                         if (deleteIndex >= 0) {
                             character.class_skill_relations.splice(deleteIndex, 1);
                         }
                         break;
+                }
+            }
+        })
+        // Add FCB subscription
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'character_favored_class_bonuses',
+            filter: `character_id=eq.${characterId}`
+        }, (payload) => {
+            if (character.character_favored_class_bonuses) {
+                const index = character.character_favored_class_bonuses.findIndex(
+                    fcb => fcb.level === (payload.new as Tables['character_favored_class_bonuses']['Row']).level
+                );
+                if (index >= 0) {
+                    character.character_favored_class_bonuses[index] = payload.new as Tables['character_favored_class_bonuses']['Row'];
+                } else {
+                    character.character_favored_class_bonuses.push(payload.new as Tables['character_favored_class_bonuses']['Row']);
                 }
             }
         })
@@ -343,6 +421,10 @@ export async function enqueueCharacterUpdate<T>({
 
 // Add new skill data fetching function
 async function fetchSkillData(characterId: number) {
+    if (!character.class) {
+        throw new Error('Character class is required');
+    }
+
     const [baseSkillsResult, skillRanksResult, classSkillsResult] = await Promise.all([
         supabase.from('base_skills').select('*'),
         supabase.from('character_skill_ranks').select('*').eq('character_id', characterId),
@@ -354,7 +436,13 @@ async function fetchSkillData(characterId: number) {
     if (classSkillsResult.error) throw classSkillsResult.error;
 
     character.base_skills = baseSkillsResult.data;
-    character.character_skill_ranks = skillRanksResult.data;
+    // Convert and validate the skill ranks
+    character.character_skill_ranks = skillRanksResult.data
+        .filter(rank => isValidSkillRankSource(rank.source))
+        .map(rank => ({
+            ...rank,
+            source: rank.source as SkillRankSource
+        }));
     character.class_skill_relations = classSkillsResult.data;
 }
 
@@ -382,6 +470,22 @@ async function toggleBuff(buffType: string, isActive: boolean) {
     if (error) throw error;
 }
 
+async function fetchCharacterData(characterId: number) {
+    // ... existing fetches ...
+
+    // Add FCB fetch
+    const fcbResult = await supabase
+        .from('character_favored_class_bonuses')
+        .select('*')
+        .eq('character_id', characterId);
+
+    if (fcbResult.error) throw fcbResult.error;
+    
+    // Update character state
+    character.character_favored_class_bonuses = fcbResult.data as Tables['character_favored_class_bonuses']['Row'][];
+
+}
+
 // Export only what's necessary
 export { 
     character,
@@ -396,5 +500,6 @@ export {
     fetchSkillData,
     isClassSkill,
     getSkillRanks,
-    toggleBuff
+    toggleBuff,
+    fetchCharacterData
 };

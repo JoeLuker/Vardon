@@ -1,158 +1,496 @@
 <script lang="ts">
-    import { updateQueue } from '$lib/utils/updateQueue.svelte';
-    import type { BaseSkill } from '$lib/types/character';
+    import { character } from '$lib/state/character.svelte';
+    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
+    import { getABPBonuses } from '$lib/types/abp';
+    import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/types/character';
+    import { supabase } from '$lib/supabaseClient';
+    import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+	import { onMount } from 'svelte';
 
-    type SkillGrid = Record<number, boolean[]>;
-
-    interface EnhancedSkill extends BaseSkill {
-        ranks: number;
-        isClassSkill: boolean;
-    }
-
-    let { characterId, skills, pointsPerLevel = 9, classLevel = 5, onSave } = $props<{
-        characterId: number;
-        skills: EnhancedSkill[];
-        pointsPerLevel?: number;
-        classLevel?: number;
-        onSave: (skillRanks: Record<number, number>) => Promise<void>;
+    let { onClose } = $props<{
+        onClose: () => void;
     }>();
 
-    let skillGrid = $state<SkillGrid>({});
+    let pendingChanges = $state<Required<Pick<CharacterSkillRank, 'skill_id' | 'ranks' | 'applied_at_level' | 'source'>>[]>([]);
     let isSaving = $state(false);
-
-    // Initialize the grid when skills change
-    $effect(() => {
-        skillGrid = skills.reduce((grid: SkillGrid, skill: EnhancedSkill) => {
-            grid[skill.id] = Array(classLevel)
-                .fill(false)
-                .map((_, i) => i < skill.ranks);
-            return grid;
-        }, {});
+    let updateState = $state<UpdateState>({ 
+        status: 'idle' as const, 
+        error: null 
     });
 
-    // Calculate points used per level
-    let pointsUsedByLevel = $derived.by(() => {
-        return Array(classLevel)
-            .fill(0)
-            .map((_, level) => 
-                Object.values(skillGrid).reduce((sum, skillLevels) => 
-                    sum + (skillLevels[level] ? 1 : 0), 0)
+    let stats = $derived(calculateCharacterStats(
+        character,
+        getABPBonuses(character.level)
+    ));
+
+    // Add new reactive variable for mobile view
+    let isMobileView = $state(false);
+
+    // Add window resize handler
+    function handleResize() {
+        isMobileView = window.innerWidth < 768;
+    }
+
+    onMount(() => {
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    });
+
+    function canAddRankAtLevel(skillName: string, level: number): boolean {
+        const skillData = stats.skills.byName[skillName];
+        if (!skillData) return false;
+
+        // Check if we have points available at this level
+        const levelData = stats.skills.byLevel[level];
+        if (!levelData || levelData.remaining <= 0) return false;
+
+        // Check if total ranks would exceed character level
+        const currentRanks = skillData.ranks.byLevel[level]?.reduce(
+            (sum: number, rank: { ranks: number }) => sum + rank.ranks, 
+            0
+        ) ?? 0;
+        
+        return currentRanks < level;
+    }
+
+    function handleRankChange(skillName: string, level: number, checked: boolean) {
+        if (checked && !canAddRankAtLevel(skillName, level)) return;
+
+        const skill = character.base_skills?.find(s => s.name === skillName);
+        if (!skill) return;
+
+        if (checked) {
+            // Add new rank
+            const newRank: Required<Pick<CharacterSkillRank, 'skill_id' | 'ranks' | 'applied_at_level' | 'source'>> = {
+                skill_id: skill.id,
+                applied_at_level: level,
+                ranks: 1,
+                source: SKILL_RANK_SOURCES.CLASS
+            };
+            pendingChanges = [...pendingChanges, newRank];
+        } else {
+            // Remove rank
+            pendingChanges = pendingChanges.filter(change => 
+                !(change.skill_id === skill.id && 
+                  change.applied_at_level === level)
             );
-    });
-
-    let isLevelFull = $derived(pointsUsedByLevel.map(points => points >= pointsPerLevel));
-    let totalPointsUsed = $derived(pointsUsedByLevel.reduce((sum, points) => sum + points, 0));
-
-    function toggleSkill(skillId: number, level: number) {
-        if (!skillGrid[skillId]) return;
-
-        const currentValue = skillGrid[skillId][level];
-        if (!currentValue && isLevelFull[level]) return;
-
-        const newLevels = [...skillGrid[skillId]];
-        newLevels[level] = !currentValue;
-        skillGrid[skillId] = newLevels;
+        }
     }
 
     async function handleSave() {
+        if (isSaving) return;
         isSaving = true;
-        const newRanks = Object.entries(skillGrid).reduce((acc, [skillId, levels]) => {
-            acc[Number(skillId)] = levels.filter(Boolean).length;
-            return acc;
-        }, {} as Record<number, number>);
 
-        const previousGrid = { ...skillGrid };
+        await executeUpdate({
+            key: `skills-${character.id}`,
+            status: updateState,
+            operation: async () => {
+                // First, delete existing class-sourced ranks
+                const { error: deleteError } = await supabase
+                    .from('character_skill_ranks')
+                    .delete()
+                    .eq('character_id', character.id)
+                    .eq('source', SKILL_RANK_SOURCES.CLASS);
 
-        try {
-            await updateQueue.enqueue({
-                key: `skill-allocation-${characterId}`,
-                execute: async () => {
-                    await onSave(newRanks);
-                },
-                optimisticUpdate: () => {
-                    // Update is handled in parent component
-                },
-                rollback: () => {
-                    skillGrid = previousGrid;
+                if (deleteError) throw deleteError;
+
+                // Then insert all new ranks
+                if (pendingChanges.length > 0) {
+                    const { error: insertError } = await supabase
+                        .from('character_skill_ranks')
+                        .insert(pendingChanges.map(update => ({
+                            ...update,
+                            character_id: character.id
+                        })));
+
+                    if (insertError) throw insertError;
                 }
-            });
-        } finally {
-            isSaving = false;
-        }
+            },
+            optimisticUpdate: () => {
+                if (character.character_skill_ranks) {
+                    character.character_skill_ranks = character.character_skill_ranks.filter(
+                        rank => rank.source !== SKILL_RANK_SOURCES.CLASS
+                    );
+
+                    character.character_skill_ranks.push(...pendingChanges.map(update => ({
+                        ...update,
+                        character_id: character.id,
+                        id: -1,
+                        created_at: null,
+                        updated_at: new Date().toISOString(),
+                        sync_status: 'pending'
+                    } satisfies CharacterSkillRank)));
+                }
+            },
+            rollback: () => {
+                // Rollback handled by executeUpdate
+            }
+        });
+
+        onClose();
     }
 </script>
 
-<div class="space-y-4">
-    <div class="flex justify-between items-center border-b border-gray-200 pb-4">
-        <h2 class="text-xl font-bold">Allocate Skill Points</h2>
-        <div class="text-sm text-gray-600">
-            Total Points Used: {totalPointsUsed} / {pointsPerLevel * classLevel}
-        </div>
-    </div>
-
-    <div class="overflow-auto max-h-[60vh]">
-        <table class="w-full border-collapse">
-            <thead class="sticky top-0 bg-white z-10">
-                <tr>
-                    <th class="text-left p-2">Skill</th>
-                    {#each Array(classLevel) as _, level}
-                        <th class="p-2 text-center">
-                            <div>Level {level + 1}</div>
-                            <div class="text-sm {pointsUsedByLevel[level] === pointsPerLevel ? 'text-red-500' : 'text-gray-600'}">
-                                {pointsUsedByLevel[level]}/{pointsPerLevel}
-                            </div>
-                        </th>
-                    {/each}
-                </tr>
-            </thead>
-            <tbody>
-                {#each skills as skill}
-                    {@const isClassSkill = skill.isClassSkill}
-                    <tr class:bg-primary={isClassSkill}>
-                        <td class="p-2">
-                            <div>{skill.name}</div>
-                            <div class="text-xs space-x-2">
-                                <span class="text-gray-500">({skill.ability.toUpperCase()})</span>
-                                {#if isClassSkill}
-                                    <span class="text-primary">Class Skill</span>
-                                {/if}
-                                {#if skill.trained_only}
-                                    <span class="text-warning">Trained Only</span>
-                                {/if}
-                                {#if skill.armor_check_penalty}
-                                    <span class="text-error">Armor Check</span>
+<div class="skill-allocator">
+    {#if isMobileView}
+        <div class="mobile-view">
+            {#each character.base_skills ?? [] as skill}
+                {@const skillData = stats.skills.byName[skill.name]}
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <h3>{skill.name}</h3>
+                        <div class="skill-meta">
+                            <span>Ability: {skill.ability}</span>
+                            {#if skillData.classSkill}
+                                <span class="class-skill">Class Skill</span>
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="level-grid">
+                        {#each Array(character.level) as _, level}
+                            {@const levelNum = level + 1}
+                            {@const existingRanks = skillData.ranks.byLevel[levelNum] ?? []}
+                            <div class="level-item">
+                                <label>
+                                    <span>Lvl {levelNum}</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={existingRanks.length > 0}
+                                        disabled={!canAddRankAtLevel(skill.name, levelNum)}
+                                        onchange={(e) => handleRankChange(
+                                            skill.name,
+                                            levelNum,
+                                            e.currentTarget.checked
+                                        )}
+                                    />
+                                </label>
+                                {#if existingRanks.length > 0}
+                                    <small class="rank-source">
+                                        ({existingRanks.map((r: { source: string }) => r.source).join(', ')})
+                                    </small>
                                 {/if}
                             </div>
-                        </td>
-                        {#each Array(classLevel) as _, level}
-                            {@const isSelected = skillGrid[skill.id]?.[level]}
-                            {@const isDisabled = !isSelected && isLevelFull[level]}
-                            <td class="p-2 text-center">
-                                <button
-                                    type="button"
-                                    class="w-6 h-6 rounded border-2 transition-colors {isSelected ? 'bg-primary border-primary' : 'border-primary'} {isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-dark'}"
-                                    onclick={() => toggleSkill(skill.id, level)}
-                                    disabled={isDisabled}
-                                    aria-label="{isSelected ? 'Remove' : 'Add'} rank at level {level + 1}"
-                                ></button>
-                            </td>
                         {/each}
+                    </div>
+                    <div class="skill-footer">
+                        <span>Total: {skillData.total}</span>
+                    </div>
+                </div>
+            {/each}
+        </div>
+    {:else}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sticky-col">Skill</th>
+                        <th class="sticky-col">Ability</th>
+                        <th class="sticky-col">Class</th>
+                        {#each Array(character.level) as _, level}
+                            <th>
+                                Level {level + 1}
+                                <div class="points-info">
+                                    ({stats.skills.byLevel[level + 1].used}/{stats.skills.byLevel[level + 1].available})
+                                </div>
+                            </th>
+                        {/each}
+                        <th>Total</th>
                     </tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    {#each character.base_skills ?? [] as skill}
+                        {@const skillData = stats.skills.byName[skill.name]}
+                        <tr>
+                            <td class="sticky-col">{skill.name}</td>
+                            <td class="sticky-col">{skill.ability}</td>
+                            <td class="sticky-col">{skillData.classSkill ? '✓' : ''}</td>
+                            {#each Array(character.level) as _, level}
+                                {@const levelNum = level + 1}
+                                {@const existingRanks = skillData.ranks.byLevel[levelNum] ?? []}
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={existingRanks.length > 0}
+                                        disabled={!canAddRankAtLevel(skill.name, levelNum)}
+                                        onchange={(e) => handleRankChange(
+                                            skill.name, 
+                                            levelNum, 
+                                            e.currentTarget.checked
+                                        )}
+                                    />
+                                    {#if existingRanks.length > 0}
+                                        <span class="rank-source">
+                                            ({existingRanks.map((r: { source: string }) => r.source).join(', ')})
+                                        </span>
+                                    {/if}
+                                </td>
+                            {/each}
+                            <td>{skillData.total}</td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </div>
+    {/if}
 
-    <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
-        <button class="btn btn-secondary" onclick={() => onSave({})}> Cancel </button>
-        <button
-            class="btn flex items-center gap-2"
+    <div class="actions">
+        <button 
+            disabled={pendingChanges.length === 0 || isSaving}
             onclick={handleSave}
-            disabled={isSaving}>
+        >
             {#if isSaving}
-                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div class="spinner"></div>
             {/if}
-            Save Changes
+            {isSaving ? 'Saving...' : 'Save Changes'}
+        </button>
+        <button 
+            class="btn btn-secondary" 
+            onclick={onClose}
+            disabled={isSaving || updateState.status === 'syncing'}
+        >
+            Cancel
         </button>
     </div>
+
+    {#if updateState.error}
+        <div class="error">
+            Failed to save changes. Please try again.
+        </div>
+    {/if}
 </div>
+
+<style>
+    .skill-allocator {
+        width: 100%;
+        max-width: 100%;
+        position: relative;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .table-container {
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: auto;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-border, #ddd);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        flex: 1;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-background, white);
+    }
+
+    th, td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border, #ddd);
+        white-space: nowrap;
+    }
+
+    th {
+        background: var(--color-background-alt, #f5f5f5);
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        box-shadow: 0 1px 0 var(--color-border, #ddd);
+    }
+
+    .sticky-col {
+        position: sticky;
+        left: 0;
+        background: var(--color-background, white);
+        z-index: 2;
+    }
+
+    /* Update first column width and add text handling */
+    td.sticky-col:nth-child(1),
+    th.sticky-col:nth-child(1) {
+        left: 0;
+        min-width: 240px; /* Increased from 160px */
+        width: 240px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    td.sticky-col:nth-child(2),
+    th.sticky-col:nth-child(2) {
+        left: 240px; /* Updated to match new first column width */
+        min-width: 100px;
+        width: 100px;
+    }
+
+    td.sticky-col:nth-child(3),
+    th.sticky-col:nth-child(3) {
+        left: 340px; /* Updated to account for new first column width */
+        min-width: 80px;
+        width: 80px;
+    }
+
+    th.sticky-col {
+        z-index: 3;
+        background: var(--color-background-alt, #f5f5f5);
+    }
+
+    tr:hover .sticky-col {
+        background: var(--color-background-hover, #f9f9f9);
+    }
+
+    .points-info {
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #666);
+        margin-top: 0.25rem;
+        white-space: nowrap;
+    }
+
+    .actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .error {
+        margin-top: 1rem;
+        color: var(--color-error, #dc2626);
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        background: var(--color-error-bg, #fef2f2);
+        border: 1px solid var(--color-error-border, #fecaca);
+    }
+
+    .spinner {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Add some responsive behavior */
+    @media (max-width: 768px) {
+        .table-container {
+            border-radius: 0;
+            border-left: 0;
+            border-right: 0;
+        }
+    }
+
+    /* Add mobile styles */
+    .mobile-view {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+    .skill-card {
+        background: var(--color-background, white);
+        border: 1px solid var(--color-border, #ddd);
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .skill-header {
+        margin-bottom: 1rem;
+    }
+
+    .skill-header h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+
+    .skill-meta {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--color-text-muted, #666);
+    }
+
+    .class-skill {
+        color: var(--color-success, #16a34a);
+    }
+
+    .level-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .level-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .level-item label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .level-item span {
+        font-size: 0.875rem;
+    }
+
+    .level-item small {
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #666);
+    }
+
+    .skill-footer {
+        font-weight: 500;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--color-border, #ddd);
+    }
+
+    /* Update responsive styles */
+    @media (max-width: 768px) {
+        .skill-allocator {
+            height: calc(100vh - 4rem);
+            max-height: none;
+        }
+
+        .actions {
+            position: sticky;
+            bottom: 0;
+            background: var(--color-background, white);
+            padding: 1rem;
+            border-top: 1px solid var(--color-border, #ddd);
+            margin-top: 0;
+        }
+    }
+</style>

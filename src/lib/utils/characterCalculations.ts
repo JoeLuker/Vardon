@@ -3,11 +3,19 @@ import type {
   Character, 
   CharacterAttributes, 
   KnownBuffType,
-  BaseSkill,
-  CharacterEquipment,
+  CharacterSkillRank,
+  DbTables,
   CharacterEquipmentProperties
 } from '$lib/types/character';
 import type { ABPBonuses } from '$lib/types/abp';
+import type { Buff, BuffEffect } from '$lib/types/buffs';
+import { BUFF_CONFIG } from '$lib/config/buffs';
+
+// Use types from Database
+type CharacterABPBonus = DbTables['character_abp_bonuses']['Row'];
+type CharacterEquipment = DbTables['character_equipment']['Row'];
+type CharacterDiscovery = DbTables['character_discoveries']['Row'];
+type BaseSkill = DbTables['base_skills']['Row'];
 
 // Types for calculated stats
 export interface CalculatedStats {
@@ -50,14 +58,22 @@ export interface CalculatedStats {
           will: number;
       };
   };
-  skills: Record<string, {
+  skills: {
+    byName: Record<string, {
+	  ability: any;
       total: number;
-      ranks: number;
+      ranks: SkillRanksByLevel;
       abilityMod: number;
       classSkill: boolean;
       miscMod: number;
       armorCheckPenalty: number;
-  }>;
+    }>;
+    byLevel: Record<number, {
+      available: number;
+      used: number;
+      remaining: number;
+    }>;
+  };
   resources: {
       bombs: {
           perDay: number;
@@ -78,6 +94,14 @@ export function getAbilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }
 
+// Helper function to get ABP bonus value
+function getABPBonus(
+    abpBonuses: CharacterABPBonus[] | undefined,
+    bonusType: CharacterABPBonus['bonus_type']
+): number {
+    return abpBonuses?.find(b => b.bonus_type === bonusType)?.value ?? 0;
+}
+
 // Calculate all attribute-related values
 function calculateAttributes(
   character: Character,
@@ -87,23 +111,24 @@ function calculateAttributes(
       str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10
   };
 
-  // Calculate permanent bonuses (from items, feats, etc.)
+  // Calculate permanent bonuses (from ABP)
   const permanent = { ...baseAttributes };
-  // Add permanent bonuses here when implemented
+  const mentalProwessBonus = getABPBonus(character.character_abp_bonuses, 'mental_prowess');
+  
+  if (mentalProwessBonus > 0) {
+      permanent.int += mentalProwessBonus;
+  }
 
   // Calculate temporary bonuses from active buffs
   const temporary = { ...permanent };
-  activeBuffs.forEach(buff => {
-      switch(buff) {
-          case 'cognatogen':
-              temporary.int += 4;
-              temporary.str -= 2;
-              break;
-          case 'dex_mutagen':
-              temporary.dex += 4;
-              temporary.wis -= 2;
-              break;
-          // Add other buff effects
+  activeBuffs.forEach(buffName => {
+      const buff = BUFF_CONFIG.find((b: Buff) => b.name === buffName);
+      if (buff) {
+          buff.effects.forEach((effect: BuffEffect) => {
+              if (effect.attribute && effect.modifier) {
+                  temporary[effect.attribute as keyof CharacterAttributes] += effect.modifier;
+              }
+          });
       }
   });
 
@@ -111,7 +136,7 @@ function calculateAttributes(
   const permanentModifiers = Object.entries(permanent).reduce(
       (acc, [key, value]) => ({
           ...acc,
-          [key]: getAbilityModifier(value)
+          [key]: getAbilityModifier(value as number)
       }),
       {} as CharacterAttributes
   );
@@ -119,7 +144,7 @@ function calculateAttributes(
   const temporaryModifiers = Object.entries(temporary).reduce(
       (acc, [key, value]) => ({
           ...acc,
-          [key]: getAbilityModifier(value)
+          [key]: getAbilityModifier(value as number)
       }),
       {} as CharacterAttributes
   );
@@ -177,13 +202,26 @@ function calculateDefenses(
   activeBuffs: KnownBuffType[],
   abpBonuses: ABPBonuses
 ): CalculatedStats['defenses'] {
+  let naturalArmorBonus = 0;
+  
+  // Calculate natural armor bonus from active mutagens/cognatogens
+  activeBuffs.forEach(buffName => {
+      const buff = BUFF_CONFIG.find((b: Buff) => b.name === buffName);
+      if (buff) {
+          const naturalArmorEffect = buff.effects.find((e: BuffEffect) => 'naturalArmor' in e);
+          if (naturalArmorEffect?.naturalArmor) {
+              naturalArmorBonus = Math.max(naturalArmorBonus, naturalArmorEffect.naturalArmor);
+          }
+      }
+  });
+
   const mods = calculateCombatMods(activeBuffs);
 
   return {
       ac: {
-          normal: 10 + attributes.modifiers.temporary.dex + mods.ac.normal + abpBonuses.armor,
-          touch: 10 + attributes.modifiers.temporary.dex + mods.ac.touch,
-          flatFooted: 10 + mods.ac.flatFooted + abpBonuses.armor
+          normal: 10 + attributes.modifiers.temporary.dex + mods.ac.normal + abpBonuses.armor + naturalArmorBonus,
+          touch: 10 + attributes.modifiers.temporary.dex + mods.ac.touch + naturalArmorBonus,
+          flatFooted: 10 + mods.ac.flatFooted + abpBonuses.armor + naturalArmorBonus
       },
       saves: {
           fortitude: 2 + attributes.modifiers.temporary.con + mods.saves.fort + abpBonuses.resistance,
@@ -193,50 +231,149 @@ function calculateDefenses(
   };
 }
 
-// Calculate all skill-related values
+// Add new interface for tracking ranks by level
+interface SkillRanksByLevel {
+    total: number;
+    byLevel: Record<number, {
+        ranks: number;
+        source: string;
+    }[]>;
+}
+
+// Helper to get ranks up to a specific level
+function getRanksUpToLevel(
+    skillRanks: CharacterSkillRank[] | undefined,
+    skillId: number,
+    level: number
+): SkillRanksByLevel {
+    const ranks = skillRanks?.filter(rank => 
+        rank.skill_id === skillId && 
+        rank.applied_at_level <= level
+    ) ?? [];
+
+    const byLevel: Record<number, { ranks: number; source: string; }[]> = {};
+    let total = 0;
+
+    // Initialize all levels
+    for (let i = 1; i <= level; i++) {
+        byLevel[i] = [];
+    }
+
+    // Group ranks by level
+    ranks.forEach(rank => {
+        byLevel[rank.applied_at_level].push({
+            ranks: rank.ranks,
+            source: rank.source
+        });
+        total += rank.ranks;
+    });
+
+    return { total, byLevel };
+}
+
+// Update the skills interface
+export interface CalculatedStats {
+    skills: {
+        byName: Record<string, {
+            ability: any; // Changed from string to any to match the error message
+            total: number;
+            ranks: SkillRanksByLevel;
+            abilityMod: number;
+            classSkill: boolean;
+            miscMod: number;
+            armorCheckPenalty: number;
+        }>;
+        byLevel: Record<number, {
+            available: number;
+            used: number;
+            remaining: number;
+        }>;
+    };
+    // ... rest of the interface
+}
+
+// Update the skills calculation
 function calculateSkills(
-  character: Character,
-  attributes: CalculatedStats['attributes']
+    character: Character,
+    attributes: CalculatedStats['attributes']
 ): CalculatedStats['skills'] {
-  const skills: CalculatedStats['skills'] = {};
+    const skillsByName: CalculatedStats['skills']['byName'] = {};
+    const skillsByLevel: CalculatedStats['skills']['byLevel'] = {};
 
-  if (!character.base_skills) return skills;
+    if (!character.base_skills) {
+        return { byName: skillsByName, byLevel: skillsByLevel };
+    }
 
-  character.base_skills.forEach(baseSkill => {
-      const skillRank = character.character_skill_ranks?.find(
-          rank => rank.skill_id === baseSkill.id
-      );
-      const isClassSkill = character.class_skill_relations?.some(
-          relation => relation.skill_id === baseSkill.id
-      ) ?? false;
-      const abilityMod = attributes.modifiers.permanent[
-          baseSkill.ability.toLowerCase() as keyof CharacterAttributes
-      ];
-      const ranks = skillRank?.ranks ?? 0;
-      const classSkillBonus = (isClassSkill && ranks > 0) ? 3 : 0;
-      
-      const armorCheckPenalty = baseSkill.armor_check_penalty ? 
-          calculateArmorCheckPenalty(character.character_equipment) : 0;
-          
-      const miscMod = calculateMiscSkillModifiers(
-          character.character_equipment,
-          character.character_feats,
-          baseSkill.name
-      );
+    // Calculate available points for each level
+    for (let level = 1; level <= character.level; level++) {
+        const basePoints = 4; // Alchemist base
+        const intBonus = Math.floor((attributes.permanent.int - 10) / 2);
+        const fcbPoint = character.character_favored_class_bonuses?.some(
+            (fcb: DbTables['character_favored_class_bonuses']['Row']) => 
+                fcb.level === level && fcb.choice === 'skill'
+        ) ? 1 : 0;
 
-      const total = ranks + abilityMod + classSkillBonus + miscMod + armorCheckPenalty;
+        skillsByLevel[level] = {
+            available: Math.max(1, basePoints + intBonus + fcbPoint),
+            used: 0,
+            remaining: 0 // Will calculate after counting used points
+        };
+    }
 
-      skills[baseSkill.name] = {
-          total,
-          ranks,
-          abilityMod,
-          classSkill: isClassSkill,
-          miscMod,
-          armorCheckPenalty
-      };
-  });
+    // Calculate skill totals and track ranks by level
+    character.base_skills.forEach(baseSkill => {
+        const rankInfo = getRanksUpToLevel(
+            character.character_skill_ranks,
+            baseSkill.id,
+            character.level
+        );
+        
+        const isClassSkill = character.class_skill_relations?.some(
+            relation => relation.skill_id === baseSkill.id
+        ) ?? false;
 
-  return skills;
+        const abilityMod = attributes.modifiers.permanent[
+            baseSkill.ability.toLowerCase() as keyof CharacterAttributes
+        ];
+
+        const classSkillBonus = (isClassSkill && rankInfo.total > 0) ? 3 : 0;
+        
+        const armorCheckPenalty = baseSkill.armor_check_penalty ? 
+            calculateArmorCheckPenalty(character.character_equipment) : 0;
+            
+        const miscMod = calculateMiscSkillModifiers(
+            character.character_equipment,
+            character.character_feats,
+            baseSkill.name
+        );
+
+        // Add up ranks used at each level
+        Object.entries(rankInfo.byLevel).forEach(([level, ranksAtLevel]) => {
+            const totalRanksAtLevel = ranksAtLevel.reduce((sum, r) => sum + r.ranks, 0);
+            skillsByLevel[Number(level)].used += totalRanksAtLevel;
+        });
+
+        const total = rankInfo.total + abilityMod + classSkillBonus + miscMod + armorCheckPenalty;
+
+        skillsByName[baseSkill.name] = {
+            total,
+            ranks: rankInfo,
+            abilityMod,
+            classSkill: isClassSkill,
+            ability: baseSkill.ability,
+            miscMod,
+            armorCheckPenalty
+        };
+    });
+
+    // Calculate remaining points for each level
+    Object.keys(skillsByLevel).forEach(level => {
+        const lvl = Number(level);
+        skillsByLevel[lvl].remaining = 
+            skillsByLevel[lvl].available - skillsByLevel[lvl].used;
+    });
+
+    return { byName: skillsByName, byLevel: skillsByLevel };
 }
 
 // Calculate resource-related values
@@ -244,7 +381,8 @@ function calculateResources(
   character: Character,
   attributes: CalculatedStats['attributes']
 ): CalculatedStats['resources'] {
-  const intModifier = attributes.modifiers.permanent.int;
+  // Use temporary int modifier for bombs (includes cognatogen)
+  const intModifier = attributes.modifiers.temporary.int;
   const level = character.level;
 
   return {
@@ -252,7 +390,7 @@ function calculateResources(
           perDay: level + intModifier,
           remaining: character.character_combat_stats?.[0]?.bombs_left ?? 0,
           damage: `${Math.ceil(level/2)}d6 + ${intModifier}`,
-          splash: intModifier
+          splash: Math.ceil(level/2) + intModifier
       },
       extracts: Object.fromEntries(
           Array.from({ length: 6 }, (_, i) => i + 1).map(level => [
@@ -335,23 +473,25 @@ function calculateExtractsPerDay(characterLevel: number, intModifier: number, ex
 }
 
 function calculateMiscSkillModifiers(
-  equipment: CharacterEquipment[] = [],
-  feats: any[] = [],
+  equipment: DbTables['character_equipment']['Row'][] = [],
+  feats: DbTables['character_feats']['Row'][] = [],
   skillName: string
 ): number {
   let modifier = 0;
 
   // Add equipment bonuses
   equipment.forEach(item => {
-      if (item.equipped && item.properties?.skill_bonus?.skill === skillName) {
-          modifier += item.properties.skill_bonus.value;
+      const props = item.properties as CharacterEquipmentProperties;
+      if (item.equipped && props?.skill_bonus?.skill === skillName) {
+          modifier += props.skill_bonus.value;
       }
   });
 
   // Add feat bonuses
   feats.forEach(feat => {
-      if (feat.properties?.skill_bonus?.skill === skillName) {
-          modifier += feat.properties.skill_bonus.value;
+      const props = feat.properties as CharacterEquipmentProperties;
+      if (props?.skill_bonus?.skill === skillName) {
+          modifier += props.skill_bonus.value;
       }
   });
 
@@ -363,13 +503,21 @@ export function calculateSkillBonus(
     ranks: number, 
     isClassSkill: boolean,
     abilityModifiers: CharacterAttributes,
-    armorCheckPenalty: number = 0
+    armorCheckPenalty: number = 0,
+    character: Character
 ): number {
     const abilityMod = abilityModifiers[skill.ability.toLowerCase() as keyof CharacterAttributes];
     const classSkillBonus = (isClassSkill && ranks > 0) ? 3 : 0;
     const armorPenalty = skill.armor_check_penalty ? armorCheckPenalty : 0;
     
-    return ranks + abilityMod + classSkillBonus + armorPenalty;
+    // Add Perfect Recall bonus for Mindchemist on Knowledge checks
+    const perfectRecallBonus = 
+        character.archetype === 'mindchemist' && 
+        character.level >= 2 && 
+        skill.name.startsWith('Knowledge') ? 
+            abilityMod : 0;
+    
+    return ranks + abilityMod + perfectRecallBonus + classSkillBonus + armorPenalty;
 }
 
 interface CombatMods {
@@ -393,39 +541,103 @@ interface CombatMods {
 
 // Add this function
 function calculateCombatMods(activeBuffs: KnownBuffType[]): CombatMods {
-  const mods: CombatMods = {
-    initiative: 0,
-    attack: 0,
-    damage: 0,
-    extraAttacks: 0,
-    cmb: 0,
-    cmd: 0,
-    ac: {
-      normal: 0,
-      touch: 0,
-      flatFooted: 0
-    },
-    saves: {
-      fort: 0,
-      ref: 0,
-      will: 0
-    }
-  };
+    const mods: CombatMods = {
+        initiative: 0,
+        attack: 0,
+        damage: 0,
+        extraAttacks: 0,
+        cmb: 0,
+        cmd: 0,
+        ac: { normal: 0, touch: 0, flatFooted: 0 },
+        saves: { fort: 0, ref: 0, will: 0 }
+    };
 
-  activeBuffs.forEach(buff => {
-    switch(buff) {
-      case 'cognatogen':
-        mods.attack += 2; // Example bonus
-        break;
-      case 'dex_mutagen':
-        mods.initiative += 2;
-        mods.ac.normal += 2;
-        mods.ac.touch += 2;
-        mods.saves.ref += 2;
-        break;
-      // Add other buff effects as needed
-    }
-  });
+    activeBuffs.forEach(buff => {
+        switch(buff) {
+            // Combat feats only - everything else is handled by ability score changes
+            case 'deadly_aim':
+                mods.attack -= 2;
+                mods.damage += 4;
+                break;
+            case 'rapid_shot':
+            case 'two_weapon_fighting':
+                mods.attack -= 2;
+                mods.extraAttacks += 1;
+                break;
+        }
+    });
 
-  return mods;
+    return mods;
 }
+
+// Update skill points calculation to use permanent int bonus
+export function calculateTotalSkillPoints(character: Character): number {
+    // Base skill points (4 for alchemist)
+    const basePoints = 4;
+    
+    // Get permanent Intelligence including ABP bonuses, but NOT temporary buffs
+    const baseInt = character.character_attributes?.[0]?.int ?? 10;
+    const mentalProwessBonus = getABPBonus(character.character_abp_bonuses, 'mental_prowess');
+    const permanentInt = baseInt + mentalProwessBonus;
+    
+    // Calculate Int modifier from permanent Int score only
+    const intBonus = Math.floor((permanentInt - 10) / 2);
+    
+    // FCB skill points
+    const fcbSkillPoints = (character.character_favored_class_bonuses ?? [])
+        .filter(fcb => fcb.choice === 'skill')
+        .length;
+    
+    // Calculate total: (base + int mod) × level + FCB points
+    const pointsPerLevel = Math.max(1, basePoints + intBonus);
+    const totalPoints = (pointsPerLevel * character.level) + fcbSkillPoints;
+    
+    return totalPoints;
+}
+
+// Update mutagen/cognatogen availability check
+function canUseMutagen(character: Character): boolean {
+    if (character.archetype === 'mindchemist') {
+        // Mindchemists can only use mutagens if they took it as a discovery
+        return character.character_discoveries?.some((d: CharacterDiscovery) => 
+            d.discovery_name === 'mutagen'
+        ) ?? false;
+    }
+    return true; // Base alchemists always have access
+}
+
+function canUseCognatogen(character: Character): boolean {
+    if (character.archetype === 'mindchemist') {
+        return true; // Mindchemists always have access
+    }
+    // Base alchemists need the discovery
+    return character.character_discoveries?.some((d: CharacterDiscovery) => 
+        d.discovery_name === 'cognatogen'
+    ) ?? false;
+}
+
+// Update buff validation
+function validateBuff(character: Character, buffType: KnownBuffType): boolean {
+    switch(buffType) {
+        case 'int_cognatogen':
+        case 'wis_cognatogen':
+        case 'cha_cognatogen':
+            return (
+                character.archetype === 'mindchemist' || 
+                (character.character_discoveries?.some(d => 
+                    d.discovery_name === 'cognatogen'
+                ) ?? false)
+            );
+        case 'dex_mutagen':
+        case 'str_mutagen':
+        case 'con_mutagen':
+            return character.character_discoveries?.some((d: CharacterDiscovery) => 
+                d.discovery_name === 'mutagen'
+            ) ?? false;
+        default:
+            return true;
+    }
+}
+
+// Export the utility functions so they can be used elsewhere
+export { canUseMutagen, canUseCognatogen, validateBuff };

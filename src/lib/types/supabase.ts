@@ -506,6 +506,44 @@ export type Database = {
           },
         ]
       }
+      character_favored_class_bonuses: {
+        Row: {
+          character_id: number | null
+          choice: string
+          created_at: string | null
+          id: number
+          level: number
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          character_id?: number | null
+          choice: string
+          created_at?: string | null
+          id?: never
+          level: number
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          character_id?: number | null
+          choice?: string
+          created_at?: string | null
+          id?: never
+          level?: number
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_favored_class_bonuses_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_feats: {
         Row: {
           character_id: number | null
@@ -584,29 +622,35 @@ export type Database = {
       }
       character_skill_ranks: {
         Row: {
+          applied_at_level: number
           character_id: number | null
           created_at: string | null
           id: number
           ranks: number
           skill_id: number | null
+          source: string
           sync_status: string | null
           updated_at: string | null
         }
         Insert: {
+          applied_at_level: number
           character_id?: number | null
           created_at?: string | null
           id?: never
           ranks?: number
           skill_id?: number | null
+          source: string
           sync_status?: string | null
           updated_at?: string | null
         }
         Update: {
+          applied_at_level?: number
           character_id?: number | null
           created_at?: string | null
           id?: never
           ranks?: number
           skill_id?: number | null
+          source?: string
           sync_status?: string | null
           updated_at?: string | null
         }
@@ -624,13 +668,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "base_skills"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "character_skill_ranks_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "character_skill_view"
-            referencedColumns: ["skill_id"]
           },
         ]
       }
@@ -747,40 +784,20 @@ export type Database = {
             referencedRelation: "base_skills"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "class_skill_relations_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "character_skill_view"
-            referencedColumns: ["skill_id"]
-          },
         ]
       }
     }
     Views: {
-      character_skill_view: {
-        Row: {
-          ability: string | null
-          armor_check_penalty: boolean | null
-          character_id: number | null
-          is_class_skill: boolean | null
-          ranks: number | null
-          skill_id: number | null
-          skill_name: string | null
-          trained_only: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_skill_ranks_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
+      distribute_skill_ranks: {
+        Args: {
+          p_character_id: number
+          p_progressions: Database["public"]["CompositeTypes"]["skill_progression"][]
+        }
+        Returns: undefined
+      }
       uuid_generate_v1: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -832,7 +849,10 @@ export type Database = {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      skill_progression: {
+        skill_name: string | null
+        ranks_per_level: number[] | null
+      }
     }
   }
 }

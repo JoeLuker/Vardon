@@ -2,7 +2,7 @@
     import { slide } from 'svelte/transition';
     import { character, updateSpellSlot } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-    import type { SpellSlot, KnownSpell } from '$lib/types/character';
+    import type { DatabaseCharacterSpellSlot, DatabaseCharacterKnownSpell } from '$lib/types/character';
     import ResourceTracker from '$lib/components/ResourceTracker.svelte';
 
     let updateState = $state<UpdateState>({
@@ -16,7 +16,7 @@
 
     // Group spells by level for easier display
     let spellsByLevel = $derived(() => {
-        const grouped: Record<number, KnownSpell[]> = {};
+        const grouped: Record<number, DatabaseCharacterKnownSpell[]> = {};
         for (const spell of knownSpells) {
             const level = spell.spell_level;
             if (!grouped[level]) {
@@ -29,7 +29,7 @@
 
     // Transform slots for display
     let slotsByLevel = $derived(() => {
-        const grouped: Record<number, SpellSlot> = {};
+        const grouped: Record<number, DatabaseCharacterSpellSlot> = {};
         for (const slot of spellSlots) {
             grouped[slot.spell_level] = slot;
         }

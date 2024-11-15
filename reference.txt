@@ -1,0 +1,970 @@
+Tengus
+Source Inner Sea Races pg. 251, Dragon Empires Primer pg. 6, Dragon Empires Gazetteer pg. 12, Advanced Race Guide pg. 162, Pathfinder RPG Bestiary pg. 263
+Monster Entry Link
+Tengus are a race of wingless avian humanoids with humanoid hands, clawed feet, and a beak that resembles that of a crow or raven. Matching the colors of these birds, most tengus’ feathers are jet black; however, a few possess brown or blue-black coloration instead.
+
+Ranging throughout almost all of the Dragon Empires, tengus have long suffered the scorn and abuse of the ruling humans, treated as a lesser race and relegated to the underclass. The recent fall of Lung Wa has allowed tengus to break free from the tyranny of other races, and the tengu nation of Kwanlai is testament to this achievement. Nonetheless, centuries of poverty and strife have made many tengus covetous of the wealth of other races, and tengus’ reputation for thievery, deceit, and secrecy often precedes them wherever they go. While some tengus seek to dismantle such unfair stereotypes, others fit the bill by choice, thinking they may as well commit the crimes they are already so often accused of.
+
+Tengus possess a rich culture that combines aspects from the numerous societies their people have been a part of, though they are loath to share the more unique parts of their own culture with outsiders, as they are largely distrustful and scornful of others.
+Tengu Racial Traits
++2 Dexterity, +2 Wisdom, –2 Constitution: Tengus are fast and observant, but relatively fragile.
+Tengu: Tengus are humanoids with the tengu subtype.
+Medium: Tengus are Medium creatures and receive no bonuses or penalties due to their size.
+Normal Speed: Tengus have a base speed of 30 feet.
+Senses: Tengus have low-light vision.
+Sneaky: Tengus gain a +2 racial bonus on Perception and Stealth checks.
+Gifted Linguist: Tengus gain a +4 racial bonus on Linguistics checks, and learn two languages each time they gain a rank in Linguistics rather than one language.
+Swordtrained: Tengus are automatically proficient with swordlike weapons (including bastard swords, daggers, elven curve blades, falchions, greatswords, kukris, longswords, punching daggers, rapiers, scimitars, short swords, and two-bladed swords).
+Natural Weapon: A tengu has a bite attack that deals 1d3 points of damage.
+Languages: Tengus begin play speaking Common and Tengu. Tengus with high Intelligence scores can choose any languages they want (except for secret languages, such as Druidic).
+Tengu Alternate Racial Traits
+Replaces Gifted Linguist
+PFS Legal Carrion Sense
+Source Advanced Race Guide pg. 163
+Many tengus have a natural ability to sniff out carrion. While their sense of smell isn’t as keen as that of other species, it is particularly attuned to the scent of injuries or death. Tengus with this racial trait have a limited scent ability, which only functions for corpses and badly wounded creatures (50% or fewer hit points). This racial trait replaces gifted linguist.
+
+PFS Legal Glide
+Source Advanced Race Guide pg. 163
+Some tengus can use their feathered arms and legs to glide. Tengus with this racial trait can make a DC 15 Fly check to fall safely from any height without taking falling damage, as if using feather fall. When falling safely, a tengu may make an additional DC 15 Fly check to glide, moving 5 feet laterally for every 20 feet he falls. This racial trait replaces gifted linguist.
+Replaces Natural Weapon, Sneaky
+PFS Legal Deft Swords
+Source Inner Sea Races pg. 216
+Some tengu learn dazzling blade techniques that allow them to use their weapons to protect against combat maneuvers. They gain a +2 dodge bonus to CMD while wielding a swordlike weapon. This racial trait replaces natural weapon and sneaky.
+Replaces Swordtrained
+PFS Legal Claw Attack
+Source Advanced Race Guide pg. 163
+Tengus with this racial trait have learned to use their claws as natural weapons. They gain two claw attacks as primary natural attacks that deal 1d3 points of damage, and are treated as having the Improved Unarmed Strike feat for the purpose of qualifying for other feats. This racial trait replaces swordtrained.
+
+PFS Legal Exotic Weapon Training
+Source Advanced Race Guide pg. 163
+Instead of swords, some tengus are trained in exotic weaponry. Such tengus choose a number of eastern weapons equal to 3 + their Intelligence bonus, and gain proficiency with these weapons. This racial trait replaces swordtrained.
+
+
+
+
+The boon restriction to create ifrits, oreads, sylphs, and undines was removed at the start of Season 8, and all four are now freely available. Oreads
+Source Inner Sea Races pg. 247, Bestiary 2 pg. 205, Advanced Race Guide pg. 144
+Monster Entry Link
+Oreads are humans whose ancestry includes the touch of an elemental being of earth somewhere along the line, often that of a shaitan genie. Stoic and contemplative, oreads are a race not easily moved, yet almost unstoppable when spurred to action. They remain a mystery to most of the world thanks to their reclusive nature, but those who seek them out in their secluded mountain hideaways find oreads to be quiet, dependable, and protective of their friends.
+
+Physical Description: Oreads are strong and solidly built, with skin and hair colored stony shades of black, brown, gray, or white. While all oreads appear vaguely earthy, a few bear more pronounced signs of their elemental heritage—skin that shines like polished onyx, rocky outcroppings protruding from their flesh, glowing gemstones for eyes, or hair like crystalline spikes. They often dress in earthy tones, wearing practical clothing well suited to vigorous physical activity and preferring fresh flowers, simple gemstones, and other natural accents to complex manufactured jewelry.
+
+Society: As a minor offshoot of the human race, oreads have no real established society of their own. Instead, most oreads grow up in human communities learning the customs of their parents. Adult oreads have a well-deserved reputation among other races for being hermits and loners. Few take well to the bustle of city life, preferring instead to spend their days in quiet contemplation atop some remote mountain peak or deep below the earth in a secluded cavern. Oreads with a greater tolerance for life among humans often join the city watch, or find some other way to serve their community in a position of responsibility.
+
+Relations: Oreads feel comfortable in the company of dwarves, with whom they have much in common. They find gnomes too strange and many halflings far too brash, and so avoid these races in general. Oreads gladly associate with half-orcs and half-elves, feeling a sense of kinship with the other part-human races despite inevitable personality conflicts. Among the elemental-touched races, oreads have few friends but no true enemies.
+
+Alignment and Religion: Oreads are, perhaps above all else, set in their ways, and any disruption of their routine is met with quiet disapproval. Oreads are fiercely protective of their friends, but don't seem particularly concerned with the well-being of those outside their small circle of acquaintances. As such, most oreads are lawful neutral. Religious life comes easily to the earth-touched. They appreciate the quiet, contemplative life of the monastic order, and most dedicate themselves to the worship of earth- or nature-related deities.
+
+Adventurers: Oreads are initially hesitant adventurers. They dislike leaving their homes and don't handle the shock of new experiences well. Usually it takes some outside force to rouse oreads into action, often by threatening their homes, lives, or friends. Once the initial threat is dealt with, however, oreads often find they've grown accustomed to the adventuring life, and continue to pursue it through the rest of their days. Oreads make good monks and fighters thanks to their prodigious strength and self-discipline.
+
+Male Names: Andanan, Jeydavu, Mentys, Oret, Sithundan, Urtar.
+
+Female Names: Besthana, Echane, Ghatiyara, Irice, Nysene, Pashe.
+Oread Racial Traits
++2 Strength, +2 Wisdom, –2 Charisma: Oreads are strong, solid, stable, and stoic.
+Native Outsider: Oreads are outsiders with the native subtype.
+Medium: Oreads are Medium creatures and have no bonuses or penalties due to their size.
+Slow Speed: Oreads have a base speed of 20 feet.
+Darkvision: Oreads can see in the dark up to 60 feet.
+Spell-Like Ability: Oreads can use magic stone 1/day as spell-like ability (with a caster level equal to the oread’s character level; DC 11 + Charisma modifier).
+Energy Resistance: Oreads have acid resistance 5.
+Earth Affinity: Oread sorcerers with the elemental (earth) bloodline treat their Charisma scores as 2 points higher for the purposes of all sorcerer spells and class abilities. Oread clerics with the Earth domain use their domain powers and spells at +1 caster level.
+Languages: Oreads begin play speaking Common and Terran. Oreads with high Intelligence scores can choose from the following languages: Aquan, Auran, Dwarven, Elven, Gnome, Halfling, Ignan, and Undercommon
+Subraces
+PFS Legal Gemsoul (Crystal Oread)
+Source Plane-Hopper's Handbook pg. 20
+With scintillating personalities to match their captivating appearances, gemsoul oreads command attention—and prefer it that way.
+
+Typical Alignment N
+Ability Modifiers +2 Str, +2 Cha, –2 Wis
+Alternate Spell-Like Ability Gemsouls gain color spray as a spell-like ability.
+Crystal Affinity This racial trait functions as and can be replaced as the base oread’s earth affinity, except it benefits sorcerers with the deep earth bloodline and spellcasters with the Charm domain.
+
+Gemsouls tend to have large egos and are flashy in their relationships. They gravitate towards artistic pursuits, most frequently of a performative nature, though they also have a strong tradition of symmetric poetry. Gemsouls prefer to make their homes in flamboyant societies or places where they can make meaningful personal contributions, as well as in nations that appreciate cultivated beauty, like Kyonin.
+
+Gemsouls typically have dazzling, faceted skin, along with a cluster of crystalline formations instead of hair and pupil-less eyes of vivid colors. Some favor tattoos in complex, branching geometric shapes, and they can frequently be seen wearing silks or brightly dyed linen to contrast their complexions.
+
+PFS Legal Ironsoul (Metal Oread)
+Source Plane-Hopper's Handbook pg. 20
+Stolid and indomitable, ironsoul oreads undertake great works, both physical and conceptual, with unwavering determination.
+
+Typical Alignment LN
+Ability Modifiers +2 Con, +2 Wis, –2 Dex
+Alternate Spell-Like Ability Ironsouls gain unerring weapon as a spell-like ability.
+Metal Affinity This racial trait functions as and can be replaced as the base oread’s earth affinity, except it benefits sorcerers with the shaitan bloodline and spellcasters with the Metal subdomain.
+
+Possessed of patience and a sense of self-refinement through struggle, ironsouls reflect their ancestry in their continuous and determined efforts towards self-improvement. Ironsouls are most at home in areas that reflect that same sense of directed and intentional growth, and they operate best within existing formal structures.
+
+Ironsouls wear their elemental heritage on their skin, with most having some amount of metallic sheen. Their skin tone varies, with colors ranging from gold and silver to copper-green and dull, oxide gray.
+
+Oread Alternate Racial Trait
+Replaces Earth Affinity
+PFS Legal Crystalline Form
+Source Advanced Race Guide pg. 144
+Oreads with this trait gain a +2 racial bonus to AC against rays thanks to their reflective crystalline skin. In addition, once per day, they can deflect a single ray attack targeted at them as if they were using the Deflect Arrows feat. This racial trait replaces earth affinity.
+
+PFS Legal Earth Insight
+Source Advanced Race Guide pg. 144
+Oread spellcasters sometimes find that their elemental heritage makes creatures of earth more willing to serve them. Summon monster and summon nature’s ally spells that such oreads cast last 2 rounds longer than normal when used to summon creatures with the earth subtype. This racial trait replaces earth affinity.
+
+PFS Legal Fertile Soil
+Source Advanced Race Guide pg. 144
+Oread sorcerers with the verdant bloodline treat their Charisma score as 2 points higher for all sorcerer spells and class abilities. Oread clerics with the Plant domain use their domain powers and spells at +1 caster level. This racial trait replaces earth affinity.
+
+Oread Gem Magic
+Source Blood of the Elements pg. 8
+The following alternate racial trait can be selected instead of an oread’s default earth affinity racial trait. More information on alternate racial traits can be found on page 8 of the Pathfinder RPG Advanced Player’s Guide.
+
+Oreads’ proclivity for long spans of study and concentration makes them natural wizards, witches, and oracles. Oreads with this racial trait can augment their earth-related spells and spell-like abilities through the use of precious and semiprecious gemstones as additional material components. The gems are destroyed in the process, granting the spell the listed effects in addition to its normal effects unless otherwise noted. Only one instance of oread gem magic can be applied to a spell at a time; excess expended gems do not stack.
+
+Binding EarthARG: +1 damage; +1 to DC of Strength checks. Cost: Garnet worth 50 gp.
+
+Binding Earth, MassARG: As binding earth augmentation, affecting all targets of the augmented spell. Cost: Garnets worth 250 gp.
+
+Calcific TouchAPG: +1 Dexterity damage. Cost: Aquamarine worth 250 gp.
+
+Clashing RocksAPG: +1 damage per damage die. Cost: Emeralds worth 1,500 gp.
+
+Earthquake: +2 Reflex save DC in whatever application the spell is used; area increases to 100-foot-radius shapeable spread. Cost: Jet worth 500 gp.
+
+Elemental Body: Duration increases to 10 minutes/level. Cost: Amber worth 250 gp for elemental body I, +100 gp per spell level for greater versions.
+
+Elemental Swarm: Earth elementals summoned gain the advanced simple template (this does not stack with the Augment Summoning feat). Cost: Rubies worth 1,200 gp.
+
+Magic Stone: Range increment increases by 10 feet. Cost: Moonstone worth 25 gp.
+
+Meld into Stone: Can bring up to 200 pounds of equipment with you; you can see as normal out of the stone. Cost: Peridots worth 150 gp.
+
+Mighty Fist of EarthARG: Increase unarmed strike damage by one step (to 1d4 in most instances). Cost: Sard or sardonyx worth 25 gp.
+
+Raging RubbleARG: Rubble deals +1 damage; distraction DC increases by 1. Cost: Tourmaline worth 80 gp.
+
+Shifting SandAPG: Move area of sands up to 15 feet as a move action. Cost: Turquoise worth 125 gp.
+
+Soften Earth and Stone: Creatures can move only at a quarter their normal speed (minimum 5 feet) in areas of mud and loose dirt. Cost: Fluorite worth 100 gp.
+
+Spike Stones: +1 piercing damage; spikes deal 1 point of bleed damage. Cost: Topaz worth 300 gp.
+
+Stone Shape: Shapes that include moving parts have only 5% chance of not working. Cost: Opal worth 250 gp.
+
+Stone ShieldARG: If your opponent’s attack strikes the stone shield, its full damage roll is also applied to its weapon. Unarmed strikes and natural attacks are not affected. Cost: Jade worth 75 gp.
+
+Stoneskin: The cost of this spell’s expensive material component can be reduced or increased to affect the spell’s power accordingly. With reduced components, the spell grants DR 10/silver (instead of adamantine); with increased components, the spell absorbs 15 points of damage per caster level before it’s discharged. Cost: Diamonds worth 150 gp (reduced); diamonds worth 500 gp (increased).
+
+PFS Legal Stone in the Blood
+Source Advanced Race Guide pg. 145
+Oreads with this racial trait mimic the healing abilities of the mephits, gaining fast healing 2 for 1 round anytime they are subject to acid damage (the acid damage does not need to overcome the oread’s resistances or immunities to activate this ability). The oread can heal up to 2 hit points per level per day with this ability, after which it ceases to function. This racial trait replaces earth affinity.
+Replaces Energy Resistance
+PFS Legal Granite Skin
+Source Advanced Race Guide pg. 144
+Rocky growths cover the skin of oreads with this racial trait. They gain a +1 racial bonus to natural armor. This racial trait replaces energy resistance.
+Replaces Energy Resistance, Languages
+Isolated
+Source Inner Sea Races pg. 216
+Many oreads are loners and raise their families in isolated groups, either in deep caverns or high mountains. They gain a +2 racial bonus on Perception checks and Knowledge (dungeoneering) checks, and they can use Knowledge (dungeoneering) untrained. They begin play speaking only Terran, rather than Common and Terran. This racial trait replaces energy resistance and alters the oread’s starting languages.
+Replaces Languages, Subtype, Type
+PFS Legal Mostly Human
+Source Inner Sea Races pg. 215
+A few ifrits, oreads, sulis, sylphs, and undines have appearances much closer to those of their human ancestors; in fact, they may not even realize their true race. Such geniekin appear to be human, save perhaps minor features like unusual eye color, and they count as humanoid (human) as well as outsider (native) for all purposes (such as humanoid-affecting spells such as charm person or enlarge person). These geniekin do not automatically gain their associated elemental language (but may select it as a bonus language if their Intelligence is high enough). This ability alters the geniekin’s type, subtype, and languages.
+Replaces Spell-Like Ability
+PFS Legal Ferrous Growth
+Source Advanced Race Guide pg. 144
+Oreads with this racial trait learn how to mimic the magic of their shaitan ancestors. Once per day, such an oread can cause a touched piece of nonmagical iron or steel to grow into an object up to 10 pounds in weight, such as a sword, crowbar, or light steel shield. This object remains in this form for 10 minutes or until broken or destroyed, at which point it shrinks back to its original size and shape. This racial trait replaces the spell-like ability racial trait.
+
+PFS Legal Mountain-Born
+Source Advanced Race Guide pg. 144
+Oreads are drawn to mountains and other high places, and after many generations they’ve grown well suited to their environment. Oreads with this racial trait gain a +2 racial bonus on Acrobatics checks made to cross narrow ledges and on saves against altitude fatigue and sickness. This racial trait replaces the spell-like ability racial trait.
+
+PFS Legal Treacherous Earth
+Source Advanced Race Guide pg. 145
+Once per day, an oread with this racial trait can will the earth to rumble and shift, transforming a 10-foot-radius patch of earth, unworked stone, or sand into an area of difficult terrain, centered on an area the oread touches. This lasts for a number of minutes equal to the oread’s level, after which the ground returns to normal. This racial trait replaces the spell-like ability racial trait.
+
+
+
+Extra Bombs replaces Brew Potion Alchemist
+Source Advanced Player's Guide pg. 26
+Whether secreted away in a smoky basement laboratory or gleefully experimenting in a well-respected school of magic, the alchemist is often regarded as being just as unstable, unpredictable, and dangerous as the concoctions he brews. While some creators of alchemical items content themselves with sedentary lives as merchants, providing tindertwigs and smokesticks, the true alchemist answers a deeper calling. Rather than cast magic like a spellcaster, the alchemist captures his own magic potential within liquids and extracts he creates, infusing his chemicals with virulent power to grant him impressive skill with poisons, explosives, and all manner of self-transformative magic.
+
+Role: The alchemist’s reputation is not softened by his exuberance (some would say dangerous recklessness) in perfecting his magical extracts and potion-like creations, infusing these substances with magic siphoned from his aura and using his own body as experimental stock. Nor is it mollified by the alchemist’s almost gleeful passion for building explosive bombs and discovering strange new poisons and methods for their use. These traits, while making him a liability and risk for most civilized organizations and institutions of higher learning, seem to fit quite well with most adventuring groups.
+
+Alignment: Any.
+Hit Die: d8.
+Starting Wealth: 3d6 x 10 gp (average 105 gp).
+Class Skills
+The Alchemist's class skills are Appraise (Int), Craft (any) (Int), Disable Device (Dex), Fly (Dex), Heal (Wis), Knowledge (arcana) (Int), Knowledge (nature) (Int), Perception (Wis), Profession (Wis), Sleight of Hand (Dex), Spellcraft (Int), Survival (Wis), Use Magic Device (Cha).
+
+Skill Points at each Level: 4 + Int modifier.
+Class Features
+ 	Spells Per Day
+Level	Base Attack Bonus	Fort Save	Ref Save	Will Save	Special	1st	2nd	3rd	4th	5th	6th
+1st	+0	+2	+2	+0	Alchemy, bomb 1d6, Brew Potion, mutagen, Throw Anything	1	-	-	-	-	-
+2nd	+1	+3	+3	+0	Discovery, poison resistance +2, poison use	2	-	-	-	-	-
+3rd	+2	+3	+3	+1	Bomb 2d6, swift alchemy	3	-	-	-	-	-
+4th	+3	+4	+4	+1	Discovery	3	1	-	-	-	-
+5th	+3	+4	+4	+1	Bomb 3d6, poison resistance +4	4	2	-	-	-	-
+6th	+4	+5	+5	+2	Discovery, swift poisoning	4	3	-	-	-	-
+7th	+5	+5	+5	+2	Bomb 4d6	4	3	1	-	-	-
+8th	+6/+1	+6	+6	+2	Discovery, poison resistance +6	4	4	2	-	-	-
+9th	+6/+1	+6	+6	+3	Bomb 5d6	5	4	3	-	-	-
+10th	+7/+2	+7	+7	+3	Discovery, poison immunity	5	4	3	1	-	-
+11th	+8/+3	+7	+7	+3	Bomb 6d6	5	4	4	2	-	-
+12th	+9/+4	+8	+8	+4	Discovery	5	5	4	3	-	-
+13th	+9/+4	+8	+8	+4	Bomb 7d6	5	5	4	3	1	-
+14th	+10/+5	+9	+9	+4	Discovery, persistent mutagen	5	5	4	4	2	-
+15th	+11/+6/+1	+9	+9	+5	Bomb 8d6	5	5	5	4	3	-
+16th	+12/+7/+2	+10	+10	+5	Discovery	5	5	5	4	3	1
+17th	+12/+7/+2	+10	+10	+5	Bomb 9d6	5	5	5	4	4	2
+18th	+13/+8/+3	+11	+11	+6	Discovery, instant alchemy	5	5	5	5	4	3
+19th	+14/+9/+4	+11	+11	+6	Bomb 10d6	5	5	5	5	5	4
+20th	+15/+10/+5	+12	+12	+6	Grand discovery	5	5	5	5	5	5
+
+Weapon and Armor Proficiency: Alchemists are proficient with all simple weapons and bombs. They are also proficient with light armor, but not with shields.
+
+Alchemy (Su): Alchemists are not only masters of creating mundane alchemical substances such as alchemist’s fire and smokesticks, but also of fashioning magical potion-like extracts in which they can store spell effects. In effect, an alchemist prepares his spells by mixing ingredients into a number of extracts, and then “casts” his spells by drinking the extract. When an alchemist creates an extract or bomb, he infuses the concoction with a tiny fraction of his own magical power—this enables the creation of powerful effects, but also binds the effects to the creator.
+
+When using Craft (alchemy) to create an alchemical item, an alchemist gains a competence bonus equal to his class level on the Craft (alchemy) check. In addition, an alchemist can use Craft (alchemy) to identify potions as if using detect magic. He must hold the potion for 1 round to make such a check.
+
+An alchemist can create three special types of magical items—extracts, bombs, and mutagens. Bombs are explosive splash weapons, and mutagens are transformative elixirs that the alchemist drinks to enhance his physical abilities—both of these are detailed in their own sections below.
+
+Extracts are the most varied of the three. In many ways, they behave like spells in potion form, and as such their effects can be dispelled by effects like dispel magic using the alchemist’s level as the caster level. Unlike potions, though, extracts can have powerful effects and duplicate spells that a potion normally could not.
+
+An alchemist can create only a certain number of extracts of each level per day. His base daily allotment of extracts is given on Table 2–1. In addition, he receives bonus extracts per day if he has a high Intelligence score, in the same way a wizard receives bonus spells per day.
+
+When an alchemist mixes an extract, he infuses the chemicals and reagents in the extract with magic siphoned from his own magical aura. An extract immediately becomes inert if it leaves the alchemist’s possession, reactivating as soon as it returns to his keeping—an alchemist cannot normally pass out his extracts for allies to use (but see the “infusion” discovery below). An extract, once created, remains potent for 1 day before losing its magic, so an alchemist must re-prepare his extracts every day. Mixing an extract takes 1 minute of work—most alchemists prepare many extracts at the start of the day or just before going on an adventure, but it’s not uncommon for an alchemist to keep some (or even all) of his daily extract slots open so that he can prepare extracts in the field as needed.
+
+Although the alchemist doesn’t actually cast spells, he does have a formulae list that determines what extracts he can create. An alchemist can utilize spell-trigger items if the spell appears on his formulae list, but not spell-completion items (unless he uses Use Magic Device to do so). An extract is “cast” by drinking it, as if imbibing a potion—the effects of an extract exactly duplicate the spell upon which its formula is based, save that the spell always affects only the drinking alchemist. An alchemist can draw and drink an extract as a standard action. The alchemist uses his level as the caster level to determine any effect based on caster level.
+
+Creating extracts consumes raw materials, but the cost of these materials is insignificant—comparable to the valueless material components of most spells. If a spell normally has a costly material component, that component is expended during the consumption of that particular extract. Extracts cannot be made from spells that have focus requirements (alchemist extracts that duplicate divine spells never have a divine focus requirement).
+
+An alchemist can prepare an extract of any formula he knows. To learn or use an extract, an alchemist must have an Intelligence score equal to at least 10 + the extract’s level. The Difficulty Class for a saving throw against an alchemist’s extract is 10 + the extract level + the alchemist’s Intelligence modifier.
+
+An alchemist may know any number of formulae. He stores his formulae in a special tome called a formula book. He must refer to this book whenever he prepares an extract but not when he consumes it. An alchemist begins play with two 1st-level formulae of his choice, plus a number of additional forumlae equal to his Intelligence modifier. At each new alchemist level, he gains one new formula of any level that he can create. An alchemist can also add formulae to his book just like a wizard adds spells to his spellbook, using the same costs, pages, and time requirements. An alchemist can study a wizard’s spellbook to learn any formula that is equivalent to a spell the spellbook contains. A wizard, however, cannot learn spells from a formula book. An alchemist does not need to decipher arcane writings before copying them.
+
+Bomb (Su): In addition to magical extracts, alchemists are adept at swiftly mixing various volatile chemicals and infusing them with their magical reserves to create powerful bombs that they can hurl at their enemies. An alchemist can use a number of bombs each day equal to his class level + his Intelligence modifier. Bombs are unstable, and if not used in the round they are created, they degrade and become inert—their method of creation prevents large volumes of explosive material from being created and stored. In order to create a bomb, the alchemist must use a small vial containing an ounce of liquid catalyst—the alchemist can create this liquid catalyst from small amounts of chemicals from an alchemy lab, and these supplies can be readily refilled in the same manner as a spellcaster’s component pouch. Most alchemists create a number of catalyst vials at the start of the day equal to the total number of bombs they can create in that day—once created, a catalyst vial remains usable by the alchemist for years.
+
+Drawing the components of, creating, and throwing a bomb requires a standard action that provokes an attack of opportunity. Thrown bombs have a range of 20 feet and use the Throw Splash Weapon special attack. Bombs are considered weapons and can be selected using feats such as Point-Blank Shot and Weapon Focus. On a direct hit, an alchemist’s bomb inflicts 1d6 points of fire damage + additional damage equal to the alchemist’s Intelligence modifier. The damage of an alchemist’s bomb increases by 1d6 points at every odd-numbered alchemist level (this bonus damage is not multiplied on a critical hit or by using feats such as Vital Strike). Splash damage from an alchemist bomb is always equal to the bomb’s minimum damage (so if the bomb would deal 2d6+4 points of fire damage on a direct hit, its splash damage would be 6 points of fire damage). Those caught in the splash damage can attempt a Reflex save for half damage. The DC of this save is equal to 10 + 1/2 the alchemist’s level + the alchemist’s Intelligence modifier.
+
+Alchemists can learn new types of bombs as discoveries (see the Discovery ability) as they level up. An alchemist’s bomb, like an extract, becomes inert if used or carried by anyone else.
+
+Brew Potion (Ex): At 1st level, alchemists receive Brew Potion as a bonus feat. An alchemist can brew potions of any formulae he knows (up to 3rd level), using his alchemist level as his caster level. The spell must be one that can be made into a potion. The alchemist does not need to meet the prerequisites for this feat.
+
+Mutagen (Su): At 1st level, an alchemist discovers how to create a mutagen that he can imbibe in order to heighten his physical prowess at the cost of his personality. It takes 1 hour to brew a dose of mutagen, and once brewed, it remains potent until used. An alchemist can only maintain one dose of mutagen at a time—if he brews a second dose, any existing mutagen becomes inert. As with an extract or bomb, a mutagen that is not in an alchemist’s possession becomes inert until an alchemist picks it up again.
+
+When an alchemist brews a mutagen, he selects one physical ability score—either Strength, Dexterity, or Constitution. It’s a standard action to drink a mutagen. Upon being imbibed, the mutagen causes the alchemist to grow bulkier and more bestial, granting him a +2 natural armor bonus and a +4 alchemical bonus to the selected ability score for 10 minutes per alchemist level. In addition, while the mutagen is in effect, the alchemist takes a –2 penalty to one of his mental ability scores. If the mutagen enhances his Strength, it applies a penalty to his Intelligence. If it enhances his Dexterity, it applies a penalty to his Wisdom. If it enhances his Constitution, it applies a penalty to his Charisma.
+
+A non-alchemist who drinks a mutagen must make a Fortitude save (DC 10 + 1/2 the alchemist’s level + the alchemist’s Intelligence modifier) or become nauseated for 1 hour—a non-alchemist can never gain the benefit of a mutagen, but an alchemist can gain the effects of another alchemist’s mutagen if he drinks it. (Although if the other alchemist creates a different mutagen, the effects of the “stolen” mutagen immediately cease.) The effects of a mutagen do not stack. Whenever an alchemist drinks a mutagen, the effects of any previous mutagen immediately end.
+
+Throw Anything (Ex): All alchemists gain the Throw Anything feat as a bonus feat at 1st level. An alchemist adds his Intelligence modifier to damage done with splash weapons, including the splash damage if any. This bonus damage is already included in the bomb class feature.
+
+Discovery (Su): At 2nd level, and then again every 2 levels thereafter (up to 18th level), an alchemist makes an incredible alchemical discovery. Unless otherwise noted, an alchemist cannot select an individual discovery more than once. Some discoveries can only be made if the alchemist has met certain prerequisites first, such as uncovering other discoveries. Discoveries that modify bombs that are marked with an asterisk (*) do not stack. Only one such discovery can be applied to an individual bomb. The DC of any saving throw called for by a discovery is equal to 10 + 1/2 the alchemist’s level + the alchemist’s Intelligence modifier.
+
+The full list of Alchemist Discoveries can be found here.
+
+Poison Resistance (Ex): At 2nd level, an alchemist gains a +2 bonus on all saving throws against poison. This bonus increases to +4 at 5th level, and then again to +6 at 8th level. At 10th level, an alchemist becomes completely immune to poison.
+
+Poison Use (Ex): Alchemists are trained in the use of poison and starting at 2nd level, cannot accidentally poison themselves when applying poison to a weapon.
+
+Swift Alchemy (Ex): At 3rd level, an alchemist can create alchemical items with astounding speed. It takes an alchemist half the normal amount of time to create alchemical items, and he can apply poison to a weapon as a move action.
+
+Swift Poisoning (Ex): At 6th level, an alchemist can apply a dose of poison to a weapon as a swift action.
+
+Persistent Mutagen (Su): At 14th level, the effects of a mutagen last for 1 hour per level.
+
+Instant Alchemy (Ex): At 18th level, an alchemist can create alchemical items with almost supernatural speed. He can create any alchemical item as a full-round action if he succeeds at the Craft (alchemy) check and has the appropriate resources at hand to fund the creation. He can apply poison to a weapon as an immediate action.
+
+Grand Discovery (Su): At 20th level, the alchemist makes a grand discovery. He immediately learns two normal discoveries, but also learns a third discovery chosen from the list below, representing a truly astounding alchemical breakthrough of significant import. For many alchemists, the promise of one of these grand discoveries is the primary goal of their experiments and hard work.
+
+
+
+PFS Legal Mindchemist
+Source Ultimate Magic pg. 19
+While most alchemists use mutagens to boost their physical ability at the cost of mental ability, some use alchemy for the opposite purpose—to boost the power of the mind and memory. A mindchemist can reach incredible levels of mental acuity, but suffers lingering debilitating effects to his physique. A mindchemist has the following class features.
+
+Cognatogen: At 1st level, a mindchemist learns how to create a cognatogen, as per the cognatogen discovery. This ability replaces the mutagen class ability (a mindchemist cannot create mutagens unless he selects mutagen* as a discovery).
+
+Perfect Recall: At 2nd level, a mindchemist has honed his memory. When making a Knowledge check, he may add his Intelligence bonus on the check a second time. Thus, a mindchemist with 5 ranks in Knowledge (history) and a +2 Intelligence bonus has a total skill bonus of +9 (5 + 2 + 2) using this ability. The mindchemist can also use this ability when making an Intelligence check to remember something. This ability replaces poison use.
+
+Bonus Feats: A mindchemist may select Skill Focus (Disable Device, Disguise, Heal, any Knowledge skill, Sense Motive, or Spellcraft) in place of a discovery.
+
+Languages: A mindchemist may learn three languages in place of a discovery.
+
+Discoveries: The following discoveries complement the mindchemist archetype: grand cognatogen, greater cognatogen, infuse mutagen.
+
+
+
+PFS Legal Monk (Unchained)
+Source Pathfinder Unchained pg. 14
+Physical and mental perfection—that is the life goal of every monk. For these skilled warriors, martial prowess and mental clarity are one and the same. Capable of pummeling foes with both fist and weapon, monks are among the more versatile combatants on the battlefield. Monks are also able to harness their ki, a spiritual life force that resides within, allowing them to perform amazing acts of acrobatics and mystical skill. All of this depends on incredible discipline and focus, and monks spend their entire lives perfecting these arts.
+
+Unchained: Much of the monk has been reworked, including its base attack bonus, Hit Die, saves, and many of its special abilities. The result is a version of the monk that not only is easier to play, but also possesses a great deal more versatility. Flurry of blows is now much simpler to use in play. Many of the higher-level abilities of the monk, such as abundant step and quivering palm, have been incorporated into the new system of ki powers. As a monk advances in level, he can select from a variety of ki powers, allowing the player to truly customize his character.
+
+Alignment: Any lawful.
+Hit Die: d10.
+Starting Wealth: 1d6 x 10 gp (average 35 gp).
+Class Skills
+The Monk (Unchained)'s class skills are Acrobatics (Dex), Climb (Str), Craft (Int), Escape Artist (Dex), Intimidate (Cha), Knowledge (history) (Int), Knowledge (religion) (Int), Perception (Wis), Perform (Cha), Profession (Wis), Ride (Dex), Sense Motive (Wis), Stealth (Dex), and Swim (Str).
+
+Skill Points at each Level: 4 + Int modifier.
+Class Features
+Level	Base Attack Bonus	Fort Save	Ref Save	Will Save	Special	Unarmed Damage	AC Bonus	Fast Movement
+1st	+1	+2	+2	+0	Bonus feat, flurry of blows (bonus attack), stunning fist, unarmed strike	1d6	+0	+0 ft.
+2nd	+2	+3	+3	+0	Bonus feat, evasion	1d6	+0	+0 ft.
+3rd	+3	+3	+3	+1	Fast movement, ki pool, ki strike (magic)	1d6	+0	+10 ft.
+4th	+4	+4	+4	+1	Ki power, still mind	1d8	+1	+10 ft.
+5th	+5	+4	+4	+1	Purity of body, style strike (1/round)	1d8	+1	+10 ft.
+6th	+6/+1	+5	+5	+2	Bonus feat, ki power	1d8	+1	+20 ft.
+7th	+7/+2	+5	+5	+2	Ki strike (cold iron/silver)	1d8	+1	+20 ft.
+8th	+8/+3	+6	+6	+2	Ki power	1d10	+2	+20 ft.
+9th	+9/+4	+6	+6	+3	Improved evasion, style strike	1d10	+2	+30 ft.
+10th	+10/+5	+7	+7	+3	Bonus feat, ki power, ki strike (lawful)	1d10	+2	+30 ft.
+11th	+11/+6/+1	+7	+7	+3	Flurry of blows (bonus attack)	1d10	+2	+30 ft.
+12th	+12/+7/+2	+8	+8	+4	Ki power	2d6	+3	+40 ft.
+13th	+13/+8/+3	+8	+8	+4	Style strike, tongue of the sun and moon	2d6	+3	+40 ft.
+14th	+14/+9/+4	+9	+9	+4	Bonus feat, ki power	2d6	+3	+40 ft.
+15th	+15/+10/+5	+9	+9	+5	Style strike (2/round)	2d6	+3	+50 ft.
+16th	+16/+11/+6/+1	+10	+10	+5	Ki power, ki strike (adamantine)	2d8	+4	+50 ft.
+17th	+17/+12/+7/+2	+10	+10	+5	Style strike, timeless body	2d8	+4	+50 ft.
+18th	+18/+13/+8/+3	+11	+11	+6	Bonus feat, ki power	2d8	+4	+60 ft.
+19th	+19/+14/+9/+4	+11	+11	+6	Flawless mind	2d8	+4	+60 ft.
+20th	+20/+15/+10/+5	+12	+12	+6	Ki power, perfect self	2d10	+5	+60 ft.
+
+Weapon and Armor Proficiency: Monks are proficient with the club, crossbow (light or heavy), dagger, handaxe, javelin, kama, nunchaku, quarterstaff, sai, short sword, shortspear, shuriken, siangham, sling, spear, and any weapon with the monk special weapon quality.
+
+Monks are not proficient with any armor or shields.
+
+When wearing armor, using a shield, or carrying a medium or heavy load, a monk loses his AC bonus, as well as his fast movement and flurry of blows abilities.
+
+AC Bonus (Ex): When unarmored and unencumbered, the monk adds his Wisdom bonus (if any) to his AC and CMD. In addition, a monk gains a +1 bonus to AC and CMD at 4th level. This bonus increases by 1 for every four monk levels thereafter, up to a maximum of +5 at 20th level.
+
+These bonuses to AC apply even against touch attacks or when the monk is flat-footed. He loses these bonuses when he is immobilized or helpless, when he wears any armor, when he carries a shield, or when he carries a medium or heavy load.
+
+Bonus Feat: At 1st level, 2nd level, and every 4 levels thereafter, a monk can select a bonus feat. These feats must be taken from the following list: Catch Off-Guard, Combat Reflexes, Deflect Arrows, Dodge, Improved Grapple, Scorpion Style, and Throw Anything. At 6th level, the following feats are added to the list: Gorgon’s Fist, Improved Bull Rush, Improved Disarm, Improved Feint, Improved Trip, and Mobility. At 10th level, the following feats are added to the list: Improved Critical, Medusa’s Wrath, Snatch Arrows, and Spring Attack. A monk need not have any of the prerequisites normally required for these feats to select them.
+
+Flurry of Blows (Ex): At 1st level, a monk can make a flurry of blows as a full-attack action. When making a flurry of blows, the monk can make one additional attack at his highest base attack bonus. This additional attack stacks with the bonus attacks from haste and other similar effects. When using this ability, the monk can make these attacks with any combination of his unarmed strikes and weapons that have the monk special weapon quality. He takes no penalty for using multiple weapons when making a flurry of blows, but he does not gain any additional attacks beyond what’s already granted by the flurry for doing so. (He can still gain additional attacks from a high base attack bonus, from this ability, and from haste and similar effects).
+
+At 11th level, a monk can make an additional attack at his highest base attack bonus whenever he makes a flurry of blows. This stacks with the first attack from this ability and additional attacks from haste and similar effects.
+
+Stunning Fist (Ex): At 1st level, the monk gains Stunning Fist as a bonus feat, even if he does not meet the prerequisites. At 4th level, and every 4 levels thereafter, the monk gains the ability to apply a new condition to the target of his Stunning Fist. This condition replaces stunning the target for 1 round, and a successful saving throw still negates the effect. At 4th level, the monk can choose to make the target fatigued. At 8th level, he can make the target sickened for 1 minute. At 12th level, he can make the target staggered for 1d6+1 rounds. At 16th level, he can permanently blind or deafen the target. At 20th level, he can paralyze the target for 1d6+1 rounds. The monk must choose which condition will apply before the attack roll is made. These effects do not stack with themselves (a creature fatigued by Stunning Fist cannot become exhausted if hit by Stunning Fist again), but additional hits do increase the duration.
+
+Unarmed Strike (Ex): At 1st level, a monk gains Improved Unarmed Strike as a bonus feat. A monk’s attacks can be with fists, elbows, knees, and feet. This means that a monk can make unarmed strikes with his hands full. There is no such thing as an off-hand attack for a monk striking unarmed. A monk can apply his full Strength bonus on damage rolls for all his unarmed strikes. A monk’s unarmed strikes deal lethal damage, although he can choose to deal nonlethal damage with no penalty on his attack roll. He can make this choice while grappling as well.
+
+A monk’s unarmed strike is treated as both a manufactured weapon and a natural weapon for the purpose of spells and effects that enhance or improve either manufactured weapons or natural weapons.
+
+The damage dealt by a monk’s unarmed strike is determined by the unarmed damage column on Table 1–2: Monk. The damage listed is for Medium monks. The damage for Small or Large monks is listed below.
+
+Level	Damage (Small Monk)	Damage (Large Monk)
+1st–3rd	1d4	1d8
+4th–7th	1d6	2d6
+8th–11th	1d8	2d8
+12th–15th	1d10	3d6
+16th–19th	2d6	3d8
+20th	2d8	4d8
+
+Evasion (Ex): At 2nd level, a monk can avoid damage from many area-effect attacks. If a monk succeeds at a Reflex saving throw against an attack that normally deals half damage on a successful save, he instead takes no damage. Evasion can be used only if a monk is wearing light armor or no armor. A helpless monk does not gain the benefit of evasion.
+
+Fast Movement (Ex): At 3rd level, a monk gains an enhancement bonus to his land speed, as shown on Table 1–2. A monk in armor or carrying a medium or heavy load loses this extra speed.
+
+Ki Pool (Su): At 3rd level, a monk gains a pool of ki points, supernatural energy he can use to accomplish amazing feats. The number of points in a monk’s ki pool is equal to 1/2 his monk level + his Wisdom modifier. As long as he has at least 1 point in his ki pool, he can make a ki strike. At 3rd level, ki strike allows his unarmed attacks to be treated as magic weapons for the purpose of overcoming damage reduction. At 7th level, his unarmed attacks are also treated as cold iron and silver for the purpose of overcoming damage reduction. At 10th level, his unarmed attacks are also treated as lawful weapons for the purpose of overcoming damage reduction. At 16th level, his unarmed attacks are treated as adamantine weapons for the purpose of overcoming damage reduction and bypassing hardness.
+
+By spending 1 point from his ki pool as a swift action, a monk can make one additional unarmed strike at his highest attack bonus when making a flurry of blows attack. This bonus attack stacks with all bonus attacks gained from flurry of blows, as well as those from haste and similar effects. A monk gains additional powers that consume points from his ki pool as he gains levels.
+
+The ki pool is replenished each morning after 8 hours of rest or meditation; these hours do not need to be consecutive.
+
+Ki Powers (Su): At 4th level and every 2 levels thereafter, a monk can select one ki power. These powers allow the monk to perform amazing feats of mystical power and acrobatic prowess by expending points from his ki pool. Once a ki power is selected, it cannot be changed. Some ki powers require the monk to be of a specific level or higher before they can be chosen. Unless otherwise noted, a monk cannot select an individual ki power more than once.
+
+Abundant Step (Su): A monk with this ki power can slip magically between spaces, as if using the spell dimension door. Using this ability is a move action that consumes 2 points from his ki pool. The monk’s caster level for this effect is equal to his monk level. He cannot take other creatures with him when he uses this ability. A monk must be at least 8th level before selecting this ki power.
+
+Cobra Breath (Su): Whenever a monk with this ki power uses diamond body to neutralize a poison, he can instead release that poison as a ranged touch attack against a single foe within 30 feet. If the attack hits, the foe must succeed at a saving throw (using the poison’s original DC) or suffer the poison’s effects, even if it was not originally a contact poison. A monk must be at least 12th level and must possess the diamond body ki power before selecting this ki power.
+
+Diamond Body (Su): By spending 1 point from his ki pool, a monk with this power can remove one toxin from his body as if using neutralize poison, using his monk level as his caster level. He can remove only one poison in this way per use of this ability. A monk must be at least 8th level before selecting this ki power.
+
+Diamond Mind (Su): By spending 1 point from his ki pool as a swift action, a monk with this power can suppress a fear effect affecting him as if using remove fear, using his monk level as his caster level. He can spend 2 ki points to activate this ability even when frightened or panicked. A monk must be at least 6th level before selecting this ki power.
+
+Diamond Resilience (Ex): By spending 1 ki point as a swift action, the monk gains DR 2/—. At 16th level, the damage reduction increases to 4/—. At 19th level, it increases to DR 6/—. This DR lasts for 1 minute. A monk must be at least 12th level before selecting this ki power.
+
+Diamond Soul (Ex): A monk can spend 2 points from his ki pool as a swift action to gain spell resistance equal to his monk level + 10. This spell resistance lasts for a number of rounds equal to the monk’s level. A monk must be at least 12th level before selecting this ki power.
+
+Elemental Fury (Su): A monk who selects this ki power must select one type of energy: acid, cold, electricity, or fire. Once this choice is made, it cannot be changed. The monk can expend 1 point from his ki pool as a swift action to imbue his natural attacks with this energy, causing them to deal 1d6 points of damage of the chosen type for a number of rounds equal to 1/2 his monk level. A monk must be at least 6th level before selecting this ki power.
+
+Elemental Burst (Su): A monk with this ability can spend 4 ki points to unleash a gout of energy in a 30-foot cone. Creatures within the cone take 20d6 points of damage of the same type as the monk’s elemental fury ki power. A Reflex save (DC = 10 + 1/2 the monk’s level + his Wisdom modifier) halves the damage. A monk must be at least 18th level and must possess the elemental fury ki power before selecting this ki power.
+
+Empty Body (Su): A monk with this ki power gains the ability to assume an ethereal state for 1 minute as though using the spell etherealness, using his monk level as his caster level. Using this ability is a move action that consumes 3 points from the monk’s ki pool. This ability affects only the monk and cannot be used to make other creatures ethereal.
+
+Feather Balance (Ex): A monk with this ability can spend 1 ki point as a swift action to achieve perfect balance. While this is active, the monk treats any Acrobatics attempt made to balance as if he had rolled a 20. This ability lasts for 1 minute.
+
+Formless Mastery (Ex): A monk with this ability varies his styles, never repeating the same move twice and capitalizing on the weaknesses of an opponent’s style. As long as he does not possess any style feat, the monk can spend 1 point from his ki pool as an immediate action to gain the following against opponents in the stance of a style feat: a +4 dodge bonus to AC, a +4 circumstance bonus on attack rolls, and a bonus equal to his monk level on damage rolls. These bonuses last until the end of the monk’s next turn (or his current turn if he uses this ability on his own turn). The monk can activate this ability and the furious defense ki power with the same immediate action for a total cost of 3 ki points. A monk must be at least 7th level before selecting this ki power.
+
+Furious Defense (Ex): By spending 1 point from his ki pool as an immediate action, a monk with this ki power can grant himself a +4 dodge bonus to AC until the end of his next turn. The monk can activate this ability and the formless mastery ki power with the same immediate action for a total cost of 3 ki points. A monk must be at least 7th level before selecting this ki power.
+
+High Jump (Ex): A monk with this ki power adds his level as a bonus on all Acrobatics checks to jump, both for vertical jumps and horizontal jumps. In addition, he always counts as having a running start when attempting Acrobatics checks to jump. By spending 1 point from his ki pool as a swift action, the monk gains a +20 bonus on Acrobatics checks to jump for 1 round.
+
+Insightful Wisdom (Su): A monk with this ability can spend 2 ki points as an immediate action to give another ally within 30 feet just the right word of advice to prevent disaster. If the ally can hear the monk, she can reroll a single attack roll or saving throw. The ally must take the second result, even if it is worse. A monk must be at least 8th level before selecting this ki power.
+
+Ki Blocker (Su): A monk with this ability can spend 1 ki point as a free action before making an unarmed strike against a foe. If the attack hits, the monk can interrupt the target’s flow of ki. If the monk successfully damages the target of his attack, that opponent’s cost to activate abilities with ki increases by 1 ki point for 1 hour. If the monk spends 2 points from his ki pool, he can use this ability to affect the target’s arcane pool, arcane reservoir, grit points, inspiration, or panache points instead of its ki pool. The effects of this ability do not stack, but multiple hits increase the duration by 1 hour for each hit. A monk must be at least 10th level before selecting this ki power.
+
+Ki Guardian (Su): As an immediate action before he rolls a saving throw against a targeted effect that also targets other allies or an area effect whose area includes other allies, a monk with this ability can spend any number of ki points and designate a number of adjacent allies equal to the number of ki points spent. The monk rolls one saving throw for each designated ally, using his bonus instead of the ally’s. For each successful saving throw, the corresponding ally treats the effect as if that ally had succeeded at the saving throw, and for each saving throw failed, the corresponding ally treats the effect as if that ally had failed the saving throw. If the monk fails any of the saving throws (including his own original saving throw), the monk treats the effect as if he had failed the saving throw. A monk must be at least 6th level before selecting this ki power.
+
+Ki Hurricane (Ex): As a full-round action, a monk with this ability can move up to twice his speed. At any point in that movement, the monk can spend 1 ki point to make the first attack in his flurry of blows. He can later spend another ki point to make the next attack in his flurry of blows, and so on, until he either stops spending ki points or has exhausted all the attacks from his flurry of blows. A monk must be at least 10th level and possess the sudden speed ki power before selecting this ki power.
+
+Ki Metabolism (Su): A monk with this ability uses his ki to control his metabolism. As long as he has at least 1 point remaining in his ki pool, the monk needs to eat and drink only 1/4 as often as normal, needs only 2 hours of sleep each night (including to replenish his ki pool), and can hold his breath for up to 1 hour per point of Constitution. As a move action, he can spend 1 ki point to enter a state of suspended animation, falling unconscious and appearing dead to all senses. At the time he enters this state, he indicates a preset period of time or a triggering condition, after which he awakens.
+
+Ki Mount (Su): A monk with this ability can spend 1 ki point as a standard action to grant 2 temporary hit points per monk level he possesses to his mount for 1 hour per monk level. As long as the monk and his mount are adjacent or the monk is mounted, the mount shares the benefits of whichever of the AC bonus, evasion, high jump, improved evasion, ki strike, perfect self, and still mind abilities the monk possesses. A monk must be at least 6th level before selecting this ki power.
+
+Ki Range (Su): A monk with this ability can spend 1 ki point as a swift action to increase the range increment of any thrown monk weapon by 20 feet. Apply this benefit before doubling the range increment with the Far Shot feat.
+
+Ki Visions (Su): A monk with this ability often sees visions of spirits or hears the voice of his departed mentor in his dreams. On any given night during which the monk dreams, he can use this ability to gain the benef its of a divination. If he does, he spends 2 ki points from the next day’s total. A monk must be at least 10th level before selecting this ki power.
+
+Ki Volley (Su): When a targeted spell or spell-like ability fails to overcome the monk’s spell resistance from diamond soul, he can spend 2 ki points as an immediate action to send that spell back at its caster as spell turning. A monk must be 16th level or higher and possess the diamond soul ki power before selecting this ki power.
+
+Light Steps (Ex): A monk with this ki power can move effortlessly across nearly any surface. Whenever the monk activates his feather balance ki power, he can also ignore all difficult terrain. In addition, while active, he can cross any solid surface, even if it would normally not support his weight. This does not allow him to walk on liquids. A monk must be at least 8th level and have the feather balance ki power before selecting this ki power.
+
+One Touch (Ex): As long as he has at least 1 point remaining in his ki pool, as a standard action, a monk with this power can make an unarmed strike against a foe as a touch attack. He adds 1/2 his monk level as a bonus on the damage roll. He can spend 1 ki point to double this bonus for that attack. A monk must be at least 12th level before selecting this ki power.
+
+Qinggong Power (Su): A monk with this power selects any of the qinggong monk ki powers (Pathfinder RPG Ultimate Magic 51) for which he qualifies based on his monk level. A monk can select this ability multiple times. Each time, he must select a different qinggong monk ki power.
+
+Quivering Palm (Su): A monk can set up vibrations within the body of another creature that can thereafter be fatal if the monk so desires. Using this ability is a standard action that costs 4 ki points, and the monk must announce his intent to use this ability (and spend the ki points) before making the attack roll. Creatures immune to critical hits cannot be affected. Otherwise, if the attack hits and the target takes damage from the blow, the quivering palm attack succeeds. Thereafter, the monk can try to slay the victim at any time within a number of days equal to his monk level. To make such an attempt, the monk merely wills the target to die (a free action); unless the target succeeds at a Fortitude saving throw (DC = 10 + 1/2 the monk’s level + the monk’s Wisdom modifier), it dies. If the saving throw is successful, the target is no longer in danger from that particular quivering palm attack, but it can still be affected by another one at a later time. A monk can have no more than one quivering palm in effect at one time. If a monk uses quivering palm while another is still in effect, the previous one is negated. A monk must be at least 16th level before selecting this ki power.
+
+Slow Fall (Su): A monk within arm’s reach of a wall can use it to slow his descent by expending 1 point from his ki pool. When he uses this ability, he takes no damage from the fall (as if using feather fall), but he must be adjacent to a wall for the length of the fall (although this can be used to reduce the damage from a fall if only part of it is adjacent to a wall).
+
+Sudden Speed (Su): A monk with this ki power can spend 1 point from his ki pool as a swift action to grant himself a sudden burst of speed. This increases the monk’s base land speed by 30 feet for 1 minute.
+
+Water Sprint (Su): A monk with this ki power can spend 1 point from his ki pool as a swift action to gain the ability to walk on water, as if under the effects of water walk. Once activated, this ability lasts for 1 minute per monk level. A monk must be at least 6th level before selecting this ki power.
+
+Wind Jump (Su): A monk with this ki power can spend 1 point from his ki pool as a move action to grant himself a fly speed (with perfect maneuverability) equal to his base land speed. He must end his movement each round on solid ground (or some other surface that can support his weight) or fall as normal. Once activated, this ability lasts for 1 minute. A monk must be at least 8th level and have the high jump ki power before selecting this ki power.
+
+Wholeness of Body (Su): A monk with this ki power can heal his own wounds as a standard action. By spending 2 points from his ki pool, he can heal an amount of damage equal to 1d8 + his monk level.
+
+Still Mind (Ex): At 4th level, a monk gains a +2 bonus on saving throws against enchantment spells and effects.
+
+Purity of Body (Ex): At 5th level, a monk gains immunity to all diseases, including supernatural and magical diseases.
+
+Style Strike (Ex): At 5th level, a monk can learn one type of style strike. Whenever he makes a flurry of blows, he can designate one of his unarmed strikes as a style strike. This attack is resolved as normal, but it has an additional effect depending on the type of strike chosen. At 9th level, and every 4 levels thereafter, a monk learns an additional style strike. He must choose which style strike to apply before the attack roll is made. At 15th level, he can designate up to two of his unarmed strikes each round as a style strike, and each one can be a different type. The monk can choose from any of the following strikes.
+
+Defensive Spin: The monk spins about, confounding his foe. If the attack hits, the monk gains a +4 dodge bonus to AC against any attacks made by the target of the style strike until the start of his next turn. This bonus does not stack with itself. The monk must attack with a fist to use this style strike.
+
+Elbow Smash: The monk follows up a punch with a strike from his elbow. If the attack hits, the monk can make an additional attack using the same attack bonus as the punch at a –5 penalty. If this second attack hits, it deals damage as normal, but all of the damage is nonlethal. The monk must attack with a fist to use this style strike.
+
+Flying Kick: The monk leaps through the air to strike a foe with a kick. Before the attack, the monk can move a distance equal to his fast movement bonus. This movement is made as part of the monk’s flurry of blows attack and does not require an additional action. At the end of this movement, the monk must make an attack against an adjacent foe. This movement may be between attacks. This movement provokes an attack of opportunity as normal. The attack made after the movement must be a kick.
+
+Foot Stomp: The monk stomps on a foe’s foot, preventing the opponent from escaping. If the attack hits and the monk ends his turn adjacent to that foe, the foe’s movement is restricted. Until the start of the monk’s next turn, the target of this attack can move only in such a way that the space it occupies is adjacent to the monk. Alternatively, it can attempt a combat maneuver check (against the monk’s CMD) as a standard action to break free. This strike does not work against foes that cannot be tripped. The monk must attack with a kick to use this style strike.
+
+Hammerblow: The monk links his hands together, swinging both arms like a club and dealing tremendous damage. If the attack hits, the monk rolls his unarmed strike damage twice, adding both rolls together before applying Strength and other modif iers to the damage. This bonus damage is not multiplied on a critical hit. The monk must attack with a fist to use this style strike, but must have both hands free.
+
+Head-Butt: The monk slams his head into his enemy’s head, leaving his foe reeling. If the attack hits and the foe is of the same size or one size smaller than the monk, the monk can make a free combat maneuver check against the target of this strike (using the base attack bonus of the attack used to hit the foe). If the foe is not of the same creature type as the monk, the monk takes a –8 penalty on this check. If the check is successful, the target is staggered for 1 round. Creatures without a discernible head are not affected by this style strike (subject to GM discretion). The monk must attack with a head-butt to use this style strike.
+
+Knockback Kick: The monk attempts to knock his foe back with a powerful kick. If the attack hits, the monk can attempt a free combat maneuver check against the foe (using the base attack bonus of the attack used to hit the foe). If the check is successful, the foe is knocked 10 feet directly away from the monk. This distance increases by 10 feet for every 5 by which the check exceeds the foe’s CMD, to a maximum distance equal to the monk’s fast movement bonus. This movement does not provoke an attack of opportunity. The foe stops moving if it strikes another creature, barrier, or otherwise solid object. The creature is not knocked prone by this movement. The monk must attack with a kick to use this style strike.
+
+Leg Sweep: The monk attempts to sweep his foe’s leg, knocking the opponent down. If the attack hits, the monk can make a free trip attempt against the target of this strike (using the base attack bonus of the attack used to hit the foe). This trip attempt does not provoke an attack of opportunity. The monk must attack with a kick to use this style strike.
+
+Shattering Punch: The monk delivers a brutal punch that can penetrate defenses. If the attack hits, it bypasses any damage reduction or hardness possessed by the target of that attack. The monk must attack with a fist to use this style strike.
+
+Spin Kick: The monk spins about, delivering a kick his foe did not expect. The monk makes his attack against the foe’s flat-footed AC. Creatures with the uncanny dodge class feature or a similar effect cannot be caught flat-footed by this style strike. The monk must attack with a kick to use this style strike.
+
+Improved Evasion (Ex): At 9th level, a monk’s evasion ability improves. He still takes no damage on successful Reflex saving throws against attacks, but henceforth he takes only half damage on failed saves. A helpless monk does not gain the benefit of improved evasion.
+
+Tongue of the Sun and Moon (Ex): At 13th level, a monk can understand and speak with any living creature, as if under a permanent tongues effect.
+
+Timeless Body (Ex): At 17th level, a monk no longer takes penalties to his ability scores for aging and cannot be magically aged. Any such penalties that he has already taken, however, remain in place. Age bonuses still accrue, and the monk still dies of old age when his time is up.
+
+Flawless Mind: At 19th level, a monk gains total control over his mental faculties. Whenever he attempts a Will save, he can roll twice and take the better result. If he fails a Will saving throw against a spell or effect that has a duration longer than 1 hour, the monk can attempt a new saving throw at the end of each hour to end the effect.
+
+Perfect Self: At 20th level, a monk becomes a magical creature. He is forevermore treated as an outsider rather than a humanoid (or whatever his original creature type was) for the purpose of spells and magical effects. Additionally, the monk gains damage reduction 10/chaotic, which allows him to ignore the first 10 points of damage from any attack made by a nonchaotic weapon. Unlike other outsiders, the monk can still be brought back from the dead as if he were a member of his previous creature type. Finally, the monk gains the ability to enter a state of perfect calm. During this time, the monk can take no actions, but he does regain ki at the rate of 1 point per 10 minutes spent at calm. He cannot use this ability to gain an amount of ki in excess of his maximum.
+Ex-Monks
+A monk who becomes nonlawful cannot gain new levels as a monk but retains all monk abilities.
+
+PFS Legal Kineticist
+Source Occult Adventures pg. 10
+Kineticists are living channels for elemental matter and energy, manipulating the world around them by drawing upon inner reserves from their own bodies. Kineticists often awaken to their kinetic abilities during a violent or traumatic experience, releasing their power involuntarily. As kinetic power is seldom inherited, kineticists are rarely able to find mentors to guide them, so they must delve into these mysteries on their own to learn to control their gifts.
+
+Role: Kineticists generally use their powers to assail their foes from range, but based on the way their talents develop, they can channel their kinetic abilities for a variety of situations. Kineticists are usually quite different from their families and friends, so they often strike out on their own or alongside others with extraordinary talents.
+
+Alignment: Any.
+Hit Die: d8.
+Starting Wealth: 1d6 x 10 gp (average 35 gp).
+Class Skills
+The Kineticist's class skills are Acrobatics (Dex), Craft (Int), Heal (Wis), Intimidate (Cha), Perception (Wis), Profession (Wis), Stealth (Dex), and Use Magic Device (Cha).
+
+Skill Points at each Level: 4 + Int modifier.
+Class Features
+Level	Base Attack Bonus	Fort Save	Ref Save	Will Save	Special
+1st	+0	+2	+2	+0	Burn, elemental focus, gather power, infusion, kinetic blast
+2nd	+1	+3	+3	+0	Elemental defense, utility wild talent
+3rd	+2	+3	+3	+1	Elemental overflow +1, infusion
+4th	+3	+4	+4	+1	Utility wild talent
+5th	+3	+4	+4	+1	Infusion, infusion specialization 1, metakinesis (empower)
+6th	+4	+5	+5	+2	Elemental overflow +2, internal buffer +1, utility wild talent
+7th	+5	+5	+5	+2	Expanded element
+8th	+6/+1	+6	+6	+2	Infusion specialization 2, utility wild talent
+9th	+6/+1	+6	+6	+3	Elemental overflow +3, infusion, metakinesis (maximize)
+10th	+7/+2	+7	+7	+3	Utility wild talent
+11th	+8/+3	+7	+7	+3	Infusion, infusion specialization 3, internal buffer 2, supercharge
+12th	+9/+4	+8	+8	+4	Elemental overflow +4, utility wild talent
+13th	+9/+4	+8	+8	+4	Infusion, metakinesis (quicken)
+14th	+10/+5	+9	+9	+4	Infusion specialization 4, utility wild talent
+15th	+11/+6/+1	+9	+9	+5	Expanded element, elemental overflow +5
+16th	+12/+7/+2	+10	+10	+5	Composite specialization, internal buffer 3, utility wild talent
+17th	+12/+7/+2	+10	+10	+5	Infusion, infusion specialization 5, metakinesis (twice)
+18th	+13/+8/+3	+11	+11	+6	Elemental overflow +6, utility wild talent
+19th	+14/+9/+4	+11	+11	+6	Infusion, metakinetic master
+20th	+15/+10/+5	+12	+12	+6	Infusion specialization 6, omnikinesis, utility wild talent
+
+Weapon and Armor Proficiency: Kineticists are proficient with all simple weapons and light armor, but not shields.
+
+Elemental Focus (Su): At 1st level, a kineticist chooses one primary element on which to focus. This element determines how she accesses the raw power of the Ethereal Plane, and grants her access to specific wild talents (see below) and additional class skills. She can select aether (telekinesis), air (aerokinesis), earth (geokinesis), fire (pyrokinesis), or water (hydrokinesis). She gains her selected element’s basic utility wild talent (basic telekinesis, basic aerokinesis, basic geokinesis, basic pyrokinesis, or basic hydrokinesis; see page 23) as a bonus wild talent. See Elements on page 14 for the specific abilities granted by each element.
+
+Wild Talents: A kineticist can use wild talents—magical abilities similar to spells but drawn from the kineticist’s innate psychic talent and usable at will. Wild talents are typically spell-like abilities (though some are supernatural abilities), and take a standard action to use unless otherwise noted. A wild talent always has the elemental descriptor or descriptors (aether, air, earth, fire, or water) matching its Element entry. A wild talent that can be used with any of several elements gains the appropriate elemental descriptor when used with an element. For example, the wall wild talent gains the earth descriptor when used by a geokineticist.
+
+Every wild talent has an effective spell level. A kineticist can always select 1st-level wild talents, but she can select a wild talent of a higher level only if her kineticist level is at least double the wild talent’s effective spell level. Kinetic blast and defense wild talents are always considered to have an effective spell level equal to 1/2 the kineticist’s class level (to a maximum effective spell level of 9th at kineticist level 18th).
+
+Unless otherwise noted, the DC for a saving throw against a wild talent is equal to 10 + the wild talent’s effective spell level + the kineticist’s Constitution modifier. The kineticist uses her Constitution modifier on all concentration checks for wild talents.
+
+In addition to the wild talents she gains from her other class features, at 2nd level and every 2 levels thereafter, a kineticist selects a new utility wild talent from the list of options available to her. A kineticist can select only universal wild talents or those that match her element (see Elemental Focus above). At 6th, 10th, and 16th levels, a kineticist can replace one of her utility wild talents with another wild talent of the same level or lower. She can’t replace a wild talent that she used to qualify for another of her wild talents.
+
+Burn (Ex): At 1st level, a kineticist can overexert herself to channel more power than normal, pushing past the limit of what is safe for her body by accepting burn. Some of her wild talents allow her to accept burn in exchange for a greater effect, while others require her to accept a certain amount of burn to use that talent at all. For each point of burn she accepts, a kineticist takes 1 point of nonlethal damage per character level. This damage can’t be healed by any means other than getting a full night’s rest, which removes all burn and associated nonlethal damage. Nonlethal damage from burn can’t be reduced or redirected, and a kineticist incapable of taking nonlethal damage can’t accept burn. A kineticist can accept only 1 point of burn per round. This limit rises to 2 points of burn at 6th level, and rises by 1 additional point every 3 levels thereafter. A kineticist can’t choose to accept burn if it would put her total number of points of burn higher than 3 + her Constitution modifier (though she can be forced to accept more burn from a source outside her control). A kineticist who has accepted burn never benefits from abilities that allow her to ignore or alter the effects she receives from nonlethal damage.
+
+Kinetic Blast (Sp): At 1st level, a kineticist gains a kinetic blast wild talent of her choice. This kinetic blast must be a simple blast that matches her element. As a standard action, the kineticist can unleash a kinetic blast at a single target up to a range of 30 feet. She must have at least one hand free to aim the blast (or one prehensile appendage, if she doesn’t have hands). All damage from a kinetic blast is treated as magic for the purpose of bypassing damage reduction. Kinetic blasts count as a type of weapon for the purpose of feats such as Weapon Focus. The kineticist is never considered to be wielding or gripping the kinetic blast (regardless of effects from form infusions; see Infusion on page 12), and she can’t use Vital Strike feats with kinetic blasts. Even the weakest kinetic blast involves a sizable mass of elemental matter or energy, so kinetic blasts always deal full damage to swarms of any size (though only area blasts deal extra damage to swarms). A readied kinetic blast can be used to counterspell any spell of equal or lower level that shares its descriptor. A kinetic blast that deals energy damage of any type (including force) has the corresponding descriptor. The various kinetic blasts, as well as additional rules for simple blasts, are described on pages 15–16.
+
+Gather Power (Su): If she has both hands free (or all of her prehensile appendages free, for unusual kineticists), a kineticist can gather energy or elemental matter as a move action. Gathering power creates an extremely loud, visible display in a 20-foot radius centered on the kineticist, as the energy or matter swirls around her. Gathering power in this way allows the kineticist to reduce the total burn cost of a blast wild talent she uses in the same round by 1 point. The kineticist can instead gather power for 1 full round in order to reduce the total burn cost of a blast wild talent used on her next turn by 2 points (to a minimum of 0 points). If she does so, she can also gather power as a move action during her next turn to reduce the burn cost by a total of 3 points. If the kineticist takes damage during or after gathering power and before using the kinetic blast that releases it, she must succeed at a concentration check (DC = 10 + damage taken + effective spell level of her kinetic blast) or lose the energy in a wild surge that forces her to accept a number of points of burn equal to the number of points by which her gathered power would have reduced the burn cost. This ability can never reduce the burn cost of a wild talent below 0 points.
+
+Infusion (Su): At 1st level, a kineticist gains an infusion wild talent from the list of options available based on her elemental focus. She gains additional infusions at 3rd, 5th, 9th, 11th, 13th, 17th, and 19th levels. By using infusions along with her kinetic blasts, a kineticist can alter her kinetic blasts to suit her needs. Infusions come in two types, each of which changes a kinetic blast differently: a substance infusion causes an additional effect, while a form infusion causes the kinetic blast to manifest in a different way. Each infusion can alter only certain kinds of kinetic blasts, which are listed in its Associated Blasts entry. Each time the kineticist uses one of her kinetic blast wild talents, she can apply up to one associated form infusion and up to one associated substance infusion. Some infusions change the action required to activate a kinetic blast or entirely transform the kinetic blast’s normal effects. The burn cost listed in each infusion’s Burn entry is added to the burn cost of the kinetic blast the infusion modifies.
+
+The DC for a save against an infusion is based on the associated kinetic blast’s effective spell level, not the level of the infusion. The DCs for form infusions are calculated using the kineticist’s Dexterity modifier instead of her Constitution modifier. When a kineticist modifies a kinetic blast with a form infusion and a substance infusion that both require saving throws, each target first attempts a saving throw against the form infusion. If a target succeeds and a successful save negates the infusion’s effects, the entire kinetic blast is negated; otherwise, the target then attempts a saving throw against the substance infusion. If a kineticist’s form and substance infusions both alter the kinetic blast’s damage, apply the substance infusion’s alteration first.
+
+At 5th, 11th, and 17th levels, a kineticist can replace one of her infusions with another infusion of the same effective spell level or lower. She can’t replace an infusion that she used to qualify for another of her wild talents.
+
+The descriptions of infusions begin on page 17.
+
+Elemental Defense (Su): At 2nd level, a kineticist gains her element’s defense wild talent ( the descriptions of defense wild talents begin on page 16).
+
+Elemental Overflow (Ex): At 3rd level, a kineticist’s body surges with energy from her chosen element whenever she accepts burn, causing her to glow with a nimbus of fire, weep water from her pores, or experience some other thematic effect. In addition, she receives a bonus on her attack rolls with kinetic blasts equal to the total number of points of burn she currently has, to a maximum bonus of +1 for every 3 kineticist levels she possesses. She also receives a bonus on damage rolls with her kinetic blast equal to double the bonus on attack rolls. The kineticist can suppress the visual effects of elemental overflow by concentrating for 1 full round, but doing so suppresses all of this ability’s other benefits, as well. The next time the kineticist uses any wild talent, the visual effects and benefits return instantly.
+
+As a kineticist’s body becomes more and more suffused with her element, she begins to gain more powerful benefits. Starting at 6th level, whenever she has at least 3 points of burn, the kineticist gains a +2 size bonus to two physical ability scores of her choice. She also gains a chance to ignore the effects of a critical hit or sneak attack equal to 5% × her current number of points of burn. At 11th level, whenever the kineticist has at least 5 points of burn, these bonuses increase to a +4 size bonus to one physical ability score of her choice and a +2 size bonus to each of her other two physical ability scores. At 16th level, whenever the kineticist has at least 7 points of burn, these bonuses increase to a +6 size bonus to one physical ability score of her choice, a +4 size bonus to a second physical ability score of her choice, and a +2 size bonus to the remaining physical ability score.
+
+Infusion Specialization (Ex): At 5th level, whenever a kineticist uses one or more infusions with a blast, she reduces the combined burn cost of the infusions by 1. This can’t reduce the total cost of the infusions used below 0. She reduces the burn cost by 1 additional point at 8th, 11th, 14th, 17th, and 20th levels.
+
+Metakinesis (Su): At 5th level, a kineticist gains the ability to alter her kinetic blasts as if with metamagic feats by accepting burn. By accepting 1 point of burn, she can empower her kinetic blast (as if using Empower Spell). At 9th level, by accepting 2 points of burn, she can maximize her kinetic blast as if using Maximize Spell. At 13th level, by accepting 3 points of burn, she can quicken her kinetic blast as if using Quicken Spell. At 17th level, by accepting 4 points of burn, the kineticist can use her kinetic blast twice with the same standard action, or swift action if she also uses metakinesis to quicken the blast. When she uses a double kinetic blast, all modifications, such as metakinesis and infusions, apply to both of the blasts, but the kineticist needs to pay the burn cost only once.
+
+Internal Buffer (Su): At 6th level, a kineticist’s study of her body and the elemental forces that course through it allow her to form an internal buffer to store extra energy. The buffer starts empty and doesn’t replenish each day, but the kineticist can accept 1 point of burn to add 1 point to the buffer as a full-round action, to a maximum of 1 point total. This maximum increases to 2 points at 11th level and to 3 points at 16th level. Once the kineticist adds points to her buffer, they remain indefinitely until she spends them. When she would otherwise accept burn, a kineticist can spend 1 point from her buffer to avoid accepting 1 point of burn. She cannot spend more than 1 point from her buffer in this way for a single wild talent. Points spent from the internal buffer don’t activate elemental overflow or add to its effects. Similarly, this buffer can be used to exceed the limit on the number of points of burn the kineticist can accept in a single turn.
+
+Expanded Element (Su): At 7th level, a kineticist learns to use another element or expands her understanding of her own element. She can choose any element, including her primary element. She gains one of that element’s simple blast wild talents that she does not already possess, if any. She also gains all composite blast wild talents whose prerequisites she meets, as well as the basic wild talent of her chosen expanded element (for instance, basic aerokinesis if she chooses air). See Composite Blasts on page 15 for additional rules for and descriptions of composite blasts. She doesn’t gain the defense wild talent of the expanded element.
+
+If the kineticist’s expanded element is different from her primary element, she treats her kineticist level as 4 levels lower for the purpose of determining which wild talents she can learn from her expanded element.
+
+If the kineticist chooses to expand her understanding of an element she already has, she gains an additional utility wild talent or infusion of her choice from that element, as if from her infusion or wild talent class feature, as appropriate.
+
+At 15th level, the kineticist can either select a new element or expand her understanding of her original element. She can’t select the same element she selected at 7th level unless it is her primary element. She gains all the benefits from her new expanded element as listed above. However, if the kineticist selected her primary element as her expanded element at both 7th and 15th levels, her mastery of that element increases. For wild talents of her element, the kineticist gains a +1 bonus on attack rolls and damage rolls, as well as to caster level and DCs.
+
+Supercharge (Su): At 11th level, when using gather power as a move action, a kineticist can reduce the total burn cost of a single wild talent by 2 points instead of 1. When using gather power for 1 full round, she can reduce the burn cost of a single wild talent by 3 points instead of 2.
+
+Composite Specialization (Su): At 16th level, a kineticist becomes more adept at creating composite blasts. She reduces the burn cost of all composite blasts by 1 point. This can’t reduce the cost of a composite blast below 0 points.
+
+Metakinetic Master (Su): At 19th level, a kineticist chooses one type of metakinesis, such as empower or quicken. She reduces the burn cost of that metakinesis by 1 point (to a minimum of 0 points).
+
+Omnikinesis (Su): At 20th level, a kineticist transcends the distinction between the different elements and can bend all creation to her will. By accepting 1 point of burn (in addition to any burn requirement of the kinetic blast she chooses), she can use any blast wild talent she doesn’t know. By accepting 1 point of burn as a standard action, she can change any of her wild talents into any other wild talent of the same category (such as simple blasts or defense) for 24 hours, ignoring any elemental requirements or restrictions (but not any other requirements or restrictions).
+
+
+PFS Legal Elemental Ascetic
+Source Occult Adventures pg. 90
+Combining the elemental powers of a kineticist with the rigid physical discipline of a monk, an elemental ascetic channels his powers through his body to enhance himself in combat.
+
+Elemental Flurry (Su): At 1st level, an elemental ascetic gains Improved Unarmed Strike as a bonus feat. He gains the kinetic fist form infusion and it costs 0 points of burn instead of 1 point of burn. When using the kinetic fist form infusion with a full attack, he can make a flurry of blows as the monk class feature. He must use only his fists to make this flurry, no matter what other abilities he possesses. Like a monk, he can use this ability only when unarmored, not using a shield, and unencumbered. He can’t use his kinetic blast without a form infusion, nor can he ever use his kinetic blast with the chain, extended range, extreme range, foe throw, flurry of blasts, many throw, or snake form infusions, or with any other form infusion that requires a ranged attack roll or ranged touch attack roll. This ability alters kinetic blast and replaces elemental overflow.
+
+Elemental Wisdom (Su): An elemental ascetic can use his Wisdom modifier instead of his Constitution modifier to determine the DCs of Constitution-based wild talents, the duration of wild talents with a Constitution-based duration, and his bonus on concentration checks for wild talents. This ability alters the key ability scores of wild talents.
+
+AC Bonus (Ex): At 2nd level, when unarmored, not using a shield, and unencumbered, an elemental ascetic adds his Wisdom bonus (if any) to his AC and his CMD. These bonuses to AC apply even against touch attacks or when the elemental ascetic is flat-footed. He loses these bonuses when he is immobilized or helpless. This bonus increases by 1 for every 4 kineticist levels the elemental ascetic possesses beyond 2nd. The elemental ascetic’s kineticist levels stack with monk levels for the purpose of determining when the bonus increases. An elemental ascetic can never take the expanded defense utility wild talent. This ability replaces elemental defense.
+
+Powerful Fist (Su): At 5th level, an elemental ascetic can accept 2 additional points of burn when using kinetic fist to increase that infusion’s damage dice from d6s to d8s. At 9th level, he can instead accept 3 additional points of burn to increase the damage dice from d6s to d10s. At 13th level, he can instead accept 4 additional points of burn to increase the damage dice from d6s to d12s. All of these options count as burn from a form infusion and can thus be reduced by infusion specialization. This ability replaces the 5th-, 9th-, and 13th-level infusions.
+
+
+Kineticist Elements
+Description Source: Occult Adventures
+A kineticist can choose from among the following elements. Infusion wild talents are marked with a dagger (†); all other wild talents listed below from 1st-9th are utility wild talents.
+
+
+PFS Legal Universal
+Source Occult Adventures pg. 14
+The following wild talents are available to all kineticists.
+Class Skills: N/A
+
+Wild Talents
+Simple Blast - N/A
+Composite Blasts - N/A
+Defense - N/A
+1st - draining infusion†, elemental whispers, extended range†, infernal bargain, kinetic awe, kinetic blade†, kinetic dissolution, kinetic fist†, mesmerizing elementalist, nine-tailed kineticist, skilled kineticist, tengu blade lore, venom speaker
+2nd - blade rush†, focused blast†, kundalini infusion†, past life evoker, skilled kineticist, greater, spindle†, venom admixture†
+3rd - elemental grip, elemental trap†, elemental whispers, greater, extreme range†, flurry of blasts†, kinetic restoration, kinetic whip†, mobile blast†, snake†, stylish infusion†
+4th - expanded defense, venom infusion†
+5th - blade whirlwind†, grappling infusion†, kinetic form, spark of life, wall†
+6th - ride the blast, whip hurricane†
+7th - shepherd of souls†, venom infusion, greater†
+8th - elemental exile, reverse shift
+9th - N/A
+
+PFS Legal Earth
+Source Occult Adventures pg. 14
+Kineticists who focus on the element of earth are called geokineticists. Geokineticists manipulate the earth itself, and they are masters of defensive techniques.
+Class Skills: A geokineticist adds Climb and Knowledge (dungeoneering) to her list of class skills.
+
+Wild Talents
+Simple Blast - earth blast
+Composite Blasts - autumn blast, magma blast, metal blast, mud blast, sandstorm blast
+Defense - flesh of stone
+1st - basic geokinesis, earth walk, kinetic cover, pushing infusion†
+2nd - bowling infusion†, earth climb, entangling infusion†
+3rd - clockwork heart, earth child, impale†, jagged flesh, magnetic infusion†, magnetism, pillar, rare-metal infusion†, tremorsense
+4th - earthmeld, enduring earth, shift earth
+5th - clockwork puppet, earth glide, elemental transmission, spark of innovation, stone sculptor, tremor†, tremorsense, greater, untwisting iron infusion†
+6th - deadly earth†
+7th - fragmentation†, shift earth, greater
+8th - earth tongue
+9th - magnetism, greater, seismic master
+
+
+PFS Legal Hungry Ghost Monk
+Source Advanced Player's Guide pg. 110
+The hungry ghost monk looks to spirits that prey upon the living as models of perfection. He sees the life energy of the universe as a resource to be manipulated, even stealing it from other creatures. It is through this constant influx of energy that the hungry ghost monk reaches his ultimate goal: power—personal, pure, and simple. A hungry ghost monk has the following class features.
+
+Punishing Kick (Ex): At 1st level, a hungry ghost monk gains Punishing Kick as a bonus feat, even if he does not meet the prerequisites. At 10th level, and every five levels thereafter, the monk can push the target of his Punishing Kick an additional 5 feet (10 feet at 10th level, 15 feet at 15th level, and 20 feet at 20th level). At 15th level, he can instead choose to push the target 5 feet and knock the target prone with the same attack. The target still gets a saving throw to avoid being knocked prone. This ability replaces Stunning Fist.
+
+Steal Ki (Ex): At 5th level, a hungry ghost monk can steal ki from other creatures, though this ability is controversial in some circles of monks, who see it as nothing less than a form of vampirism. If the monk scores a confirmed critical hit against a living enemy or reduces a living enemy to 0 or fewer hit points, he can steal some of that creature’s ki. This ability replenishes 1 spent ki point to the monk’s ki pool, as long as the monk has at least 1 ki point in his pool. He cannot exceed his ki pool’s maximum. At 11th level, each time the monk successfully steals ki, he can make an immediate saving throw against one disease he is suffering from. There is no penalty for failing this saving throw. The monk gains a bonus equal to his Wisdom modifier on the saving throw. This ability replaces purity of body.
+
+Life Funnel (Su): At 7th level, a hungry ghost monk can steal a creature’s life force to replenish his own. If the monk has at least 1 ki point in his ki pool and scores a confirmed critical hit against a living enemy or reduces a living enemy to 0 or fewer hit points, he heals a number of hit points equal to his monk level. As with steal ki, some monks believe that life funnel is an unsavory act, no better than what the undead do to the living. A monk with this ability cannot steal both ki and hit points at the same time. This ability replaces wholeness of body.
+
+Life from a Stone (Su): At 11th level, a hungry ghost monk can steal ki or life force from any creature, not just living creatures. If the monk has at least 1 ki point in his pool, he gains the benefit of life funnel and steal ki when he confirms a critical hit against any creature or reduces any creature to 0 or fewer hit points. This ability replaces diamond body.
+
+Sipping Demon (Su): A 13th level, a hungry ghost monk gains 1 temporary hit point each time he hits an enemy with a melee attack. The monk gains a number of temporary hit points equal to his Wisdom modifier when he scores a critical hit. The maximum number of temporary hit points the monk can have is equal to his monk level. The temporary hit points disappear 1 hour later. The monk can only use this ability when he has at least 1 ki point in his ki pool. This ability is a proscribed manipulation of ki considered by many good monks to be a corruption. The ability replaces diamond soul.
+
+
+Corruption
+Source Horror Adventures pg. 14
+Even the most pure creature can succumb to tides of darkness. What begins as a minor malady or errant idea can grow into something malignant—a spreading corruption that can obscure your morals, cloud your judgment, and ultimately devour your soul. There are a number of different types of corruptions, from the hunger of vampirism to the horrifying transformation of the promethean. Living with a corruption is often a terrifying experience, but also offers the temptation of dark gifts. Hosts sometimes choose not to fight the corruption, but rather accept it and allow it to progress. These unfortunate folk either succumb to lust for the corruption’s power or attempt to control the stain of corruption and use its gifts for some greater good.
+
+Each corruption detailed on the pages that follow features a general description, followed by its catalysts and manifestations. The catalyst section explains how a creature might contract the corruption, how it progresses, and how it can be cured. When a creature first contracts a corruption and its manifestation level increases, the corrupted creature gains manifestations. Manifestations carry both beneficial gifts and detrimental stains. Also, as the manifestation level increases, the stains and gifts of previous manifestations might grow more powerful. Lastly, as a creature’s manifestation level increases, so does the possibility of the corruption taking hold entirely, defiling its host forever.
+Corruption Glossary
+Source Horror Adventures pg. 14
+A short list of terms related to corruptions follows.
+
+Catalyst: The inciting incident that corrupted you in the game’s story, combined with ways you can progress toward total corruption.
+
+Corruption: A dark manifestation of evil or alien influence that changes you over time.
+
+Corruption Stage: A measure of how close you are to falling to your corruption. Think of your corruption stage as how much your soul has been altered by your corruption. At corruption stage 3, you succumb and are no longer a PC.
+
+Gift: A benefit granted by a manifestation of your corruption.
+
+Manifestation: A manifestation is a way in which your corruption becomes more prominent. You gain manifestations roughly every 2 character levels you live with your corruption. Each manifestation has both a gift and a stain, although you might not get both.
+
+Manifestation Level: This is a measure of how much your corruption has changed your body and mind. Your manifestation level equals the number of manifestations you have.
+
+Stain: A negative effect granted by a manifestation of your corruption.
+Contracting a Corruption
+Source Horror Adventures pg. 14
+The catalyst section of each corruption offers a number of possible methods for contracting that corruption. Once you contract a corruption, you immediately gain a manifestation. Your manifestation level becomes 1, and your number of manifestations and your manifestation level can increase as described in Manifestation Level. You also draw closer to losing your soul, as represented by your corruption stage. This is described under The Corruption’s Progress.
+
+Multiple Corruptions: Typically, you can have only one corruption. If some exceedingly rare condition arises that would cause you to be affected by more than one, you typically gain stains from both corruptions’ manifestations but gifts from only the first one you contracted, and the secondary corruption also grants manifestations at a slower rate. When the text refers to your manifestation level, use only your manifestation level for the second corruption, not the sum of all your manifestation levels.
+Manifestations
+Source Horror Adventures pg. 14
+You gain a manifestation of your curse when you first contract a corruption, and gain more at later levels. Each manifestation includes both a gift and a stain (though campaign variants can change how you acquire these gifts and stains as described in the Variants section below). Many manifestations have prerequisites that limit them to characters farther along in their corruptions. A prerequisite marked with an asterisk (*) is another manifestation in the same section.
+
+Unless stated otherwise, the DC for gifts that allow a saving throw is equal to 10 + 1/2 your level + your manifestation level (see below). You can have a maximum of nine manifestations.
+Corruption Variants
+Source Horror Adventures pg. 14
+A corruption’s gift and stain don’t have to manifest together. Your GM can use the following variants to alter how gifts and stains are gained.
+
+Useful Corruption: In this form of campaign, your corruption’s gifts allow you to fight sinister forces. You select which manifestation to take when you gain the corruption and with each increase to your manifestation level. You receive the gift, but you don’t have to take the stain. If you refuse the stain, that manifestation doesn’t increase your manifestation level, which could prevent you from qualifying for additional manifestations. You can accept the stain of your manifestations at any time, immediately increasing your manifestation level.
+
+Vile Corruption: In this form of campaign, corruptions are terrible burdens to be purged as soon as possible. When you contract a corruption or your manifestation level increases, the GM decides which manifestation you gain. You always acquire the stain, but you can choose not to take the gift. If you refuse the gift, you gain a +1 circumstance bonus on saving throws related to the corruption progressing. For each additional gift you refuse, this bonus increases by 1. You can accept the gifts of your manifestations at any time, but once you do, you immediately lose the corresponding bonus on saving throws.
+Manifestation Level
+Source Horror Adventures pg. 15
+Each creature with a corruption has a manifestation level, which is normally equal to the number of manifestations the corrupted creature has (see Variants for exceptions). Sometimes gifts and stains become more extreme as a creature’s manifestation level increases.
+
+You gain a new manifestation roughly every 2 levels. GMs can introduce corruptions as early as your 1st character level. A standard rate of corruption starts with a PC gaining the first stain at 1st level, the second at 3rd level, and another at 5th, 7th, 9th, and so on. Because you are limited to nine manifestations, your manifestation level can’t exceed 9th.
+
+This standard rate of acquisition is a guideline rather than a strict rule. Many corruptions feature story considerations that could speed up or slow down the process, and individual GMs can alter the speed to serve the campaign’s narrative. When introducing a corruption at higher levels, a GM could accelerate the rate at which the first manifestations are acquired or grant multiple manifestations at once. In any case, the GM decides when a corruption progresses, not you (though variants can alter this, as described in Variants).
+The Corruption's Progress
+Source Horror Adventures pg. 15
+Every corruption has an associated saving throw. Each time you fail it, your corruption progresses to the next corruption stage. Each stage causes a more significant change within you, until you become completely irredeemable at corruption stage 3. When you gain a corruption, you begin at what is effectively stage 0, with no direct penalties. You must attempt a saving throw when you are being pulled toward darkness, and these saves are usually spread over a long period of time (often weeks or months). As such, abilities that allow or force rerolls (or rolling twice and taking the higher or lower result) can never be used on these saving throws, and temporary bonuses don’t apply on the progression saving throw, even if they are long-lasting.
+
+Corruptions
+Even the most pure creature can succumb to tides of darkness. What begins as a minor malady or errant idea can grow into something malignant—a spreading corruption that can obscure your morals, cloud your judgment, and ultimately devour your soul. There are a number of different types of corruptions, from the hunger of vampirism to the horrifying transformation of the promethean. Living with a corruption is often a terrifying experience, but also offers the temptation of dark gifts. Hosts sometimes choose not to fight the corruption, but rather accept it and allow it to progress. These unfortunate folk either succumb to lust for the corruption’s power or attempt to control the stain of corruption and use its gifts for some greater good.
+Click here for the full rules on Corruptions.
+Vampirism Corruption
+Source Horror Adventures pg. 36
+You salivate when blood is spilled, and struggle against the urge to sink your teeth into the necks of friends and innocents.
+Catalyst
+Being drained—but not killed—at least six times by a vampire within a month or less causes this corruption. Powerful vampires or curses can cause this corruption more rapidly.
+Progression
+Vampirism progresses when you feed off and kill a sentient creature. Each week, you need to drink the blood of sentient creatures one size category smaller than you or larger until you drain enough to deal Constitution damage equal to your manifestation level. If you don’t have the fangs manifestation, you must feed on a helpless or willing creature. If you haven’t drunk enough blood after a week, you must succeed at a Will save (DC = 15 + your manifestation level) each day until you have. If you fail, the next time you rest, your corruption takes over and you unconsciously hunt and feed, drinking a sentient creature dry. If circumstances make it impossible to feed (such as if you are tied down or in a locale with nothing to feed upon) you start to starve as if you had not eaten in 3 days, and you continue to thirst for blood and struggle to escape and feed until you have received five times the amount of blood from sentient creatures you normally require. If your allies are able to restrain and feed you, your corruption doesn’t progress. However, the DC of the Will save against your corruption progressing increases by 2. These increases stack, and last until your corruption reaches the next stage. Whenever you drop below 0 hit points, you must attempt a save as if you hadn’t drunk enough blood that week.
+Corruption Stage 1: Once you feed on an innocent sentient creature, your alignment shifts one step toward evil and spells that detect undead sense you, though the peculiar result they return informs the caster that you’re still a living creature. Other spells and effects don’t treat you as undead.
+Corruption Stage 2: The second time this happens, your alignment shifts another step toward evil and you are affected by spells and abilities as if your creature type were undead (including bane and the favored enemy class feature). This doesn’t grant you any of the immunities of being undead, nor does it make you immune to effects that target living creatures or change how negative and positive energy affect you.
+Corruption Stage 3: The third time this occurs, you become an NPC vampire under the GM’s control.
+Removing the Corruption
+Ending the corruption requires eliminating the source, such as by slaying your progenitor vampire or ending your curse.
+Manifestations
+The following are manifestations of the vampirism corruption.
+Allure
+Source Horror Adventures pg. 36
+You can influence others subtly, but lose your reflection.
+Gift: You gain a +2 racial bonus on Bluff, Diplomacy, and Intimidate checks. At manifestation level 3rd, these bonuses increase to +4.
+Stain: You cast no reflection. While you’re within 10 feet of a mirror or reflective surface, nearby creatures may notice something amiss (Perception DC 20). If they succeed by 5 or more, they notice your lack of reflection. When you reach manifestation level 3rd, a creature can present a mirror to you as a standard action to repel you. You must stay at least 5 feet away from the mirror and can’t touch or make melee attacks against that creature. After 1 round, if the creature continues presenting the mirror, you can attempt a DC 25 Will save each round to ignore the repulsion for that round.
+Children of the Night
+Source Horror Adventures pg. 36
+You can summon foul beasts to faithfully serve you.
+Gift: Once per day, you can summon a rat swarm or a wolf, as if using summon nature’s ally II with a caster level equal to your character level. The creature serves you for 10 minutes or until destroyed. At manifestation level 3rd and every 2 manifestation levels thereafter, you can use this ability an additional time each day. At manifestation level 4th, you can spend two daily uses of this ability to summon a bat swarm.
+Stain: You take a –3 penalty on Handle Animal and Ride checks against animals (except those you summon with this manifestation’s gift). At manifestation level 5th, you affect nonhostile animals as if you had an unnatural aura.
+Dreadful Charm
+Source Horror Adventures pg. 36
+Your powers of persuasion allow you to compel the weak.
+Prerequisite: Allure.
+Gift: Once per day when you succeed at a Bluff, Diplomacy, or Intimidate check against a creature, you can charm that creature as if using charm monster with a caster level equal to your character level. If the creature fails its save, it’s charmed for a number of minutes equal to your character level.
+Stain: You no longer cast a shadow. Noticing this in normal or bright light requires a successful DC 15 Perception check. Also, if you’re in an area that smells strongly of garlic, you must succeed at a DC 20 Fortitude save or be sickened for 1d4 minutes. Immunities don’t prevent this sickened condition.
+Fangs
+Source Horror Adventures pg. 36
+Your canines grow unnaturally long when you are angry.
+Gift: You can, as a swift action, grow fangs that grant you a bite attack. This is a primary natural attack that deals 1d6 points of piercing damage if your size is Medium (1d4 if Small). You can dismiss the fangs as a move action. You can drain blood with your bite from a helpless creature as a standard action, or a pinned creature as a free action once per round immediately after succeeding at a combat maneuver check to pin the creature or maintain your pin. Each time you drain blood, you deal 1 point of Constitution damage. This counts toward the feeding you must do to avoid your corruption progressing; you needn’t entirely drain and kill the creature. Draining blood changes your alignment only if you feed on an unwilling innocent.
+Stain: To avoid a saving throw against your corruption progressing, you must drink the requisite amount of blood each day instead of each week.
+Greater Unlife
+Source Horror Adventures pg. 37
+You can recover from nearly any wound.
+Prerequisite: Manifestation level 3rd, unlife.
+Gift: When you use the ability of the unlife manifestation, you gain fast healing 3 instead of fast healing 1. While the fast healing lasts, you are immune to nonlethal damage, ability damage, and ability drain, although you retain any you already had.
+Stain: Whenever you’re in direct sunlight, you’re staggered instead of shaken. Nothing can remove or prevent this condition, but it ends once you’re out of direct sunlight.
+Life Drain
+Source Horror Adventures pg. 37
+You can drain life from those you harm.
+Prerequisite: Manifestation level 2nd.
+Gift: You gain a slam attack, a primary natural attack that deals 1d6 points of bludgeoning damage if your size is Medium (1d4 if Small). If you confirm a critical hit with this attack, you inflict 1 temporary negative level on the target. The DC to remove this negative level is equal to the standard corruption ability DC.
+Stain: You are healed by negative energy and harmed by positive energy as if you were an undead creature.
+True Unlife
+Source Horror Adventures pg. 37
+You can cheat death.
+Prerequisite: Manifestation level 3rd, greater unlife, unlife.
+Gift: When you’re reduced to fewer than 0 hit points but not slain and you have a use of fast healing remaining, you immediately assume gaseous form, activate your fast healing, and remain conscious. Once you have more than 0 hit points, the effect ends. This delays the normal Will save against your corruption progressing until gaseous form ends.
+Stain: If you remain in direct sunlight, at the end of your second turn you burst into flame, taking 1d6 points of fire damage per manifestation level you have each round. This fire damage bypasses resistance or immunity and can’t be prevented. The fire damage and staggered condition end as soon as you get out of direct sunlight. If you are reduced to fewer than 0 hit points while in direct sunlight, you are slain and can’t be brought back to life without true resurrection.
+Unlife
+Source Horror Adventures pg. 37
+You heal at a phenomenal rate.
+Prerequisite: Manifestation level 3rd.
+Gift: As a standard action a number of times per day equal to 1/2 your manifestation level, you can grant yourself fast healing 1 for 1 minute.
+Stain: While you’re in direct sunlight, you become shaken. Nothing can remove this condition, nor does immunity to fear prevent it, but it ends as soon as you are no longer in sunlight.
+Vampiric Grace
+Source Horror Adventures pg. 37
+You move with a predator’s grace.
+Prerequisite: Manifestation level 2nd.
+Gift: You gain Dodge as a bonus feat and a +2 racial bonus on Stealth checks. At manifestation level 6th, you can climb walls (as per spider climb) at will.
+Stain: You can enter a private dwelling only if invited in by someone with the authority to do so, unless you succeed at a DC 30 Will save. If you fail, you can never retry the save, but you can enter if you’re later invited inside.
+
+
+Monster Templates
+Vampire Spawn (CR +1)
+Monster Codex pg. 244
+Acquired/Inherited Template Acquired
+Simple Template No
+Usable with Summons No
+
+The following template can be used to create unique vampire spawn with class levels.
+
+“Vampire spawn” is an acquired template that can be added to any living creature with 4 or more Hit Dice (referred to hereafter as the base creature). A vampire spawn uses the base creature’s stats and abilities except as noted here.
+
+CR: Same as the base creature + 1.
+Alignment: Any evil.
+Type: The creature’s type changes to undead. Do not recalculate class Hit Dice, BAB, or saves.
+Senses: A vampire spawn gains darkvision to 60 feet.
+Armor Class: Natural armor increases to +4, unless the base creature’s natural armor is already +4 or higher.
+Hit Dice: Change all racial Hit Dice to d8s. Class Hit Dice are unaffected. As undead, vampire spawn use their Cha modifier to determine bonus hit points (instead of Con).
+Defensive Abilities: A vampire spawn gains channel resistance +2, DR 5/silver, resistance 10 against cold and electricity, and fast healing 2.
+Weaknesses: A vampire spawn has the same weaknesses of the vampire that created it.
+
+Resurrection Vulnerability (Su): A raise dead or similar spell cast on a vampire spawn destroys it (Will negates). Using the spell in this way does not require a material component.
+
+Melee: A vampire spawn gains a slam attack if the base creature didn’t have one. Damage for the slam depends on the vampire spawn’s size (see Bestiary 301).
+Special Attacks: A vampire spawn gains a vampire’s blood drain and dominate special attacks. The vampire who created the spawn can influence a spawn’s dominated creature as if she had dominated it herself.
+
+Energy Drain (Su): A creature hit by a vampire spawn’s slam (or other natural weapon) gains 1 negative level. This ability only triggers only once per round.
+
+Special Qualities: A vampire spawn gains the gaseous form, shadowless, and spider climb abilities of a vampire.
+Ability Scores: Cha +2.
+Skills: Spawn gain a +8 racial bonus on Acrobatics and Stealth checks.
+Feats: Spawn gain Skill Focus (Perception) as a bonus feat.
+
+
+
+Home >Bestiary >(Bestiary) By Type >Templates >
+Vampire (CR +2)
+Contents [show]
+
+
+Vampires are undead humanoid creatures that feed on the blood of the living. They look much as they did in life, often becoming more attractive, though some have a hardened, feral look instead.
+
+Creating a Vampire
+“Vampire” is an acquired template that can be added to any living creature with 5 or more Hit Dice (referred to hereafter as the base creature). Most vampires were once humanoids, fey, or monstrous humanoids. A vampire uses the base creature’s stats and abilities except as noted here.
+
+CR: Same as the base creature + 2.
+
+AL: Any evil.
+
+Type: The creature’s type changes to undead (augmented). Do not recalculate class Hit Dice, BAB, or saves.
+
+Senses: A vampire gains darkvision 60 ft.
+
+
+AD
+Armor Class: Natural armor improves by +6.
+
+Hit Dice: Change all racial Hit Dice to d8s. Class Hit Dice are unaffected. As undead, vampires use their Charisma modifier to determine bonus hit points (instead of Constitution).
+
+Defensive Abilities: A vampire gains channel resistance +4, DR 10/magic and silver, and resistance to cold 10 and electricity 10, in addition to all of the defensive abilities granted by the undead type. A vampire also gains fast healing 5. If reduced to 0 hit points in combat, a vampire assumes gaseous form (see below) and attempts to escape. It must reach its coffin home within 2 hours or be utterly destroyed. (It can normally travel up to 9 miles in 2 hours.) Additional damage dealt to a vampire forced into gaseous form has no effect. Once at rest, the vampire is helpless. It regains 1 hit point after 1 hour, then is no longer helpless and resumes healing at the rate of 5 hit points per round.
+
+Weaknesses: Vampires cannot tolerate the strong odor of garlic and will not enter an area laced with it. Similarly, they recoil from mirrors or strongly presented holy symbols. These things don’t harm the vampire—they merely keep it at bay. A recoiling vampire must stay at least 5 feet away from the mirror or holy symbol and cannot touch or make melee attacks against that creature. Holding a vampire at bay takes a standard action. After 1 round, a vampire can overcome its revulsion of the object and function normally each round it makes a DC 25 Will save.
+
+Vampires cannot enter a private home or dwelling unless invited in by someone with the authority to do so.
+
+Reducing a vampire’s hit points to 0 or lower incapacitates it but doesn’t always destroy it (see fast healing). However, certain attacks can slay vampires. Exposing any vampire to direct sunlight staggers it on the first round of exposure and destroys it utterly on the second consecutive round of exposure if it does not escape. Each round of immersion in running water inflicts damage on a vampire equal to one-third of its maximum hit points—a vampire reduced to 0 hit points in this manner is destroyed. Driving a wooden stake through a helpless vampire’s heart instantly slays it (this is a full-round action). However, it returns to life if the stake is removed, unless the head is also severed and anointed with holy water.
+
+Speed: Same as the base creature. If the base creature has a swim speed, the vampire is not unduly harmed by running water.
+
+Melee: A vampire gains a slam attack if the base creature didn’t have one. Damage for the slam depends on the vampire’s size. Its slam also causes energy drain (see below). Its natural weapons are treated as magic weapons for the purpose of overcoming damage reduction.
+
+Special Attacks: A vampire gains several special attacks. Save DCs are equal to 10 + 1/2 vampire’s HD + vampire’s Cha modifier unless otherwise noted.
+
+Blood Drain (Su)
+A vampire can suck blood from a grappled opponent; if the vampire establishes or maintains a pin, it drains blood, dealing 1d4 points of Constitution damage. The vampire heals 5 hit points or gains 5 temporary hit points for 1 hour (up to a maximum number of temporary hit points equal to its full normal hit points) each round it drains blood.
+
+Children of the Night (Su)
+Once per day, a vampire can call forth 1d6+1 rat swarms, 1d4+1 bat swarms, or 2d6 wolves as a standard action. (If the base creature is not terrestrial, this power might summon other creatures of similar power.) These creatures arrive in 2d6 rounds and serve the vampire for up to 1 hour.
+
+Create Spawn (Su)
+A vampire can create spawn out of those it slays with blood drain or energy drain, provided that the slain creature is of the same creature type as the vampire’s base creature type. The victim rises from death as a vampire spawn in 1d4 days. This vampire is under the command of the vampire that created it, and remains enslaved until its master’s destruction. A vampire may have enslaved spawn totaling no more than twice its own Hit Dice; any spawn it creates that would exceed this limit become free-willed undead. A vampire may free an enslaved spawn in order to enslave a new spawn, but once freed, a vampire or vampire spawn cannot be enslaved again.
+
+Dominate (Su)
+A vampire can crush a humanoid opponent’s will as a standard action. Anyone the vampire targets must succeed on a Will save or fall instantly under the vampire’s influence, as though by a dominate person spell (caster level 12th). The ability has a range of 30 feet. At the GM’s discretion, some vampires might be able to affect different creature types with this power.
+
+Energy Drain (Su)
+A creature hit by a vampire’s slam (or other natural weapon) gains two negative levels. This ability only triggers once per round, regardless of the number of attacks a vampire makes.
+
+Special Qualities: A vampire gains the following special qualities:
+
+Change Shape (Su)
+A vampire can use change shape to assume the form of a dire bat or wolf, as beast shape II.
+
+Gaseous Form (Su)
+As a standard action, a vampire can assume gaseous form at will (caster level 5th), but it can remain gaseous indefinitely and has a fly speed of 20 feet with perfect maneuverability.
+
+Shadowless (Ex)
+A vampire casts no shadows and shows no reflection in a mirror.
+
+Spider Climb (Ex)
+A vampire can climb sheer surfaces as though under the effects of a spider climb spell.
+
+Ability Scores: Str +6, Dex +4, Int +2, Wis +2, Cha +4. As an undead creature, a vampire has no Constitution score.
+
+Skills: Vampires gain a +8 racial bonus on Bluff, Perception, Sense Motive, and Stealth checks.
+
+Feats: Vampires gain Alertness, Combat Reflexes, Dodge, Improved Initiative, Lightning Reflexes, and Toughness as bonus feats.
+
+Vampiric Breeds
+Unlike the appellations of many undead, the name “vampire” can apply to a wide variety of terrible creatures, this undead affliction proving variable to such an extent that numerous distinct types of vampires reputedly exist. While these unusual vampires might pervade the tales and fears of secluded or exotic regions—and even outnumber more typical vampires in such areas—they are generally far more reclusive than their better-known and more populous cousins.
+
+Aswang
+A terrifying breed of vampire typically haunting lands of the distant east, aswangs only arise from female victims. While these cunning undead predators fear no light and appear relatively human by day, they possess significant shapeshifting powers, undergoing a monstrous transformation, in which they grow terrible wings, claws, and a long, sharp tongue which they use to feed upon flesh and hearts—especially those of the young or unborn. Seemingly related to these grotesque undead are the dismembered manananggal and penanggalan, horrifying vampiric witches that respectively abandon their lower bodies or all but their heads and dangling entrails as they take to the hunt.
+
+Dhampir
+Known as ghoul-blooded or half-vampires, those cursed to live as dhampirs know a miserable half-life. Born from mothers infected with vampirism in the final days of their pregnancy or sired by freshly spawned vampire fathers, dhampirs live with the curse of vampirism in their mortal blood. Although the taint grants these rare souls eerie abilities, such as sensing nearby undead, so too are they cursed with a measure of their accursed parents’ ravenous natures, making many just as dangerous as vampires themselves.
+
+Nosferatu
+Thought by many to be bearers of an ancient strain of vampirism, nosferatu possess many traits common to vampires, yet notably lack the immortal youth and vigor of other breeds. With strange similarities to and powers over beasts and vermin, these reclusive, withered vampires typically avoid interactions with the living except those who fall victim to their eerie powers of mind control. Yet, despite their age and dreadful manipulations, nosferatu are a waning breed, with none known to be able to pass on their monstrous curse and thus create more of their kind.
+
+Vrykolakas
+Bestial creatures, vrykolakas lack all the pride, romanticism, and seductive qualities of other vampiric breeds. Similar to ghouls yet far more cunning, these animalistic, shape-changing corpses rise from their graves by night to haunt the living and spread a terrifying, life-draining disease. Bereft of numerous vampiric weaknesses, they prove notoriously difficult to kill and can easily scour the life from overconfident hunters or entire unwary communities.
+
+
+AD
+Variant Abilities
+Just as various breeds of vampires exist, so too does diversity exist within regional or otherwise related groups of such undead.
+
+Ancient Youth (Su) (CR +0)
+A vampire with this ability transformed into one of the undead at a very young age, and has been trapped within an adolescent body for an existence possibly measuring in centuries. Vampires with this ability are size Small and gain a +4 bonus on all Bluff checks.
+
+Mastermind (Su) (CR +0)
+Vampires with this ability can have a number of enslaved spawn totaling four times its total Hit Dice. In addition, the vampire chooses one of the following three abilities: clairaudience, clairvoyance, or telepathy. Depending on the ability chosen, the vampire can hear what its spawn hears, see what it sees, or communicate telepathically with it. The vampire may exercise or end its use of this ability as a standard action and maintain its connection to its spawn for as long as it wishes. A vampire may only use this ability with one spawn at a time. The vampire and vampire spawn must be on the same plane for this ability to function. While using this ability, the vampire enters a catatonic state similar to its daily rest and is treated as helpless, though it is alerted to any jarring noises, the presence of any visible creature within 5 feet, or any damage that befalls its body.
+
+Noble Dead (Su) (CR +0)
+A vampire with this ability possesses an ancient and legendary bloodline. He gains a +2 bonus on all Diplomacy checks, which increases to +4 if being utilized against another undead creature. In addition, he gains channel resistance +6, and the DC of his dominate ability increases by +2.
+
+Sunlight Resistance (Su) (CR +0)
+This ability provides a vampire a measure of resistance against sunlight. On the second and all later rounds of exposure to direct sunlight, the vampire takes damage equal to one-third of its maximum hit points and is destroyed if this brings it to 0 hit points. The vampire is staggered on any round it is exposed to direct sunlight.
+
+Swarm Form (Su) (CR +0)
+As a standard action, a vampire with this ability can change into a bat swarm, centipede swarm, rat swarm, or spider swarm. The swarm has a number of hit points equal to the vampire, and any damage done to the swarm affects the vampire’s hit point total. While in swarm form, a vampire cannot use any of its natural or special attacks, although it gains the movement, natural weapons, and extraordinary special abilities of the swarm into which it has transformed. The vampire also retains all of its usual special qualities. While in swarm form the vampire is still considered to be an undead creature ith its total number of Hit Dice. A vampire can remain in swarm form until it assumes another form or retakes it original form (a standard action), or until the next sunrise.
+
+Vampire Hunger
+Some vampires find their sanguine urges so irresistible that to resist them would be to invite madness into their own minds.
+
+The following optional rules system is for players and GMs who wish to incorporate vampiric hunger into their games.
+
+“Hunger” is perhaps a misleading term to describe a vampire’s lust for flesh, consciousness, or youth. As unliving things, they technically require no sustenance, and yet ravenousness is often considered a key characteristic of those who walk without life. In truth, this desire is driven not by need, but by psychological greed. Feasting grants the undead no physical nourishment, but does fill them with a pleasure and power they can’t attain by any other means. For undead, the act of feeding can be likened to that of an addict satiating her inner demon.
+
+The basest monsters pursue their addiction to the exclusion of anything else, but vampires and other greater undead are closer to functioning addicts—simultaneously managing their hunger and their more high-minded schemes. If denied living nectar for too long, however, even the sharpest creatures hurl themselves at whichever warm, soft parts of the living they most covet.
+
+This section presents optional rules for the hunger of undead creatures. Consult your GM if you want to use these rules in your game, since the added element of feeding can have a drastic effect on vampire-focused campaigns, especially for players running vampire PCs.
+
+Creatures and Their Hunger
+For vampires, managing their hunger is an integral part of unlife. Some revel in the feast, but for others it is nothing but a constant source of stress and shame.
+
+A vampire who refuses to feed on intelligent beings is relegated to the dull taste of animal blood out of necessity, and forsakes the euphoria of a true feed.
+
+Some see little choice but to give in to their desires with resignation. The joy dulls and the process becomes rote, but they accept it as part of their nature and never seek to break the cycle. This is especially true of spawn still under the control of their creator, who often view their hunger as just another restriction on their freedom.
+
+Other vampires are so frustrated by their immortal addiction that they dedicate their lives to the search for a cure for their affliction—or at least a substitute for feeding.
+
+This is more common for mortals unwillingly turned into vampires and those who truly understanding the ongoing implications of their transformation. Those nosferatu who have sufficient intellect are among the most likely to seek such a cure, and many feed with guilt.
+
+There are those who find the feeding process detestable, but whose fear of withdrawal convinces them to act on their hunger. To mortals, this revulsion-filled consumption is indistinguishable from savage bloodlust. Instead of pity and understanding, these vampires are greeted like any other of their kind—with stakes and torches and holy rage.
+
+Hunger Rules
+
+Where the living suffer physically from starvation, undead suffer mentally. After long enough without a “meal,” even the most arrogant vampire becomes a bestial creature of instinct. Withdrawal weakens the monster, and as its natural defenses fail, its behavior becomes irrational, particularly when it’s around sources of what it is denied or has denied itself.
+
+A carnivorous or otherwise life-draining undead may safely go a number of days equal to its Hit Dice without a dose of its preferred meal before it starts to feel the effects of hunger. Each additional day after this grace period, the undead must make a Will save (DC 10 + 1/2 the undead creature’s Hit Dice, + 1 for each previous check).
+
+If the undead creature fails its save, it enters withdrawal and begins to take penalties according to the Withdrawal Penalties table. It must continue to save each day until it feeds again. Additional failed checks increase the penalties as shown on the table. Feats and abilities that affect mortal hunger (such as Endurance or a ring of sustenance) do not apply to vampire hunger.
+
+An undead that is suffering from withdrawal grows increasingly drawn and gaunt (or diaphanous and tattered, for incorporeal undead). Any attempts by the creature to conceal its undead nature with the Disguise skill are penalized as noted on the table.
+
+An undead that suffers withdrawal is acutely aware of its unfulfilled addiction; if presented with the chance to feed, it might be compelled to do so, regardless of the consequences. Anytime it comes within 10 feet of a helpless creature that can sate its desire, it must make another hunger save at the current DC. Failure means it falls upon the helpless creature—whether friend or foe— and attempts to consume or drain it. Until the undead has fed, it can take no action other than to feed from this helpless creature or to enable itself to feed (such as a moroi grappling a creature so it can use its blood drain). During this feeding frenzy, the undead creature takes a –2 penalty to its AC.
+
+Withdrawal Effects
+
+An undead that hasn’t fed recently suffers from withdrawal, depending on the number of hunger saves it has failed.
+
+As shown on the Withdrawal Penalties table on the facing page, an undead creature suffering from withdrawal takes penalties to channel resistance, on Will saves, to Strength and Charisma scores, to damage reduction, to fast healing, and on Disguise checks. The withdrawal penalties apply only if the creature has the ability in question. For example, a hungry moroi’s damage reduction decreases, but a hungry ghoul ignores that column because it doesn’t have damage reduction. All penalties are removed when the creature completes a single feeding. This only ends the withdrawal penalties, and does not grant the creature any feeding bonuses beyond those granted by the creature’s ability associated with feeding.
+
+If the undead’s Strength or Charisma penalties equal its Strength or Charisma, it becomes inert, helpless, and wracked by nightmares of hunger; it only revives if fed by another. An undead creature’s channel resistance, damage reduction, and fast healing cannot fall below 0.
+
+Feeding Bonuses
+
+What constitutes a feeding differs for each undead creature according to its own addiction. For creatures with a blood drain, level drain, or ability drain ability, each use of that ability counts as a feeding. Hungering creatures that lack a drain ability, such as zombies and ghouls, count consuming 1 pound of flesh as feeding (larger and smaller undead require proportionately more or less flesh). For these creatures, the flesh of a creature that has been dead for more than 1 hour staves off withdrawal but does not grant any other benefits, such as feeding bonuses (see below).
+
+If an undead creature can sate its hunger by feeding on a living creature with an Intelligence score of 5 or higher, it gains the following benefits from the feeding. These benefits are in addition to any listed in the creature’s feeding-related ability.
+
+
+AD
+The first benefit—deeply desirable even to barely sentient undead—is the euphoric rush of feeding, which fills the feeder with a sense of power, domination, and focus. The undead gains a +1 resistance bonus on Will saves for 1 hour.
+
+The undead gains a +2 resistance bonus on all saves against spells and effects from creatures that have the same alignment as the target of the feeding.
+
+It is because of this effect that vampires so often feed on the innocent and pure, since most of their would-be slayers are of a similarly noble and good disposition.
+
+Table: Withdrawal Penalties
+Failed Hunger Saves	Channel Resistance	Will Saves	Str/Cha	DR	Fast Healing	Disguise
+1	–1	–2	–1	–2	–1	–2
+2	–1	–2	–1	–2	–1	–2
+3	–1	–2	–2	–4	–1	–4
+4	–2	–3	–2	–4	–2	–4
+5	–2	–3	–4	–4	–2	–4
+6	–2	–3	–4	–6	–2	–6
+7	–3	–4	–6	–6	–3	–6
+8	–3	–4	–6	–6	–3	–6
+9	–3	–4	–8	–8	–3	–8
+10	–4	–5	–10	–8	–4	–8
+The undead gains a +4 competence bonus on Survival checks to track creatures of the same type as the target of the feeding. This bonus increases to +8 when the undead is tracking the specific creature on which it fed. The target creature is considered “very familiar” for the purposes of divination spells and effects cast by the undead.

@@ -5,9 +5,6 @@
     import Attributes from '$lib/components/Attributes.svelte';
     import Skills from '$lib/components/Skills.svelte';
     import CombatStats from '$lib/components/CombatStats.svelte';
-    import BombTracker from '$lib/components/BombTracker.svelte';
-    import ExtractManager from '$lib/components/ExtractManager.svelte';
-    import MutagenManager from '$lib/components/MutagenManager.svelte';
     import Consumables from '$lib/components/Consumables.svelte';
     import BuffManager from '$lib/components/BuffManager.svelte';
     import SpellManager from '$lib/components/SpellManager.svelte';
@@ -33,9 +30,8 @@
         <HPTracker />
         
         <!-- Combat Section -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
             <CombatStats />
-            <BombTracker />
             <BuffManager />
         </div>
 
@@ -46,9 +42,7 @@
         </div>
 
         <!-- Alchemy Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <ExtractManager />
-            <MutagenManager />
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-3">
             <Consumables />
         </div>
 

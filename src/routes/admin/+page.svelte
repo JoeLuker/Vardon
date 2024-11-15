@@ -5,6 +5,8 @@
     import FeatsManager from '$lib/components/admin/FeatsManager.svelte';
     import DiscoveriesManager from '$lib/components/admin/DiscoveriesManager.svelte';
     import ClassFeaturesManager from '$lib/components/admin/ClassFeaturesManager.svelte';
+    import SkillsManager from '$lib/components/admin/SkillsManager.svelte';
+    import FavoredClassBonusesManager from '$lib/components/admin/FavoredClassBonusesManager.svelte';
     import type { PageData } from './$types';
 
     
@@ -25,7 +27,8 @@
         { id: 'discoveries', label: 'Discoveries' },
         { id: 'skills', label: 'Skills & Abilities' },
         { id: 'equipment', label: 'Equipment' },
-        { id: 'spells', label: 'Spells & Extracts' }
+        { id: 'spells', label: 'Spells & Extracts' },
+        { id: 'fcb', label: 'Favored Class Bonuses' }
     ];
 </script>
 
@@ -85,6 +88,22 @@
                 aria-labelledby="tab-discoveries"
             >
                 <DiscoveriesManager />
+            </div>
+        {:else if activeTab === 'skills'}
+            <div 
+                role="tabpanel"
+                id="panel-skills"
+                aria-labelledby="tab-skills"
+            >
+                <SkillsManager />
+            </div>
+        {:else if activeTab === 'fcb'}
+            <div 
+                role="tabpanel"
+                id="panel-fcb"
+                aria-labelledby="tab-fcb"
+            >
+                <FavoredClassBonusesManager />
             </div>
         {:else}
             <div 

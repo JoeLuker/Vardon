@@ -3,8 +3,8 @@ export type ABPBonusType =
   | 'armor'
   | 'weapon'
   | 'deflection'
-  | 'mental'
-  | 'physical'
+  | 'mental_prowess'
+  | 'physical_prowess'
   | 'toughening';
 
 export interface ABPBonuses {
@@ -12,8 +12,8 @@ export interface ABPBonuses {
   armor: number;
   weapon: number;
   deflection: number;
-  mental: number;
-  physical: number;
+  mental_prowess: number;
+  physical_prowess: number;
   toughening: number;
 }
 
@@ -23,8 +23,8 @@ export const ABP_PROGRESSION: Record<number, Partial<ABPBonuses>> = {
   3: { resistance: 1 },
   4: { armor: 1, weapon: 1 },
   5: { deflection: 1 },
-  6: { mental: 2 },
-  7: { physical: 2 },
+  6: { mental_prowess: 2 },
+  7: { physical_prowess: 2 },
   8: { armor: 2, resistance: 2, toughening: 1, weapon: 2 }
 };
 
@@ -34,8 +34,8 @@ export function getABPBonuses(level: number): ABPBonuses {
     armor: 0,
     weapon: 0,
     deflection: 0,
-    mental: 0,
-    physical: 0,
+    mental_prowess: 0,
+    physical_prowess: 0,
     toughening: 0
   };
 

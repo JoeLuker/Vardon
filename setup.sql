@@ -18,8 +18,10 @@ DROP TRIGGER IF EXISTS update_character_discoveries_timestamp ON character_disco
 DROP TRIGGER IF EXISTS update_character_feats_timestamp ON character_feats;
 DROP TRIGGER IF EXISTS update_character_corruptions_timestamp ON character_corruptions;
 DROP TRIGGER IF EXISTS update_character_corruption_manifestations_timestamp ON character_corruption_manifestations;
+DROP TRIGGER IF EXISTS update_character_favored_class_bonuses_timestamp ON character_favored_class_bonuses;
 
 -- Drop all tables in reverse dependency order
+DROP TABLE IF EXISTS character_favored_class_bonuses CASCADE;
 DROP TABLE IF EXISTS character_corruption_manifestations CASCADE;
 DROP TABLE IF EXISTS character_corruptions CASCADE;
 DROP TABLE IF EXISTS character_consumables CASCADE;
@@ -114,11 +116,12 @@ CREATE TABLE character_skill_ranks (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     character_id BIGINT REFERENCES characters(id) ON DELETE CASCADE,
     skill_id BIGINT REFERENCES base_skills(id),
-    ranks INTEGER NOT NULL DEFAULT 0,
+    source TEXT NOT NULL,
+    applied_at_level INTEGER NOT NULL,
+    ranks INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict')),
-    UNIQUE(character_id, skill_id)
+    sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict'))
 );
 
 -- Spell slots with sync support
@@ -273,6 +276,18 @@ CREATE TABLE character_corruption_manifestations (
     sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict'))
 );
 
+-- Create table for tracking FCB choices
+CREATE TABLE character_favored_class_bonuses (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    character_id BIGINT REFERENCES characters(id) ON DELETE CASCADE,
+    level INTEGER NOT NULL,
+    choice TEXT NOT NULL CHECK (choice IN ('hp', 'skill', 'other')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict')),
+    UNIQUE(character_id, level)
+);
+
 -- SETUP.SQL PART 4: TRIGGERS AND FUNCTIONS --
 
 -- Update timestamp function
@@ -370,13 +385,73 @@ CREATE TRIGGER update_character_skill_ranks_timestamp
     BEFORE UPDATE ON character_skill_ranks 
     FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
+CREATE TRIGGER update_character_favored_class_bonuses_timestamp 
+    BEFORE UPDATE ON character_favored_class_bonuses 
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
   -- SETUP.SQL PART 5: INITIAL DATA INSERTION --
+
+-- 1. First drop the function, then the type
+DROP FUNCTION IF EXISTS distribute_skill_ranks(BIGINT, skill_progression[]);
+DROP TYPE IF EXISTS skill_progression CASCADE;
+
+CREATE TYPE skill_progression AS (
+    skill_name TEXT,
+    ranks_per_level INTEGER[]
+);
+
+CREATE OR REPLACE FUNCTION distribute_skill_ranks(
+    p_character_id BIGINT,
+    p_progressions skill_progression[]
+) RETURNS void AS $func$
+DECLARE
+    v_skill_id BIGINT;
+    v_progression skill_progression;
+    v_level INTEGER;
+BEGIN
+    FOREACH v_progression IN ARRAY p_progressions LOOP
+        -- Get skill ID with error handling
+        SELECT id INTO STRICT v_skill_id 
+        FROM base_skills 
+        WHERE name = v_progression.skill_name;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Skill not found: %', v_progression.skill_name;
+        END IF;
+
+        -- Insert ranks for each level where ranks > 0
+        FOR v_level IN 1..array_length(v_progression.ranks_per_level, 1) LOOP
+            IF v_progression.ranks_per_level[v_level] > 0 THEN
+                INSERT INTO character_skill_ranks (
+                    character_id,
+                    skill_id,
+                    source,
+                    applied_at_level,
+                    ranks
+                ) VALUES (
+                    p_character_id,
+                    v_skill_id,
+                    'class',
+                    v_level,
+                    v_progression.ranks_per_level[v_level]
+                );
+            END IF;
+        END LOOP;
+    END LOOP;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE EXCEPTION 'Character or skill not found';
+    WHEN OTHERS THEN
+        RAISE;
+END;
+$func$ LANGUAGE plpgsql;
 
 DO $$ 
 DECLARE
     user_uuid UUID;
     character_id BIGINT;
     corruption_id BIGINT;
+    v_progressions skill_progression[];
 BEGIN
     -- Set a default user_id for testing
     user_uuid := '9c4e4bb1-db8d-41df-b796-b9454622eed2'::UUID;
@@ -385,12 +460,12 @@ BEGIN
     INSERT INTO characters (
         user_id, name, class, race, level, current_hp, max_hp
     ) VALUES (
-        user_uuid, 'Vardon Salvador', 'Alchemist', 'Tengu', 5, 35, 35
+        user_uuid, 'Vardon Salvador', 'Alchemist', 'Tengu', 5, 30, 30
     ) RETURNING id INTO character_id;
 
     -- Insert attributes
     INSERT INTO character_attributes (character_id, str, dex, con, int, wis, cha, is_temporary) 
-    VALUES (character_id, 12, 16, 12, 20, 10, 8, false);
+    VALUES (character_id, 10, 16, 10, 16, 14, 8, false);
 
     -- Insert combat stats
     INSERT INTO character_combat_stats (character_id, bombs_left, base_attack_bonus) 
@@ -415,8 +490,12 @@ BEGIN
 
     -- Insert buffs
     INSERT INTO character_buffs (character_id, buff_type, is_active) VALUES
-        (character_id, 'cognatogen', false),
+        (character_id, 'int_cognatogen', false),
+        (character_id, 'wis_cognatogen', false),
+        (character_id, 'cha_cognatogen', false),
         (character_id, 'dex_mutagen', false),
+        (character_id, 'str_mutagen', false),
+        (character_id, 'con_mutagen', false),
         (character_id, 'deadly_aim', false),
         (character_id, 'rapid_shot', false),
         (character_id, 'two_weapon_fighting', false);
@@ -479,23 +558,22 @@ WHERE name IN (
     'Use Magic Device'
 );
 
--- Insert initial ranks for the character
-INSERT INTO character_skill_ranks (character_id, skill_id, ranks)
-SELECT character_id, bs.id, 
-    CASE bs.name
-        WHEN 'Craft (Alchemy)' THEN 5
-        WHEN 'Disable Device' THEN 5
-        WHEN 'Knowledge (Arcana)' THEN 5
-        WHEN 'Knowledge (Nature)' THEN 5
-        WHEN 'Perception' THEN 5
-        WHEN 'Sleight of Hand' THEN 5
-        WHEN 'Spellcraft' THEN 5
-        WHEN 'Use Magic Device' THEN 5
-        WHEN 'Stealth' THEN 3
-        WHEN 'Survival' THEN 1
-        ELSE 0
-    END
-FROM base_skills bs;
+    -- Define skill progressions
+    v_progressions := ARRAY[
+        ('Craft (Alchemy)',     '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Disable Device',      '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Knowledge (Arcana)',  '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Knowledge (Nature)',  '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Perception',          '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Sleight of Hand',     '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Spellcraft',          '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Use Magic Device',    '{1,1,1,1,1}'::INTEGER[])::skill_progression,
+        ('Stealth',            '{1,1,1,0,0}'::INTEGER[])::skill_progression,
+        ('Survival',           '{1,0,0,0,0}'::INTEGER[])::skill_progression
+    ];
+
+    -- Distribute the ranks
+    PERFORM distribute_skill_ranks(character_id, v_progressions);
 
     -- Insert discoveries
     INSERT INTO character_discoveries (character_id, discovery_name, selected_level) VALUES
@@ -564,6 +642,14 @@ FROM base_skills bs;
         (character_id, corruption_id, 'Greater Unlife', 4, 'Unlife'),
         (character_id, corruption_id, 'True Unlife', 5, 'Greater Unlife');
 
+    -- Insert FCB choices
+    INSERT INTO character_favored_class_bonuses (character_id, level, choice) VALUES
+        (character_id, 1, 'skill'),
+        (character_id, 2, 'skill'),
+        (character_id, 3, 'skill'),
+        (character_id, 4, 'skill'),
+        (character_id, 5, 'skill');
+
     RAISE NOTICE 'Created character with ID: %', character_id;
 END $$;
 
@@ -589,6 +675,7 @@ alter publication supabase_realtime add table character_corruption_manifestation
 alter publication supabase_realtime add table base_skills;
 alter publication supabase_realtime add table class_skill_relations;
 alter publication supabase_realtime add table character_skill_ranks;
+alter publication supabase_realtime add table character_favored_class_bonuses;
 
 -- Create policies for all tables
 create policy "Public realtime access"
@@ -681,6 +768,11 @@ create policy "Public realtime access"
     using (true)
     with check (true);
 
+create policy "Public realtime access"
+    on character_favored_class_bonuses for all
+    using (true)
+    with check (true);
+
 -- Enable full replica identity for all tables
 alter table characters replica identity full;
 alter table character_attributes replica identity full;
@@ -700,24 +792,4 @@ alter table character_corruption_manifestations replica identity full;
 alter table base_skills replica identity full;
 alter table class_skill_relations replica identity full;
 alter table character_skill_ranks replica identity full;
-
--- Add to setup.sql
-CREATE OR REPLACE VIEW character_skill_view AS
-SELECT 
-    csr.character_id,
-    bs.id as skill_id,
-    bs.name as skill_name,
-    bs.ability,
-    bs.trained_only,
-    bs.armor_check_penalty,
-    csr.ranks,
-    EXISTS (
-        SELECT 1 
-        FROM class_skill_relations cr
-        JOIN characters c ON c.class = cr.class_name
-        WHERE cr.skill_id = bs.id
-        AND c.id = csr.character_id
-    ) as is_class_skill
-FROM base_skills bs
-CROSS JOIN characters c
-LEFT JOIN character_skill_ranks csr ON csr.skill_id = bs.id AND csr.character_id = c.id;
+alter table character_favored_class_bonuses replica identity full;

@@ -1,14 +1,14 @@
 <script lang="ts">
     import { character } from '$lib/state/character.svelte';
-    import type { CharacterClassFeature } from '$lib/types/character';
+    import type { DatabaseCharacterClassFeature } from '$lib/types/character';
 
-    interface TransformedFeature extends CharacterClassFeature {
+    interface TransformedFeature extends DatabaseCharacterClassFeature {
         displayName: string;
     }
 
     // Transform features for display
     let featuresList = $derived(
-        (character.character_class_features ?? []).map((feature: CharacterClassFeature): TransformedFeature => ({
+        (character.character_class_features ?? []).map((feature: DatabaseCharacterClassFeature): TransformedFeature => ({
             ...feature,
             displayName: feature.feature_name
                 .replace(/([A-Z])/g, ' $1')

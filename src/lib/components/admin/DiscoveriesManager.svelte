@@ -3,7 +3,7 @@
     import { character } from '$lib/state/character.svelte';
     import { type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
-    import type { CharacterDiscovery } from '$lib/types/character';
+    import type { DatabaseCharacterDiscovery } from '$lib/types/character';
 	import type { Json } from '$lib/types/supabase';
 
     let updateState = $state<UpdateState>({
@@ -12,7 +12,7 @@
     });
 
     let showAddModal = $state(false);
-    let editingDiscovery = $state<Partial<CharacterDiscovery> | null>(null);
+    let editingDiscovery = $state<Partial<DatabaseCharacterDiscovery> | null>(null);
 
     // Fix the derived store syntax
     let discoveryList = $derived([...(character.character_discoveries ?? [])].sort((a, b) => a.selected_level - b.selected_level));
@@ -56,7 +56,7 @@
             if (error) throw error;
 
             // Type assertion since we know the shape matches CharacterDiscovery
-            const savedDiscovery = data as CharacterDiscovery;
+            const savedDiscovery = data as DatabaseCharacterDiscovery;
 
             if (character.character_discoveries) {
                 if (isNew) {
@@ -78,7 +78,7 @@
         }
     }
 
-    async function deleteDiscovery(discovery: CharacterDiscovery) {
+    async function deleteDiscovery(discovery: DatabaseCharacterDiscovery) {
         if (!confirm(`Are you sure you want to delete ${discovery.discovery_name}?`)) return;
 
         const previousDiscoveries = [...(character.character_discoveries ?? [])];

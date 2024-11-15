@@ -1,7 +1,7 @@
 <script lang="ts">
     import { character, updateExtract } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-    import type { CharacterExtract } from '$lib/types/character';
+    import type { DatabaseCharacterExtract } from '$lib/types/character';
 
     let showPrepareModal = $state(false);
     let updateState = $state<UpdateState>({
@@ -24,9 +24,9 @@
     } as const);
 
     let extractsByLevel = $derived(() => {
-        const grouped: Record<number, CharacterExtract[]> = {};
+        const grouped: Record<number, DatabaseCharacterExtract[]> = {};
         
-        (character.character_extracts ?? []).forEach((extract: CharacterExtract) => {
+        (character.character_extracts ?? []).forEach((extract: DatabaseCharacterExtract) => {
             const level = extract.extract_level;
             if (!grouped[level]) {
                 grouped[level] = [];
@@ -41,12 +41,12 @@
         const used: Record<number, number> = {};
         Object.entries(extractsByLevel()).forEach(([levelStr, extracts]) => {
             const level = Number(levelStr);
-            used[level] = extracts.filter((extract: CharacterExtract) => extract.prepared > 0 && extract.used > 0).length;
+            used[level] = extracts.filter((extract: DatabaseCharacterExtract) => extract.prepared > 0 && extract.used > 0).length;
         });
         return used;
     });
 
-    async function handleExtractUse(extract: CharacterExtract) {
+    async function handleExtractUse(extract: DatabaseCharacterExtract) {
         if (!(extract.prepared > 0) || extract.used > 0) return;
 
         const previousState = extract.used;
@@ -74,7 +74,7 @@
         });
     }
 
-    async function handleExtractPrepare(extract: CharacterExtract) {
+    async function handleExtractPrepare(extract: DatabaseCharacterExtract) {
         if (extract.prepared > 0) return;
 
         const level = extract.extract_level as keyof typeof extractsPerDay;

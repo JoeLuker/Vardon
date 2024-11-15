@@ -3,7 +3,7 @@
     import { character } from '$lib/state/character.svelte';
     import type { UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
-    import type { CharacterFeat } from '$lib/types/character';
+    import type { DatabaseCharacterFeat } from '$lib/types/character';
     import type { Json } from '$lib/types/supabase';
 
     let updateState = $state<UpdateState>({
@@ -12,7 +12,7 @@
     });
 
     let showAddModal = $state(false);
-    let editingFeat = $state<Partial<CharacterFeat> | null>(null);
+    let editingFeat = $state<Partial<DatabaseCharacterFeat> | null>(null);
 
     // Replace featsByType with a simple sorted list
     let featList = $derived([...(character.character_feats ?? [])].sort((a, b) => a.selected_level - b.selected_level));
@@ -50,7 +50,7 @@
                     .single();
 
                 if (error) throw error;
-                const savedFeat = data as CharacterFeat;
+                const savedFeat = data as DatabaseCharacterFeat;
                 character.character_feats?.push(savedFeat);
             } else {
                 const updateData = {
@@ -68,7 +68,7 @@
                     .single();
 
                 if (error) throw error;
-                const savedFeat = data as CharacterFeat;
+                const savedFeat = data as DatabaseCharacterFeat;
                 const index = character.character_feats?.findIndex(f => f.id === savedFeat.id) ?? -1;
                 if (index >= 0 && character.character_feats) {
                     character.character_feats[index] = savedFeat;
@@ -84,7 +84,7 @@
         }
     }
 
-    async function deleteFeat(feat: CharacterFeat) {
+    async function deleteFeat(feat: DatabaseCharacterFeat) {
         if (!confirm(`Are you sure you want to delete ${feat.feat_name}?`)) return;
 
         const previousFeats = [...(character.character_feats ?? [])];

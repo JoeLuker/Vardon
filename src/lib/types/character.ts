@@ -1,57 +1,37 @@
-import type { Json } from "./supabase";
+import type { Database } from "./supabase";
 
-export interface CharacterAttributes {
-	str: number;
-	dex: number;
-	con: number;
-	int: number;
-	wis: number;
-	cha: number;
-}
+// Type aliases for commonly used database types
+export type DbTables = Database['public']['Tables']
+export type DatabaseCharacter = DbTables['characters']['Row']
+export type DatabaseCharacterBuff = DbTables['character_buffs']['Row']
+export type DatabaseCharacterAttribute = DbTables['character_attributes']['Row']
+export type DatabaseCharacterSkillRank = DbTables['character_skill_ranks']['Row']
+export type DatabaseBaseSkill = DbTables['base_skills']['Row']
+export type DatabaseClassSkillRelation = DbTables['class_skill_relations']['Row']
+export type DatabaseCharacterClassFeature = DbTables['character_class_features']['Row'];
+export type DatabaseCharacterDiscovery = DbTables['character_discoveries']['Row'];
+export type DatabaseCharacterAbpBonus = DbTables['character_abp_bonuses']['Row'];
+export type DatabaseCharacterCombatStats = DbTables['character_combat_stats']['Row'];
+export type DatabaseCharacterConsumables = DbTables['character_consumables']['Row'];
+export type DatabaseCharacterCorruptionManifestation = DbTables['character_corruption_manifestations']['Row'];
+export type DatabaseCharacterCorruption = DbTables['character_corruptions']['Row'];
+export type DatabaseCharacterEquipment = DbTables['character_equipment']['Row'];
+export type DatabaseCharacterExtract = DbTables['character_extracts']['Row'];
+export type DatabaseCharacterFavoredClassBonus = DbTables['character_favored_class_bonuses']['Row'];
+export type DatabaseCharacterFeat = DbTables['character_feats']['Row'];
+export type DatabaseCharacterKnownSpell = DbTables['character_known_spells']['Row'];
+export type DatabaseCharacterSpellSlot = DbTables['character_spell_slots']['Row'];
 
-export interface CombatStats {
-	bombs_left: number;
-	base_attack_bonus: number;
-	initiative: number;
-	cmb: number;
-	cmd: number;
-	ac: number;
-	touch_ac: number;
-	flat_footed_ac: number;
-	fortitude: number;
-	reflex: number;
-	will: number;
-}
+// Type aliases for commonly used table types
+export type AttributeKey = keyof Pick<DbTables['character_attributes']['Row'], 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'>;
+export type ConsumableKey = keyof Pick<DbTables['character_consumables']['Row'], 'alchemist_fire' | 'acid' | 'tanglefoot'>;
 
-export interface Consumables {
-	alchemist_fire: number;
-	acid: number;
-	tanglefoot: number;
-}
 
-export interface DatabaseCharacterSkill {
-	id: number;
-	character_id: number | null;
-	skill_name: string;
-	ability: string;
-	class_skill: boolean | null;
-	ranks: number;
-	sync_status: string | null;
-	updated_at: string | null;
-}
-
-export interface CharacterSkill {
-	skill_name: string;
-	ability: string;
-	class_skill: boolean | null;
-	ranks: number;
-}
-
-export type AttributeKey = keyof CharacterAttributes;
-export type ConsumableKey = keyof Consumables;
-
+// Game-specific constants
 export const KNOWN_BUFFS = [
-    'cognatogen',
+    'int_cognatogen',
+    'wis_cognatogen',
+    'cha_cognatogen',
     'dex_mutagen',
     'str_mutagen',
     'con_mutagen',
@@ -70,213 +50,43 @@ export const KNOWN_BUFFS = [
     'owl_wisdom'
 ] as const;
 
-export type KnownBuffType = 
-  | 'cognatogen' 
-  | 'dex_mutagen' 
-  | 'str_mutagen' 
-  | 'con_mutagen'
-  | 'deadly_aim'
-  | 'rapid_shot'
-  | 'two_weapon_fighting'
-  | 'encumbered'
-  | 'improved_initiative'
-  | 'shield_of_faith'
-  | 'mage_armor'
-  | 'barkskin'
-  | 'bulls_strength'
-  | 'enlarge_person'
-  | 'resistance'
-  | 'divine_favor'
-  | 'owl_wisdom';
+export const SKILL_RANK_SOURCES = {
+    CLASS: 'class',
+    INTELLIGENCE: 'intelligence',
+    FAVORED_CLASS: 'favored_class',
+    OTHER: 'other'
+} as const;
 
-export interface DatabaseCharacterBuff {
-	id: number;
-	character_id: number | null;
-	buff_type: string;
-	is_active: boolean | null;
-	updated_at: string | null;
-	sync_status: 'synced' | 'pending' | 'conflict' | null;
+// Derived types from constants
+export type KnownBuffType = typeof KNOWN_BUFFS[number];
+export type SkillRankSource = typeof SKILL_RANK_SOURCES[keyof typeof SKILL_RANK_SOURCES];
+
+// Core attribute interfaces
+export interface CharacterAttributes {
+    str: number;
+    dex: number;
+    con: number;
+    int: number;
+    wis: number;
+    cha: number;
 }
 
+export interface Consumables {
+    alchemist_fire: number;
+    acid: number;
+    tanglefoot: number;
+}
+
+// Type refinements
 export interface CharacterBuff extends Omit<DatabaseCharacterBuff, 'buff_type'> {
-	buff_type: KnownBuffType;
+    buff_type: KnownBuffType;
 }
 
-export interface SpellSlot {
-	id: number;
-	character_id: number | null;
-	spell_level: number;
-	total: number;
-	remaining: number;
-	updated_at: string | null;
-	sync_status: 'synced' | 'pending' | 'conflict' | null;
+export interface CharacterSkillRank extends Omit<DatabaseCharacterSkillRank, 'source'> {
+    source: SkillRankSource;
 }
 
-export interface KnownSpell {
-	id: number;
-	character_id: number | null;
-	spell_level: number;
-	spell_name: string;
-	created_at: string | null;
-	sync_status: 'synced' | 'pending' | 'conflict' | null;
-}
-
-export interface CharacterDiscovery {
-	id: number;
-	character_id: number | null;
-	discovery_name: string;
-	selected_level: number;
-	properties: Record<string, unknown> | null;
-	updated_at: string | null;
-	sync_status: 'synced' | 'pending' | 'conflict' | null;
-}
-
-export interface CharacterClassFeature {
-	id: number;
-	character_id: number | null;
-	feature_name: string;
-	feature_level: number;
-	active: boolean;
-	properties: Json | null;
-	updated_at: string | null;
-	sync_status: 'synced' | 'pending' | 'conflict' | null;
-}
-
-export interface CharacterFeat {
-	id: number;
-	character_id: number | null;
-	feat_name: string;
-	feat_type: string;
-	selected_level: number;
-	properties: Record<string, unknown> | null;
-	updated_at: string | null;
-	sync_status: 'synced' | 'pending' | 'conflict' | null;
-}
-
-export interface BaseSkill {
-    id: number;
-    name: string;
-    ability: string;
-    trained_only: boolean | null;
-    armor_check_penalty: boolean | null;
-}
-
-export interface CharacterSkillRank {
-    id: number;
-    character_id: number | null;
-    skill_id: number | null;
-    ranks: number;
-    sync_status: string | null;
-    updated_at: string | null;
-}
-
-export interface ClassSkillRelation {
-    id: number;
-    class_name: string;
-    skill_id: number | null;
-}
-
-export interface Character {
-    id: number;
-    name: string;
-    class: string;
-    race: string;
-    level: number;
-    current_hp: number;
-    max_hp: number;
-    is_offline: boolean | null;
-    created_at: string | null;
-    updated_at: string | null;
-    last_synced_at: string | null;
-    user_id: string | null;
-    character_attributes: CharacterAttributes[];
-    character_combat_stats: CombatStats[];
-    character_consumables: Consumables[];
-    character_buffs: DatabaseCharacterBuff[];
-    character_skill_ranks: CharacterSkillRank[];
-    character_spell_slots: SpellSlot[];
-    character_known_spells: KnownSpell[];
-    character_discoveries: CharacterDiscovery[];
-    character_class_features: CharacterClassFeature[];
-    character_feats: CharacterFeat[];
-    character_extracts: CharacterExtract[];
-    character_equipment: CharacterEquipment[];
-    base_skills?: BaseSkill[];
-    class_skill_relations?: ClassSkillRelation[];
-}
-
-// Helper type for creating new characters
-export type NewCharacter = Omit<
-	Character,
-	'id' | 'created_at' | 'updated_at' | 'last_synced_at' | 'is_offline'
->;
-
-// Helper type for updates
-export type CharacterUpdate = Partial<Omit<Character, 'id'>>;
-
-// Helper types for specific updates
-export interface AttributeUpdate extends Partial<CharacterAttributes> {
-	character_id?: number;
-}
-
-export interface CombatStatsUpdate extends Partial<CombatStats> {
-	character_id?: number;
-}
-
-export interface ConsumablesUpdate extends Partial<Consumables> {
-	character_id?: number;
-}
-
-export interface BuffUpdate {
-	character_id?: number;
-	buff_type: KnownBuffType;
-	is_active: boolean;
-}
-
-export interface SkillUpdate {
-	character_id?: number;
-	skill_id: number;
-	ranks: number;
-}
-
-// Validation helpers
-export const isKnownBuff = (buff: string): buff is KnownBuffType => {
-	return KNOWN_BUFFS.includes(buff as KnownBuffType);
-};
-
-export const isValidAttributeKey = (key: string): key is AttributeKey => {
-	return ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(key);
-};
-
-export const isValidConsumableKey = (key: string): key is ConsumableKey => {
-	return ['alchemist_fire', 'acid', 'tanglefoot'].includes(key);
-};
-
-export interface CharacterSpellSlot {
-    character_id: number;
-    spell_level: number;
-    total: number;
-    remaining: number;
-}
-
-export interface CharacterKnownSpell {
-    character_id: number;
-    spell_level: number;
-    spell_name: string;
-}
-
-export interface CharacterExtract {
-    id: number;
-    character_id: number | null;
-    extract_name: string;
-    extract_level: number;
-    prepared: number;
-    used: number;
-    created_at: string | null;
-    updated_at: string | null;
-    sync_status: string | null;
-}
-
+// Combined view types
 export interface SkillView {
     character_id: number;
     skill_id: number;
@@ -284,26 +94,72 @@ export interface SkillView {
     ability: string;
     trained_only: boolean;
     armor_check_penalty: boolean;
-    ranks: number;
+    ranks_by_source: Record<SkillRankSource, number>;
+    total_ranks: number;
     is_class_skill: boolean;
 }
 
-export interface CharacterEquipment {
-    id: number;
-    character_id: number | null;
-    name: string;
-    type: string;
-    equipped: boolean;
-    properties: CharacterEquipmentProperties;
-    updated_at: string | null;
-    sync_status: 'synced' | 'pending' | 'conflict' | null;
+// Main Character interface combining multiple tables
+export interface Character extends DatabaseCharacter {
+    character_attributes?: DatabaseCharacterAttribute[];
+    character_buffs?: CharacterBuff[];
+    character_skill_ranks?: CharacterSkillRank[];
+    base_skills?: DatabaseBaseSkill[];
+    class_skill_relations?: DatabaseClassSkillRelation[];
+    character_class_features?: DatabaseCharacterClassFeature[];
+    character_abp_bonuses?: DatabaseCharacterAbpBonus[];
+    character_combat_stats?: DatabaseCharacterCombatStats[];
+    character_equipment?: DatabaseCharacterEquipment[];
+    character_feats?: DatabaseCharacterFeat[];
+    character_discoveries?: DatabaseCharacterDiscovery[];
+    character_favored_class_bonuses?: DatabaseCharacterFavoredClassBonus[];
+    character_consumables?: DatabaseCharacterConsumables[];
+    character_spell_slots?: DatabaseCharacterSpellSlot[];
+    character_known_spells?: DatabaseCharacterKnownSpell[];
+    character_extracts?: DatabaseCharacterExtract[];
+    archetype?: string;
+    character_corruption_manifestations?: DatabaseCharacterCorruptionManifestation[];
+    character_corruptions?: DatabaseCharacterCorruption[];
 }
 
+// Helper types for operations
+export type NewCharacter = Omit<Character, 'id' | 'created_at' | 'updated_at' | 'last_synced_at' | 'is_offline'>;
+export type CharacterUpdate = Partial<Omit<Character, 'id'>>;
+
+// Type guards and validation
+export const isKnownBuff = (buff: string): buff is KnownBuffType => {
+    return KNOWN_BUFFS.includes(buff as KnownBuffType);
+};
+
+export const isValidSkillRankSource = (source: string): source is SkillRankSource => {
+    return Object.values(SKILL_RANK_SOURCES).includes(source as SkillRankSource);
+};
+
+export const isValidAttributeKey = (key: string): key is keyof CharacterAttributes => {
+    return ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(key);
+};
+
+export const isValidConsumableKey = (key: string): key is keyof Consumables => {
+    return ['alchemist_fire', 'acid', 'tanglefoot'].includes(key);
+};
+
+// Add equipment properties type
 export interface CharacterEquipmentProperties {
+    armor_bonus?: number;
+    max_dex?: number;
     armor_check_penalty?: number;
+    damage?: string;
+    crit_range?: string;
+    crit_mult?: number;
+    bonus?: number;
+    type?: string;
     skill_bonus?: {
         skill: string;
         value: number;
     };
-    [key: string]: unknown;
+}
+
+export interface CombatStats {
+    bombs_left: number;
+    base_attack_bonus: number;
 }

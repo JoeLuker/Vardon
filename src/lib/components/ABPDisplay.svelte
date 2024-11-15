@@ -11,8 +11,8 @@
         armor: 'Armor',
         weapon: 'Weapon',
         deflection: 'Deflection',
-        mental: 'Mental',
-        physical: 'Physical',
+        mental_prowess: 'Mental Prowess',
+        physical_prowess: 'Physical Prowess',
         toughening: 'Toughening'
     };
 </script>
