@@ -3,16 +3,32 @@ import { browser } from '$app/environment';
 import { supabase } from '$lib/supabaseClient';
 import type { Database } from '$lib/types/supabase';
 import type { 
-    Character, 
-    CharacterBuff, 
+    Character,
+    CharacterBuff,
     CharacterSkillRank,
     DatabaseBaseSkill,
     DatabaseCharacterAttribute,
+    DatabaseCharacterAbpBonus,
+    DatabaseCharacterClassFeature,
+    DatabaseCharacterCombatStats,
+    DatabaseCharacterConsumables,
+    DatabaseCharacterCorruptionManifestation,
+    DatabaseCharacterCorruption,
+    DatabaseCharacterDiscovery,
+    DatabaseCharacterEquipment,
+    DatabaseCharacterExtract,
+    DatabaseCharacterFavoredClassBonus,
+    DatabaseCharacterFeat,
+    DatabaseCharacterKnownSpell,
+    DatabaseCharacterSpellSlot,
+    DatabaseCharacterTrait,
     DatabaseClassSkillRelation,
-    DbTables,
     SkillRankSource,
     AttributeKey,
-    ConsumableKey
+    ConsumableKey,
+    CharacterTraitWithBase,
+    DatabaseCharacterAncestry,
+    DatabaseCharacterAncestralTrait
 } from '$lib/types/character';
 import { 
     isKnownBuff, 
@@ -20,6 +36,7 @@ import {
 } from '$lib/types/character';
 import { createOptimisticUpdate, type OptimisticUpdateConfig } from '$lib/utils/optimisticUpdate';
 import { updateQueue } from '$lib/utils/updateQueue.svelte';
+import type { ABPBonusType } from '$lib/types/abp';
 
 type Tables = Database['public']['Tables']
 
@@ -32,7 +49,7 @@ const character = $state<Character>({
     // Initialize with empty character data
     id: 0,
     name: '',
-    race: '',
+    ancestry: '',
     class: '',
     level: 1,
     current_hp: 0,
@@ -48,18 +65,22 @@ const character = $state<Character>({
     class_skill_relations: [] as DatabaseClassSkillRelation[],
     character_attributes: [] as DatabaseCharacterAttribute[],
     character_buffs: [] as CharacterBuff[],
-    character_combat_stats: [] as DbTables['character_combat_stats']['Row'][],
-    character_consumables: [] as DbTables['character_consumables']['Row'][],
-    character_spell_slots: [] as DbTables['character_spell_slots']['Row'][],
-    character_known_spells: [] as DbTables['character_known_spells']['Row'][],
-    character_class_features: [] as DbTables['character_class_features']['Row'][],
-    character_discoveries: [] as DbTables['character_discoveries']['Row'][],
-    character_feats: [] as DbTables['character_feats']['Row'][],
-    character_extracts: [] as DbTables['character_extracts']['Row'][],
-    character_favored_class_bonuses: [] as DbTables['character_favored_class_bonuses']['Row'][],
-    character_abp_bonuses: [] as DbTables['character_abp_bonuses']['Row'][],
-    character_corruption_manifestations: [] as DbTables['character_corruption_manifestations']['Row'][],
-    character_corruptions: [] as DbTables['character_corruptions']['Row'][]
+    character_combat_stats: [] as DatabaseCharacterCombatStats[],
+    character_consumables: [] as DatabaseCharacterConsumables[],
+    character_spell_slots: [] as DatabaseCharacterSpellSlot[],
+    character_known_spells: [] as DatabaseCharacterKnownSpell[],
+    character_class_features: [] as DatabaseCharacterClassFeature[],
+    character_discoveries: [] as DatabaseCharacterDiscovery[],
+    character_equipment: [] as DatabaseCharacterEquipment[],
+    character_feats: [] as DatabaseCharacterFeat[],
+    character_extracts: [] as DatabaseCharacterExtract[],
+    character_favored_class_bonuses: [] as DatabaseCharacterFavoredClassBonus[],
+    character_traits: [] as CharacterTraitWithBase[],
+    character_abp_bonuses: [] as DatabaseCharacterAbpBonus[],
+    character_corruption_manifestations: [] as DatabaseCharacterCorruptionManifestation[],
+    character_corruptions: [] as DatabaseCharacterCorruption[],
+    character_ancestries: [] as DatabaseCharacterAncestry[],
+    character_ancestral_traits: [] as DatabaseCharacterAncestralTrait[]
 } satisfies Character);
 
 // Core update functions
@@ -151,9 +172,16 @@ function initializeCharacter(data: Tables['characters']['Row'] & Partial<Charact
         character_known_spells: data.character_known_spells || [],
         character_class_features: data.character_class_features || [],
         character_discoveries: data.character_discoveries || [],
+        character_equipment: data.character_equipment || [],
         character_feats: data.character_feats || [],
         character_extracts: data.character_extracts || [],
-        character_favored_class_bonuses: data.character_favored_class_bonuses || []
+        character_favored_class_bonuses: data.character_favored_class_bonuses || [],
+        character_traits: data.character_traits || [],
+        character_abp_bonuses: data.character_abp_bonuses || [],
+        character_corruption_manifestations: data.character_corruption_manifestations || [],
+        character_corruptions: data.character_corruptions || [],
+        character_ancestries: data.character_ancestries || [],
+        character_ancestral_traits: data.character_ancestral_traits || []
     };
     
     Object.assign(character, fullCharacter);
@@ -165,7 +193,8 @@ function initializeCharacter(data: Tables['characters']['Row'] & Partial<Charact
 
 // Enhanced real-time subscription helper
 function setupRealtimeSubscription(characterId: number) {
-    const channel = supabase.channel(`character-${characterId}`)
+    const channel = supabase
+        .channel(`character-${characterId}`)
         // Main character table
         .on('postgres_changes', { 
             event: '*', 
@@ -396,6 +425,40 @@ function setupRealtimeSubscription(characterId: number) {
                 }
             }
         })
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'character_traits',
+            filter: `character_id=eq.${characterId}`
+        }, (payload) => {
+            if (character.character_traits) {
+                const index = character.character_traits.findIndex(
+                    t => t.id === (payload.new as DatabaseCharacterTrait).id
+                );
+                if (index >= 0) {
+                    character.character_traits[index] = payload.new as CharacterTraitWithBase;
+                }
+            }
+        })
+        // Add ancestry subscription
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'character_ancestries',
+            filter: `character_id=eq.${characterId}`
+        }, (payload) => {
+            if (character.character_ancestries) {
+                const newAncestry = payload.new as DatabaseCharacterAncestry;
+                const index = character.character_ancestries.findIndex(
+                    a => a.id === newAncestry.id
+                );
+                if (index >= 0) {
+                    character.character_ancestries[index] = newAncestry;
+                } else {
+                    character.character_ancestries.push(newAncestry);
+                }
+            }
+        })
         .subscribe();
 
     return () => {
@@ -484,6 +547,47 @@ async function fetchCharacterData(characterId: number) {
     // Update character state
     character.character_favored_class_bonuses = fcbResult.data as Tables['character_favored_class_bonuses']['Row'][];
 
+    // Add ancestry fetch with full relationship data
+    const ancestryResult = await supabase
+        .from('character_ancestries')
+        .select(`
+            *,
+            ancestry:base_ancestries!inner (
+                id,
+                name,
+                size,
+                base_speed,
+                ability_modifiers,
+                description
+            )
+        `)
+        .eq('character_id', characterId);
+
+    if (ancestryResult.error) throw ancestryResult.error;
+    
+    // Update character state with ancestry data
+    character.character_ancestries = ancestryResult.data.map(row => ({
+        ...row,
+        ancestry: row.ancestry || null
+    })) as DatabaseCharacterAncestry[];
+
+}
+
+async function updateABPBonus(
+  bonusType: ABPBonusType,
+  value: number,
+  valueTarget?: string
+) {
+  const { error } = await supabase
+    .from('character_abp_bonuses')
+    .update({ 
+      value,
+      value_target: valueTarget 
+    })
+    .eq('character_id', character.id)
+    .eq('bonus_type', bonusType);
+
+  if (error) throw error;
 }
 
 // Export only what's necessary
@@ -501,5 +605,6 @@ export {
     isClassSkill,
     getSkillRanks,
     toggleBuff,
-    fetchCharacterData
+    fetchCharacterData,
+    updateABPBonus
 };

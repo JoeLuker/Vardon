@@ -19,6 +19,10 @@ DROP TRIGGER IF EXISTS update_character_feats_timestamp ON character_feats;
 DROP TRIGGER IF EXISTS update_character_corruptions_timestamp ON character_corruptions;
 DROP TRIGGER IF EXISTS update_character_corruption_manifestations_timestamp ON character_corruption_manifestations;
 DROP TRIGGER IF EXISTS update_character_favored_class_bonuses_timestamp ON character_favored_class_bonuses;
+DROP TRIGGER IF EXISTS update_character_traits_timestamp ON character_traits;
+DROP TRIGGER IF EXISTS update_base_traits_timestamp ON base_traits;
+DROP TRIGGER IF EXISTS update_base_ancestries_timestamp ON base_ancestries;
+DROP TRIGGER IF EXISTS update_base_ancestral_traits_timestamp ON base_ancestral_traits;
 
 -- Drop all tables in reverse dependency order
 DROP TABLE IF EXISTS character_favored_class_bonuses CASCADE;
@@ -40,6 +44,12 @@ DROP TABLE IF EXISTS characters CASCADE;
 DROP TABLE IF EXISTS character_skill_ranks CASCADE;
 DROP TABLE IF EXISTS class_skill_relations CASCADE;
 DROP TABLE IF EXISTS base_skills CASCADE;
+DROP TABLE IF EXISTS base_traits CASCADE;
+DROP TABLE IF EXISTS base_ancestries CASCADE;
+DROP TABLE IF EXISTS base_ancestral_traits CASCADE;
+DROP TABLE IF EXISTS character_traits CASCADE;
+DROP TABLE IF EXISTS character_ancestries CASCADE;
+DROP TABLE IF EXISTS character_ancestral_traits CASCADE;
 
 -- Drop extension if it was created for UUID support
 DROP EXTENSION IF EXISTS "uuid-ossp";
@@ -49,13 +59,38 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- SETUP.SQL PART 2: TABLE CREATION --
 
--- Base character table with Supabase-specific columns
+-- Create base_ancestries first
+CREATE TABLE base_ancestries (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name TEXT NOT NULL UNIQUE,
+    size TEXT NOT NULL,
+    base_speed INTEGER NOT NULL,
+    ability_modifiers JSONB NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Then create base_ancestral_traits which references base_ancestries
+CREATE TABLE base_ancestral_traits (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    ancestry_id BIGINT REFERENCES base_ancestries(id),
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    benefits JSONB,
+    is_optional BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(ancestry_id, name)
+);
+
+-- Then create characters table
 CREATE TABLE characters (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id UUID REFERENCES auth.users (id),
     NAME TEXT NOT NULL,
     CLASS TEXT NOT NULL,
-    race TEXT NOT NULL,
+    ancestry TEXT NOT NULL,
     LEVEL INTEGER NOT NULL,
     current_hp INTEGER NOT NULL,
     max_hp INTEGER NOT NULL,
@@ -63,6 +98,29 @@ CREATE TABLE characters (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_offline BOOLEAN DEFAULT FALSE,
     last_synced_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Then create character_ancestral_traits which references both characters and base_ancestral_traits
+CREATE TABLE character_ancestral_traits (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    character_id BIGINT REFERENCES characters(id) ON DELETE CASCADE,
+    ancestral_trait_id BIGINT REFERENCES base_ancestral_traits(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict')),
+    UNIQUE(character_id, ancestral_trait_id)
+);
+
+-- Finally create character_ancestries which references both characters and base_ancestries
+CREATE TABLE character_ancestries (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    character_id BIGINT REFERENCES characters(id) ON DELETE CASCADE,
+    ancestry_id BIGINT REFERENCES base_ancestries(id),
+    is_primary BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict')),
+    UNIQUE(character_id, ancestry_id)
 );
 
 -- Attributes tracking with sync support
@@ -176,6 +234,7 @@ CREATE TABLE character_abp_bonuses (
     character_id BIGINT REFERENCES characters (id) ON DELETE CASCADE,
     bonus_type TEXT NOT NULL,
     value INTEGER NOT NULL,
+    value_target TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict')),
     UNIQUE (character_id, bonus_type)
@@ -288,6 +347,29 @@ CREATE TABLE character_favored_class_bonuses (
     UNIQUE(character_id, level)
 );
 
+
+-- Base traits table
+CREATE TABLE base_traits (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name TEXT NOT NULL UNIQUE,
+    trait_type TEXT NOT NULL,
+    description TEXT NOT NULL,
+    benefits JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Character traits linking table
+CREATE TABLE character_traits (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    character_id BIGINT REFERENCES characters(id) ON DELETE CASCADE,
+    trait_id BIGINT REFERENCES base_traits(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending', 'conflict')),
+    UNIQUE(character_id, trait_id)
+);
+
 -- SETUP.SQL PART 4: TRIGGERS AND FUNCTIONS --
 
 -- Update timestamp function
@@ -389,6 +471,26 @@ CREATE TRIGGER update_character_favored_class_bonuses_timestamp
     BEFORE UPDATE ON character_favored_class_bonuses 
     FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
+CREATE TRIGGER update_base_traits_timestamp 
+    BEFORE UPDATE ON base_traits 
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_base_ancestries_timestamp 
+    BEFORE UPDATE ON base_ancestries 
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_base_ancestral_traits_timestamp 
+    BEFORE UPDATE ON base_ancestral_traits 
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_character_traits_timestamp 
+    BEFORE UPDATE ON character_traits 
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_character_ancestries_timestamp 
+    BEFORE UPDATE ON character_ancestries 
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
   -- SETUP.SQL PART 5: INITIAL DATA INSERTION --
 
 -- 1. First drop the function, then the type
@@ -451,21 +553,125 @@ DECLARE
     user_uuid UUID;
     character_id BIGINT;
     corruption_id BIGINT;
+    tengu_id BIGINT;
+    pragmatic_activator_id BIGINT;
+    clever_wordplay_id BIGINT;
     v_progressions skill_progression[];
 BEGIN
     -- Set a default user_id for testing
     user_uuid := '9c4e4bb1-db8d-41df-b796-b9454622eed2'::UUID;
 
+    -- Insert Tengu ancestry first
+    INSERT INTO base_ancestries (
+        name, 
+        size, 
+        base_speed, 
+        ability_modifiers,
+        description
+    ) VALUES (
+        'Tengu',
+        'Medium',
+        30,
+        '{"dex": 2, "wis": 2, "con": -2}'::jsonb,
+        'Tengus are avian humanoids who resemble crows or ravens with human arms and hands.'
+    ) RETURNING id INTO tengu_id;
+
+    -- Insert Tengu ancestry traits
+    INSERT INTO base_ancestral_traits (
+        ancestry_id,
+        name,
+        description,
+        benefits,
+        is_optional
+    ) VALUES 
+    -- Standard Traits
+    (tengu_id, 'Swordtrained', 
+     'Tengus are trained from birth in swordplay, and as a result are automatically proficient with sword-like weapons.',
+     '{"weapon_proficiency": ["bastard sword", "dagger", "elven curve blade", "falchion", "greatsword", "kukri", "longsword", "punching dagger", "rapier", "scimitar", "short sword", "two-bladed sword"]}'::jsonb,
+     false),
+    (tengu_id, 'Natural Weapon', 
+     'A tengu has a bite attack that deals 1d3 points of damage.',
+     '{"natural_attack": {"type": "bite", "damage": "1d3"}}'::jsonb,
+     false),
+    (tengu_id, 'Gifted Linguist', 
+     'Tengus gain a +4 racial bonus on Linguistics checks, and learn 2 languages each time they gain a rank in Linguistics rather than 1.',
+     '{"skill_bonus": {"linguistics": 4}, "special": "double_languages"}'::jsonb,
+     false),
+    (tengu_id, 'Low-Light Vision', 
+     'Tengus have low-light vision allowing them to see twice as far as humans in conditions of dim light.',
+     '{"vision": "low-light"}'::jsonb,
+     false),
+    (tengu_id, 'Sneaky', 
+     'Tengus gain a +2 racial bonus on Perception and Stealth checks.',
+     '{"skill_bonus": {"perception": 2, "stealth": 2}}'::jsonb,
+     false),
+    -- Alternate Traits
+    (tengu_id, 'Carrion Sense', 
+     'Limited scent ability, which only functions for corpses and badly wounded creatures (50% or fewer hit points).',
+     '{"special": "limited_scent"}'::jsonb,
+     true),
+    (tengu_id, 'Claw Attack', 
+     'Two claw attacks as primary natural attacks that deal 1d3 points of damage, and are treated as having the Improved Unarmed Strike feat.',
+     '{"natural_attack": {"type": "claws", "damage": "1d3", "count": 2}, "bonus_feat": "Improved Unarmed Strike"}'::jsonb,
+     true),
+    (tengu_id, 'Deft Swords', 
+     'Gain a +2 dodge bonus to CMD while wielding a swordlike weapon.',
+     '{"conditional_bonus": {"type": "dodge", "value": 2, "to": "cmd", "condition": "wielding_sword"}}'::jsonb,
+     true),
+    (tengu_id, 'Exotic Weapon Training', 
+     'Choose a number of eastern weapons equal to 3 + Intelligence bonus, and gain proficiency with these weapons.',
+     '{"special": "eastern_weapon_training"}'::jsonb,
+     true),
+    (tengu_id, 'Glide', 
+     'Can make a DC 15 Fly check to fall safely from any height without taking falling damage, as if using feather fall. When falling safely, can make an additional DC 15 Fly check to glide, moving 5 feet laterally for every 20 feet fallen.',
+     '{"special": "glide"}'::jsonb,
+     true);
+
+    -- Insert traits
+    INSERT INTO base_traits (
+        name,
+        trait_type,
+        description,
+        benefits
+    ) VALUES 
+    ('Pragmatic Activator',
+     'Magic',
+     'While some figure out how to use magical devices with stubborn resolve, your approach is more pragmatic.',
+     '{"skill_modifier_replacement": {"use_magic_device": {"from": "cha", "to": "int"}}}'::jsonb
+    ) RETURNING id INTO pragmatic_activator_id;
+
+    INSERT INTO base_traits (
+        name,
+        trait_type,
+        description,
+        benefits
+    ) VALUES 
+    ('Clever Wordplay',
+     'Social',
+     'Your cunning and logic are more than a match for another''s confidence and poise.',
+     '{"skill_modifier_replacement": {"choosable": {"from": "cha", "to": "int", "count": 1}}}'::jsonb
+    ) RETURNING id INTO clever_wordplay_id;
+
     -- Insert base character and immediately get the ID
     INSERT INTO characters (
-        user_id, name, class, race, level, current_hp, max_hp
+        user_id, name, class, ancestry, level, current_hp, max_hp
     ) VALUES (
         user_uuid, 'Vardon Salvador', 'Alchemist', 'Tengu', 5, 30, 30
     ) RETURNING id INTO character_id;
 
+    -- Link traits to character
+    INSERT INTO character_traits (character_id, trait_id)
+    VALUES 
+    (character_id, pragmatic_activator_id),
+    (character_id, clever_wordplay_id);
+
+    -- Link racial traits to character
+    INSERT INTO character_ancestries (character_id, ancestry_id, is_primary)
+    VALUES (character_id, tengu_id, true);
+
     -- Insert attributes
     INSERT INTO character_attributes (character_id, str, dex, con, int, wis, cha, is_temporary) 
-    VALUES (character_id, 10, 16, 10, 16, 14, 8, false);
+    VALUES (character_id, 10, 14, 12, 16, 12, 8, false);
 
     -- Insert combat stats
     INSERT INTO character_combat_stats (character_id, bombs_left, base_attack_bonus) 
@@ -609,14 +815,15 @@ WHERE name IN (
         (character_id, 'PoisonUse', 2, '{"description": "Never risk poisoning self when applying poison"}'::jsonb);
 
     -- Insert ABP bonuses
-    INSERT INTO character_abp_bonuses (character_id, bonus_type, value) VALUES
-        (character_id, 'resistance', 1),
-        (character_id, 'armor_attunement', 1),
-        (character_id, 'weapon_attunement', 1),
-        (character_id, 'deflection', 1),
-        (character_id, 'mental_prowess', 2),
-        (character_id, 'physical_prowess', 2);
-
+    INSERT INTO character_abp_bonuses (character_id, bonus_type, value, value_target) VALUES
+        (character_id, 'resistance', 1, NULL),
+        (character_id, 'armor_attunement', 1, NULL),
+        (character_id, 'weapon_attunement', 1, NULL),
+        (character_id, 'deflection', 1, NULL),
+        (character_id, 'mental_prowess', 2, NULL),
+        (character_id, 'mental_prowess_choice', 1, 'int'),
+        (character_id, 'physical_prowess', 2, NULL),
+        (character_id, 'physical_prowess_choice', 1, 'dex');
     -- Insert extracts
     INSERT INTO character_extracts (character_id, extract_name, extract_level, prepared, used) VALUES
         (character_id, 'Shield', 1, 2, 0),
@@ -676,6 +883,12 @@ alter publication supabase_realtime add table base_skills;
 alter publication supabase_realtime add table class_skill_relations;
 alter publication supabase_realtime add table character_skill_ranks;
 alter publication supabase_realtime add table character_favored_class_bonuses;
+alter publication supabase_realtime add table base_traits;
+alter publication supabase_realtime add table base_ancestries;
+alter publication supabase_realtime add table base_ancestral_traits;
+alter publication supabase_realtime add table character_traits;
+alter publication supabase_realtime add table character_ancestries;
+alter publication supabase_realtime add table character_ancestral_traits;
 
 -- Create policies for all tables
 create policy "Public realtime access"
@@ -773,6 +986,36 @@ create policy "Public realtime access"
     using (true)
     with check (true);
 
+create policy "Public realtime access"
+    on base_traits for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on base_ancestries for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on base_ancestral_traits for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on character_traits for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on character_ancestries for all
+    using (true)
+    with check (true);
+
+create policy "Public realtime access"
+    on character_ancestral_traits for all
+    using (true)
+    with check (true);
+
 -- Enable full replica identity for all tables
 alter table characters replica identity full;
 alter table character_attributes replica identity full;
@@ -793,3 +1036,9 @@ alter table base_skills replica identity full;
 alter table class_skill_relations replica identity full;
 alter table character_skill_ranks replica identity full;
 alter table character_favored_class_bonuses replica identity full;
+alter table base_traits replica identity full;
+alter table base_ancestries replica identity full;
+alter table base_ancestral_traits replica identity full;
+alter table character_traits replica identity full;
+alter table character_ancestries replica identity full;
+alter table character_ancestral_traits replica identity full;

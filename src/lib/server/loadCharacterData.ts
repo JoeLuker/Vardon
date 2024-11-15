@@ -38,6 +38,26 @@ export async function loadCharacterData(
         supabase.from('character_equipment').select('*').eq('character_id', characterId),
         supabase.from('character_corruptions').select('*').eq('character_id', characterId),
         supabase.from('character_corruption_manifestations').select('*').eq('character_id', characterId),
+        supabase.from('base_traits').select('*'),
+        supabase
+            .from('character_traits')
+            .select(`
+                *,
+                base_traits (*)
+            `)
+            .eq('character_id', characterId),
+        
+        // Add new queries for ancestries
+        supabase.from('base_ancestries').select('*'),
+        supabase
+            .from('character_ancestries')
+            .select(`
+                *,
+                ancestry:base_ancestries(*)
+            `)
+            .eq('character_id', characterId),
+        supabase.from('base_ancestral_traits').select('*'),
+        supabase.from('character_ancestral_traits').select('*').eq('character_id', characterId),
     ] as const;
 
     const results = await Promise.all(baseQueries);
@@ -70,6 +90,12 @@ export async function loadCharacterData(
         character_equipment: results[10].data,
         character_corruptions: results[11].data,
         character_corruption_manifestations: results[12].data,
+        base_traits: results[13].data,
+        character_traits: results[14].data,
+        base_ancestries: results[15].data,
+        character_ancestries: results[16].data,
+        base_ancestral_traits: results[17].data,
+        character_ancestral_traits: results[18].data,
     };
 
     console.log('✅ Server: Character data loaded successfully');

@@ -2,9 +2,7 @@
     import { slide } from 'svelte/transition';
     import type { UpdateState } from '$lib/utils/updates';
     import SkillAllocator from './SkillAllocator.svelte';
-    import { character } from '$lib/state/character.svelte';
-    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
-    import { getABPBonuses } from '$lib/types/abp';
+    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
     import type { CalculatedStats } from '$lib/utils/characterCalculations';
 
     type SkillData = CalculatedStats['skills']['byName'][string];
@@ -15,10 +13,7 @@
         error: null
     });
 
-    let stats = $derived(calculateCharacterStats(
-        character,
-        getABPBonuses(character.level)
-    ));
+    let stats = $derived(getCalculatedStats());
 </script>
 
 <section class="card" transition:slide>

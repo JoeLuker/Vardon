@@ -1,10 +1,9 @@
 <script lang="ts">
-    import { getABPBonuses } from '$lib/types/abp';
     import type { ABPBonuses } from '$lib/types/abp';
-    import { character } from '$lib/state/character.svelte';
+    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
 
-    let level = $derived(character.level);
-    let bonuses = $derived(getABPBonuses(level + 2));
+    let stats = $derived(getCalculatedStats());
+    let bonuses = $derived(stats.defenses.abpBonuses);
     
     const bonusLabels: Record<keyof ABPBonuses, string> = {
         resistance: 'Resistance',

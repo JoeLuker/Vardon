@@ -5,14 +5,14 @@ import type {
   KnownBuffType,
   CharacterSkillRank,
   DbTables,
-  CharacterEquipmentProperties
+  CharacterEquipmentProperties,
+  DatabaseCharacterAbpBonus
 } from '$lib/types/character';
-import type { ABPBonuses } from '$lib/types/abp';
+import { getABPBonuses, type ABPBonuses } from '$lib/types/abp';
 import type { Buff, BuffEffect } from '$lib/types/buffs';
 import { BUFF_CONFIG } from '$lib/config/buffs';
 
-// Use types from Database
-type CharacterABPBonus = DbTables['character_abp_bonuses']['Row'];
+
 type CharacterEquipment = DbTables['character_equipment']['Row'];
 type CharacterDiscovery = DbTables['character_discoveries']['Row'];
 type BaseSkill = DbTables['base_skills']['Row'];
@@ -26,6 +26,26 @@ export interface CalculatedStats {
       modifiers: {
           permanent: CharacterAttributes;
           temporary: CharacterAttributes;
+      };
+      bonuses: {
+          ancestry: {
+              source: string;
+              values: Partial<CharacterAttributes>;
+          };
+          abp: {
+              mental: {
+                  attribute: keyof CharacterAttributes;
+                  value: number;
+              } | null;
+              physical: {
+                  attribute: keyof CharacterAttributes;
+                  value: number;
+              } | null;
+          };
+          buffs: {
+              source: string;
+              values: Partial<CharacterAttributes>;
+          }[];
       };
   };
   combat: {
@@ -57,6 +77,7 @@ export interface CalculatedStats {
           reflex: number;
           will: number;
       };
+      abpBonuses: ABPBonuses;
   };
   skills: {
     byName: Record<string, {
@@ -96,8 +117,8 @@ export function getAbilityModifier(score: number): number {
 
 // Helper function to get ABP bonus value
 function getABPBonus(
-    abpBonuses: CharacterABPBonus[] | undefined,
-    bonusType: CharacterABPBonus['bonus_type']
+    abpBonuses: DatabaseCharacterAbpBonus[] | undefined,
+    bonusType: DatabaseCharacterAbpBonus['bonus_type']
 ): number {
     return abpBonuses?.find(b => b.bonus_type === bonusType)?.value ?? 0;
 }
@@ -107,56 +128,109 @@ function calculateAttributes(
   character: Character,
   activeBuffs: KnownBuffType[]
 ): CalculatedStats['attributes'] {
+  // Base attributes
   const baseAttributes = character.character_attributes?.[0] ?? {
       str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10
   };
 
-  // Calculate permanent bonuses (from ABP)
+  // Calculate permanent bonuses (starting with ancestry)
   const permanent = { ...baseAttributes };
-  const mentalProwessBonus = getABPBonus(character.character_abp_bonuses, 'mental_prowess');
   
+  // Get ancestry info
+  const primaryAncestry = character.character_ancestries?.find(ca => ca.is_primary);
+  const ancestryModifiers = primaryAncestry?.ancestry?.ability_modifiers ?? {};
+  
+  // Apply ancestry modifiers
+  Object.entries(ancestryModifiers).forEach(([ability, modifier]) => {
+    const key = ability.toLowerCase() as keyof CharacterAttributes;
+    permanent[key] += modifier;
+  });
+
+  // Get ABP bonuses
+  const mentalProwessBonus = getABPBonus(character.character_abp_bonuses, 'mental_prowess');
+  const physicalProwessBonus = getABPBonus(character.character_abp_bonuses, 'physical_prowess');
+
+  const mentalProwessChoice = character.character_abp_bonuses?.find(b => 
+    b.bonus_type === 'mental_prowess_choice'
+  )?.value_target ?? 'int';
+
+  const physicalProwessChoice = character.character_abp_bonuses?.find(b => 
+    b.bonus_type === 'physical_prowess_choice'
+  )?.value_target ?? 'dex';
+
+  // Apply prowess bonuses
   if (mentalProwessBonus > 0) {
-      permanent.int += mentalProwessBonus;
+    permanent[mentalProwessChoice as keyof CharacterAttributes] += mentalProwessBonus;
+  }
+  if (physicalProwessBonus > 0) {
+    permanent[physicalProwessChoice as keyof CharacterAttributes] += physicalProwessBonus;
   }
 
   // Calculate temporary bonuses from active buffs
   const temporary = { ...permanent };
+  const buffBonuses: CalculatedStats['attributes']['bonuses']['buffs'] = [];
+  
   activeBuffs.forEach(buffName => {
-      const buff = BUFF_CONFIG.find((b: Buff) => b.name === buffName);
-      if (buff) {
-          buff.effects.forEach((effect: BuffEffect) => {
-              if (effect.attribute && effect.modifier) {
-                  temporary[effect.attribute as keyof CharacterAttributes] += effect.modifier;
-              }
-          });
+    const buff = BUFF_CONFIG.find((b: Buff) => b.name === buffName);
+    if (buff) {
+      const buffValues: Partial<CharacterAttributes> = {};
+      buff.effects.forEach((effect: BuffEffect) => {
+        if (effect.attribute && effect.modifier) {
+          temporary[effect.attribute as keyof CharacterAttributes] += effect.modifier;
+          buffValues[effect.attribute as keyof CharacterAttributes] = effect.modifier;
+        }
+      });
+      if (Object.keys(buffValues).length > 0) {
+        buffBonuses.push({
+          source: buff.label,
+          values: buffValues
+        });
       }
+    }
   });
 
-  // Calculate modifiers for both permanent and temporary values
+  // Calculate modifiers
   const permanentModifiers = Object.entries(permanent).reduce(
-      (acc, [key, value]) => ({
-          ...acc,
-          [key]: getAbilityModifier(value as number)
-      }),
-      {} as CharacterAttributes
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: getAbilityModifier(value as number)
+    }),
+    {} as CharacterAttributes
   );
 
   const temporaryModifiers = Object.entries(temporary).reduce(
-      (acc, [key, value]) => ({
-          ...acc,
-          [key]: getAbilityModifier(value as number)
-      }),
-      {} as CharacterAttributes
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: getAbilityModifier(value as number)
+    }),
+    {} as CharacterAttributes
   );
 
   return {
-      base: baseAttributes,
-      permanent,
-      temporary,
-      modifiers: {
-          permanent: permanentModifiers,
-          temporary: temporaryModifiers
-      }
+    base: baseAttributes,
+    permanent,
+    temporary,
+    modifiers: {
+      permanent: permanentModifiers,
+      temporary: temporaryModifiers
+    },
+    bonuses: {
+      ancestry: {
+        source: primaryAncestry?.ancestry?.name ?? 'Ancestry',
+        values: ancestryModifiers
+      },
+      abp: {
+        mental: mentalProwessBonus > 0 ? {
+          attribute: mentalProwessChoice as keyof CharacterAttributes,
+          value: mentalProwessBonus
+        } : null,
+        physical: physicalProwessBonus > 0 ? {
+          attribute: physicalProwessChoice as keyof CharacterAttributes,
+          value: physicalProwessBonus
+        } : null
+      },
+      buffs: buffBonuses
+    }
   };
 }
 
@@ -200,8 +274,10 @@ function calculateCombat(
 function calculateDefenses(
   attributes: CalculatedStats['attributes'],
   activeBuffs: KnownBuffType[],
-  abpBonuses: ABPBonuses
+  character: Character
 ): CalculatedStats['defenses'] {
+  let abpBonuses = getABPBonuses(character.character_abp_bonuses ?? []);
+  
   let naturalArmorBonus = 0;
   
   // Calculate natural armor bonus from active mutagens/cognatogens
@@ -227,7 +303,8 @@ function calculateDefenses(
           fortitude: 2 + attributes.modifiers.temporary.con + mods.saves.fort + abpBonuses.resistance,
           reflex: 2 + attributes.modifiers.temporary.dex + mods.saves.ref + abpBonuses.resistance,
           will: 2 + attributes.modifiers.temporary.wis + mods.saves.will + abpBonuses.resistance
-      }
+      },
+      abpBonuses: abpBonuses
   };
 }
 
@@ -406,25 +483,21 @@ function calculateResources(
 }
 
 // Master calculation function
-export function calculateCharacterStats(
-  character: Character,
-  abpBonuses: ABPBonuses
-): CalculatedStats {
-  const activeBuffs = (character.character_buffs ?? [])
-      .filter(b => b.is_active)
-      .map(b => b.buff_type as KnownBuffType);
+export function calculateCharacterStats(character: Character): CalculatedStats {
+  const activeBuffs = character.character_buffs
+    ?.filter(b => b.is_active)
+    .map(b => b.buff_type as KnownBuffType) ?? [];
 
   const attributes = calculateAttributes(character, activeBuffs);
   
   return {
-      attributes,
-      combat: calculateCombat(character, attributes, activeBuffs),
-      defenses: calculateDefenses(attributes, activeBuffs, abpBonuses),
-      skills: calculateSkills(character, attributes),
-      resources: calculateResources(character, attributes)
+    attributes,
+    combat: calculateCombat(character, attributes, activeBuffs),
+    defenses: calculateDefenses(attributes, activeBuffs, character),
+    skills: calculateSkills(character, attributes),
+    resources: calculateResources(character, attributes)
   };
 }
-
 // Helper functions for formatting and specific calculations
 function calculateArmorCheckPenalty(equipment: CharacterEquipment[] = []): number {
   const equippedArmor = equipment.find(e => e.type === 'armor' && e.equipped);

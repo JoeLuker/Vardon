@@ -12,8 +12,10 @@
     import Discoveries from '$lib/components/Discoveries.svelte';
     import Feats from '$lib/components/Feats.svelte';
     import ABPDisplay from '$lib/components/ABPDisplay.svelte';
+    import Traits from '$lib/components/Traits.svelte';
     import { initializeCharacter } from '$lib/state/character.svelte';
     import type { Character } from '$lib/types/character';
+    import AncestryDisplay from '$lib/components/AncestryDisplay.svelte';
 
     let { data } = $props<{ data: { character: Character } }>();
 
@@ -55,6 +57,8 @@
                 <Discoveries />
                 <Feats />
                 <ABPDisplay />
+                <Traits />
+                <AncestryDisplay />
             </div>
         </div>
     </div>

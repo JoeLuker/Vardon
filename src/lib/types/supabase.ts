@@ -9,6 +9,154 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      base_ancestral_traits: {
+        Row: {
+          ancestry_id: number | null
+          benefits: Json | null
+          created_at: string | null
+          description: string
+          id: number
+          is_optional: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_id?: number | null
+          benefits?: Json | null
+          created_at?: string | null
+          description: string
+          id?: never
+          is_optional?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_id?: number | null
+          benefits?: Json | null
+          created_at?: string | null
+          description?: string
+          id?: never
+          is_optional?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_ancestral_traits_ancestry_id_fkey"
+            columns: ["ancestry_id"]
+            isOneToOne: false
+            referencedRelation: "base_ancestries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_ancestries: {
+        Row: {
+          ability_modifiers: Json
+          base_speed: number
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+          size: string
+          updated_at: string | null
+        }
+        Insert: {
+          ability_modifiers: Json
+          base_speed: number
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name: string
+          size: string
+          updated_at?: string | null
+        }
+        Update: {
+          ability_modifiers?: Json
+          base_speed?: number
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name?: string
+          size?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      base_races: {
+        Row: {
+          ability_modifiers: Json
+          base_speed: number
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+          size: string
+          updated_at: string | null
+        }
+        Insert: {
+          ability_modifiers: Json
+          base_speed: number
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name: string
+          size: string
+          updated_at?: string | null
+        }
+        Update: {
+          ability_modifiers?: Json
+          base_speed?: number
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name?: string
+          size?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      base_racial_traits: {
+        Row: {
+          benefits: Json | null
+          created_at: string | null
+          description: string
+          id: number
+          is_optional: boolean | null
+          name: string
+          race_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          benefits?: Json | null
+          created_at?: string | null
+          description: string
+          id?: never
+          is_optional?: boolean | null
+          name: string
+          race_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          benefits?: Json | null
+          created_at?: string | null
+          description?: string
+          id?: never
+          is_optional?: boolean | null
+          name?: string
+          race_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_racial_traits_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "base_races"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       base_skills: {
         Row: {
           ability: string
@@ -39,6 +187,36 @@ export type Database = {
         }
         Relationships: []
       }
+      base_traits: {
+        Row: {
+          benefits: Json | null
+          created_at: string | null
+          description: string
+          id: number
+          name: string
+          trait_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          benefits?: Json | null
+          created_at?: string | null
+          description: string
+          id?: never
+          name: string
+          trait_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          benefits?: Json | null
+          created_at?: string | null
+          description?: string
+          id?: never
+          name?: string
+          trait_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       character_abp_bonuses: {
         Row: {
           bonus_type: string
@@ -47,6 +225,7 @@ export type Database = {
           sync_status: string | null
           updated_at: string | null
           value: number
+          value_target: string | null
         }
         Insert: {
           bonus_type: string
@@ -55,6 +234,7 @@ export type Database = {
           sync_status?: string | null
           updated_at?: string | null
           value: number
+          value_target?: string | null
         }
         Update: {
           bonus_type?: string
@@ -63,10 +243,98 @@ export type Database = {
           sync_status?: string | null
           updated_at?: string | null
           value?: number
+          value_target?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "character_abp_bonuses_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_ancestral_traits: {
+        Row: {
+          ancestral_trait_id: number | null
+          character_id: number | null
+          created_at: string | null
+          id: number
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ancestral_trait_id?: number | null
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ancestral_trait_id?: number | null
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_ancestral_traits_ancestral_trait_id_fkey"
+            columns: ["ancestral_trait_id"]
+            isOneToOne: false
+            referencedRelation: "base_ancestral_traits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_ancestral_traits_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_ancestries: {
+        Row: {
+          ancestry_id: number | null
+          character_id: number | null
+          created_at: string | null
+          id: number
+          is_primary: boolean | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_id?: number | null
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          is_primary?: boolean | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_id?: number | null
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          is_primary?: boolean | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_ancestries_ancestry_id_fkey"
+            columns: ["ancestry_id"]
+            isOneToOne: false
+            referencedRelation: "base_ancestries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_ancestries_character_id_fkey"
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
@@ -620,6 +888,79 @@ export type Database = {
           },
         ]
       }
+      character_races: {
+        Row: {
+          character_id: number | null
+          created_at: string | null
+          id: number
+          is_primary: boolean | null
+          race_id: number | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          is_primary?: boolean | null
+          race_id?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          is_primary?: boolean | null
+          race_id?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_races_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "base_races"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_racial_traits: {
+        Row: {
+          character_id: number | null
+          created_at: string | null
+          id: number
+          racial_trait_id: number | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          racial_trait_id?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          racial_trait_id?: number | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_racial_traits_racial_trait_id_fkey"
+            columns: ["racial_trait_id"]
+            isOneToOne: false
+            referencedRelation: "base_racial_traits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_skill_ranks: {
         Row: {
           applied_at_level: number
@@ -709,8 +1050,51 @@ export type Database = {
           },
         ]
       }
+      character_traits: {
+        Row: {
+          character_id: number | null
+          created_at: string | null
+          id: number
+          sync_status: string | null
+          trait_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          sync_status?: string | null
+          trait_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          character_id?: number | null
+          created_at?: string | null
+          id?: never
+          sync_status?: string | null
+          trait_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_traits_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_traits_trait_id_fkey"
+            columns: ["trait_id"]
+            isOneToOne: false
+            referencedRelation: "base_traits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
+          ancestry: string
           class: string
           created_at: string | null
           current_hp: number
@@ -720,11 +1104,11 @@ export type Database = {
           level: number
           max_hp: number
           name: string
-          race: string
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          ancestry: string
           class: string
           created_at?: string | null
           current_hp: number
@@ -734,11 +1118,11 @@ export type Database = {
           level: number
           max_hp: number
           name: string
-          race: string
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          ancestry?: string
           class?: string
           created_at?: string | null
           current_hp?: number
@@ -748,7 +1132,6 @@ export type Database = {
           level?: number
           max_hp?: number
           name?: string
-          race?: string
           updated_at?: string | null
           user_id?: string | null
         }

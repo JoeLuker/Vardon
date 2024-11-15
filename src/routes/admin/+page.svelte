@@ -7,6 +7,8 @@
     import ClassFeaturesManager from '$lib/components/admin/ClassFeaturesManager.svelte';
     import SkillsManager from '$lib/components/admin/SkillsManager.svelte';
     import FavoredClassBonusesManager from '$lib/components/admin/FavoredClassBonusesManager.svelte';
+    import TraitsManager from '$lib/components/admin/TraitsManager.svelte';
+    import AncestryManager from '$lib/components/admin/AncestryManager.svelte';
     import type { PageData } from './$types';
 
     
@@ -28,7 +30,9 @@
         { id: 'skills', label: 'Skills & Abilities' },
         { id: 'equipment', label: 'Equipment' },
         { id: 'spells', label: 'Spells & Extracts' },
-        { id: 'fcb', label: 'Favored Class Bonuses' }
+        { id: 'fcb', label: 'Favored Class Bonuses' },
+        { id: 'traits', label: 'Traits' },
+        { id: 'ancestries', label: 'Ancestries' }
     ];
 </script>
 
@@ -104,6 +108,22 @@
                 aria-labelledby="tab-fcb"
             >
                 <FavoredClassBonusesManager />
+            </div>
+        {:else if activeTab === 'traits'}
+            <div 
+                role="tabpanel"
+                id="panel-traits"
+                aria-labelledby="tab-traits"
+            >
+                <TraitsManager />
+            </div>
+        {:else if activeTab === 'ancestries'}
+            <div 
+                role="tabpanel"
+                id="panel-ancestries"
+                aria-labelledby="tab-ancestries"
+            >
+                <AncestryManager />
             </div>
         {:else}
             <div 

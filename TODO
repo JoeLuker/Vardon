@@ -1,24 +1,24 @@
 # Development Tasks
 
 ## Core Character Components
-- [ ] Implement Race System
-  - Basic racial traits
-  - Racial abilities
+
+- [ ] Implement Ancestry System
+  - Basic ancestral traits
+  - Ancestral abilities
   - Stat modifications
 
 - [ ] Implement Traits System
-  - Combat traits
-  - Magic traits
-  - Social traits
-  - Campaign traits
- 
+  - overwite skill ability for characters with specific traits
+
 ## Character Management
+
 - [ ] Multiple Character Support
   - Character selector/switcher
   - Character data storage/loading
   - Character list management
 
 ## Combat & Calculations
+
 - [ ] Fix Combat Attack Bonus Display
   - Verify BAB calculations
   - Include all relevant modifiers
@@ -31,6 +31,7 @@
   - Item effects on character stats
 
 ## Magic Systems
+
 - [ ] Spell Management
   - Spell Prepper Component
     - Spell slots tracking
@@ -42,6 +43,7 @@
     - Spell modification
 
 ## Special Systems
+
 - [ ] Corruption System
   - Corruption tracker
   - Corruption effects
@@ -57,11 +59,8 @@
     - Special abilities tracking
 
 ## Verification
+
 - [ ] Pathfinder Rules Compliance
   - Audit all calculations
   - Verify modifier stacking rules
   - Check against Pathfinder core rulebook
-
-
-
-

@@ -1,3 +1,5 @@
+import type { DatabaseCharacterAbpBonus } from "./character";
+
 export type ABPBonusType = 
   | 'resistance'
   | 'armor'
@@ -17,18 +19,7 @@ export interface ABPBonuses {
   toughening: number;
 }
 
-export const ABP_PROGRESSION: Record<number, Partial<ABPBonuses>> = {
-  1: {},
-  2: {},
-  3: { resistance: 1 },
-  4: { armor: 1, weapon: 1 },
-  5: { deflection: 1 },
-  6: { mental_prowess: 2 },
-  7: { physical_prowess: 2 },
-  8: { armor: 2, resistance: 2, toughening: 1, weapon: 2 }
-};
-
-export function getABPBonuses(level: number): ABPBonuses {
+export function getABPBonuses(characterAbpBonuses: DatabaseCharacterAbpBonus[]): ABPBonuses {
   const bonuses: ABPBonuses = {
     resistance: 0,
     armor: 0,
@@ -39,12 +30,12 @@ export function getABPBonuses(level: number): ABPBonuses {
     toughening: 0
   };
 
-  for (let i = 1; i <= level; i++) {
-    const levelBonuses = ABP_PROGRESSION[i] || {};
-    Object.entries(levelBonuses).forEach(([key, value]) => {
-      bonuses[key as ABPBonusType] = value;
-    });
-  }
+  characterAbpBonuses.forEach(bonus => {
+    const type = bonus.bonus_type as keyof ABPBonuses;
+    if (type in bonuses) {
+      bonuses[type] = bonus.value;
+    }
+  });
 
   return bonuses;
 } 

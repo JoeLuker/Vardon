@@ -21,7 +21,20 @@ export type DatabaseCharacterFavoredClassBonus = DbTables['character_favored_cla
 export type DatabaseCharacterFeat = DbTables['character_feats']['Row'];
 export type DatabaseCharacterKnownSpell = DbTables['character_known_spells']['Row'];
 export type DatabaseCharacterSpellSlot = DbTables['character_spell_slots']['Row'];
-
+export type DatabaseBaseTrait = DbTables['base_traits']['Row'];
+export type DatabaseCharacterTrait = DbTables['character_traits']['Row'];
+export type DatabaseCharacterAncestry = DbTables['character_ancestries']['Row'] & {
+    ancestry?: {
+        id: number;
+        name: string;
+        size: string;
+        base_speed: number;
+        ability_modifiers: Record<string, number>;
+        description: string | null;
+    };
+}
+export type DatabaseCharacterAncestralTrait = DbTables['character_ancestral_traits']['Row'];
+export type DatabaseBaseAncestralTrait = DbTables['base_ancestral_traits']['Row'];
 // Type aliases for commonly used table types
 export type AttributeKey = keyof Pick<DbTables['character_attributes']['Row'], 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'>;
 export type ConsumableKey = keyof Pick<DbTables['character_consumables']['Row'], 'alchemist_fire' | 'acid' | 'tanglefoot'>;
@@ -99,6 +112,11 @@ export interface SkillView {
     is_class_skill: boolean;
 }
 
+// Add a type for character traits that includes the joined base_traits data
+export interface CharacterTraitWithBase extends DatabaseCharacterTrait {
+    base_traits?: DatabaseBaseTrait;
+}
+
 // Main Character interface combining multiple tables
 export interface Character extends DatabaseCharacter {
     character_attributes?: DatabaseCharacterAttribute[];
@@ -120,6 +138,9 @@ export interface Character extends DatabaseCharacter {
     archetype?: string;
     character_corruption_manifestations?: DatabaseCharacterCorruptionManifestation[];
     character_corruptions?: DatabaseCharacterCorruption[];
+    character_traits?: CharacterTraitWithBase[];
+    character_ancestries?: DatabaseCharacterAncestry[];
+    character_ancestral_traits?: DatabaseCharacterAncestralTrait[];
 }
 
 // Helper types for operations
@@ -163,3 +184,4 @@ export interface CombatStats {
     bombs_left: number;
     base_attack_bonus: number;
 }
+

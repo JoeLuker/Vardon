@@ -2,7 +2,7 @@
     import { character } from '$lib/state/character.svelte';
 
     let name = $derived(character.name);
-    let race = $derived(character.race);
+    let ancestry = $derived(character.ancestry);
     let characterClass = $derived(character.class);
     let level = $derived(character.level);
 </script>
@@ -14,7 +14,7 @@
             <div class="flex items-center gap-3 text-ink-light">
                 <span class="badge">Level {level}</span>
                 <span class="text-sm">
-                    {race} {characterClass}
+                    {ancestry} {characterClass}
                 </span>
             </div>
         </div>

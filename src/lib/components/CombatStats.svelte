@@ -1,10 +1,9 @@
 <!-- src/lib/components/CombatStats.svelte -->
 <script lang="ts">
     import { character, updateBombs } from '$lib/state/character.svelte';
-    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
-    import { getABPBonuses } from '$lib/types/abp';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-
+    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
+    
     // Component state
     let isEditing = $state(false);
     let inputValue = $state(0);
@@ -14,10 +13,7 @@
     });
 
     // Calculate all stats
-    let stats = $derived(calculateCharacterStats(
-        character,
-        getABPBonuses(character.level)
-    ));
+    let stats = $derived(getCalculatedStats());
 
     let resources = $derived(stats.resources);
     let combat = $derived(stats.combat);

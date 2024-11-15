@@ -1,11 +1,10 @@
 <script lang="ts">
     import { character } from '$lib/state/character.svelte';
-    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
-    import { getABPBonuses } from '$lib/types/abp';
     import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/types/character';
     import { supabase } from '$lib/supabaseClient';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 	import { onMount } from 'svelte';
+    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
 
     let { onClose } = $props<{
         onClose: () => void;
@@ -18,10 +17,7 @@
         error: null 
     });
 
-    let stats = $derived(calculateCharacterStats(
-        character,
-        getABPBonuses(character.level)
-    ));
+    let stats = $derived(getCalculatedStats());
 
     // Add new reactive variable for mobile view
     let isMobileView = $state(false);
