@@ -25,6 +25,9 @@ export async function loadCharacterData(
             .eq('id', characterId)
             .single(),
 
+        // Add ABP query here
+        supabase.from('character_abp_bonuses').select('*').eq('character_id', characterId),
+
         // Related data
         supabase.from('base_skills').select('*, character_skill_ranks!left(*, character_id)'),
         supabase.from('character_class_features').select('*').eq('character_id', characterId),
@@ -78,24 +81,25 @@ export async function loadCharacterData(
     // Simplified response object building
     const responseData = {
         ...characterResult.data,
-        base_skills: results[1].data,
-        character_class_features: results[2].data,
-        character_feats: results[3].data,
-        character_discoveries: results[4].data,
-        character_extracts: results[5].data,
-        character_known_spells: results[6].data,
-        character_spell_slots: results[7].data,
-        class_skill_relations: results[8].data,
-        character_favored_class_bonuses: results[9].data,
-        character_equipment: results[10].data,
-        character_corruptions: results[11].data,
-        character_corruption_manifestations: results[12].data,
-        base_traits: results[13].data,
-        character_traits: results[14].data,
-        base_ancestries: results[15].data,
-        character_ancestries: results[16].data,
-        base_ancestral_traits: results[17].data,
-        character_ancestral_traits: results[18].data,
+        character_abp_bonuses: results[1].data,
+        base_skills: results[2].data,
+        character_class_features: results[3].data,
+        character_feats: results[4].data,
+        character_discoveries: results[5].data,
+        character_extracts: results[6].data,
+        character_known_spells: results[7].data,
+        character_spell_slots: results[8].data,
+        class_skill_relations: results[9].data,
+        character_favored_class_bonuses: results[10].data,
+        character_equipment: results[11].data,
+        character_corruptions: results[12].data,
+        character_corruption_manifestations: results[13].data,
+        base_traits: results[14].data,
+        character_traits: results[15].data,
+        base_ancestries: results[16].data,
+        character_ancestries: results[17].data,
+        base_ancestral_traits: results[18].data,
+        character_ancestral_traits: results[19].data,
     };
 
     console.log('✅ Server: Character data loaded successfully');
