@@ -1,6 +1,17 @@
-import { loadCharacterData } from '$lib/server/loadCharacterData';
+import { supabase } from '$lib/supabaseClient';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-    return loadCharacterData();
+    const { data: characters, error } = await supabase
+        .from('characters')
+        .select('id, name, class, ancestry, level')
+        .order('updated_at', { ascending: false });
+
+    if (error) {
+        throw error;
+    }
+
+    return {
+        characters
+    };
 };

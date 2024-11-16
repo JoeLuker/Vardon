@@ -498,15 +498,14 @@ async function fetchSkillData(characterId: number) {
     if (skillRanksResult.error) throw skillRanksResult.error;
     if (classSkillsResult.error) throw classSkillsResult.error;
 
+
     character.base_skills = baseSkillsResult.data;
-    // Convert and validate the skill ranks
-    character.character_skill_ranks = skillRanksResult.data
-        .filter(rank => isValidSkillRankSource(rank.source))
-        .map(rank => ({
-            ...rank,
-            source: rank.source as SkillRankSource
-        }));
+    character.character_skill_ranks = skillRanksResult.data.map(rank => ({
+        ...rank,
+        source: (rank.source || 'class') as SkillRankSource
+    }));
     character.class_skill_relations = classSkillsResult.data;
+
 }
 
 // Add helper functions
@@ -535,6 +534,9 @@ async function toggleBuff(buffType: string, isActive: boolean) {
 
 async function fetchCharacterData(characterId: number) {
     // ... existing fetches ...
+
+    // Add skill data fetch
+    await fetchSkillData(characterId);
 
     // Add FCB fetch
     const fcbResult = await supabase
@@ -589,7 +591,6 @@ async function updateABPBonus(
 
   if (error) throw error;
 }
-
 // Export only what's necessary
 export { 
     character,

@@ -78,6 +78,13 @@ export interface CalculatedStats {
           will: number;
       };
       abpBonuses: ABPBonuses;
+      armorCheckPenalty: number;
+      naturalArmorBonus?: number;
+      equipmentBonuses?: {
+          armor: number;
+          maxDex: number | null;
+          checkPenalty: number;
+      };
   };
   skills: {
     byName: Record<string, {
@@ -241,29 +248,31 @@ function calculateCombat(
   activeBuffs: KnownBuffType[]
 ): CalculatedStats['combat'] {
   const mods = calculateCombatMods(activeBuffs);
-  const baseAttackBonus = character.character_combat_stats?.[0]?.base_attack_bonus ?? 0;
+  const bab = character.character_combat_stats?.[0]?.base_attack_bonus ?? 0;
 
   return {
       initiative: attributes.modifiers.temporary.dex + mods.initiative,
-      baseAttackBonus,
+      baseAttackBonus: bab,
       attacks: {
           melee: {
               bonus: formatAttackBonus(
-                  baseAttackBonus + attributes.modifiers.temporary.str + mods.attack,
-                  mods.extraAttacks
+                  bab + attributes.modifiers.temporary.str + mods.attack,
+                  bab,
+                  mods.extraAttacks.melee
               ),
               damage: formatDamageBonus(attributes.modifiers.temporary.str + mods.damage)
           },
           ranged: {
               bonus: formatAttackBonus(
-                  baseAttackBonus + attributes.modifiers.temporary.dex + mods.attack,
-                  mods.extraAttacks
+                  bab + attributes.modifiers.temporary.dex + mods.attack,
+                  bab,
+                  mods.extraAttacks.ranged
               ),
               damage: formatDamageBonus(mods.damage)
           }
       },
       combatManeuver: {
-          bonus: baseAttackBonus + attributes.modifiers.temporary.str + mods.cmb,
+          bonus: bab + attributes.modifiers.temporary.str + mods.cmb,
           defense: 10 + attributes.modifiers.temporary.str + 
                   attributes.modifiers.temporary.dex + mods.cmd
       }
@@ -277,6 +286,9 @@ function calculateDefenses(
   character: Character
 ): CalculatedStats['defenses'] {
   let abpBonuses = getABPBonuses(character.character_abp_bonuses ?? []);
+  
+  // Calculate equipment armor bonuses
+  const equipmentBonuses = calculateArmorBonuses(character.character_equipment ?? []);
   
   let naturalArmorBonus = 0;
   
@@ -293,18 +305,26 @@ function calculateDefenses(
 
   const mods = calculateCombatMods(activeBuffs);
 
+  // Apply max Dex limit if equipment restricts it
+  const effectiveDexMod = equipmentBonuses.maxDex !== null 
+    ? Math.min(attributes.modifiers.temporary.dex, equipmentBonuses.maxDex)
+    : attributes.modifiers.temporary.dex;
+
   return {
       ac: {
-          normal: 10 + attributes.modifiers.temporary.dex + mods.ac.normal + abpBonuses.armor + naturalArmorBonus,
-          touch: 10 + attributes.modifiers.temporary.dex + mods.ac.touch + naturalArmorBonus,
-          flatFooted: 10 + mods.ac.flatFooted + abpBonuses.armor + naturalArmorBonus
+          normal: 10 + effectiveDexMod + mods.ac.normal + abpBonuses.armor + abpBonuses.deflection + naturalArmorBonus + equipmentBonuses.armor,
+          touch: 10 + effectiveDexMod + mods.ac.touch + abpBonuses.deflection,
+          flatFooted: 10 + mods.ac.flatFooted + abpBonuses.armor + abpBonuses.deflection + naturalArmorBonus + equipmentBonuses.armor
       },
       saves: {
           fortitude: 2 + attributes.modifiers.temporary.con + mods.saves.fort + abpBonuses.resistance,
-          reflex: 2 + attributes.modifiers.temporary.dex + mods.saves.ref + abpBonuses.resistance,
+          reflex: 2 + effectiveDexMod + mods.saves.ref + abpBonuses.resistance,
           will: 2 + attributes.modifiers.temporary.wis + mods.saves.will + abpBonuses.resistance
       },
-      abpBonuses: abpBonuses
+      abpBonuses: abpBonuses,
+      armorCheckPenalty: equipmentBonuses.checkPenalty,
+      naturalArmorBonus: naturalArmorBonus,
+      equipmentBonuses: equipmentBonuses
   };
 }
 
@@ -458,24 +478,24 @@ function calculateResources(
   character: Character,
   attributes: CalculatedStats['attributes']
 ): CalculatedStats['resources'] {
-  // Use temporary int modifier for bombs (includes cognatogen)
-  const intModifier = attributes.modifiers.temporary.int;
+  // Use permanent int modifier for bombs (excludes temporary effects like cognatogen)
+  const intModifier = attributes.modifiers.permanent.int;
   const level = character.level;
 
   return {
       bombs: {
           perDay: level + intModifier,
           remaining: character.character_combat_stats?.[0]?.bombs_left ?? 0,
-          damage: `${Math.ceil(level/2)}d6 + ${intModifier}`,
-          splash: Math.ceil(level/2) + intModifier
+          damage: `${Math.ceil(level/2)}d6 + ${attributes.modifiers.temporary.int}`, // Still use temporary for damage
+          splash: Math.ceil(level/2) + attributes.modifiers.temporary.int // Still use temporary for splash
       },
       extracts: Object.fromEntries(
           Array.from({ length: 6 }, (_, i) => i + 1).map(level => [
               level,
               {
                   perDay: calculateExtractsPerDay(character.level, intModifier, level),
-                  prepared: 0, // Add actual prepared count
-                  used: 0 // Add actual used count
+                  prepared: 0,
+                  used: 0
               }
           ])
       )
@@ -504,22 +524,22 @@ function calculateArmorCheckPenalty(equipment: CharacterEquipment[] = []): numbe
   return (equippedArmor?.properties as CharacterEquipmentProperties)?.armor_check_penalty ?? 0;
 }
 
-function formatAttackBonus(total: number, extraAttacks: number = 0): string {
-  const sign = total >= 0 ? '+' : '';
-  let display = `${sign}${total}`;
-  
-  // Add iterative attacks
-  const iterations = Math.floor(total / 5);
-  for (let i = 1; i <= iterations; i++) {
-      display += ` / ${sign}${total - (5 * i)}`;
-  }
-  
-  // Add extra attacks from effects (like Rapid Shot)
-  if (extraAttacks > 0) {
-      display += ` / ${sign}${total}`.repeat(extraAttacks);
-  }
-  
-  return display;
+function formatAttackBonus(total: number, bab: number, extraAttacks: number = 0): string {
+    const sign = total >= 0 ? '+' : '';
+    let display = `${sign}${total}`;
+    
+    // Add iterative attacks based on BAB only
+    const iterations = Math.floor(bab / 5) - 1; // -1 because first attack is already included
+    for (let i = 1; i <= iterations; i++) {
+        display += ` / ${sign}${total - (5 * i)}`;
+    }
+    
+    // Add extra attacks from effects (like Rapid Shot) at highest bonus
+    for (let i = 0; i < extraAttacks; i++) {
+        display += ` / ${sign}${total}`;
+    }
+    
+    return display;
 }
 
 function formatDamageBonus(bonus: number): string {
@@ -597,7 +617,10 @@ interface CombatMods {
   initiative: number;
   attack: number;
   damage: number;
-  extraAttacks: number;
+  extraAttacks: {
+    melee: number;
+    ranged: number;
+  };
   cmb: number;
   cmd: number;
   ac: {
@@ -612,13 +635,15 @@ interface CombatMods {
   };
 }
 
-// Add this function
 function calculateCombatMods(activeBuffs: KnownBuffType[]): CombatMods {
     const mods: CombatMods = {
         initiative: 0,
         attack: 0,
         damage: 0,
-        extraAttacks: 0,
+        extraAttacks: {
+            melee: 0,
+            ranged: 0
+        },
         cmb: 0,
         cmd: 0,
         ac: { normal: 0, touch: 0, flatFooted: 0 },
@@ -627,15 +652,18 @@ function calculateCombatMods(activeBuffs: KnownBuffType[]): CombatMods {
 
     activeBuffs.forEach(buff => {
         switch(buff) {
-            // Combat feats only - everything else is handled by ability score changes
             case 'deadly_aim':
                 mods.attack -= 2;
                 mods.damage += 4;
                 break;
             case 'rapid_shot':
+                mods.attack -= 2;
+                mods.extraAttacks.ranged += 1;
+                break;
             case 'two_weapon_fighting':
                 mods.attack -= 2;
-                mods.extraAttacks += 1;
+                mods.extraAttacks.melee += 1;
+                mods.extraAttacks.ranged += 1;
                 break;
         }
     });
@@ -714,3 +742,35 @@ function validateBuff(character: Character, buffType: KnownBuffType): boolean {
 
 // Export the utility functions so they can be used elsewhere
 export { canUseMutagen, canUseCognatogen, validateBuff };
+
+function calculateArmorBonuses(equipment: CharacterEquipment[] = []): {
+    armor: number;
+    maxDex: number | null;
+    checkPenalty: number;
+} {
+    let totalArmor = 0;
+    let maxDex: number | null = null;
+    let checkPenalty = 0;
+
+    equipment.forEach(item => {
+        if (item.equipped && item.properties) {
+            const props = item.properties as CharacterEquipmentProperties;
+            if (props.armor_bonus) {
+                totalArmor += props.armor_bonus;
+            }
+            if (props.max_dex !== undefined) {
+                maxDex = maxDex === null ? props.max_dex : Math.min(maxDex, props.max_dex);
+            }
+            if (props.armor_check_penalty) {
+                checkPenalty += props.armor_check_penalty;
+            }
+        }
+    });
+
+    return {
+        armor: totalArmor,
+        maxDex,
+        checkPenalty
+    };
+}
+

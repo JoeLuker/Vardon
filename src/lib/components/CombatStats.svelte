@@ -3,6 +3,8 @@
     import { character, updateBombs } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
+    import type { CalculatedStats } from '$lib/utils/characterCalculations';
+    import Tooltip from '$lib/components/Tooltip.svelte';
     
     // Component state
     let isEditing = $state(false);
@@ -19,17 +21,32 @@
     let combat = $derived(stats.combat);
     let defenses = $derived(stats.defenses);
 
-    // Display configurations
-    const saveThrows = $state.raw([
+    // Update the saveThrows type definition
+    type SaveType = 'Fortitude' | 'Reflex' | 'Will';
+
+    // Update the saveThrows array with proper typing
+    const saveThrows = $state.raw<Array<{ label: SaveType; value: () => number }>>([
         { label: 'Fortitude', value: () => defenses.saves.fortitude },
         { label: 'Reflex', value: () => defenses.saves.reflex },
         { label: 'Will', value: () => defenses.saves.will }
     ]);
 
     const armorClasses = $state.raw([
-        { label: 'Normal', value: () => defenses.ac.normal },
-        { label: 'Touch', value: () => defenses.ac.touch },
-        { label: 'Flat-Footed', value: () => defenses.ac.flatFooted }
+        { 
+            label: 'Normal', 
+            value: () => defenses.ac.normal,
+            getTooltip: (stats: CalculatedStats) => getNormalACTooltip(stats)
+        },
+        { 
+            label: 'Touch', 
+            value: () => defenses.ac.touch,
+            getTooltip: (stats: CalculatedStats) => getTouchACTooltip(stats)
+        },
+        { 
+            label: 'Flat-Footed', 
+            value: () => defenses.ac.flatFooted,
+            getTooltip: (stats: CalculatedStats) => getFlatFootedACTooltip(stats)
+        }
     ]);
 
     const combatStats = $state.raw([
@@ -114,6 +131,158 @@
         node.focus();
         return {};
     }
+
+    function getSaveTooltip(save: 'Fortitude' | 'Reflex' | 'Will', stats: CalculatedStats): string {
+        const baseBonus = Math.floor(stats.combat.baseAttackBonus/2);
+        const parts = [];
+
+        // Always show base
+        parts.push(`Base (${baseBonus})`);
+
+        // Add ability modifier based on save type
+        const abilityMods = {
+            'Fortitude': { mod: stats.attributes.modifiers.temporary.con, label: 'CON' },
+            'Reflex': { mod: stats.attributes.modifiers.temporary.dex, label: 'DEX' },
+            'Will': { mod: stats.attributes.modifiers.temporary.wis, label: 'WIS' }
+        };
+        
+        const mod = abilityMods[save];
+        if (mod.mod !== 0) {
+            parts.push(`${mod.label} (${mod.mod >= 0 ? '+' : ''}${mod.mod})`);
+        }
+
+        return parts.join(' + ');
+    }
+
+    function getInitiativeTooltip(stats: CalculatedStats): string {
+        const parts = [];
+        const dexMod = stats.attributes.modifiers.temporary.dex;
+
+        if (dexMod !== 0) {
+            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
+        }
+
+        return parts.join(' + ') || '0';
+    }
+
+    function getNormalACTooltip(stats: CalculatedStats): string {
+        const parts = ['10'];
+        const dexMod = stats.attributes.modifiers.temporary.dex;
+        const abpArmorBonus = stats.defenses.abpBonuses.armor;
+        const equipmentArmorBonus = stats.defenses.equipmentBonuses?.armor ?? 0;
+        const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
+        const deflectionBonus = stats.defenses.abpBonuses.deflection;
+        
+        if (dexMod !== 0) {
+            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
+        }
+        
+        if (totalArmorBonus > 0) {
+            const sources = [];
+            if (abpArmorBonus > 0) sources.push(`ABP +${abpArmorBonus}`);
+            if (equipmentArmorBonus > 0) sources.push(`Equipment +${equipmentArmorBonus}`);
+            parts.push(`Armor (${sources.join(', ')})`);
+        }
+        
+        if (stats.defenses.naturalArmorBonus) {
+            parts.push(`Natural Armor (+${stats.defenses.naturalArmorBonus})`);
+        }
+        
+        if (deflectionBonus > 0) {
+            parts.push(`Deflection (+${deflectionBonus})`);
+        }
+
+        return parts.join(' + ');
+    }
+
+    function getTouchACTooltip(stats: CalculatedStats): string {
+        const parts = ['10'];
+        const dexMod = stats.attributes.modifiers.temporary.dex;
+        const deflectionBonus = stats.defenses.abpBonuses.deflection;
+        
+        if (dexMod !== 0) {
+            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
+        }
+        
+        if (deflectionBonus > 0) {
+            parts.push(`Deflection (+${deflectionBonus})`);
+        }
+
+        return parts.join(' + ');
+    }
+
+    function getFlatFootedACTooltip(stats: CalculatedStats): string {
+        const parts = ['10'];
+        const abpArmorBonus = stats.defenses.abpBonuses.armor;
+        const equipmentArmorBonus = stats.defenses.equipmentBonuses?.armor ?? 0;
+        const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
+        const deflectionBonus = stats.defenses.abpBonuses.deflection;
+        
+        if (totalArmorBonus > 0) {
+            const sources = [];
+            if (abpArmorBonus > 0) sources.push(`ABP +${abpArmorBonus}`);
+            if (equipmentArmorBonus > 0) sources.push(`Equipment +${equipmentArmorBonus}`);
+            parts.push(`Armor (${sources.join(', ')})`);
+        }
+        
+        if (stats.defenses.naturalArmorBonus) {
+            parts.push(`Natural Armor (+${stats.defenses.naturalArmorBonus})`);
+        }
+        
+        if (deflectionBonus > 0) {
+            parts.push(`Deflection (+${deflectionBonus})`);
+        }
+
+        return parts.join(' + ');
+    }
+
+    function getCMBTooltip(stats: CalculatedStats): string {
+        const parts = [];
+        const bab = stats.combat.baseAttackBonus;
+        const strMod = stats.attributes.modifiers.temporary.str;
+
+        if (bab !== 0) {
+            parts.push(`BAB (${bab >= 0 ? '+' : ''}${bab})`);
+        }
+
+        if (strMod !== 0) {
+            parts.push(`STR (${strMod >= 0 ? '+' : ''}${strMod})`);
+        }
+
+        return parts.join(' + ') || '0';
+    }
+
+    function getCMDTooltip(stats: CalculatedStats): string {
+        const parts = ['10'];
+        const bab = stats.combat.baseAttackBonus;
+        const strMod = stats.attributes.modifiers.temporary.str;
+        const dexMod = stats.attributes.modifiers.temporary.dex;
+
+        if (bab !== 0) {
+            parts.push(`BAB (${bab >= 0 ? '+' : ''}${bab})`);
+        }
+
+        if (strMod !== 0) {
+            parts.push(`STR (${strMod >= 0 ? '+' : ''}${strMod})`);
+        }
+
+        if (dexMod !== 0) {
+            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
+        }
+
+        return parts.join(' + ');
+    }
+
+    function getBombDamageTooltip(stats: CalculatedStats): string {
+        const parts = [`Base (${Math.ceil(stats.combat.baseAttackBonus/2)}d6)`];
+        const intMod = stats.attributes.modifiers.temporary.int;
+
+        if (intMod !== 0) {
+            parts.push(`INT (${intMod >= 0 ? '+' : ''}${intMod})`);
+        }
+
+        return parts.join(' + ');
+    }
 </script>
 
 <div class="card">
@@ -169,7 +338,10 @@
                     <span class="text-sm text-gray-600">/ {resources.bombs.perDay}</span>
                 </div>
                 <div class="text-right text-sm">
-                    <div>{resources.bombs.damage}</div>
+                    <div class="group relative">
+                        <div>{resources.bombs.damage}</div>
+                        <Tooltip text={getBombDamageTooltip(stats)} />
+                    </div>
                     <div class="text-gray-600">+{resources.bombs.splash} splash</div>
                 </div>
             </div>
@@ -180,18 +352,21 @@
             <div>
                 <h3 class="text-sm font-medium">Attacks</h3>
                 <div class="mt-2 space-y-2">
-                    <div>
+                    <div class="group relative">
                         <span class="text-sm text-gray-600">Melee</span>
                         <div class="text-xl font-bold">{combat.attacks.melee.bonus}</div>
+                        <Tooltip text={`BAB (${stats.combat.baseAttackBonus}) + STR (${stats.attributes.modifiers.temporary.str}) + Size + Weapon Focus + Other Modifiers`} />
                         {#if combat.attacks.melee.damage}
                             <div class="text-sm text-gray-600">
                                 Damage {combat.attacks.melee.damage}
                             </div>
                         {/if}
                     </div>
-                    <div>
+                    
+                    <div class="group relative">
                         <span class="text-sm text-gray-600">Ranged</span>
                         <div class="text-xl font-bold">{combat.attacks.ranged.bonus}</div>
+                        <Tooltip text={`BAB (${stats.combat.baseAttackBonus}) + DEX (${stats.attributes.modifiers.temporary.dex}) + Size + Point Blank Shot + Other Modifiers`} />
                         {#if combat.attacks.ranged.damage}
                             <div class="text-sm text-gray-600">
                                 Damage {combat.attacks.ranged.damage}
@@ -207,17 +382,21 @@
             <!-- Initiative -->
             <div>
                 <span class="text-sm font-medium">Initiative</span>
-                <div class="text-xl font-bold">{combat.initiative >= 0 ? '+' : ''}{combat.initiative}</div>
+                <div class="group relative">
+                    <div class="text-xl font-bold">{combat.initiative >= 0 ? '+' : ''}{combat.initiative}</div>
+                    <Tooltip text={getInitiativeTooltip(stats)} />
+                </div>
             </div>
 
             <!-- Armor Class -->
             <div>
                 <span class="text-sm font-medium">Armor Class</span>
                 <div class="grid grid-cols-3 gap-2 text-center">
-                    {#each armorClasses as { label, value }}
-                        <div>
+                    {#each armorClasses as { label, value, getTooltip }}
+                        <div class="group relative">
                             <div class="text-xl font-bold">{value()}</div>
                             <div class="text-xs">{label}</div>
+                            <Tooltip text={getTooltip(stats)} />
                         </div>
                     {/each}
                 </div>
@@ -228,9 +407,10 @@
                 <span class="text-sm font-medium">Saving Throws</span>
                 <div class="grid grid-cols-3 gap-2 text-center">
                     {#each saveThrows as { label, value }}
-                        <div>
+                        <div class="group relative">
                             <div class="text-xl font-bold">{value() >= 0 ? '+' : ''}{value()}</div>
                             <div class="text-xs">{label}</div>
+                            <Tooltip text={getSaveTooltip(label, stats)} />
                         </div>
                     {/each}
                 </div>
@@ -239,11 +419,12 @@
             <!-- CMB/CMD -->
             <div class="grid grid-cols-2 gap-2">
                 {#each combatStats as { key, label, value }}
-                    <div>
+                    <div class="group relative">
                         <span class="text-sm font-medium">{label}</span>
                         <div class="text-xl font-bold">
                             {key === 'cmb' ? (value() >= 0 ? '+' : '') : ''}{value()}
                         </div>
+                        <Tooltip text={key === 'cmb' ? getCMBTooltip(stats) : getCMDTooltip(stats)} />
                     </div>
                 {/each}
             </div>

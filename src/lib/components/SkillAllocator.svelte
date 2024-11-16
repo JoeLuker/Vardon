@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { character, fetchSkillData } from '$lib/state/character.svelte';
     import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/types/character';
     import { supabase } from '$lib/supabaseClient';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
@@ -27,27 +27,71 @@
         isMobileView = window.innerWidth < 768;
     }
 
+    let isLoading = $state(true);
+
+    // Add new state to track explicitly unchecked ranks
+    let uncheckedRanks = $state<number[]>([]); // Store IDs of ranks that were unchecked
+
     onMount(() => {
         handleResize();
         window.addEventListener('resize', handleResize);
+
+        // Load skill data
+        fetchSkillData(character.id)
+            .catch(error => {
+                console.error('Failed to load skill data:', error);
+                updateState.error = error instanceof Error ? error : new Error('Failed to load skills');
+            })
+            .finally(() => {
+                isLoading = false;
+            });
+
+        // Return cleanup function
         return () => window.removeEventListener('resize', handleResize);
     });
 
     function canAddRankAtLevel(skillName: string, level: number): boolean {
         const skillData = stats.skills.byName[skillName];
-        if (!skillData) return false;
+        if (!skillData) {
+            console.warn(`No skill data found for ${skillName}`);
+            return false;
+        }
 
         // Check if we have points available at this level
         const levelData = stats.skills.byLevel[level];
-        if (!levelData || levelData.remaining <= 0) return false;
+        if (!levelData) {
+            console.warn(`No level data found for level ${level}`);
+            return false;
+        }
+
+        // Get existing ranks for this skill at this level
+        const existingRanks = skillData.ranks.byLevel[level] ?? [];
+        const hasExistingClassRank = existingRanks.some(
+            rank => rank.source === SKILL_RANK_SOURCES.CLASS
+        );
+
+        // If we already have a class rank at this level, we can toggle it off
+        if (hasExistingClassRank) {
+            return true;
+        }
+
+        // Check skill points availability
+        const pendingRanksAtLevel = pendingChanges.filter(
+            change => change.applied_at_level === level
+        ).length;
+
+        const availablePoints = levelData.available - levelData.used + pendingRanksAtLevel;
+        if (availablePoints <= 0) {
+            return false;
+        }
 
         // Check if total ranks would exceed character level
-        const currentRanks = skillData.ranks.byLevel[level]?.reduce(
-            (sum: number, rank: { ranks: number }) => sum + rank.ranks, 
+        const totalRanks = existingRanks.reduce(
+            (sum, rank) => sum + rank.ranks,
             0
-        ) ?? 0;
-        
-        return currentRanks < level;
+        );
+
+        return totalRanks < level;
     }
 
     function handleRankChange(skillName: string, level: number, checked: boolean) {
@@ -65,66 +109,138 @@
                 source: SKILL_RANK_SOURCES.CLASS
             };
             pendingChanges = [...pendingChanges, newRank];
+
+            // Optimistically update character's skill ranks
+            if (character.character_skill_ranks) {
+                character.character_skill_ranks = [
+                    ...character.character_skill_ranks,
+                    {
+                        ...newRank,
+                        character_id: character.id,
+                        id: -Math.random(),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        sync_status: 'pending'
+                    }
+                ];
+            }
         } else {
-            // Remove rank
+            // Find and track the unchecked rank's ID
+            const existingRank = character.character_skill_ranks?.find(
+                rank => rank.skill_id === skill.id && 
+                        rank.applied_at_level === level &&
+                        rank.source === SKILL_RANK_SOURCES.CLASS
+            );
+            if (existingRank?.id && existingRank.id > 0) { // Only track real DB ids (positive numbers)
+                uncheckedRanks = [...uncheckedRanks, existingRank.id];
+            }
+
+            // Remove rank from pending changes
             pendingChanges = pendingChanges.filter(change => 
                 !(change.skill_id === skill.id && 
                   change.applied_at_level === level)
             );
+
+            // Remove from character's skill ranks
+            if (character.character_skill_ranks) {
+                character.character_skill_ranks = character.character_skill_ranks.filter(
+                    rank => !(
+                        rank.skill_id === skill.id && 
+                        rank.applied_at_level === level &&
+                        rank.source === SKILL_RANK_SOURCES.CLASS
+                    )
+                );
+            }
         }
     }
 
     async function handleSave() {
         if (isSaving) return;
         isSaving = true;
-
-        await executeUpdate({
-            key: `skills-${character.id}`,
-            status: updateState,
-            operation: async () => {
-                // First, delete existing class-sourced ranks
-                const { error: deleteError } = await supabase
-                    .from('character_skill_ranks')
-                    .delete()
-                    .eq('character_id', character.id)
-                    .eq('source', SKILL_RANK_SOURCES.CLASS);
-
-                if (deleteError) throw deleteError;
-
-                // Then insert all new ranks
-                if (pendingChanges.length > 0) {
-                    const { error: insertError } = await supabase
+        
+        // Store original state for rollback
+        const originalSkillRanks = [...(character.character_skill_ranks ?? [])];
+        
+        try {
+            await executeUpdate({
+                key: `skills-${character.id}`,
+                status: updateState,
+                operation: async () => {
+                    // Get existing class ranks
+                    const { data: existingRanks } = await supabase
                         .from('character_skill_ranks')
-                        .insert(pendingChanges.map(update => ({
-                            ...update,
-                            character_id: character.id
-                        })));
+                        .select('*')
+                        .eq('character_id', character.id)
+                        .eq('source', SKILL_RANK_SOURCES.CLASS);
 
-                    if (insertError) throw insertError;
-                }
-            },
-            optimisticUpdate: () => {
-                if (character.character_skill_ranks) {
-                    character.character_skill_ranks = character.character_skill_ranks.filter(
-                        rank => rank.source !== SKILL_RANK_SOURCES.CLASS
+                    // Create map for comparison
+                    const existingRankMap = new Map(
+                        (existingRanks ?? []).map(rank => 
+                            [`${rank.skill_id}-${rank.applied_at_level}`, rank]
+                        )
                     );
 
-                    character.character_skill_ranks.push(...pendingChanges.map(update => ({
-                        ...update,
-                        character_id: character.id,
-                        id: -1,
-                        created_at: null,
-                        updated_at: new Date().toISOString(),
-                        sync_status: 'pending'
-                    } satisfies CharacterSkillRank)));
-                }
-            },
-            rollback: () => {
-                // Rollback handled by executeUpdate
-            }
-        });
+                    // Only upsert new ranks
+                    const ranksToUpsert = pendingChanges.filter(rank => {
+                        const key = `${rank.skill_id}-${rank.applied_at_level}`;
+                        return !existingRankMap.has(key);
+                    });
 
-        onClose();
+                    // Delete unchecked ranks
+                    if (uncheckedRanks.length > 0) {
+                        const { error: deleteError } = await supabase
+                            .from('character_skill_ranks')
+                            .delete()
+                            .in('id', uncheckedRanks);
+
+                        if (deleteError) throw deleteError;
+                    }
+
+                    // Insert new ranks
+                    if (ranksToUpsert.length > 0) {
+                        const { data: upsertedRanks, error: upsertError } = await supabase
+                            .from('character_skill_ranks')
+                            .upsert(ranksToUpsert.map(update => ({
+                                ...update,
+                                character_id: character.id
+                            })))
+                            .select();
+
+                        if (upsertError) throw upsertError;
+
+                        // Update local state with new ranks
+                        if (upsertedRanks) {
+                            character.character_skill_ranks = [
+                                ...(character.character_skill_ranks?.filter(rank => 
+                                    !ranksToUpsert.some(newRank => 
+                                        newRank.skill_id === rank.skill_id && 
+                                        newRank.applied_at_level === rank.applied_at_level
+                                    )
+                                ) ?? []),
+                                ...upsertedRanks.map(rank => ({
+                                    ...rank,
+                                    source: rank.source.toLowerCase() as CharacterSkillRank['source']
+                                }))
+                            ];
+                        }
+                    }
+                },
+                optimisticUpdate: () => {
+                    // Optimistic updates are already handled in handleRankChange
+                },
+                rollback: () => {
+                    character.character_skill_ranks = originalSkillRanks;
+                }
+            });
+            
+            uncheckedRanks = [];
+            onClose();
+        } catch (error) {
+            console.error('Save failed:', error);
+            updateState.error = error instanceof Error ? error : new Error('Failed to save skills');
+        } finally {
+            isSaving = false;
+        }
     }
 </script>
 

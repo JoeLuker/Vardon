@@ -9,6 +9,8 @@
     import FavoredClassBonusesManager from '$lib/components/admin/FavoredClassBonusesManager.svelte';
     import TraitsManager from '$lib/components/admin/TraitsManager.svelte';
     import AncestryManager from '$lib/components/admin/AncestryManager.svelte';
+    import EquipmentManager from '$lib/components/admin/EquipmentManager.svelte';
+    import CorruptionManager from '$lib/components/admin/CorruptionManager.svelte';
     import type { PageData } from './$types';
 
     
@@ -32,7 +34,8 @@
         { id: 'spells', label: 'Spells & Extracts' },
         { id: 'fcb', label: 'Favored Class Bonuses' },
         { id: 'traits', label: 'Traits' },
-        { id: 'ancestries', label: 'Ancestries' }
+        { id: 'ancestries', label: 'Ancestries' },
+        { id: 'corruption', label: 'Corruption' }
     ];
 </script>
 
@@ -124,6 +127,22 @@
                 aria-labelledby="tab-ancestries"
             >
                 <AncestryManager />
+            </div>
+        {:else if activeTab === 'equipment'}
+            <div 
+                role="tabpanel"
+                id="panel-equipment"
+                aria-labelledby="tab-equipment"
+            >
+                <EquipmentManager />
+            </div>
+        {:else if activeTab === 'corruption'}
+            <div 
+                role="tabpanel"
+                id="panel-corruption"
+                aria-labelledby="tab-corruption"
+            >
+                <CorruptionManager />
             </div>
         {:else}
             <div 

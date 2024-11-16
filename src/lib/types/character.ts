@@ -39,7 +39,6 @@ export type DatabaseBaseAncestralTrait = DbTables['base_ancestral_traits']['Row'
 export type AttributeKey = keyof Pick<DbTables['character_attributes']['Row'], 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'>;
 export type ConsumableKey = keyof Pick<DbTables['character_consumables']['Row'], 'alchemist_fire' | 'acid' | 'tanglefoot'>;
 
-
 // Game-specific constants
 export const KNOWN_BUFFS = [
     'int_cognatogen',

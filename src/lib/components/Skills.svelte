@@ -4,6 +4,8 @@
     import SkillAllocator from './SkillAllocator.svelte';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
     import type { CalculatedStats } from '$lib/utils/characterCalculations';
+    import { character, fetchSkillData } from '$lib/state/character.svelte';
+    import { onMount } from 'svelte';
 
     type SkillData = CalculatedStats['skills']['byName'][string];
 
@@ -12,8 +14,21 @@
         status: 'idle',
         error: null
     });
+    let isLoading = $state(true);
 
     let stats = $derived(getCalculatedStats());
+
+    onMount(() => {
+        // Load skill data
+        fetchSkillData(character.id)
+            .catch(error => {
+                console.error('Failed to load skill data:', error);
+                updateState.error = error instanceof Error ? error : new Error('Failed to load skills');
+            })
+            .finally(() => {
+                isLoading = false;
+            });
+    });
 </script>
 
 <section class="card" transition:slide>
@@ -23,7 +38,7 @@
             class="btn" 
             onclick={() => (showSkillAllocator = true)}
             type="button"
-            disabled={updateState.status === 'syncing'}
+            disabled={updateState.status === 'syncing' || isLoading}
         >
             {#if updateState.status === 'syncing'}
                 <div class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
@@ -32,32 +47,38 @@
         </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {#each Object.entries(stats.skills.byName) as [name, skill]}
-            {@const typedSkill = skill as SkillData}
-            <div
-                class="flex items-center justify-between rounded bg-gray-50 p-3 hover:bg-gray-100"
-                class:border-l-4={typedSkill.classSkill}
-                class:border-primary={typedSkill.classSkill}
-            >
-                <div>
-                    <span class="font-medium">{name}</span>
-                    <div class="space-x-1 text-xs">
-                        <span class="text-gray-500">({typedSkill.ability})</span>
-                        {#if typedSkill.classSkill}
-                            <span class="text-primary">Class Skill</span>
-                        {/if}
-                        {#if typedSkill.ranks.total > 0}
-                            <span class="text-gray-500">{typedSkill.ranks.total} ranks</span>
-                        {/if}
+    {#if isLoading}
+        <div class="flex justify-center py-8">
+            <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+        </div>
+    {:else}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {#each Object.entries(stats.skills.byName) as [name, skill]}
+                {@const typedSkill = skill as SkillData}
+                <div
+                    class="flex items-center justify-between rounded bg-gray-50 p-3 hover:bg-gray-100"
+                    class:border-l-4={typedSkill.classSkill}
+                    class:border-primary={typedSkill.classSkill}
+                >
+                    <div>
+                        <span class="font-medium">{name}</span>
+                        <div class="space-x-1 text-xs">
+                            <span class="text-gray-500">({typedSkill.ability})</span>
+                            {#if typedSkill.classSkill}
+                                <span class="text-primary">Class Skill</span>
+                            {/if}
+                            {#if typedSkill.ranks.total > 0}
+                                <span class="text-gray-500">{typedSkill.ranks.total} ranks</span>
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="text-lg font-bold">
+                        {typedSkill.total >= 0 ? '+' : ''}{typedSkill.total}
                     </div>
                 </div>
-                <div class="text-lg font-bold">
-                    {typedSkill.total >= 0 ? '+' : ''}{typedSkill.total}
-                </div>
-            </div>
-        {/each}
-    </div>
+            {/each}
+        </div>
+    {/if}
 
     {#if updateState.error}
         <div class="mt-4 rounded-md bg-accent/10 p-4 text-sm text-accent">
