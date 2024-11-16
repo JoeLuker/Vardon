@@ -3,8 +3,8 @@
     import type { CharacterAttributes } from '$lib/types/character';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
     
-    interface AttributeDefinition {
-        key: keyof CharacterAttributes;
+    interface AttributeDefinition { 
+        key: keyof CharacterAttributes; 
         label: string;
         description?: string;
     }

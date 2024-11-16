@@ -1,107 +1,175 @@
 import { error } from '@sveltejs/kit';
 import { supabase } from '$lib/supabaseClient';
-import type { PostgrestSingleResponse } from '@supabase/supabase-js';
+import type { Character, CharacterBuff, SkillRankSource } from '$lib/types/character';
 
-type CharacterDataResponse = {
-    character: Record<string, any>;  // Consider defining a more specific type
-};
-
-export async function loadCharacterData(
-    characterId = 1
-): Promise<CharacterDataResponse> {
+export async function loadCharacterData(characterId: number) {
     console.log('🔄 Server: Loading character data');
-
-    const baseQueries = [
-        // Basic character info
-        supabase
+    
+    try {
+        // First, get the specific character
+        const { data: characterData, error: characterError } = await supabase
             .from('characters')
-            .select(`
-                *,
-                character_attributes!inner (*),
-                character_combat_stats!inner (*),
-                character_consumables!inner (*),
-                character_buffs (*)
-            `)
+            .select()
             .eq('id', characterId)
-            .single(),
+            .single();
 
-        // Add ABP query here
-        supabase.from('character_abp_bonuses').select('*').eq('character_id', characterId),
+        if (characterError) {
+            console.log('❌ Server: Error loading character:', JSON.stringify(characterError, null, 2));
+            throw error(500, 'Error loading character data');
+        }
 
-        // Related data
-        supabase.from('base_skills').select('*, character_skill_ranks!left(*, character_id)'),
-        supabase.from('character_class_features').select('*').eq('character_id', characterId),
-        supabase.from('character_feats').select('*').eq('character_id', characterId),
-        supabase.from('character_discoveries').select('*').eq('character_id', characterId),
-        supabase.from('character_extracts').select('*').eq('character_id', characterId),
-        supabase.from('character_known_spells').select('*').eq('character_id', characterId),
-        supabase.from('character_spell_slots').select('*').eq('character_id', characterId),
-        supabase.from('class_skill_relations').select('*'),
-        supabase.from('character_favored_class_bonuses').select('*').eq('character_id', characterId),
-        supabase.from('character_equipment').select('*').eq('character_id', characterId),
-        supabase.from('character_corruptions').select('*').eq('character_id', characterId),
-        supabase.from('character_corruption_manifestations').select('*').eq('character_id', characterId),
-        supabase.from('base_traits').select('*'),
-        supabase
-            .from('character_traits')
-            .select(`
-                *,
-                base_traits (*)
-            `)
-            .eq('character_id', characterId),
-        
-        // Add new queries for ancestries
-        supabase.from('base_ancestries').select('*'),
-        supabase
-            .from('character_ancestries')
-            .select(`
-                *,
-                ancestry:base_ancestries(*)
-            `)
-            .eq('character_id', characterId),
-        supabase.from('base_ancestral_traits').select('*'),
-        supabase.from('character_ancestral_traits').select('*').eq('character_id', characterId),
-    ] as const;
+        if (!characterData) {
+            console.log('❌ Server: No character found with ID:', characterId);
+            throw error(404, 'Character not found');
+        }
 
-    const results = await Promise.all(baseQueries);
+        // Then get all the related data
+        const [
+            { data: attributes },
+            { data: buffs },
+            { data: skillRanks },
+            { data: baseSkills },
+            { data: classSkillRelations },
+            { data: classFeatures },
+            { data: abpBonuses },
+            { data: combatStats },
+            { data: equipment },
+            { data: feats },
+            { data: discoveries },
+            { data: favoredClassBonuses },
+            { data: consumables },
+            { data: spellSlots },
+            { data: knownSpells },
+            { data: extracts },
+            { data: corruptionManifestations },
+            { data: corruptions },
+            { data: traits },
+            { data: ancestries },
+            { data: ancestralTraits }
+        ] = await Promise.all([
+            supabase
+                .from('character_attributes')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_buffs')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_skill_ranks')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('base_skills')
+                .select('*'),
+            supabase
+                .from('class_skill_relations')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_class_features')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_abp_bonuses')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_combat_stats')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_equipment')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_feats')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_discoveries')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_favored_class_bonuses')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_consumables')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_spell_slots')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_known_spells')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_extracts')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_corruption_manifestations')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_corruptions')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_traits')
+                .select('*, base_traits(*)')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_ancestries')
+                .select('*')
+                .eq('character_id', characterId),
+            supabase
+                .from('character_ancestral_traits')
+                .select('*')
+                .eq('character_id', characterId)
+        ]);
 
-    // Error handling
-    const errors = results.filter(result => result.error).map(result => result.error);
-    if (errors.length > 0) {
-        console.error('❌ Server: Error loading character data:', errors);
-        throw error(500, 'Failed to load character data');
+        const character: Character = {
+            ...characterData,
+            character_attributes: attributes || [],
+            character_buffs: (buffs || []).map(buff => ({
+                ...buff,
+                buff_type: buff.buff_type as CharacterBuff['buff_type']
+            })),
+            character_skill_ranks: (skillRanks || []).map(rank => ({
+                ...rank,
+                source: rank.source as SkillRankSource
+            })),
+            base_skills: baseSkills || [],
+            class_skill_relations: classSkillRelations || [],
+            character_class_features: classFeatures || [],
+            character_abp_bonuses: abpBonuses || [],
+            character_combat_stats: combatStats || [],
+            character_equipment: equipment || [],
+            character_feats: feats || [],
+            character_discoveries: discoveries || [],
+            character_favored_class_bonuses: favoredClassBonuses || [],
+            character_consumables: consumables || [],
+            character_spell_slots: spellSlots || [],
+            character_known_spells: knownSpells || [],
+            character_extracts: extracts || [],
+            character_corruption_manifestations: corruptionManifestations || [],
+            character_corruptions: corruptions || [],
+            character_traits: (traits || []).map(trait => ({
+                ...trait,
+                base_traits: trait.base_traits || undefined
+            })),
+            character_ancestries: ancestries || [],
+            character_ancestral_traits: ancestralTraits || []
+        };
+
+        console.log('✅ Server: Character data loaded successfully');
+        return { character };
+    } catch (e) {
+        console.log('❌ Server: Error loading character data:', e);
+        throw error(500, 'Error loading character data');
     }
-
-    const characterResult = results[0] as PostgrestSingleResponse<any>;
-    if (!characterResult.data) {
-        console.error('❌ Server: Character not found');
-        throw error(404, 'Character not found');
-    }
-
-    // Simplified response object building
-    const responseData = {
-        ...characterResult.data,
-        character_abp_bonuses: results[1].data,
-        base_skills: results[2].data,
-        character_class_features: results[3].data,
-        character_feats: results[4].data,
-        character_discoveries: results[5].data,
-        character_extracts: results[6].data,
-        character_known_spells: results[7].data,
-        character_spell_slots: results[8].data,
-        class_skill_relations: results[9].data,
-        character_favored_class_bonuses: results[10].data,
-        character_equipment: results[11].data,
-        character_corruptions: results[12].data,
-        character_corruption_manifestations: results[13].data,
-        base_traits: results[14].data,
-        character_traits: results[15].data,
-        base_ancestries: results[16].data,
-        character_ancestries: results[17].data,
-        base_ancestral_traits: results[18].data,
-        character_ancestral_traits: results[19].data,
-    };
-
-    console.log('✅ Server: Character data loaded successfully');
-    return { character: responseData };
 } 

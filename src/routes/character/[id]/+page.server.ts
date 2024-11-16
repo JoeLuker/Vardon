@@ -1,6 +1,7 @@
 import { loadCharacterData } from '$lib/server/loadCharacterData';
-import type { PageServerLoad } from '../../characters/[id]/$types';
+import type { PageServerLoad, PageServerLoadEvent } from './$types';
 
-export const load: PageServerLoad = async () => {
-    return loadCharacterData();
+export const load: PageServerLoad = async ({ params }: PageServerLoadEvent) => {
+    const characterId = parseInt(params.id);
+    return loadCharacterData(characterId);
 };

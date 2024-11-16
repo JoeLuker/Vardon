@@ -2,17 +2,20 @@
     import { character, updateHP } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 
-    let sliderValue = $state(character.current_hp);
+    let { currentHp, maxHp } = $props<{
+        currentHp: number;
+        maxHp: number;
+    }>();
+
+    let sliderValue = $state(currentHp);
     let isSliding = $state(false);
     let updateState = $state<UpdateState>({
         status: 'idle',
         error: null
     });
 
-    let currentHP = $derived(character.current_hp);
-    let maxHP = $derived(character.max_hp);
-    let displayHP = $derived(isSliding ? sliderValue : currentHP);
-    let hpPercentage = $derived(Math.round((displayHP / maxHP) * 100));
+    let displayHP = $derived(isSliding ? sliderValue : currentHp);
+    let hpPercentage = $derived(Math.round((displayHP / maxHp) * 100));
 
     // Quick actions with improved visual feedback
     let quickActions = $state([
@@ -31,10 +34,10 @@
     }
 
     async function handleQuickUpdate(amount: number) {
-        const newValue = Math.max(0, Math.min(maxHP, currentHP + amount));
-        if (newValue === currentHP) return;
+        const newValue = Math.max(0, Math.min(maxHp, currentHp + amount));
+        if (newValue === currentHp) return;
 
-        const previousValue = currentHP;
+        const previousValue = currentHp;
 
         await executeUpdate({
             key: `hp-${character.id}`,
@@ -50,7 +53,7 @@
     }
 
     async function handleSliderUpdate(newValue: number) {
-        if (newValue === currentHP) return;
+        if (newValue === currentHp) return;
 
         await executeUpdate({
             key: `hp-${character.id}`,
@@ -60,7 +63,7 @@
                 character.current_hp = newValue;
             },
             rollback: () => {
-                character.current_hp = currentHP;
+                character.current_hp = currentHp;
             }
         });
     }
@@ -70,7 +73,7 @@
     <div class="flex items-center justify-between">
         <h2 class="text-xl font-bold text-primary">Hit Points</h2>
         <div class="text-sm text-ink-light">
-            Maximum: {maxHP}
+            Maximum: {maxHp}
         </div>
     </div>
 
@@ -89,7 +92,7 @@
         <input
             type="range"
             min="0"
-            max={maxHP}
+            max={maxHp}
             value={sliderValue}
             class="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent"
             style="-webkit-appearance: none;"
@@ -109,7 +112,7 @@
     <div class="grid grid-cols-4 gap-3">
         {#each quickActions as { amount, label, class: buttonClass }}
             {@const isDisabled = updateState.status === 'syncing' || 
-                (amount < 0 ? displayHP <= 0 : displayHP >= maxHP)}
+                (amount < 0 ? displayHP <= 0 : displayHP >= maxHp)}
             <button
                 class="interactive focus-ring rounded-lg border-2 border-transparent 
                        bg-white/50 py-3 font-medium shadow-sm backdrop-blur-sm
@@ -125,7 +128,7 @@
     <!-- Current HP Display -->
     <div class="flex items-baseline justify-center gap-2">
         <div class="text-4xl font-bold text-primary">{displayHP}</div>
-        <div class="text-xl text-ink-light">/ {maxHP}</div>
+        <div class="text-xl text-ink-light">/ {maxHp}</div>
     </div>
 
     {#if updateState.status === 'error'}

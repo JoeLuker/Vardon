@@ -1,5 +1,9 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import type { Character } from '$lib/types/character';
+
+    let { character } = $props<{
+        character: Pick<Character, 'name' | 'ancestry' | 'class' | 'level'>
+    }>();
 
     let name = $derived(character.name);
     let ancestry = $derived(character.ancestry);
@@ -21,7 +25,6 @@
         
         <div class="flex flex-col items-end gap-2">
             <div class="rounded-full bg-primary/10 p-2">
-                <!-- Add character avatar or icon here -->
                 <div class="h-12 w-12 rounded-full bg-primary/20"></div>
             </div>
         </div>

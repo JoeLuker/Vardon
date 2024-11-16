@@ -6,6 +6,8 @@
     import type { Buff } from '$lib/types/buffs';
     import { BUFF_CONFIG } from '$lib/config/buffs';
 
+
+
     let updateState = $state<UpdateState>({
         status: 'idle',
         error: null
@@ -85,7 +87,6 @@
         });
     }
 </script>
-
 <div class="card space-y-6">
     <div class="section-header">
         <h2>Active Effects</h2>

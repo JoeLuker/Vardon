@@ -5,7 +5,8 @@
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
     import type { CalculatedStats } from '$lib/utils/characterCalculations';
     import Tooltip from '$lib/components/Tooltip.svelte';
-    
+
+
     // Component state
     let isEditing = $state(false);
     let inputValue = $state(0);
@@ -284,7 +285,6 @@
         return parts.join(' + ');
     }
 </script>
-
 <div class="card">
     <h2 class="mb-4 font-bold">Combat Stats</h2>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
