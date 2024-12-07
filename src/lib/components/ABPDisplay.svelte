@@ -4,17 +4,18 @@
     import { getCharacter } from '$lib/state/character.svelte';
     import { calculateCharacterStats } from '$lib/utils/characterCalculations';
 
-    let { characterId } = $props<{ characterId: number; }>();
+    // Destructure props using $props and add TypeScript typing
+    let { characterId }: { characterId: number } = $props();
 
     // Derive the character from state
-    let character = $derived(getCharacter(characterId));
+    let character = $derived.by(() => getCharacter(characterId));
 
     // Derive stats by recalculating each time 'character' changes
     let stats = $derived.by(() => calculateCharacterStats(character));
 
     // Extract ABP bonuses from the recalculated stats
-    let bonuses = $derived(() => stats.defenses.abpBonuses);
-    
+    let bonuses = $derived(stats.defenses.abpBonuses);
+
     const bonusLabels: Record<keyof ABPBonuses, string> = {
         resistance: 'Resistance',
         armor: 'Armor',
@@ -24,10 +25,14 @@
         physical_prowess: 'Physical Prowess',
         toughening: 'Toughening'
     };
+
 </script>
 
-<div class="card">
-    <h2 class="mb-4 font-bold">Automatic Bonus Progression</h2>
+<div class="card space-y-6">
+    <div class="section-header">
+        <h2>Automatic Bonus Progression</h2>
+    </div>
+
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {#each Object.entries(bonuses) as [type, value]}
             {#if value > 0}

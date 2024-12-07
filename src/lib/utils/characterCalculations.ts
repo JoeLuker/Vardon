@@ -9,7 +9,7 @@ import type {
     DatabaseCharacterAbpBonus
 } from '$lib/types/character';
 import { getABPBonuses, type ABPBonuses } from '$lib/types/abp';
-import type { Buff, BuffEffect, AttributeEffect, ArmorEffect, AttackEffect } from '$lib/types/buffs';
+import type { Buff, BuffEffect, AttributeEffect, ArmorEffect } from '$lib/types/buffs';
 import { BUFF_CONFIG } from '$lib/state/buffs.svelte';
 
 // Type guards for BuffEffect
@@ -19,12 +19,6 @@ function isAttributeEffect(effect: BuffEffect): effect is AttributeEffect {
 
 function isArmorEffect(effect: BuffEffect): effect is ArmorEffect {
     return 'naturalArmor' in effect;
-}
-
-function isAttackEffect(effect: BuffEffect): effect is AttackEffect {
-    return 'attackRoll' in effect || 'damageRoll' in effect || 
-           'mainHandPenalty' in effect || 'offHandPenalty' in effect || 
-           'extraAttack' in effect;
 }
 
 type CharacterEquipment = DbTables['character_equipment']['Row'];
@@ -185,12 +179,10 @@ function calculateAttributes(
     if (buff) {
       const buffValues: Partial<CharacterAttributes> = {};
       buff.effects.forEach((effect: BuffEffect) => {
-        // Use type guards to ensure effect is AttributeEffect before accessing attribute/modifier
         if (isAttributeEffect(effect)) {
           temporary[effect.attribute as keyof CharacterAttributes] += effect.modifier;
           buffValues[effect.attribute as keyof CharacterAttributes] = effect.modifier;
         }
-        // If you need to handle other effect types (ArmorEffect, AttackEffect), do so here.
       });
       if (Object.keys(buffValues).length > 0) {
         buffBonuses.push({
@@ -245,6 +237,7 @@ function calculateAttributes(
   };
 }
 
+// We define calculateCombat before calculateCharacterStats uses it
 function calculateCombat(
   character: Character,
   attributes: CalculatedStats['attributes'],
@@ -327,7 +320,6 @@ function calculateDefenses(
   activeBuffs.forEach(buffName => {
       const buff = BUFF_CONFIG.find((b: Buff) => b.name === buffName);
       if (buff) {
-          // Check for armor effect
           const naturalArmorEffect = buff.effects.find(e => isArmorEffect(e));
           if (naturalArmorEffect && isArmorEffect(naturalArmorEffect)) {
               naturalArmorBonus = Math.max(naturalArmorBonus, naturalArmorEffect.naturalArmor);

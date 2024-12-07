@@ -12,17 +12,13 @@
 
     let { characterId } = $props<{ characterId: number }>();
 
-    // Derive the character from state
     let character = $derived(getCharacter(characterId));
-
-    // Now directly derive stats by recalculating them whenever 'character' changes
     let stats = $derived.by(() => calculateCharacterStats(character));
 
     let updateState = $state<UpdateState>({ status: 'idle', error: null });
     let isEditing = $state(false);
     let inputValue = $state(0);
 
-    // Derived values from stats
     let resources = $derived.by(() => stats.resources);
     let combat = $derived.by(() => stats.combat);
     let defenses = $derived.by(() => stats.defenses);
@@ -118,7 +114,6 @@
     function getSaveTooltip(save: 'Fortitude' | 'Reflex' | 'Will', stats: CalculatedStats): string {
         const baseBonus = Math.floor(stats.combat.baseAttackBonus / 2);
         const parts: string[] = [`Base (${baseBonus})`];
-
         const abilityMods = {
             'Fortitude': { mod: stats.attributes.modifiers.temporary.con, label: 'CON' },
             'Reflex': { mod: stats.attributes.modifiers.temporary.dex, label: 'DEX' },
@@ -134,14 +129,8 @@
     }
 
     function getInitiativeTooltip(stats: CalculatedStats): string {
-        const parts: string[] = [];
         const dexMod = stats.attributes.modifiers.temporary.dex;
-
-        if (dexMod !== 0) {
-            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
-        }
-
-        return parts.join(' + ') || '0';
+        return dexMod !== 0 ? `DEX (${dexMod >= 0 ? '+' : ''}${dexMod})` : '0';
     }
 
     function getNormalACTooltip(stats: CalculatedStats): string {
@@ -149,25 +138,18 @@
         const dexMod = stats.attributes.modifiers.temporary.dex;
         const abpArmorBonus = stats.defenses.abpBonuses.armor;
         const equipmentArmorBonus = stats.defenses.equipmentBonuses?.armor ?? 0;
-        const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
         const deflectionBonus = stats.defenses.abpBonuses.deflection;
-        
+        const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
+
         if (dexMod !== 0) parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
-        
         if (totalArmorBonus > 0) {
             const sources: string[] = [];
             if (abpArmorBonus > 0) sources.push(`ABP +${abpArmorBonus}`);
             if (equipmentArmorBonus > 0) sources.push(`Equipment +${equipmentArmorBonus}`);
             parts.push(`Armor (${sources.join(', ')})`);
         }
-        
-        if (stats.defenses.naturalArmorBonus) {
-            parts.push(`Natural Armor (+${stats.defenses.naturalArmorBonus})`);
-        }
-        
-        if (deflectionBonus > 0) {
-            parts.push(`Deflection (+${deflectionBonus})`);
-        }
+        if (stats.defenses.naturalArmorBonus) parts.push(`Natural Armor (+${stats.defenses.naturalArmorBonus})`);
+        if (deflectionBonus > 0) parts.push(`Deflection (+${deflectionBonus})`);
 
         return parts.join(' + ');
     }
@@ -187,23 +169,17 @@
         const parts = ['10'];
         const abpArmorBonus = stats.defenses.abpBonuses.armor;
         const equipmentArmorBonus = stats.defenses.equipmentBonuses?.armor ?? 0;
-        const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
         const deflectionBonus = stats.defenses.abpBonuses.deflection;
-        
+        const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
+
         if (totalArmorBonus > 0) {
             const sources: string[] = [];
             if (abpArmorBonus > 0) sources.push(`ABP +${abpArmorBonus}`);
             if (equipmentArmorBonus > 0) sources.push(`Equipment +${equipmentArmorBonus}`);
             parts.push(`Armor (${sources.join(', ')})`);
         }
-        
-        if (stats.defenses.naturalArmorBonus) {
-            parts.push(`Natural Armor (+${stats.defenses.naturalArmorBonus})`);
-        }
-        
-        if (deflectionBonus > 0) {
-            parts.push(`Deflection (+${deflectionBonus})`);
-        }
+        if (stats.defenses.naturalArmorBonus) parts.push(`Natural Armor (+${stats.defenses.naturalArmorBonus})`);
+        if (deflectionBonus > 0) parts.push(`Deflection (+${deflectionBonus})`);
 
         return parts.join(' + ');
     }
@@ -235,162 +211,158 @@
     function getBombDamageTooltip(stats: CalculatedStats): string {
         const parts = [`Base (${Math.ceil(stats.combat.baseAttackBonus/2)}d6)`];
         const intMod = stats.attributes.modifiers.temporary.int;
-
         if (intMod !== 0) parts.push(`INT (${intMod >= 0 ? '+' : ''}${intMod})`);
 
         return parts.join(' + ');
     }
 </script>
 
-<div class="card">
-    <h2 class="mb-4 font-bold">Combat Stats</h2>
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <!-- Bombs Section -->
-        <div class="rounded bg-gray-50 p-4">
-            <div class="mb-2 flex items-center justify-between">
-                <label for="bombs-input" class="text-sm font-medium">Bombs</label>
-                <div class="flex gap-1">
-                    {#each quickActions as { amount, label, disabled }}
-                        <button
-                            class="btn btn-secondary px-2 py-1 text-xs"
-                            onclick={() => handleQuickUpdate(amount)}
-                            disabled={disabled()}
-                            aria-label="{label} bombs"
-                        >
-                            {label}
-                        </button>
-                    {/each}
-                </div>
-            </div>
+<!-- Dense, mobile-friendly layout -->
+<div class="p-4 space-y-3 bg-white rounded border border-gray-200 text-sm">
+    {#if updateState.status === 'syncing'}
+        <div class="text-xs text-gray-500">Updating...</div>
+    {/if}
 
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    {#if isEditing}
-                        <input
-                            id="bombs-input"
-                            type="number"
-                            class="input w-20 text-center"
-                            value={inputValue}
-                            min="0"
-                            max={resources.bombs.perDay}
-                            oninput={handleInputChange}
-                            onblur={handleInputBlur}
-                            use:focusInput
-                            aria-label="Number of bombs remaining"
-                        />
-                    {:else}
-                        <button
-                            class="rounded px-2 py-1 text-2xl font-bold hover:bg-gray-200
-                                   focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            onclick={() => {
-                                isEditing = true;
-                                inputValue = resources.bombs.remaining;
-                            }}
-                            disabled={updateState.status === 'syncing'}
-                            aria-label="Edit number of bombs"
-                        >
-                            {resources.bombs.remaining}
-                        </button>
-                    {/if}
-                    <span class="text-sm text-gray-600">/ {resources.bombs.perDay}</span>
-                </div>
-                <div class="text-right text-sm">
-                    <div class="group relative">
-                        <div>{resources.bombs.damage}</div>
-                        <Tooltip text={getBombDamageTooltip(stats)} />
-                    </div>
-                    <div class="text-gray-600">+{resources.bombs.splash} splash</div>
-                </div>
+    <!-- Bombs -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="font-medium">Bombs</span>
+            {#if isEditing}
+                <input
+                    type="number"
+                    class="w-16 border border-gray-300 rounded px-1 text-center text-sm"
+                    value={inputValue}
+                    min="0"
+                    max={resources.bombs.perDay}
+                    oninput={handleInputChange}
+                    onblur={handleInputBlur}
+                    use:focusInput
+                />
+            {:else}
+                <button
+                    class="text-xl font-bold px-2 py-1 hover:bg-gray-100 rounded"
+                    onclick={() => {
+                        isEditing = true;
+                        inputValue = resources.bombs.remaining;
+                    }}
+                    disabled={updateState.status === 'syncing'}
+                >
+                    {resources.bombs.remaining}
+                </button>
+            {/if}
+            <span>/ {resources.bombs.perDay}</span>
+        </div>
+        <div class="flex gap-1">
+            {#each quickActions as { amount, label, disabled }}
+                <button
+                    class="px-1 py-0.5 border rounded text-xs hover:bg-gray-100 disabled:opacity-50"
+                    onclick={() => handleQuickUpdate(amount)}
+                    disabled={disabled()}
+                >
+                    {label}
+                </button>
+            {/each}
+        </div>
+    </div>
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1 text-gray-700">
+            <span class="font-medium">Damage:</span>
+            <div class="group relative inline-block">
+                {resources.bombs.damage}
+                <Tooltip text={getBombDamageTooltip(stats)} />
+            </div>
+            <span class="text-gray-500">+{resources.bombs.splash} splash</span>
+        </div>
+    </div>
+
+    <!-- Attacks -->
+    <div class="space-y-1">
+        <div class="font-medium">Attacks</div>
+        <div class="flex justify-between items-center">
+            <span class="text-gray-600">Melee</span>
+            <!-- combat.attacks.melee.bonus is already formatted with sign in calculateCharacterStats -->
+            <div class="group relative font-bold text-lg">
+                {combat.attacks.melee.bonus}
+                <Tooltip text={`BAB (${stats.combat.baseAttackBonus}) + STR (${stats.attributes.modifiers.temporary.str}) + Other Mods`} />
             </div>
         </div>
+        {#if combat.attacks.melee.damage}
+            <div class="text-xs text-gray-500 text-right">Damage {combat.attacks.melee.damage}</div>
+        {/if}
 
-        <!-- Attack Section -->
-        <div class="rounded bg-gray-50 p-4">
-            <div>
-                <h3 class="text-sm font-medium">Attacks</h3>
-                <div class="mt-2 space-y-2">
-                    <div class="group relative">
-                        <span class="text-sm text-gray-600">Melee</span>
-                        <div class="text-xl font-bold">{combat.attacks.melee.bonus}</div>
-                        <Tooltip text={`BAB (${stats.combat.baseAttackBonus}) + STR (${stats.attributes.modifiers.temporary.str}) + Size + Weapon Focus + Other Modifiers`} />
-                        {#if combat.attacks.melee.damage}
-                            <div class="text-sm text-gray-600">
-                                Damage {combat.attacks.melee.damage}
-                            </div>
-                        {/if}
-                    </div>
-                    
-                    <div class="group relative">
-                        <span class="text-sm text-gray-600">Ranged</span>
-                        <div class="text-xl font-bold">{combat.attacks.ranged.bonus}</div>
-                        <Tooltip text={`BAB (${stats.combat.baseAttackBonus}) + DEX (${stats.attributes.modifiers.temporary.dex}) + Size + Point Blank Shot + Other Modifiers`} />
-                        {#if combat.attacks.ranged.damage}
-                            <div class="text-sm text-gray-600">
-                                Damage {combat.attacks.ranged.damage}
-                            </div>
-                        {/if}
-                    </div>
-                </div>
+        <div class="flex justify-between items-center">
+            <span class="text-gray-600">Ranged</span>
+            <!-- combat.attacks.ranged.bonus also already includes the sign -->
+            <div class="group relative font-bold text-lg">
+                {combat.attacks.ranged.bonus}
+                <Tooltip text={`BAB (${stats.combat.baseAttackBonus}) + DEX (${stats.attributes.modifiers.temporary.dex}) + Other Mods`} />
             </div>
         </div>
+        {#if combat.attacks.ranged.damage}
+            <div class="text-xs text-gray-500 text-right">Damage {combat.attacks.ranged.damage}</div>
+        {/if}
+    </div>
 
-        <!-- General Combat Stats -->
-        <div class="rounded bg-gray-50 p-4 space-y-4">
-            <!-- Initiative -->
-            <div>
-                <span class="text-sm font-medium">Initiative</span>
-                <div class="group relative">
-                    <div class="text-xl font-bold">{combat.initiative >= 0 ? '+' : ''}{combat.initiative}</div>
-                    <Tooltip text={getInitiativeTooltip(stats)} />
+    <!-- Initiative -->
+    <div class="flex items-center justify-between">
+        <span class="font-medium">Initiative</span>
+        <!-- Initiative is a raw number, add sign if positive -->
+        <div class="group relative font-bold text-lg">
+            {combat.initiative > 0 ? '+' : ''}{combat.initiative}
+            <Tooltip text={getInitiativeTooltip(stats)} />
+        </div>
+    </div>
+
+    <!-- Armor Class -->
+    <div class="space-y-1">
+        <div class="font-medium">Armor Class</div>
+        <div class="flex items-center justify-between text-center text-sm">
+            {#each armorClasses as { label, value, getTooltip }}
+                <div class="group relative flex-1">
+                    <!-- AC values are pure numbers, add plus sign only if needed (AC won't need +) -->
+                    <div class="font-bold text-lg">{value()}</div>
+                    <div class="text-xs text-gray-500">{label}</div>
+                    <Tooltip text={getTooltip(stats)} />
                 </div>
-            </div>
+            {/each}
+        </div>
+    </div>
 
-            <!-- Armor Class -->
-            <div>
-                <span class="text-sm font-medium">Armor Class</span>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                    {#each armorClasses as { label, value, getTooltip }}
-                        <div class="group relative">
-                            <div class="text-xl font-bold">{value()}</div>
-                            <div class="text-xs">{label}</div>
-                            <Tooltip text={getTooltip(stats)} />
-                        </div>
-                    {/each}
+    <!-- Saving Throws -->
+    <div class="space-y-1">
+        <div class="font-medium">Saving Throws</div>
+        <div class="flex items-center justify-between text-center text-sm">
+            {#each saveThrows as { label, value }}
+                <div class="group relative flex-1">
+                    <!-- Save values are numbers, add sign if positive -->
+                    <div class="font-bold text-lg">{value() > 0 ? '+' : ''}{value()}</div>
+                    <div class="text-xs text-gray-500">{label}</div>
+                    <Tooltip text={getSaveTooltip(label, stats)} />
                 </div>
-            </div>
+            {/each}
+        </div>
+    </div>
 
-            <!-- Saving Throws -->
-            <div>
-                <span class="text-sm font-medium">Saving Throws</span>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                    {#each saveThrows as { label, value }}
-                        <div class="group relative">
-                            <div class="text-xl font-bold">{value() >= 0 ? '+' : ''}{value()}</div>
-                            <div class="text-xs">{label}</div>
-                            <Tooltip text={getSaveTooltip(label, stats)} />
-                        </div>
-                    {/each}
-                </div>
-            </div>
-
-            <!-- CMB/CMD -->
-            <div class="grid grid-cols-2 gap-2">
-                {#each combatStats as { key, label, value }}
-                    <div class="group relative">
-                        <span class="text-sm font-medium">{label}</span>
-                        <div class="text-xl font-bold">
-                            {key === 'cmb' ? (value() >= 0 ? '+' : '') : ''}{value()}
-                        </div>
-                        <Tooltip text={key === 'cmb' ? getCMBTooltip(stats) : getCMDTooltip(stats)} />
+    <!-- CMB/CMD -->
+    <div class="space-y-1">
+        <div class="font-medium">CMB / CMD</div>
+        <div class="flex items-center justify-between text-center text-sm">
+            {#each combatStats as { key, label, value }}
+                <div class="group relative flex-1">
+                    <!-- For CMB (a number), add sign if positive. CMD is just a number. -->
+                    <div class="font-bold text-lg">
+                        {key === 'cmb' && value() > 0 ? '+' : ''}{value()}
                     </div>
-                {/each}
-            </div>
+                    <div class="text-xs text-gray-500">{label}</div>
+                    <Tooltip text={key === 'cmb' ? getCMBTooltip(stats) : getCMDTooltip(stats)} />
+                </div>
+            {/each}
         </div>
     </div>
 
     {#if updateState.error}
-        <div class="mt-4 rounded bg-red-100 p-3 text-sm text-red-700">
-            Failed to update bombs. Please try again.
+        <div class="rounded bg-red-50 p-2 text-xs text-red-700">
+            {updateState.error.message}
         </div>
     {/if}
 </div>

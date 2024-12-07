@@ -80,110 +80,53 @@
     }
 </script>
 
-<section class="card">
-    <h2 class="mb-4 text-xl font-bold">Attributes</h2>
+<section class="p-4 card">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-bold">Attributes</h2>
+    </div>
 
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-3">
+    <div class="space-y-1">
         {#each attributesList as { label, description, value }}
-            <div class="group relative rounded bg-gray-50 p-4 hover:bg-gray-100">
-                <div class="mb-2">
-                    <span class="text-sm font-medium text-gray-700">{label}</span>
-                    <!-- Main tooltip -->
-                    <div class="invisible absolute -top-2 left-1/2 z-10 w-64 -translate-x-1/2 
-                                transform rounded bg-gray-800 px-3 py-2 text-sm text-white 
-                                opacity-0 transition-all group-hover:visible group-hover:opacity-100">
-                        <div class="mb-2">{description}</div>
-                        
-                        <!-- Modifier Sources -->
-                        <div class="space-y-1 text-xs">
-                            <div class="font-medium">Base Score: {value.base}</div>
-                            
-                            {#if value.sources.ancestry}
-                                <div>
-                                    {value.sources.ancestry.label}: 
-                                    {formatModifier(value.sources.ancestry.value)}
-                                </div>
-                            {/if}
-                            
-                            {#if value.sources.abp}
-                                <div>
-                                    {value.sources.abp.label}: 
-                                    {formatModifier(value.sources.abp.value)}
-                                </div>
-                            {/if}
-                            
-                            {#if value.sources.buffs.length > 0}
-                                {#each value.sources.buffs as buff}
-                                    <div>
-                                        {buff.source}: {formatModifier(buff.value)}
-                                    </div>
-                                {/each}
-                            {/if}
-                        </div>
-                    </div>
+            <!-- One line per attribute, compact styling -->
+            <div 
+                class="group relative flex items-center justify-between rounded px-2 py-1 text-sm bg-gray-50 hover:bg-gray-100"
+            >
+                <!-- Left side: attribute name -->
+                <div class="flex items-center space-x-2">
+                    <span class="font-medium">{label}</span>
                 </div>
 
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
-                        <!-- Base Score -->
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm text-gray-500">Base:</span>
-                            <span class="text-xl font-bold tabular-nums">{value.base}</span>
-                        </div>
+                <!-- Right side: show modifier and totals -->
+                <div class="text-right">
+                    <!-- Show permanent and temporary if different -->
+                    {#if value.temporary !== value.permanent}
+                        <!-- Show temporary total -->
+                        <div class="font-bold text-accent tabular-nums">{value.temporary}</div>
+                        <div class="text-xs text-gray-500">({value.permanent} base)</div>
+                    {:else}
+                        <div class="font-bold tabular-nums">{value.permanent}</div>
+                    {/if}
+                    <!-- Modifier -->
+                    <div class="text-sm text-gray-700">{formatModifier(value.modifier.temporary)}</div>
+                </div>
 
-                        <!-- Permanent Modifiers -->
-                        {#if value.sources.ancestry}
-                            <div class="text-sm">
-                                <span class="text-gray-500">{value.sources.ancestry.label}:</span>
-                                <span class="font-medium">{formatModifier(value.sources.ancestry.value)}</span>
-                            </div>
-                        {/if}
-
-                        {#if value.sources.abp}
-                            <div class="text-sm">
-                                <span class="text-gray-500">{value.sources.abp.label}:</span>
-                                <span class="font-medium">{formatModifier(value.sources.abp.value)}</span>
-                            </div>
-                        {/if}
-
-                        <!-- Permanent Total -->
-                        <div class="flex items-center gap-2 border-t border-gray-200 pt-1">
-                            <span class="text-sm text-gray-500">Permanent:</span>
-                            <span class="text-xl font-bold tabular-nums text-primary">{value.permanent}</span>
-                        </div>
-
-                        <!-- Temporary Modifiers -->
-                        {#if value.sources.buffs.length > 0}
-                            <div class="border-t border-gray-200 pt-1">
-                                {#each value.sources.buffs as buff}
-                                    <div class="text-sm">
-                                        <span class="text-gray-500">{buff.source}:</span>
-                                        <span class="font-medium">{formatModifier(buff.value)}</span>
-                                    </div>
-                                {/each}
-                            </div>
-                        {/if}
-
-                        <!-- Final Total -->
-                        {#if value.temporary !== value.permanent}
-                            <div class="flex items-center gap-2 border-t border-gray-200 pt-1">
-                                <span class="text-sm text-gray-500">Total:</span>
-                                <span class="text-xl font-bold tabular-nums text-accent">{value.temporary}</span>
-                            </div>
-                        {/if}
-                    </div>
-
-                    <!-- Modifier Display -->
-                    <div class="text-right">
-                        <div class="text-2xl font-bold text-gray-600 tabular-nums">
-                            {formatModifier(value.modifier.temporary)}
-                        </div>
-                        {#if value.modifier.temporary !== value.modifier.permanent}
-                            <div class="text-sm text-gray-500">
-                                ({formatModifier(value.modifier.permanent)} base)
-                            </div>
-                        {/if}
-                    </div>
+                <!-- Tooltip with details -->
+                <div 
+                    class="invisible absolute left-1/2 top-full z-10 mt-1 w-48 -translate-x-1/2 transform rounded bg-gray-800 px-3 py-2 text-xs text-white opacity-0 transition-all group-hover:visible group-hover:opacity-100"
+                >
+                    <div class="mb-2 font-medium">{description}</div>
+                    <div>Base: {value.base}</div>
+                    {#if value.sources.ancestry}
+                        <div>{value.sources.ancestry.label}: {formatModifier(value.sources.ancestry.value)}</div>
+                    {/if}
+                    {#if value.sources.abp}
+                        <div>{value.sources.abp.label}: {formatModifier(value.sources.abp.value)}</div>
+                    {/if}
+                    {#if value.sources.buffs.length > 0}
+                        {#each value.sources.buffs as buff}
+                            <div>{buff.source}: {formatModifier(buff.value)}</div>
+                        {/each}
+                    {/if}
                 </div>
             </div>
         {/each}

@@ -18,11 +18,9 @@
         error: null
     });
 
-    // Get and validate spell data
     let spellSlots = $derived(character.character_spell_slots ?? []);
     let knownSpells = $derived(character.character_known_spells ?? []);
 
-    // Group spells by level for easier display
     let spellsByLevel = $derived(() => {
         const grouped: Record<number, DatabaseCharacterKnownSpell[]> = {};
         for (const spell of knownSpells) {
@@ -35,7 +33,6 @@
         return grouped;
     });
 
-    // Transform slots for display
     let slotsByLevel = $derived(() => {
         const grouped: Record<number, DatabaseCharacterSpellSlot> = {};
         for (const slot of spellSlots) {
@@ -44,7 +41,6 @@
         return grouped;
     });
 
-    // Get unique sorted levels combining both spells and slots
     let allLevels = $derived(
         [...new Set([
             ...Object.keys(spellsByLevel()).map(Number),
@@ -86,23 +82,31 @@
     }
 
     function getSpellLevelDisplay(level: number): string {
-        return level === 0 ? 'Cantrips' : `Level ${level} Spells`;
+        return level === 0 ? 'Cantrips' : `Level ${level}`;
     }
 </script>
 
-<div class="card">
-    <div class="mb-6 flex items-center justify-between">
-        <h2 class="text-xl font-bold">Spells</h2>
-        <div class="flex items-center gap-2">
-            <button 
-                class="text-sm text-primary hover:text-primary-dark"
+<!-- If no spells and no slots, show nothing -->
+{#if allLevels.length > 0}
+<div class="p-4 space-y-3 bg-white rounded border border-gray-200 text-sm">
+    {#if updateState.error}
+        <div class="rounded bg-red-50 p-2 text-xs text-red-700">
+            {updateState.error.message}
+        </div>
+    {/if}
+
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold">Spells</h2>
+        <div class="flex items-center gap-2 text-xs">
+            <button
+                class="text-primary hover:text-primary-dark disabled:opacity-50"
                 disabled={updateState.status === 'syncing'}
             >
-                Prepare Spells
+                Prepare
             </button>
             <div class="h-4 w-px bg-gray-300"></div>
-            <button 
-                class="text-sm text-primary hover:text-primary-dark"
+            <button
+                class="text-primary hover:text-primary-dark disabled:opacity-50"
                 disabled={updateState.status === 'syncing'}
             >
                 Rest
@@ -110,61 +114,53 @@
         </div>
     </div>
 
-    {#if updateState.error}
-        <div class="mb-4 rounded bg-red-100 p-2 text-sm text-red-700">
-            {updateState.error}
-        </div>
-    {/if}
-
     <div class="divide-y divide-gray-100">
         {#each allLevels as level (level)}
             {@const spells = spellsByLevel()[level] || []}
             {@const slots = slotsByLevel()[level]}
-            <div class="py-4 first:pt-0 last:pb-0">
-                <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-primary">
+            <div class="py-2">
+                <div class="mb-2">
+                    <h3 class="text-base font-semibold text-primary">
                         {getSpellLevelDisplay(level)}
                     </h3>
                     {#if slots}
-                        <div class="mt-2 flex flex-wrap gap-2" 
-                             transition:slide|local={{ duration: 200 }}>
+                        <div class="mt-1 flex flex-wrap items-center gap-2" transition:slide|local={{ duration: 200 }}>
                             <ResourceTracker
                                 label=""
                                 total={slots.total}
                                 used={slots.total - slots.remaining}
                                 onToggle={(remaining) => handleSlotUpdate(level, remaining)}
                             />
-                            <span class="ml-2 text-sm text-gray-600">
-                                {slots.remaining}/{slots.total} remaining
+                            <span class="text-xs text-gray-600">
+                                {slots.remaining}/{slots.total} remain
                             </span>
                         </div>
                     {/if}
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {#each spells as spell (spell.spell_name)}
-                        <div class="group relative rounded-lg bg-white/50 p-3 shadow-sm 
-                                  transition-all hover:bg-white/75">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h4 class="font-medium">{spell.spell_name}</h4>
-                                    <p class="text-sm text-gray-600">School • Action</p>
-                                </div>
-                                <button 
-                                    class="opacity-0 transition-opacity group-hover:opacity-100"
-                                    disabled={updateState.status === 'syncing'}
-                                    aria-label="Cast spell"
-                                >
-                                    <span class="rounded-full bg-primary/10 p-1 text-primary 
-                                               hover:bg-primary/20">
+                {#if spells.length > 0}
+                    <div class="space-y-1">
+                        {#each spells as spell (spell.spell_name)}
+                            <div class="group relative rounded bg-gray-50 p-2 text-sm hover:bg-gray-100 transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">{spell.spell_name}</div>
+                                        <div class="text-xs text-gray-600">School • Action</div>
+                                    </div>
+                                    <button
+                                        class="opacity-0 text-xs text-primary hover:text-primary-dark transition-opacity group-hover:opacity-100 disabled:opacity-50"
+                                        disabled={updateState.status === 'syncing'}
+                                        aria-label="Cast spell"
+                                    >
                                         Cast
-                                    </span>
-                                </button>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    {/each}
-                </div>
+                        {/each}
+                    </div>
+                {/if}
             </div>
         {/each}
     </div>
 </div>
+{/if}

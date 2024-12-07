@@ -1,4 +1,3 @@
-<!-- src/lib/components/Consumables.svelte -->
 <script lang="ts">
     import type { ConsumableKey } from '$lib/types/character';
     import { getCharacter, updateConsumable } from '$lib/state/character.svelte';
@@ -20,7 +19,6 @@
         tanglefoot: character.character_consumables?.[0]?.tanglefoot ?? 0
     });
 
-    // Configuration for all consumables
     const consumableConfig = $state([
         {
             type: 'alchemist_fire' as const,
@@ -42,7 +40,6 @@
         }
     ]);
 
-    // Derived consumable data with current values
     let consumables = $derived(
         consumableConfig.map((config) => ({
             ...config,
@@ -87,7 +84,6 @@
 
     async function handleInputBlur() {
         if (!editingType) return;
-
         const config = consumableConfig.find((c) => c.type === editingType);
         if (!config || inputValue === consumableValues[editingType]) {
             editingType = null;
@@ -119,9 +115,7 @@
     function focusInput(node: HTMLInputElement) {
         node.focus();
         node.select();
-        return {
-            destroy: () => {}
-        };
+        return {};
     }
 
     const quickActions = $state.raw([
@@ -130,21 +124,27 @@
     ]);
 </script>
 
-<div class="card">
-    <h2 class="mb-4 font-bold">Consumables</h2>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+<!-- Dense, mobile-friendly layout -->
+<div class="p-4 space-y-3 bg-white rounded border border-gray-200 text-sm">
+    {#if updateState.status === 'syncing'}
+        <div class="text-xs text-gray-500">Updating...</div>
+    {/if}
+
+    <h2 class="text-lg font-bold">Consumables</h2>
+    <!-- A vertical list instead of a grid -->
+    <div class="space-y-2">
         {#each consumables as { type, label, value, effect, maxStock }}
             <div
-                class="rounded bg-gray-50 p-4 transition-colors hover:bg-gray-100"
+                class="rounded bg-gray-50 p-2 text-sm hover:bg-gray-100 transition-colors"
                 role="group"
                 aria-labelledby={`${type}-label`}
             >
-                <div class="mb-2 flex items-center justify-between">
-                    <span id={`${type}-label`} class="text-sm font-medium">{label}</span>
+                <div class="flex items-center justify-between mb-1">
+                    <span id={`${type}-label`} class="font-medium">{label}</span>
                     <div class="flex gap-1">
                         {#each quickActions as { amount, label, getDisabled }}
                             <button
-                                class="btn btn-secondary px-2 py-1 text-xs"
+                                class="px-1 py-0.5 border rounded text-xs hover:bg-gray-200 disabled:opacity-50"
                                 onclick={() => handleQuickUpdate(type, amount)}
                                 disabled={getDisabled(value)}
                                 aria-label={`${label} ${label}`}
@@ -155,11 +155,11 @@
                     </div>
                 </div>
 
-                <div class="mb-2 flex items-center gap-2">
+                <div class="flex items-center mb-1">
                     {#if editingType === type}
                         <input
                             type="number"
-                            class="input w-20 text-center"
+                            class="w-12 border border-gray-300 rounded px-1 text-center text-sm"
                             value={inputValue}
                             min="0"
                             max={maxStock}
@@ -170,8 +170,8 @@
                         />
                     {:else}
                         <button
-                            class="min-w-[3rem] rounded px-2 py-1 text-center text-2xl font-bold hover:bg-gray-200
-                                   focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            class="w-12 text-xl font-bold py-1 text-center rounded hover:bg-gray-200 
+                                   focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                             onclick={() => startEditing(type)}
                             aria-label={`Edit ${label} quantity`}
                             disabled={updateState.status === 'syncing'}
@@ -179,15 +179,13 @@
                             {value}
                         </button>
                     {/if}
-                    <span class="text-sm text-gray-600" aria-label="Maximum quantity"> / {maxStock} </span>
+                    <span class="text-xs text-gray-600 ml-1">/ {maxStock}</span>
                 </div>
 
-                <p class="mb-2 text-xs text-gray-600" role="note">
-                    {effect}
-                </p>
+                <div class="mb-1 text-xs text-gray-600">{effect}</div>
 
                 <button
-                    class="btn btn-secondary w-full py-1 text-sm"
+                    class="w-full py-1 text-xs text-center border rounded hover:bg-gray-200 disabled:opacity-50"
                     onclick={() => handleQuickUpdate(type, -1)}
                     disabled={value === 0 || updateState.status === 'syncing'}
                 >
@@ -196,4 +194,10 @@
             </div>
         {/each}
     </div>
+
+    {#if updateState.error}
+        <div class="rounded bg-red-50 p-2 text-xs text-red-700">
+            {updateState.error.message}
+        </div>
+    {/if}
 </div>

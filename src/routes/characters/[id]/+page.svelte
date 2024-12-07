@@ -46,7 +46,6 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <div class="lg:col-span-1">
                     <Attributes characterId={characterId} />
-                    <Equipment characterId={characterId} />
                 </div>
                 <div class="lg:col-span-2">
                     <Skills characterId={characterId} />
@@ -75,6 +74,7 @@
                 <AncestryDisplay characterId={characterId}/>
                 <Traits characterId={characterId}/>
                 <CorruptionViewer characterId={characterId}/>
+                <Equipment characterId={characterId}/>
             </div>
         </div>
     </div>

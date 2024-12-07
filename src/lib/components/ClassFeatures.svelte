@@ -34,28 +34,27 @@
     );
 </script>
 
-<div class="card">
-    <h2 class="mb-4 font-bold">Class Features</h2>
+<div class="p-4 space-y-3 bg-white rounded border border-gray-200 text-sm">
+    <h2 class="text-lg font-bold">Class Features</h2>
     {#each Object.entries(featuresByLevel) as [level, features] (level)}
         {@const typedFeatures = features as TransformedFeature[]}
-        <div class="mb-6 last:mb-0">
-            <h3 class="mb-2 text-lg font-semibold text-primary">
+        <div class="space-y-1">
+            <div class="font-medium text-primary">
                 Level {level}
-            </h3>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {#each typedFeatures as feature (feature.feature_name)}
-                    <div class="rounded bg-gray-50 p-3 hover:bg-gray-100">
-                        <div class="font-medium">{feature.displayName}</div>
-                        {#if feature.properties}
-                            <div class="mt-1 text-sm text-gray-600">
-                                {#each Object.entries(feature.properties ?? {}) as [key, value]}
-                                    <div>{key}: {value}</div>
-                                {/each}
-                            </div>
-                        {/if}
-                    </div>
-                {/each}
             </div>
+            <!-- A simple vertical list, no grids -->
+            {#each typedFeatures as feature (feature.feature_name)}
+                <div class="rounded bg-gray-50 p-2 text-sm hover:bg-gray-100">
+                    <div class="font-medium">{feature.displayName}</div>
+                    {#if feature.properties}
+                        <div class="mt-1 text-xs text-gray-600 space-y-0.5">
+                            {#each Object.entries(feature.properties ?? {}) as [key, value]}
+                                <div>{key}: {value}</div>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            {/each}
         </div>
     {/each}
 </div>

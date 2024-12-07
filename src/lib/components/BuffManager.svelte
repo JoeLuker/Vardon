@@ -24,16 +24,15 @@
         return buffs;
     });
 
-    // Helper functions with proper typing
+    // Check if a buff is active
     function isBuffActive(buffName: KnownBuffType): boolean {
         return activeBuffs().has(buffName);
     }
 
+    // Check for conflicts
     function hasActiveConflict(buffName: KnownBuffType): boolean {
         return !isBuffActive(buffName) && 
-            Array.from(activeBuffs()).some((active: KnownBuffType) => 
-                doBuffsConflict(active, buffName)
-            );
+            Array.from(activeBuffs()).some((active: KnownBuffType) => doBuffsConflict(active, buffName));
     }
 
     // Handle toggling buffs
@@ -50,60 +49,51 @@
     }
 </script>
 
-<div class="card space-y-6">
-    <div class="section-header">
-        <h2>Active Effects</h2>
+<div class="p-4 card">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-bold">Active Effects</h2>
         {#if updateState.status === 'syncing'}
-            <div class="text-sm text-ink-light">Updating...</div>
+            <span class="text-sm text-gray-500">Updating...</span>
         {/if}
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="space-y-1">
         {#each BUFF_CONFIG as buff (buff.name)}
             {@const isActive = isBuffActive(buff.name as KnownBuffType)}
             {@const hasConflict = hasActiveConflict(buff.name as KnownBuffType)}
-            
+
+            <!-- One line per buff, dense layout -->
             <button
-                class="group relative overflow-hidden rounded-lg border-2 p-4 text-left 
-                       transition-all duration-300 focus:outline-none focus:ring-2
-                       {isActive 
-                           ? 'border-primary-300 bg-primary-300 text-white' 
-                           : 'border-primary-300/20 hover:border-primary-300/50 bg-white'} 
-                       {hasConflict ? 'opacity-50 cursor-not-allowed' : 'hover:scale-102'}"
+                class="
+                    flex w-full items-center justify-between rounded px-2 py-1 text-sm transition-colors
+                    {isActive ? 'bg-primary-300 text-white' : 'bg-gray-50 hover:bg-gray-100'}
+                    {hasConflict ? 'opacity-50 cursor-not-allowed' : ''}
+                "
                 onclick={() => handleBuffToggle(buff.name as KnownBuffType)}
                 disabled={updateState.status === 'syncing' || hasConflict}
                 aria-label="{isActive ? 'Deactivate' : 'Activate'} {buff.label}"
             >
-                <div class="flex items-start gap-3">
-                    <div class="flex-1">
-                        <div class="font-bold">{buff.label}</div>
-                        {#if buff.description}
-                            <div class="mt-1 text-xs opacity-75">{buff.description}</div>
-                        {/if}
-                        {#if isActive && buff.effects.length > 0}
-                            <div class="mt-3 space-y-1">
-                                {#each buff.effects as effect}
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <div class="rounded-full bg-white/20 px-2 py-0.5">
-                                            {effect.description}
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        {/if}
-                        {#if hasConflict}
-                            <div class="mt-2 text-xs text-red-500">
-                                Conflicts with active buff
-                            </div>
-                        {/if}
-                    </div>
+                <div class="flex flex-col text-left space-y-0.5">
+                    <span class="font-medium">{buff.label}</span>
+                    {#if buff.description}
+                        <span class="text-xs text-gray-600">{buff.description}</span>
+                    {/if}
+                    {#if hasConflict}
+                        <span class="text-xs text-red-500">Conflicts with active buff</span>
+                    {/if}
                 </div>
+
+                {#if isActive && buff.effects.length > 0}
+                    <span class="ml-2 rounded bg-white/20 px-1 text-xs">
+                        {buff.effects.length} effect{buff.effects.length > 1 ? 's' : ''}
+                    </span>
+                {/if}
             </button>
         {/each}
     </div>
 
     {#if updateState.error}
-        <div class="rounded-md bg-accent/10 p-4 text-sm text-accent">
+        <div class="mt-2 rounded bg-accent/10 p-2 text-xs text-accent">
             {updateState.error.message}
         </div>
     {/if}
