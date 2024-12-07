@@ -112,8 +112,8 @@
             min="0"
             max={maxHp}
             value={sliderValue}
-            class="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent"
-            style="-webkit-appearance: none;"
+            class="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent opacity-0"
+            style="-webkit-appearance: none; appearance: none;"
             oninput={(e) => {
                 sliderValue = parseInt(e.currentTarget.value);
                 isSliding = true;
