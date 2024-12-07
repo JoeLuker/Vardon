@@ -40,7 +40,7 @@
     );
 </script>
 
-<div class="space-y-4">
+<div class="card">
     <h2 class="text-xl font-bold">Equipment</h2>
 
     {#each Object.entries(equipmentByType) as [type, items] (type)}
