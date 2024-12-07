@@ -1,11 +1,11 @@
 <!-- src/lib/components/Stats.svelte -->
 <script lang="ts">
     import type { CharacterAttributes } from '$lib/types/character';
-    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
+    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
 
     let { characterId } = $props<{ characterId: number; }>();
 
-    
     interface AttributeDefinition { 
         key: keyof CharacterAttributes; 
         label: string;
@@ -22,52 +22,58 @@
         { key: 'cha', label: 'Charisma', description: 'Social interactions' }
     ]);
 
-    // Calculate all stats
-    let stats = $derived(getCalculatedStats(characterId));
+    // Derive the character from state
+    let character = $derived(getCharacter(characterId));
+
+    // Derive stats by recalculating each time 'character' changes
+    let stats = $derived.by(() => calculateCharacterStats(character));
 
     // Transform attributes for display with modifier sources
-    let attributesList = $derived(attributeDefinitions.map(attr => {
-        const base = stats.attributes.base[attr.key];
-        const permanent = stats.attributes.permanent[attr.key];
-        const temporary = stats.attributes.temporary[attr.key];
+    let attributesList = $derived.by(() => {
+        return attributeDefinitions.map(attr => {
+            const base = stats.attributes.base[attr.key];
+            const permanent = stats.attributes.permanent[attr.key];
+            const temporary = stats.attributes.temporary[attr.key];
 
-        return {
-            ...attr,
-            value: {
-                base,
-                permanent,
-                temporary,
-                modifier: {
-                    permanent: stats.attributes.modifiers.permanent[attr.key],
-                    temporary: stats.attributes.modifiers.temporary[attr.key]
-                },
-                sources: {
-                    ancestry: stats.attributes.bonuses.ancestry.values[attr.key] ? {
-                        label: stats.attributes.bonuses.ancestry.source,
-                        value: stats.attributes.bonuses.ancestry.values[attr.key] ?? 0
-                    } : null,
-                    abp: (
-                        (stats.attributes.bonuses.abp.mental?.attribute === attr.key && 
-                         stats.attributes.bonuses.abp.mental) ||
-                        (stats.attributes.bonuses.abp.physical?.attribute === attr.key && 
-                         stats.attributes.bonuses.abp.physical)
-                    ) ? {
-                        label: `${attr.key === stats.attributes.bonuses.abp.mental?.attribute ? 
-                            'Mental' : 'Physical'} Prowess (ABP)`,
-                        value: attr.key === stats.attributes.bonuses.abp.mental?.attribute ? 
-                            stats.attributes.bonuses.abp.mental.value : 
-                            stats.attributes.bonuses.abp.physical?.value ?? 0
-                    } : null,
-                    buffs: stats.attributes.bonuses.buffs
-                        .filter(buff => buff.values[attr.key])
-                        .map(buff => ({
-                            source: buff.source,
-                            value: buff.values[attr.key] ?? 0
-                        }))
+            return {
+                ...attr,
+                value: {
+                    base,
+                    permanent,
+                    temporary,
+                    modifier: {
+                        permanent: stats.attributes.modifiers.permanent[attr.key],
+                        temporary: stats.attributes.modifiers.temporary[attr.key]
+                    },
+                    sources: {
+                        ancestry: stats.attributes.bonuses.ancestry.values[attr.key] ? {
+                            label: stats.attributes.bonuses.ancestry.source,
+                            value: stats.attributes.bonuses.ancestry.values[attr.key] ?? 0
+                        } : null,
+                        abp: (
+                            (stats.attributes.bonuses.abp.mental?.attribute === attr.key && 
+                             stats.attributes.bonuses.abp.mental) ||
+                            (stats.attributes.bonuses.abp.physical?.attribute === attr.key && 
+                             stats.attributes.bonuses.abp.physical)
+                        ) ? {
+                            label: (attr.key === stats.attributes.bonuses.abp.mental?.attribute 
+                                ? 'Mental' 
+                                : 'Physical') + ' Prowess (ABP)',
+                            value: attr.key === stats.attributes.bonuses.abp.mental?.attribute ? 
+                                stats.attributes.bonuses.abp.mental.value : 
+                                stats.attributes.bonuses.abp.physical?.value ?? 0
+                        } : null,
+                        buffs: stats.attributes.bonuses.buffs
+                            .filter(buff => buff.values[attr.key])
+                            .map(buff => ({
+                                source: buff.source,
+                                value: buff.values[attr.key] ?? 0
+                            }))
+                    }
                 }
-            }
-        };
-    }));
+            };
+        });
+    });
 
     function formatModifier(num: number): string {
         return num >= 0 ? `+${num}` : num.toString();
@@ -84,8 +90,8 @@
                     <span class="text-sm font-medium text-gray-700">{label}</span>
                     <!-- Main tooltip -->
                     <div class="invisible absolute -top-2 left-1/2 z-10 w-64 -translate-x-1/2 
-                              transform rounded bg-gray-800 px-3 py-2 text-sm text-white 
-                              opacity-0 transition-all group-hover:visible group-hover:opacity-100">
+                                transform rounded bg-gray-800 px-3 py-2 text-sm text-white 
+                                opacity-0 transition-all group-hover:visible group-hover:opacity-100">
                         <div class="mb-2">{description}</div>
                         
                         <!-- Modifier Sources -->

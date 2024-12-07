@@ -1,82 +1,78 @@
 <!-- src/lib/components/CombatStats.svelte -->
 <script lang="ts">
-    import { getCharacter, updateBombs } from '$lib/state/character.svelte';
+    import { 
+        getCharacter, 
+        updateBombs, 
+        optimisticUpdateBombs, 
+        rollbackUpdateBombs 
+    } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
-    import type { CalculatedStats } from '$lib/utils/characterCalculations';
+    import { calculateCharacterStats, type CalculatedStats } from '$lib/utils/characterCalculations';
     import Tooltip from '$lib/components/Tooltip.svelte';
 
-    let { characterId } = $props<{ characterId: number; }>();
+    let { characterId } = $props<{ characterId: number }>();
 
+    // Derive the character from state
     let character = $derived(getCharacter(characterId));
 
-    // Component state
+    // Now directly derive stats by recalculating them whenever 'character' changes
+    let stats = $derived.by(() => calculateCharacterStats(character));
+
+    let updateState = $state<UpdateState>({ status: 'idle', error: null });
     let isEditing = $state(false);
     let inputValue = $state(0);
-    let updateState = $state<UpdateState>({
-        status: 'idle',
-        error: null
-    });
 
-    // Calculate all stats
-    let stats = $derived(getCalculatedStats(characterId));
+    // Derived values from stats
+    let resources = $derived.by(() => stats.resources);
+    let combat = $derived.by(() => stats.combat);
+    let defenses = $derived.by(() => stats.defenses);
 
-    let resources = $derived(stats.resources);
-    let combat = $derived(stats.combat);
-    let defenses = $derived(stats.defenses);
-
-    // Update the saveThrows type definition
     type SaveType = 'Fortitude' | 'Reflex' | 'Will';
 
-    // Update the saveThrows array with proper typing
-    const saveThrows = $state.raw<Array<{ label: SaveType; value: () => number }>>([
+    let saveThrows = $state<Array<{ label: SaveType; value: () => number }>>([
         { label: 'Fortitude', value: () => defenses.saves.fortitude },
         { label: 'Reflex', value: () => defenses.saves.reflex },
         { label: 'Will', value: () => defenses.saves.will }
     ]);
 
-    const armorClasses = $state.raw([
-        { 
-            label: 'Normal', 
+    let armorClasses = $state([
+        {
+            label: 'Normal',
             value: () => defenses.ac.normal,
             getTooltip: (stats: CalculatedStats) => getNormalACTooltip(stats)
         },
-        { 
-            label: 'Touch', 
+        {
+            label: 'Touch',
             value: () => defenses.ac.touch,
             getTooltip: (stats: CalculatedStats) => getTouchACTooltip(stats)
         },
-        { 
-            label: 'Flat-Footed', 
+        {
+            label: 'Flat-Footed',
             value: () => defenses.ac.flatFooted,
             getTooltip: (stats: CalculatedStats) => getFlatFootedACTooltip(stats)
         }
     ]);
 
-    const combatStats = $state.raw([
+    let combatStats = $state([
         { key: 'cmb', label: 'CMB', value: () => combat.combatManeuver.bonus },
         { key: 'cmd', label: 'CMD', value: () => combat.combatManeuver.defense }
     ]);
 
-    const quickActions = $state.raw([
-        { 
-            amount: -1, 
-            label: '-1', 
-            disabled: () => resources.bombs.remaining <= 0 || updateState.status === 'syncing' 
+    let quickActions = $state([
+        {
+            amount: -1,
+            label: '-1',
+            disabled: () => resources.bombs.remaining <= 0 || updateState.status === 'syncing'
         },
-        { 
-            amount: 1, 
-            label: '+1', 
-            disabled: () => resources.bombs.remaining >= resources.bombs.perDay || updateState.status === 'syncing' 
+        {
+            amount: 1,
+            label: '+1',
+            disabled: () => resources.bombs.remaining >= resources.bombs.perDay || updateState.status === 'syncing'
         }
     ]);
 
     async function handleQuickUpdate(amount: number) {
-        const newValue = Math.max(0, Math.min(
-            resources.bombs.perDay,
-            resources.bombs.remaining + amount
-        ));
-        
+        const newValue = Math.max(0, Math.min(resources.bombs.perDay, resources.bombs.remaining + amount));
         if (newValue === resources.bombs.remaining) return;
 
         const previousValue = resources.bombs.remaining;
@@ -85,16 +81,8 @@
             key: `bombs-${character.id}`,
             status: updateState,
             operation: () => updateBombs(character.id, newValue),
-            optimisticUpdate: () => {
-                if (character.character_combat_stats?.[0]) {
-                    character.character_combat_stats[0].bombs_left = newValue;
-                }
-            },
-            rollback: () => {
-                if (character.character_combat_stats?.[0]) {
-                    character.character_combat_stats[0].bombs_left = previousValue;
-                }
-            }
+            optimisticUpdate: () => optimisticUpdateBombs(character.id, newValue),
+            rollback: () => rollbackUpdateBombs(character.id, previousValue)
         });
     }
 
@@ -117,33 +105,20 @@
             key: `bombs-${character.id}`,
             status: updateState,
             operation: () => updateBombs(character.id, inputValue),
-            optimisticUpdate: () => {
-                if (character.character_combat_stats?.[0]) {
-                    character.character_combat_stats[0].bombs_left = inputValue;
-                }
-            },
-            rollback: () => {
-                if (character.character_combat_stats?.[0]) {
-                    character.character_combat_stats[0].bombs_left = previousValue;
-                }
-            }
+            optimisticUpdate: () => optimisticUpdateBombs(character.id, inputValue),
+            rollback: () => rollbackUpdateBombs(character.id, previousValue)
         });
     }
 
-    // Add the missing focusInput action
     function focusInput(node: HTMLInputElement) {
         node.focus();
         return {};
     }
 
     function getSaveTooltip(save: 'Fortitude' | 'Reflex' | 'Will', stats: CalculatedStats): string {
-        const baseBonus = Math.floor(stats.combat.baseAttackBonus/2);
-        const parts = [];
+        const baseBonus = Math.floor(stats.combat.baseAttackBonus / 2);
+        const parts: string[] = [`Base (${baseBonus})`];
 
-        // Always show base
-        parts.push(`Base (${baseBonus})`);
-
-        // Add ability modifier based on save type
         const abilityMods = {
             'Fortitude': { mod: stats.attributes.modifiers.temporary.con, label: 'CON' },
             'Reflex': { mod: stats.attributes.modifiers.temporary.dex, label: 'DEX' },
@@ -159,7 +134,7 @@
     }
 
     function getInitiativeTooltip(stats: CalculatedStats): string {
-        const parts = [];
+        const parts: string[] = [];
         const dexMod = stats.attributes.modifiers.temporary.dex;
 
         if (dexMod !== 0) {
@@ -177,12 +152,10 @@
         const totalArmorBonus = abpArmorBonus + equipmentArmorBonus;
         const deflectionBonus = stats.defenses.abpBonuses.deflection;
         
-        if (dexMod !== 0) {
-            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
-        }
+        if (dexMod !== 0) parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
         
         if (totalArmorBonus > 0) {
-            const sources = [];
+            const sources: string[] = [];
             if (abpArmorBonus > 0) sources.push(`ABP +${abpArmorBonus}`);
             if (equipmentArmorBonus > 0) sources.push(`Equipment +${equipmentArmorBonus}`);
             parts.push(`Armor (${sources.join(', ')})`);
@@ -204,13 +177,8 @@
         const dexMod = stats.attributes.modifiers.temporary.dex;
         const deflectionBonus = stats.defenses.abpBonuses.deflection;
         
-        if (dexMod !== 0) {
-            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
-        }
-        
-        if (deflectionBonus > 0) {
-            parts.push(`Deflection (+${deflectionBonus})`);
-        }
+        if (dexMod !== 0) parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
+        if (deflectionBonus > 0) parts.push(`Deflection (+${deflectionBonus})`);
 
         return parts.join(' + ');
     }
@@ -223,7 +191,7 @@
         const deflectionBonus = stats.defenses.abpBonuses.deflection;
         
         if (totalArmorBonus > 0) {
-            const sources = [];
+            const sources: string[] = [];
             if (abpArmorBonus > 0) sources.push(`ABP +${abpArmorBonus}`);
             if (equipmentArmorBonus > 0) sources.push(`Equipment +${equipmentArmorBonus}`);
             parts.push(`Armor (${sources.join(', ')})`);
@@ -241,17 +209,12 @@
     }
 
     function getCMBTooltip(stats: CalculatedStats): string {
-        const parts = [];
+        const parts: string[] = [];
         const bab = stats.combat.baseAttackBonus;
         const strMod = stats.attributes.modifiers.temporary.str;
 
-        if (bab !== 0) {
-            parts.push(`BAB (${bab >= 0 ? '+' : ''}${bab})`);
-        }
-
-        if (strMod !== 0) {
-            parts.push(`STR (${strMod >= 0 ? '+' : ''}${strMod})`);
-        }
+        if (bab !== 0) parts.push(`BAB (${bab >= 0 ? '+' : ''}${bab})`);
+        if (strMod !== 0) parts.push(`STR (${strMod >= 0 ? '+' : ''}${strMod})`);
 
         return parts.join(' + ') || '0';
     }
@@ -262,17 +225,9 @@
         const strMod = stats.attributes.modifiers.temporary.str;
         const dexMod = stats.attributes.modifiers.temporary.dex;
 
-        if (bab !== 0) {
-            parts.push(`BAB (${bab >= 0 ? '+' : ''}${bab})`);
-        }
-
-        if (strMod !== 0) {
-            parts.push(`STR (${strMod >= 0 ? '+' : ''}${strMod})`);
-        }
-
-        if (dexMod !== 0) {
-            parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
-        }
+        if (bab !== 0) parts.push(`BAB (${bab >= 0 ? '+' : ''}${bab})`);
+        if (strMod !== 0) parts.push(`STR (${strMod >= 0 ? '+' : ''}${strMod})`);
+        if (dexMod !== 0) parts.push(`DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`);
 
         return parts.join(' + ');
     }
@@ -281,13 +236,12 @@
         const parts = [`Base (${Math.ceil(stats.combat.baseAttackBonus/2)}d6)`];
         const intMod = stats.attributes.modifiers.temporary.int;
 
-        if (intMod !== 0) {
-            parts.push(`INT (${intMod >= 0 ? '+' : ''}${intMod})`);
-        }
+        if (intMod !== 0) parts.push(`INT (${intMod >= 0 ? '+' : ''}${intMod})`);
 
         return parts.join(' + ');
     }
 </script>
+
 <div class="card">
     <h2 class="mb-4 font-bold">Combat Stats</h2>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

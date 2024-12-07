@@ -102,12 +102,10 @@ export const BUFF_CONFIG: Buff[] = $state([
     }
 ]);
 
-// Helper function to get buff by name
 export function getBuff(name: KnownBuffType): Buff | undefined {
     return BUFF_CONFIG.find(buff => buff.name === name);
 }
 
-// Helper function to get all effects of a specific type
 export function getBuffEffects<T extends keyof BuffEffect>(
     activeBuffs: Set<KnownBuffType>,
     effectType: T
@@ -120,7 +118,6 @@ export function getBuffEffects<T extends keyof BuffEffect>(
         .filter((value): value is NonNullable<BuffEffect[T]> => value !== undefined);
 }
 
-// Helper to check conflicts
 export function doBuffsConflict(activeBuff: KnownBuffType, newBuff: KnownBuffType): boolean {
     const buff = BUFF_CONFIG.find(b => b.name === newBuff);
     return !!buff?.conflicts?.includes(activeBuff);

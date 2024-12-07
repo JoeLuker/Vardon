@@ -3,20 +3,17 @@
     import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/types/character';
     import { supabase } from '$lib/supabaseClient';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-	import { onMount } from 'svelte';
-    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
+    import { onMount } from 'svelte';
+    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
 
     let { onClose, characterId } = $props<{
         onClose: () => void;
         characterId: number;
     }>();
 
-    let character = $derived(getCharacter(characterId) ?? {
-        id: characterId,
-        level: 0,
-        base_skills: [],
-        character_skill_ranks: []
-    });
+    // Derive character and stats reactivity
+    let character = $derived(getCharacter(characterId));
+    let stats = $derived.by(() => calculateCharacterStats(character));
 
     let pendingChanges = $state<Required<Pick<CharacterSkillRank, 'skill_id' | 'ranks' | 'applied_at_level' | 'source'>>[]>([]);
     let isSaving = $state(false);
@@ -25,20 +22,13 @@
         error: null 
     });
 
-    let stats = $derived(getCalculatedStats(characterId));
-
-    // Add new reactive variable for mobile view
     let isMobileView = $state(false);
+    let isLoading = $state(true);
+    let uncheckedRanks = $state<number[]>([]); // Store IDs of ranks that were unchecked
 
-    // Add window resize handler
     function handleResize() {
         isMobileView = window.innerWidth < 768;
     }
-
-    let isLoading = $state(true);
-
-    // Add new state to track explicitly unchecked ranks
-    let uncheckedRanks = $state<number[]>([]); // Store IDs of ranks that were unchecked
 
     onMount(() => {
         handleResize();
@@ -54,7 +44,7 @@
                 isLoading = false;
             });
 
-        // Return cleanup function
+        // Cleanup on unmount
         return () => window.removeEventListener('resize', handleResize);
     });
 
@@ -66,14 +56,12 @@
             return false;
         }
 
-        // Check if we have points available at this level
         const levelData = stats.skills.byLevel[level];
         if (!levelData) {
             console.warn(`No level data found for level ${level}`);
             return false;
         }
 
-        // Get existing ranks for this skill at this level
         const existingRanks = skillData.ranks.byLevel[level] ?? [];
         const hasExistingClassRank = existingRanks.some(
             rank => rank.source === SKILL_RANK_SOURCES.CLASS
@@ -88,17 +76,14 @@
         const pendingRanksAtLevel = pendingChanges.filter(
             change => change.applied_at_level === level
         ).length;
-
         const availablePoints = levelData.available - levelData.used + pendingRanksAtLevel;
+
         if (availablePoints <= 0) {
             return false;
         }
 
         // Check if total ranks would exceed character level
-        const totalRanks = existingRanks.reduce(
-            (sum, rank) => sum + rank.ranks,
-            0
-        );
+        const totalRanks = existingRanks.reduce((sum, rank) => sum + rank.ranks, 0);
 
         return totalRanks < level;
     }
@@ -135,20 +120,20 @@
                 ];
             }
         } else {
-            // Find and track the unchecked rank's ID
+            // Uncheck rank
             const existingRank = character.character_skill_ranks?.find(
                 rank => rank.skill_id === skill.id && 
                         rank.applied_at_level === level &&
                         rank.source === SKILL_RANK_SOURCES.CLASS
             );
-            if (existingRank?.id && existingRank.id > 0) { // Only track real DB ids (positive numbers)
+
+            if (existingRank?.id && existingRank.id > 0) {
                 uncheckedRanks = [...uncheckedRanks, existingRank.id];
             }
 
-            // Remove rank from pending changes
+            // Remove from pending changes
             pendingChanges = pendingChanges.filter(change => 
-                !(change.skill_id === skill.id && 
-                  change.applied_at_level === level)
+                !(change.skill_id === skill.id && change.applied_at_level === level)
             );
 
             // Remove from character's skill ranks
@@ -168,7 +153,6 @@
         if (!character || isSaving) return;
         isSaving = true;
         
-        // Store original state for rollback
         const originalSkillRanks = [...(character.character_skill_ranks ?? [])];
         
         try {
@@ -176,21 +160,18 @@
                 key: `skills-${character.id}`,
                 status: updateState,
                 operation: async () => {
-                    // Get existing class ranks
                     const { data: existingRanks } = await supabase
                         .from('character_skill_ranks')
                         .select('*')
                         .eq('character_id', character.id)
                         .eq('source', SKILL_RANK_SOURCES.CLASS);
 
-                    // Create map for comparison
                     const existingRankMap = new Map(
                         (existingRanks ?? []).map(rank => 
                             [`${rank.skill_id}-${rank.applied_at_level}`, rank]
                         )
                     );
 
-                    // Only upsert new ranks
                     const ranksToUpsert = pendingChanges.filter(rank => {
                         const key = `${rank.skill_id}-${rank.applied_at_level}`;
                         return !existingRankMap.has(key);
@@ -218,7 +199,6 @@
 
                         if (upsertError) throw upsertError;
 
-                        // Update local state with new ranks
                         if (upsertedRanks) {
                             character.character_skill_ranks = [
                                 ...(character.character_skill_ranks?.filter(rank => 
@@ -236,7 +216,7 @@
                     }
                 },
                 optimisticUpdate: () => {
-                    // Optimistic updates are already handled in handleRankChange
+                    // Already handled in handleRankChange
                 },
                 rollback: () => {
                     character.character_skill_ranks = originalSkillRanks;
@@ -381,6 +361,8 @@
         </div>
     {/if}
 </div>
+
+
 
 <style>
     .skill-allocator {

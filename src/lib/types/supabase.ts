@@ -1095,6 +1095,7 @@ export type Database = {
       characters: {
         Row: {
           ancestry: string
+          archetype: string | null
           class: string
           created_at: string | null
           current_hp: number
@@ -1109,6 +1110,7 @@ export type Database = {
         }
         Insert: {
           ancestry: string
+          archetype?: string | null
           class: string
           created_at?: string | null
           current_hp: number
@@ -1123,6 +1125,7 @@ export type Database = {
         }
         Update: {
           ancestry?: string
+          archetype?: string | null
           class?: string
           created_at?: string | null
           current_hp?: number

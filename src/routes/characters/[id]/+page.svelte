@@ -19,20 +19,15 @@
     import type { PageData } from './$types';
 
     let { data } = $props<{ data: PageData }>();
-    console.log('🎲 Page data received:', data);
     let characterId = data.character?.id;
-    console.log('🆔 Character ID:', characterId);
 
     let initialized = $state(false);
 
         $effect(() => {
-        console.log('⚡ Effect running, character data:', data.character);
         if (data.character) {
             try {
-                console.log('🔄 Initializing character...');
                 initializeCharacter(data.character); // sets the global $state
                 initialized = true;
-                console.log('✅ Character initialized successfully');
             } catch (error) {
                 console.error('❌ Failed to initialize character:', error);
             }

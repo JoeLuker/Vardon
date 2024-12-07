@@ -15,16 +15,13 @@ interface CharacterState {
     cleanup?: () => void;
 }
 
-// Store of all character instances using $state rune
 const characterStates = $state(new Map<number, CharacterState>());
 
-// Modify the existing getCharacter export to be more defensive
-// Instead of returning $derived directly, we should return the state data
 function getCharacter(id: number): Character {
     const state = characterStates.get(id);
     return state?.data ?? createEmptyCharacter();
 }
-// Initialize empty character data
+
 function createEmptyCharacter(): Character {
     return {
         id: 0,
@@ -59,39 +56,39 @@ function createEmptyCharacter(): Character {
         character_corruption_manifestations: [],
         character_corruptions: [],
         character_ancestries: [],
-        character_ancestral_traits: []
+        character_ancestral_traits: [],
+        archetype: null // Relying on DatabaseCharacter which includes archetype: string | null
     } satisfies Character;
 }
 
-// Initialize or update character state with $effect for subscriptions
 function initializeCharacter(data: Tables['characters']['Row'] & Partial<Character>) {
     if (!data || !data.id) throw new Error('Valid character data is required');
     
     const fullCharacter = $state({
         ...createEmptyCharacter(),
         ...data,
-        // Ensure all arrays are initialized
-        base_skills: data.base_skills || [],
-        character_skill_ranks: data.character_skill_ranks || [],
-        class_skill_relations: data.class_skill_relations || [],
-        character_attributes: data.character_attributes || [],
-        character_buffs: data.character_buffs || [],
-        character_combat_stats: data.character_combat_stats || [],
-        character_consumables: data.character_consumables || [],
-        character_spell_slots: data.character_spell_slots || [],
-        character_known_spells: data.character_known_spells || [],
-        character_class_features: data.character_class_features || [],
-        character_discoveries: data.character_discoveries || [],
-        character_equipment: data.character_equipment || [],
-        character_feats: data.character_feats || [],
-        character_extracts: data.character_extracts || [],
-        character_favored_class_bonuses: data.character_favored_class_bonuses || [],
-        character_traits: data.character_traits || [],
-        character_abp_bonuses: data.character_abp_bonuses || [],
-        character_corruption_manifestations: data.character_corruption_manifestations || [],
-        character_corruptions: data.character_corruptions || [],
-        character_ancestries: data.character_ancestries || [],
-        character_ancestral_traits: data.character_ancestral_traits || []
+        base_skills: data.base_skills ?? [],
+        character_skill_ranks: data.character_skill_ranks ?? [],
+        class_skill_relations: data.class_skill_relations ?? [],
+        character_attributes: data.character_attributes ?? [],
+        character_buffs: data.character_buffs ?? [],
+        character_combat_stats: data.character_combat_stats ?? [],
+        character_consumables: data.character_consumables ?? [],
+        character_spell_slots: data.character_spell_slots ?? [],
+        character_known_spells: data.character_known_spells ?? [],
+        character_class_features: data.character_class_features ?? [],
+        character_discoveries: data.character_discoveries ?? [],
+        character_equipment: data.character_equipment ?? [],
+        character_feats: data.character_feats ?? [],
+        character_extracts: data.character_extracts ?? [],
+        character_favored_class_bonuses: data.character_favored_class_bonuses ?? [],
+        character_traits: data.character_traits ?? [],
+        character_abp_bonuses: data.character_abp_bonuses ?? [],
+        character_corruption_manifestations: data.character_corruption_manifestations ?? [],
+        character_corruptions: data.character_corruptions ?? [],
+        character_ancestries: data.character_ancestries ?? [],
+        character_ancestral_traits: data.character_ancestral_traits ?? []
+        // archetype field is included in `...data` as `archetype: string | null`
     });
 
     const newState: CharacterState = {
@@ -117,7 +114,6 @@ async function updateBombs(characterId: number, bombs: number) {
         .from('character_combat_stats')
         .update({ bombs_left: bombs })
         .eq('character_id', characterId);
-    
     if (error) throw error;
 }
 
@@ -126,7 +122,6 @@ async function updateConsumable(characterId: number, type: ConsumableKey, value:
         .from('character_consumables')
         .update({ [type]: value })
         .eq('character_id', characterId);
-    
     if (error) throw error;
 }
 
@@ -135,7 +130,6 @@ async function updateAttribute(characterId: number, attr: AttributeKey, value: n
         .from('character_attributes')
         .update({ [attr]: value })
         .eq('character_id', characterId);
-    
     if (error) throw error;
 }
 
@@ -145,7 +139,6 @@ async function updateSkillRank(characterId: number, skillId: number, ranks: numb
         .update({ ranks })
         .eq('character_id', characterId)
         .eq('skill_id', skillId);
-    
     if (error) throw error;
 }
 
@@ -154,7 +147,6 @@ async function updateHP(characterId: number, newValue: number) {
         .from('characters')
         .update({ current_hp: newValue })
         .eq('id', characterId);
-    
     if (error) throw error;
 }
 
@@ -164,7 +156,6 @@ async function updateSpellSlot(characterId: number, level: number, remaining: nu
         .update({ remaining })
         .eq('character_id', characterId)
         .eq('spell_level', level);
-    
     if (error) throw error;
 }
 
@@ -179,11 +170,9 @@ async function updateExtract(characterId: number, extractId: number, updates: Om
         })
         .eq('id', extractId)
         .eq('character_id', characterId);
-    
     if (error) throw error;
 }
 
-// Helper functions using derived state
 function isClassSkill(characterId: number, skillId: number): boolean {
     const state = characterStates.get(characterId);
     return state?.data.class_skill_relations?.some(
@@ -198,7 +187,6 @@ function getSkillRanks(characterId: number, skillId: number): number {
     )?.ranks ?? 0;
 }
 
-// Update functions using $effect for optimistic updates
 function enqueueCharacterUpdate<T>({ 
     characterId,
     key, 
@@ -219,7 +207,6 @@ function enqueueCharacterUpdate<T>({
     );
 }
 
-// Realtime subscription setup using $effect
 function setupRealtimeSubscription(characterId: number) {
     const state = characterStates.get(characterId);
     if (!state) throw new Error(`No state found for character ${characterId}`);
@@ -241,7 +228,8 @@ function setupRealtimeSubscription(characterId: number) {
             filter: `character_id=eq.${characterId}`
         }, (payload) => {
             if (state.data.character_attributes?.[0]) {
-                Object.assign(state.data.character_attributes[0], payload.new);
+                const updated = { ...state.data.character_attributes[0], ...payload.new };
+                state.data.character_attributes = [updated];
             }
         })
         .on('postgres_changes', {
@@ -251,7 +239,9 @@ function setupRealtimeSubscription(characterId: number) {
             filter: `character_id=eq.${characterId}`
         }, (payload) => {
             if (state.data.character_combat_stats?.[0]) {
-                Object.assign(state.data.character_combat_stats[0], payload.new);
+                const updatedStats = [...state.data.character_combat_stats];
+                updatedStats[0] = { ...updatedStats[0], ...payload.new };
+                state.data.character_combat_stats = updatedStats;
             }
         })
         .on('postgres_changes', {
@@ -261,7 +251,9 @@ function setupRealtimeSubscription(characterId: number) {
             filter: `character_id=eq.${characterId}`
         }, (payload) => {
             if (state.data.character_consumables?.[0]) {
-                Object.assign(state.data.character_consumables[0], payload.new);
+                const updatedConsumables = [...state.data.character_consumables];
+                updatedConsumables[0] = { ...updatedConsumables[0], ...payload.new };
+                state.data.character_consumables = updatedConsumables;
             }
         })
         .on('postgres_changes', {
@@ -272,11 +264,12 @@ function setupRealtimeSubscription(characterId: number) {
         }, (payload) => {
             if (state.data.character_buffs && payload.new && 'buff_type' in payload.new) {
                 const newBuff = payload.new as DatabaseCharacterBuff;
-                state.data.character_buffs = [...state.data.character_buffs.map(buff => 
+                const buffs = state.data.character_buffs.map(buff =>
                     buff.buff_type === newBuff.buff_type
                         ? { ...newBuff, buff_type: newBuff.buff_type } as CharacterBuff
                         : buff
-                )];
+                );
+                state.data.character_buffs = buffs;
             }
         })
         .subscribe();
@@ -303,15 +296,14 @@ async function fetchSkillData(characterId: number) {
     if (skillRanksResult.error) throw skillRanksResult.error;
     if (classSkillsResult.error) throw classSkillsResult.error;
 
-    state.data.base_skills = baseSkillsResult.data;
-    state.data.character_skill_ranks = skillRanksResult.data.map(rank => ({
+    state.data.base_skills = baseSkillsResult.data ?? [];
+    state.data.character_skill_ranks = (skillRanksResult.data ?? []).map(rank => ({
         ...rank,
         source: (rank.source || 'class') as SkillRankSource
     }));
-    state.data.class_skill_relations = classSkillsResult.data;
+    state.data.class_skill_relations = classSkillsResult.data ?? [];
 }
 
-// Data fetching with $effect
 async function fetchCharacterData(characterId: number) {
     const state = characterStates.get(characterId);
     if (!state) throw new Error(`No state found for character ${characterId}`);
@@ -342,11 +334,22 @@ async function fetchCharacterData(characterId: number) {
     if (fcbResult.error) throw fcbResult.error;
     if (ancestryResult.error) throw ancestryResult.error;
 
-    state.data.character_favored_class_bonuses = fcbResult.data;
-    state.data.character_ancestries = ancestryResult.data.map(row => ({
-        ...row,
-        ancestry: row.ancestry || null
-    })) as DatabaseCharacterAncestry[];
+    const stateData = state.data;
+    stateData.character_favored_class_bonuses = fcbResult.data ?? [];
+    stateData.character_ancestries = (ancestryResult.data ?? []).map(row => {
+        let fixedAncestry = undefined;
+        if (row.ancestry) {
+            fixedAncestry = {
+                ...row.ancestry,
+                // Cast ability_modifiers from Json to Record<string, number>
+                ability_modifiers: row.ancestry.ability_modifiers as Record<string, number>
+            };
+        }
+        return {
+            ...row,
+            ancestry: fixedAncestry
+        };
+    }) as DatabaseCharacterAncestry[];
 }
 
 async function toggleBuff(characterId: number, buffType: KnownBuffType, isActive: boolean) {
@@ -377,7 +380,6 @@ async function updateABPBonus(
     if (error) throw error;
 }
 
-// Cleanup function
 function cleanupCharacter(characterId: number) {
     const state = characterStates.get(characterId);
     if (state?.cleanup) {
@@ -386,7 +388,53 @@ function cleanupCharacter(characterId: number) {
     characterStates.delete(characterId);
 }
 
-// Export everything
+// ------------------- UPDATED HELPER FUNCTIONS FOR REACTIVITY -------------------
+
+export function optimisticToggleBuff(characterId: number, buffName: KnownBuffType, isActive: boolean) {
+    const state = characterStates.get(characterId);
+    if (!state) return;
+
+    const buffs = (state.data.character_buffs ?? []).map(buff => ({
+        ...buff,
+        is_active: buff.buff_type === buffName ? isActive : buff.is_active
+    }));
+    state.data.character_buffs = buffs;
+}
+
+export function rollbackToggleBuff(characterId: number, buffName: KnownBuffType, previousActive: boolean) {
+    const state = characterStates.get(characterId);
+    if (!state) return;
+
+    const buffs = (state.data.character_buffs ?? []).map(buff =>
+        buff.buff_type === buffName
+            ? { ...buff, is_active: previousActive }
+            : buff
+    );
+    state.data.character_buffs = buffs;
+}
+
+export function optimisticUpdateBombs(characterId: number, newValue: number) {
+    const state = characterStates.get(characterId);
+    if (!state) return;
+
+    if (state.data.character_combat_stats?.[0]) {
+        const updatedStats = [...state.data.character_combat_stats];
+        updatedStats[0] = { ...updatedStats[0], bombs_left: newValue };
+        state.data.character_combat_stats = updatedStats;
+    }
+}
+
+export function rollbackUpdateBombs(characterId: number, previousValue: number) {
+    const state = characterStates.get(characterId);
+    if (!state) return;
+
+    if (state.data.character_combat_stats?.[0]) {
+        const updatedStats = [...state.data.character_combat_stats];
+        updatedStats[0] = { ...updatedStats[0], bombs_left: previousValue };
+        state.data.character_combat_stats = updatedStats;
+    }
+}
+
 export {
     initializeCharacter,
     cleanupCharacter,

@@ -1,11 +1,19 @@
+<!-- src/lib/components/ABPDisplay.svelte -->
 <script lang="ts">
     import type { ABPBonuses } from '$lib/types/abp';
-    import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
+    import { calculateCharacterStats } from '$lib/utils/characterCalculations';
 
     let { characterId } = $props<{ characterId: number; }>();
 
-    let stats = $derived(getCalculatedStats(characterId));
-    let bonuses = $derived(stats.defenses.abpBonuses);
+    // Derive the character from state
+    let character = $derived(getCharacter(characterId));
+
+    // Derive stats by recalculating each time 'character' changes
+    let stats = $derived.by(() => calculateCharacterStats(character));
+
+    // Extract ABP bonuses from the recalculated stats
+    let bonuses = $derived(() => stats.defenses.abpBonuses);
     
     const bonusLabels: Record<keyof ABPBonuses, string> = {
         resistance: 'Resistance',

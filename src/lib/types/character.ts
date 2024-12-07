@@ -35,6 +35,7 @@ export type DatabaseCharacterAncestry = DbTables['character_ancestries']['Row'] 
 }
 export type DatabaseCharacterAncestralTrait = DbTables['character_ancestral_traits']['Row'];
 export type DatabaseBaseAncestralTrait = DbTables['base_ancestral_traits']['Row'];
+
 // Type aliases for commonly used table types
 export type AttributeKey = keyof Pick<DbTables['character_attributes']['Row'], 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'>;
 export type ConsumableKey = keyof Pick<DbTables['character_consumables']['Row'], 'alchemist_fire' | 'acid' | 'tanglefoot'>;
@@ -117,6 +118,7 @@ export interface CharacterTraitWithBase extends DatabaseCharacterTrait {
 }
 
 // Main Character interface combining multiple tables
+// Inherits `archetype` (string | null) from DatabaseCharacter
 export interface Character extends DatabaseCharacter {
     character_attributes?: DatabaseCharacterAttribute[];
     character_buffs?: CharacterBuff[];
@@ -134,7 +136,6 @@ export interface Character extends DatabaseCharacter {
     character_spell_slots?: DatabaseCharacterSpellSlot[];
     character_known_spells?: DatabaseCharacterKnownSpell[];
     character_extracts?: DatabaseCharacterExtract[];
-    archetype?: string;
     character_corruption_manifestations?: DatabaseCharacterCorruptionManifestation[];
     character_corruptions?: DatabaseCharacterCorruption[];
     character_traits?: CharacterTraitWithBase[];
@@ -183,4 +184,3 @@ export interface CombatStats {
     bombs_left: number;
     base_attack_bonus: number;
 }
-

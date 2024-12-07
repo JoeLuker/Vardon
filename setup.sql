@@ -94,6 +94,7 @@ CREATE TABLE characters (
     LEVEL INTEGER NOT NULL,
     current_hp INTEGER NOT NULL,
     max_hp INTEGER NOT NULL,
+    archetype TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_offline BOOLEAN DEFAULT FALSE,
@@ -654,9 +655,9 @@ BEGIN
 
     -- Insert base character and immediately get the ID
     INSERT INTO characters (
-        user_id, name, class, ancestry, level, current_hp, max_hp
+        user_id, name, class, ancestry, level, current_hp, max_hp, archetype
     ) VALUES (
-        user_uuid, 'Vardon Salvador', 'Alchemist', 'Tengu', 5, 30, 30
+        user_uuid, 'Vardon Salvador', 'Alchemist', 'Tengu', 5, 30, 30, 'mindchemist'
     ) RETURNING id INTO character_id;
 
     -- Link traits to character
@@ -795,7 +796,7 @@ WHERE name IN (
         (character_id, 'Rapid Shot', 'combat', 3),
         (character_id, 'Deadly Aim', 'combat', 3),
         (character_id, 'Extra Discovery', 'general', 5),
-        (character_id, 'Breadth of Knowledge', 'general', 5);
+        (character_id, 'Breadth of Experience', 'general', 5);
 
     -- Insert equipment
     INSERT INTO character_equipment (character_id, name, type, equipped, properties) VALUES
@@ -812,7 +813,8 @@ WHERE name IN (
         (character_id, 'SwiftAlchemy', 3, '{"description": "Create alchemical items at twice the normal speed"}'::jsonb),
         (character_id, 'SwiftPoisoning', 4, '{"description": "Apply poison as a move action"}'::jsonb),
         (character_id, 'PoisonResistance', 2, '{"bonus": 2, "type": "natural"}'::jsonb),
-        (character_id, 'PoisonUse', 2, '{"description": "Never risk poisoning self when applying poison"}'::jsonb);
+        -- (character_id, 'PoisonUse', 2, '{"description": "Never risk poisoning self when applying poison"}'::jsonb);
+    (character_id, 'Perfect Recall', 2, '{"description": "Double Intelligence bonus on Knowledge checks"}');
 
     -- Insert ABP bonuses
     INSERT INTO character_abp_bonuses (character_id, bonus_type, value, value_target) VALUES

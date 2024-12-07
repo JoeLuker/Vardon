@@ -1,6 +1,6 @@
 <!-- src/lib/components/BuffManager.svelte -->
 <script lang="ts">
-    import { getCharacter, toggleBuff } from '$lib/state/character.svelte';
+    import { getCharacter, toggleBuff, optimisticToggleBuff, rollbackToggleBuff } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import { BUFF_CONFIG, doBuffsConflict } from '$lib/state/buffs.svelte';
     import type { KnownBuffType } from '$lib/types/character';
@@ -44,20 +44,8 @@
             key: `buff-${character.id}-${buffName}`,
             status: updateState,
             operation: () => toggleBuff(character.id, buffName, !isCurrentlyActive),
-            optimisticUpdate: () => {
-                character.character_buffs = (character.character_buffs ?? [])
-                    .map(buff => ({
-                        ...buff,
-                        is_active: buff.buff_type === buffName ? !isCurrentlyActive : buff.is_active
-                    }));
-            },
-            rollback: () => {
-                character.character_buffs = (character.character_buffs ?? [])
-                    .map(buff => buff.buff_type === buffName 
-                        ? { ...buff, is_active: isCurrentlyActive }
-                        : buff
-                    );
-            }
+            optimisticUpdate: () => optimisticToggleBuff(character.id, buffName, !isCurrentlyActive),
+            rollback: () => rollbackToggleBuff(character.id, buffName, isCurrentlyActive)
         });
     }
 </script>
