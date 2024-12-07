@@ -1,10 +1,14 @@
 <!-- src/lib/components/admin/DiscoveriesManager.svelte -->
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import { type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseCharacterDiscovery } from '$lib/types/character';
-	import type { Json } from '$lib/types/supabase';
+    import type { Json } from '$lib/types/supabase';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -14,7 +18,7 @@
     let showAddModal = $state(false);
     let editingDiscovery = $state<Partial<DatabaseCharacterDiscovery> | null>(null);
 
-    // Fix the derived store syntax
+    let character = $derived(getCharacter(characterId));
     let discoveryList = $derived([...(character.character_discoveries ?? [])].sort((a, b) => a.selected_level - b.selected_level));
 
     async function saveDiscovery() {

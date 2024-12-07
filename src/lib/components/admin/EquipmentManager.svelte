@@ -1,8 +1,12 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseCharacterEquipment } from '$lib/types/character';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -24,6 +28,7 @@
         'gear'
     ] as const;
 
+    let character = $derived(getCharacter(characterId));
     let equipmentList = $derived([...(character.character_equipment ?? [])].sort((a, b) => 
         (a.type as string).localeCompare(b.type) || a.name.localeCompare(b.name)
     ));

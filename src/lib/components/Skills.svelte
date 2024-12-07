@@ -4,10 +4,16 @@
     import SkillAllocator from './SkillAllocator.svelte';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
     import type { CalculatedStats } from '$lib/utils/characterCalculations';
-    import { character, fetchSkillData } from '$lib/state/character.svelte';
+    import { fetchSkillData } from '$lib/state/character.svelte';
     import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 
     type SkillData = CalculatedStats['skills']['byName'][string];
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
+
 
     let showSkillAllocator = $state(false);
     let updateState = $state<UpdateState>({
@@ -16,11 +22,11 @@
     });
     let isLoading = $state(true);
 
-    let stats = $derived(getCalculatedStats());
+    let stats = $derived(getCalculatedStats(characterId));
 
     onMount(() => {
         // Load skill data
-        fetchSkillData(character.id)
+        fetchSkillData(characterId)
             .catch(error => {
                 console.error('Failed to load skill data:', error);
                 updateState.error = error instanceof Error ? error : new Error('Failed to load skills');
@@ -100,7 +106,7 @@
             aria-label="Close skill allocator"
         ></button>
         <div class="card relative max-h-[90vh] w-full max-w-4xl overflow-hidden">
-            <SkillAllocator onClose={() => showSkillAllocator = false} />
+            <SkillAllocator characterId={parseInt($page.params.id)} onClose={() => showSkillAllocator = false} />
         </div>
     </div>
 {/if}

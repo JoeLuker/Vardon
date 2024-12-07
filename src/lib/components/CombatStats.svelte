@@ -1,11 +1,14 @@
 <!-- src/lib/components/CombatStats.svelte -->
 <script lang="ts">
-    import { character, updateBombs } from '$lib/state/character.svelte';
+    import { getCharacter, updateBombs } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
     import type { CalculatedStats } from '$lib/utils/characterCalculations';
     import Tooltip from '$lib/components/Tooltip.svelte';
 
+    let { characterId } = $props<{ characterId: number; }>();
+
+    let character = $derived(getCharacter(characterId));
 
     // Component state
     let isEditing = $state(false);
@@ -16,7 +19,7 @@
     });
 
     // Calculate all stats
-    let stats = $derived(getCalculatedStats());
+    let stats = $derived(getCalculatedStats(characterId));
 
     let resources = $derived(stats.resources);
     let combat = $derived(stats.combat);
@@ -81,7 +84,7 @@
         await executeUpdate({
             key: `bombs-${character.id}`,
             status: updateState,
-            operation: () => updateBombs(newValue),
+            operation: () => updateBombs(character.id, newValue),
             optimisticUpdate: () => {
                 if (character.character_combat_stats?.[0]) {
                     character.character_combat_stats[0].bombs_left = newValue;
@@ -113,7 +116,7 @@
         await executeUpdate({
             key: `bombs-${character.id}`,
             status: updateState,
-            operation: () => updateBombs(inputValue),
+            operation: () => updateBombs(character.id, inputValue),
             optimisticUpdate: () => {
                 if (character.character_combat_stats?.[0]) {
                     character.character_combat_stats[0].bombs_left = inputValue;

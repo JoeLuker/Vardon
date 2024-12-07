@@ -1,8 +1,12 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import { type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseCharacterCorruption } from '$lib/types/character';
+
+    let { characterId } = $props<{ characterId: number; }>();
+
+    let character = $derived(getCharacter(characterId));
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -12,9 +16,11 @@
     let showAddModal = $state(false);
     let editingCorruption = $state<Partial<DatabaseCharacterCorruption> | null>(null);
 
-    let corruptionList = $derived([...(character.character_corruptions ?? [])].sort(
-        (a, b) => (a.corruption_stage ?? 0) - (b.corruption_stage ?? 0)
-    ));
+    let corruptionList = $derived(
+        [...(character.character_corruptions ?? [])].sort(
+            (a, b) => (a.corruption_stage ?? 0) - (b.corruption_stage ?? 0)
+        )
+    );
 
     interface VampireManifestationProperties {
         lastFeedDate?: string;

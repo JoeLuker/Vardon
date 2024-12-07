@@ -1,6 +1,6 @@
 // src/lib/utils/stateManager.ts
 import type { Character } from '$lib/types/character';
-import { character } from '$lib/state/character.svelte';
+import { getCharacter } from '$lib/state/character.svelte';
 
 export interface StateUpdate<T> {
   key: string;
@@ -19,6 +19,7 @@ export function createStateUpdate<T>({
   updateFn,
   optimisticUpdate
 }: StateUpdate<T>) {
+  let character = $derived(getCharacter(characterId));
   return {
     key: `${key}-${characterId}`,
     execute: async () => await updateFn(newValue),

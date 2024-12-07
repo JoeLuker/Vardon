@@ -1,6 +1,13 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import type { CharacterTraitWithBase } from '$lib/types/character';
+
+    let { characterId } = $props<{ characterId: number }>();
+    let character = $derived(getCharacter(characterId) ?? {
+        id: characterId,
+        level: 0,
+        character_traits: []
+    });
 
     // Group traits by type for display
     let traitsByType = $derived(

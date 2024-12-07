@@ -1,10 +1,11 @@
 <script lang="ts">
-    import type { Character } from '$lib/types/character';
+    import { getCharacter } from '$lib/state/character.svelte';
 
-    let { character } = $props<{
-        character: Pick<Character, 'name' | 'ancestry' | 'class' | 'level'>
+    let { characterId } = $props<{
+        characterId: number;
     }>();
 
+    let character = $derived(getCharacter(characterId));
     let name = $derived(character.name);
     let ancestry = $derived(character.ancestry);
     let characterClass = $derived(character.class);

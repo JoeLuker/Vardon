@@ -2,7 +2,9 @@
     import type { ABPBonuses } from '$lib/types/abp';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
 
-    let stats = $derived(getCalculatedStats());
+    let { characterId } = $props<{ characterId: number; }>();
+
+    let stats = $derived(getCalculatedStats(characterId));
     let bonuses = $derived(stats.defenses.abpBonuses);
     
     const bonusLabels: Record<keyof ABPBonuses, string> = {

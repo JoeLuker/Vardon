@@ -1,10 +1,11 @@
+// src/lib/state/buffs.svelte.ts
 import type { KnownBuffType } from '$lib/types/character';
 import type { Buff, BuffEffect } from '$lib/types/buffs';
 
 export const MUTAGEN_TYPES = ['dex_mutagen', 'str_mutagen', 'con_mutagen'] as const;
 export const COGNATOGEN_TYPES = ['int_cognatogen', 'wis_cognatogen', 'cha_cognatogen'] as const;
 
-export const BUFF_CONFIG: Buff[] = [
+export const BUFF_CONFIG: Buff[] = $state([
     {
         name: 'int_cognatogen',
         label: 'Intelligence Cognatogen',
@@ -99,28 +100,28 @@ export const BUFF_CONFIG: Buff[] = [
         ],
         description: 'Fight with a weapon in each hand'
     }
-];
+]);
 
 // Helper function to get buff by name
 export function getBuff(name: KnownBuffType): Buff | undefined {
     return BUFF_CONFIG.find(buff => buff.name === name);
 }
 
-// Helper function to check if buffs conflict
-export function doBuffsConflict(buff1: KnownBuffType, buff2: KnownBuffType): boolean {
-    const buffConfig1 = getBuff(buff1);
-    return buffConfig1?.conflicts?.includes(buff2) ?? false;
-}
-
 // Helper function to get all effects of a specific type
 export function getBuffEffects<T extends keyof BuffEffect>(
-    activeBuffs: KnownBuffType[],
+    activeBuffs: Set<KnownBuffType>,
     effectType: T
 ): Array<NonNullable<BuffEffect[T]>> {
-    return activeBuffs
+    return Array.from(activeBuffs)
         .map(buffName => getBuff(buffName))
         .filter((buff): buff is Buff => buff !== undefined)
         .flatMap(buff => buff.effects)
         .map(effect => effect[effectType])
         .filter((value): value is NonNullable<BuffEffect[T]> => value !== undefined);
+}
+
+// Helper to check conflicts
+export function doBuffsConflict(activeBuff: KnownBuffType, newBuff: KnownBuffType): boolean {
+    const buff = BUFF_CONFIG.find(b => b.name === newBuff);
+    return !!buff?.conflicts?.includes(activeBuff);
 }

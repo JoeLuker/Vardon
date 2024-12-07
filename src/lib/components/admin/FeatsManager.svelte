@@ -1,10 +1,14 @@
 <!-- src/lib/components/admin/FeatsManager.svelte -->
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import type { UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseCharacterFeat } from '$lib/types/character';
     import type { Json } from '$lib/types/supabase';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -14,7 +18,7 @@
     let showAddModal = $state(false);
     let editingFeat = $state<Partial<DatabaseCharacterFeat> | null>(null);
 
-    // Replace featsByType with a simple sorted list
+    let character = $derived(getCharacter(characterId));
     let featList = $derived([...(character.character_feats ?? [])].sort((a, b) => a.selected_level - b.selected_level));
 
     // Keep featTypes for the dropdown

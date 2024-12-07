@@ -2,6 +2,9 @@
 <script lang="ts">
     import type { CharacterAttributes } from '$lib/types/character';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
+
+    let { characterId } = $props<{ characterId: number; }>();
+
     
     interface AttributeDefinition { 
         key: keyof CharacterAttributes; 
@@ -20,7 +23,7 @@
     ]);
 
     // Calculate all stats
-    let stats = $derived(getCalculatedStats());
+    let stats = $derived(getCalculatedStats(characterId));
 
     // Transform attributes for display with modifier sources
     let attributesList = $derived(attributeDefinitions.map(attr => {

@@ -1,8 +1,12 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import type { UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseCharacterFavoredClassBonus } from '$lib/types/character';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     type FCBLevelItem = {
         level: number;
@@ -16,6 +20,8 @@
 
     let showAddModal = $state(false);
     let editingFCB = $state<Partial<DatabaseCharacterFavoredClassBonus> | null>(null);
+
+    let character = $derived(getCharacter(characterId));
 
     // Define the computation functions separately
     function computeFCBList(): DatabaseCharacterFavoredClassBonus[] {

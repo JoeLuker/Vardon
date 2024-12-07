@@ -1,10 +1,14 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import type { DatabaseCharacterDiscovery } from '$lib/types/character';
 
     interface TransformedDiscovery extends DatabaseCharacterDiscovery {
         displayName: string;
     }
+
+    let { characterId } = $props<{ characterId: number; }>();
+
+    let character = $derived(getCharacter(characterId));
 
     // Transform discoveries for display
     let discoveryList = $derived(

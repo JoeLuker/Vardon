@@ -1,14 +1,20 @@
 <script lang="ts">
+    import { getCharacter } from '$lib/state/character.svelte';
     import type { DatabaseCharacterEquipment } from '$lib/types/character';
+
+    let { characterId } = $props<{ characterId: number }>();
+
+    // Return the character directly, not via an arrow function
+    let character = $derived(getCharacter(characterId));
+
+    // Directly return the array, no arrow function
+    let equipment = $derived(character.character_equipment ?? []);
 
     interface TransformedEquipment extends DatabaseCharacterEquipment {
         displayName: string;
     }
 
-    let { equipment = [] } = $props<{
-        equipment: DatabaseCharacterEquipment[]
-    }>();
-
+    // Directly map over equipment without an arrow function in $derived
     let equipmentList = $derived(
         equipment.map((item: DatabaseCharacterEquipment): TransformedEquipment => ({
             ...item,
@@ -22,6 +28,7 @@
 
     type EquipmentByType = Record<string, TransformedEquipment[]>;
 
+    // Same for reduce, directly returning the reduced value
     let equipmentByType = $derived(
         equipmentList.reduce((acc: EquipmentByType, item: TransformedEquipment) => {
             if (!acc[item.type]) {
@@ -53,7 +60,7 @@
         </div>
     {/each}
 
-    {#if !equipment.length}
+    {#if equipment.length === 0}
         <div class="text-gray-500">No equipment</div>
     {/if}
-</div> 
+</div>

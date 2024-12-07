@@ -10,7 +10,7 @@ import type {
 } from '$lib/types/character';
 import { getABPBonuses, type ABPBonuses } from '$lib/types/abp';
 import type { Buff, BuffEffect } from '$lib/types/buffs';
-import { BUFF_CONFIG } from '$lib/config/buffs';
+import { BUFF_CONFIG } from '$lib/state/buffs.svelte';
 
 
 type CharacterEquipment = DbTables['character_equipment']['Row'];

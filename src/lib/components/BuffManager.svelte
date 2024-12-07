@@ -1,92 +1,67 @@
 <!-- src/lib/components/BuffManager.svelte -->
 <script lang="ts">
-    import { character, toggleBuff } from '$lib/state/character.svelte';
+    import { getCharacter, toggleBuff } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+    import { BUFF_CONFIG, doBuffsConflict } from '$lib/state/buffs.svelte';
     import type { KnownBuffType } from '$lib/types/character';
-    import type { Buff } from '$lib/types/buffs';
-    import { BUFF_CONFIG } from '$lib/config/buffs';
 
-
+    let { characterId } = $props<{ characterId: number }>();
 
     let updateState = $state<UpdateState>({
         status: 'idle',
         error: null
     });
 
-    let activeBuffs = $derived(
-        new Set(
-            (character.character_buffs ?? [])
-                .filter(b => b.is_active)
-                .map(b => b.buff_type as KnownBuffType)
-        )
-    );
+    // Get character and derive active buffs
+    let character = $derived(getCharacter(characterId));
+    let activeBuffs = $derived(() => {
+        const buffs = new Set<KnownBuffType>();
+        for (const buff of character.character_buffs ?? []) {
+            if (buff.is_active && buff.buff_type) {
+                buffs.add(buff.buff_type as KnownBuffType);
+            }
+        }
+        return buffs;
+    });
 
+    // Helper functions with proper typing
     function isBuffActive(buffName: KnownBuffType): boolean {
-        return activeBuffs.has(buffName);
-    }
-    function hasActiveConflict(buff: Buff & { conflicts: KnownBuffType[], name: KnownBuffType }): boolean {
-        return !isBuffActive(buff.name) && (buff.conflicts?.some((c: KnownBuffType) => isBuffActive(c)) ?? false);
+        return activeBuffs().has(buffName);
     }
 
+    function hasActiveConflict(buffName: KnownBuffType): boolean {
+        return !isBuffActive(buffName) && 
+            Array.from(activeBuffs()).some((active: KnownBuffType) => 
+                doBuffsConflict(active, buffName)
+            );
+    }
+
+    // Handle toggling buffs
     async function handleBuffToggle(buffName: KnownBuffType) {
         const isCurrentlyActive = isBuffActive(buffName);
-        const buff = BUFF_CONFIG.find((b) => b.name === buffName) as (Buff & { conflicts: KnownBuffType[], name: KnownBuffType });
-        if (!buff) return;
-
-        const previousBuffStates = new Map(
-            character.character_buffs?.map(b => [b.buff_type, b.is_active]) ?? []
-        );
-
+        
         await executeUpdate({
             key: `buff-${character.id}-${buffName}`,
             status: updateState,
-            operation: async () => {
-                // Deactivate conflicting buffs first
-                if (!isCurrentlyActive && buff.conflicts.length > 0) {
-                    for (const conflict of buff.conflicts) {
-                        if (isBuffActive(conflict)) {
-                            await toggleBuff(conflict, false);
-                        }
-                    }
-                }
-                await toggleBuff(buffName, !isCurrentlyActive);
-            },
+            operation: () => toggleBuff(character.id, buffName, !isCurrentlyActive),
             optimisticUpdate: () => {
-                if (character.character_buffs) {
-                    // Update the target buff
-                    const targetBuff = character.character_buffs.find(
-                        b => b.buff_type === buffName
-                    );
-                    if (targetBuff) {
-                        targetBuff.is_active = !isCurrentlyActive;
-                    }
-
-                    // Update conflicting buffs
-                    if (!isCurrentlyActive && buff.conflicts.length > 0) {
-                        for (const conflict of buff.conflicts) {
-                            const conflictBuff = character.character_buffs.find(
-                                b => b.buff_type === conflict
-                            );
-                            if (conflictBuff?.is_active) {
-                                conflictBuff.is_active = false;
-                            }
-                        }
-                    }
-                }
+                character.character_buffs = (character.character_buffs ?? [])
+                    .map(buff => ({
+                        ...buff,
+                        is_active: buff.buff_type === buffName ? !isCurrentlyActive : buff.is_active
+                    }));
             },
             rollback: () => {
-                if (character.character_buffs) {
-                    character.character_buffs.forEach(buff => {
-                        const previousState = previousBuffStates.get(buff.buff_type);
-                        if (previousState !== undefined) {
-                            buff.is_active = previousState;
-                        }
-                    });
-                }
+                character.character_buffs = (character.character_buffs ?? [])
+                    .map(buff => buff.buff_type === buffName 
+                        ? { ...buff, is_active: isCurrentlyActive }
+                        : buff
+                    );
             }
         });
     }
 </script>
+
 <div class="card space-y-6">
     <div class="section-header">
         <h2>Active Effects</h2>
@@ -98,16 +73,17 @@
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {#each BUFF_CONFIG as buff (buff.name)}
             {@const isActive = isBuffActive(buff.name as KnownBuffType)}
-            {@const buffWithConflicts = buff as Buff & { conflicts: KnownBuffType[], name: KnownBuffType }}
+            {@const hasConflict = hasActiveConflict(buff.name as KnownBuffType)}
+            
             <button
                 class="group relative overflow-hidden rounded-lg border-2 p-4 text-left 
                        transition-all duration-300 focus:outline-none focus:ring-2
                        {isActive 
                            ? 'border-primary-300 bg-primary-300 text-white' 
                            : 'border-primary-300/20 hover:border-primary-300/50 bg-white'} 
-                       {hasActiveConflict(buffWithConflicts) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-102'}"
+                       {hasConflict ? 'opacity-50 cursor-not-allowed' : 'hover:scale-102'}"
                 onclick={() => handleBuffToggle(buff.name as KnownBuffType)}
-                disabled={updateState.status === 'syncing' || hasActiveConflict(buffWithConflicts)}
+                disabled={updateState.status === 'syncing' || hasConflict}
                 aria-label="{isActive ? 'Deactivate' : 'Activate'} {buff.label}"
             >
                 <div class="flex items-start gap-3">
@@ -125,6 +101,11 @@
                                         </div>
                                     </div>
                                 {/each}
+                            </div>
+                        {/if}
+                        {#if hasConflict}
+                            <div class="mt-2 text-xs text-red-500">
+                                Conflicts with active buff
                             </div>
                         {/if}
                     </div>

@@ -1,9 +1,13 @@
 <!-- src/lib/components/admin/SkillsManager.svelte -->
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import { type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseBaseSkill } from '$lib/types/character';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -12,6 +16,8 @@
 
     let showAddModal = $state(false);
     let editingSkill = $state<Partial<DatabaseBaseSkill> | null>(null);
+
+    let character = $derived(getCharacter(characterId));
 
     // Local derivations
     let baseSkills = $derived(character.base_skills ?? []);

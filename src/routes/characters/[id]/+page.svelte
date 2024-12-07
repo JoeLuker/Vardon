@@ -1,4 +1,3 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
     import CharacterHeader from '$lib/components/CharacterHeader.svelte';
     import HPTracker from '$lib/components/HPTracker.svelte';
@@ -17,113 +16,75 @@
     import AncestryDisplay from '$lib/components/AncestryDisplay.svelte';
     import Equipment from '$lib/components/Equipment.svelte';
     import CorruptionViewer from '$lib/components/CorruptionViewer.svelte';
-    import type { 
-        DatabaseCharacterAttribute,
-        DatabaseBaseSkill,
-        CharacterSkillRank,
-        DatabaseClassSkillRelation,
-        DatabaseCharacterCombatStats,
-        CharacterBuff,
-        DatabaseCharacterEquipment,
-        DatabaseCharacterConsumables,
-        DatabaseCharacterSpellSlot,
-        DatabaseCharacterKnownSpell,
-        DatabaseCharacterClassFeature,
-        DatabaseCharacterDiscovery,
-        DatabaseCharacterFavoredClassBonus,
-        CharacterTraitWithBase,
-        DatabaseCharacterAncestry,
-        DatabaseCharacterAncestralTrait
-    } from '$lib/types/character';
+    import type { PageData } from './$types';
 
-    interface LoadedCharacter {
-        id: number;
-        name: string;
-        ancestry: string;
-        class: string;
-        level: number;
-        current_hp: number;
-        max_hp: number;
-        created_at: string | null;
-        updated_at: string | null;
-        last_synced_at: string | null;
-        is_offline: boolean | null;
-        user_id: string | null;
-        // Arrays from database
-        base_skills: DatabaseBaseSkill[];
-        character_skill_ranks: CharacterSkillRank[];
-        class_skill_relations: DatabaseClassSkillRelation[];
-        character_attributes: DatabaseCharacterAttribute[];
-        character_buffs: CharacterBuff[];
-        character_combat_stats: DatabaseCharacterCombatStats[];
-        character_consumables: DatabaseCharacterConsumables[];
-        character_spell_slots: DatabaseCharacterSpellSlot[];
-        character_known_spells: DatabaseCharacterKnownSpell[];
-        character_class_features: DatabaseCharacterClassFeature[];
-        character_discoveries: DatabaseCharacterDiscovery[];
-        character_equipment: DatabaseCharacterEquipment[];
-        character_favored_class_bonuses: DatabaseCharacterFavoredClassBonus[];
-        character_traits: CharacterTraitWithBase[];
-        character_ancestries: DatabaseCharacterAncestry[];
-        character_ancestral_traits: DatabaseCharacterAncestralTrait[];
-    }
+    let { data } = $props<{ data: PageData }>();
+    console.log('🎲 Page data received:', data);
+    let characterId = data.character?.id;
+    console.log('🆔 Character ID:', characterId);
 
-    interface LoadedPageData {
-        character: LoadedCharacter;
-    }
+    let initialized = $state(false);
 
-    let { data } = $props<{ data: LoadedPageData }>();
-    let character = $derived<LoadedCharacter>(data.character);
-
-    $effect(() => {
-        try {
-            initializeCharacter(character);
-        } catch (error) {
-            console.error('Failed to initialize character:', error);
+        $effect(() => {
+        console.log('⚡ Effect running, character data:', data.character);
+        if (data.character) {
+            try {
+                console.log('🔄 Initializing character...');
+                initializeCharacter(data.character); // sets the global $state
+                initialized = true;
+                console.log('✅ Character initialized successfully');
+            } catch (error) {
+                console.error('❌ Failed to initialize character:', error);
+            }
         }
     });
+
 </script>
 
-<div class="mx-auto max-w-7xl p-2 sm:p-4">
-    <div class="grid gap-3">
-        <CharacterHeader {character} />
-        <HPTracker 
-            currentHp={character.current_hp} 
-            maxHp={character.max_hp} 
-        />
-        
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div class="lg:col-span-1">
-                <Attributes />
-                <Equipment equipment={character.character_equipment} />
+{#if characterId && initialized}
+    <div class="mx-auto max-w-7xl p-2 sm:p-4">
+        <div class="grid gap-3">
+            <CharacterHeader characterId={characterId} />
+            <HPTracker 
+                characterId={characterId}
+            />
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div class="lg:col-span-1">
+                    <Attributes characterId={characterId} />
+                    <Equipment characterId={characterId} />
+                </div>
+                <div class="lg:col-span-2">
+                    <Skills characterId={characterId} />
+                </div>
             </div>
-            <div class="lg:col-span-2">
-                <Skills />
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <CombatStats />
-            <BuffManager />
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <div class="grid grid-cols-1 gap-3">
-                <SpellManager />
-                <Consumables />
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <CombatStats characterId={characterId}/>
+                <BuffManager characterId={characterId} />
             </div>
-            <div class="grid grid-cols-1 gap-3">
-                <ClassFeatures />
-                <Discoveries />
-                <Feats />
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <ABPDisplay />
-            <AncestryDisplay />
-            <Traits />
-            <CorruptionViewer />
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-3">
+                    <SpellManager characterId={characterId}/>
+                    <Consumables characterId={characterId}/>
+                </div>
+                <div class="grid grid-cols-1 gap-3">
+                    <ClassFeatures characterId={characterId}/>
+                    <Discoveries characterId={characterId} />
+                    <Feats characterId={characterId}/>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <ABPDisplay characterId={characterId}/>
+                <AncestryDisplay characterId={characterId}/>
+                <Traits characterId={characterId}/>
+                <CorruptionViewer characterId={characterId}/>
+            </div>
         </div>
     </div>
-</div>
+{:else}
+    <div class="flex items-center justify-center h-screen">
+        <p>Loading character data...</p>
+    </div>
+{/if}

@@ -1,9 +1,17 @@
 <script lang="ts">
     import { slide } from 'svelte/transition';
-    import { character, updateSpellSlot } from '$lib/state/character.svelte';
+    import { getCharacter, updateSpellSlot } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import type { DatabaseCharacterSpellSlot, DatabaseCharacterKnownSpell } from '$lib/types/character';
     import ResourceTracker from '$lib/components/ResourceTracker.svelte';
+
+    let { characterId } = $props<{ characterId: number }>();
+    let character = $derived(getCharacter(characterId) ?? {
+        id: characterId,
+        level: 0,
+        character_spell_slots: [],
+        character_known_spells: []
+    });
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -53,7 +61,7 @@
         await executeUpdate({
             key: `spell-slot-${character.id}-${level}`,
             status: updateState,
-            operation: () => updateSpellSlot(level, remaining),
+            operation: () => updateSpellSlot(character.id, level, remaining),
             optimisticUpdate: () => {
                 if (character.character_spell_slots) {
                     const slot = character.character_spell_slots.find(

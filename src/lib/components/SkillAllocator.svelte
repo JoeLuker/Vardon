@@ -1,14 +1,22 @@
 <script lang="ts">
-    import { character, fetchSkillData } from '$lib/state/character.svelte';
+    import { getCharacter, fetchSkillData } from '$lib/state/character.svelte';
     import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/types/character';
     import { supabase } from '$lib/supabaseClient';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 	import { onMount } from 'svelte';
     import { getCalculatedStats } from '$lib/state/calculatedStats.svelte';
 
-    let { onClose } = $props<{
+    let { onClose, characterId } = $props<{
         onClose: () => void;
+        characterId: number;
     }>();
+
+    let character = $derived(getCharacter(characterId) ?? {
+        id: characterId,
+        level: 0,
+        base_skills: [],
+        character_skill_ranks: []
+    });
 
     let pendingChanges = $state<Required<Pick<CharacterSkillRank, 'skill_id' | 'ranks' | 'applied_at_level' | 'source'>>[]>([]);
     let isSaving = $state(false);
@@ -17,7 +25,7 @@
         error: null 
     });
 
-    let stats = $derived(getCalculatedStats());
+    let stats = $derived(getCalculatedStats(characterId));
 
     // Add new reactive variable for mobile view
     let isMobileView = $state(false);
@@ -51,7 +59,8 @@
     });
 
     function canAddRankAtLevel(skillName: string, level: number): boolean {
-        const skillData = stats.skills.byName[skillName];
+        if (!character) return false;
+        const skillData = stats?.skills?.byName[skillName];
         if (!skillData) {
             console.warn(`No skill data found for ${skillName}`);
             return false;
@@ -95,6 +104,7 @@
     }
 
     function handleRankChange(skillName: string, level: number, checked: boolean) {
+        if (!character) return;
         if (checked && !canAddRankAtLevel(skillName, level)) return;
 
         const skill = character.base_skills?.find(s => s.name === skillName);
@@ -155,7 +165,7 @@
     }
 
     async function handleSave() {
-        if (isSaving) return;
+        if (!character || isSaving) return;
         isSaving = true;
         
         // Store original state for rollback

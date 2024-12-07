@@ -1,10 +1,14 @@
 <!-- src/lib/components/admin/ClassFeaturesManager.svelte -->
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import { type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
     import type { DatabaseCharacterClassFeature } from '$lib/types/character';
     import type { Json } from '$lib/types/supabase';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -14,6 +18,7 @@
     let showAddModal = $state(false);
     let editingFeature = $state<Partial<DatabaseCharacterClassFeature> | null>(null);
 
+    let character = $derived(getCharacter(characterId));
     let featureList = $derived([...(character.character_class_features ?? [])].sort((a, b) => a.feature_level - b.feature_level));
 
     async function saveFeature() {

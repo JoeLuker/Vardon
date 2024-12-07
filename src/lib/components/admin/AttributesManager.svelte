@@ -1,6 +1,6 @@
 <!-- src/lib/components/admin/AttributesManager.svelte -->
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import { supabase } from '$lib/supabaseClient';
 
@@ -9,6 +9,10 @@
         label: string;
         description: string;
     }
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
 
     const attributeFields: AttributeField[] = [
         { key: 'str', label: 'Strength', description: 'Physical power and carrying capacity' },
@@ -26,6 +30,7 @@
 
     let editMode = $state(false);
     let tempValues = $state<Record<string, number>>({});
+    let character = $derived(getCharacter(characterId));
 
     function startEdit() {
         editMode = true;

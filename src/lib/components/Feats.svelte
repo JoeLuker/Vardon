@@ -1,6 +1,12 @@
 <script lang="ts">
-    import { character } from '$lib/state/character.svelte';
+    import { getCharacter } from '$lib/state/character.svelte';
     import type { DatabaseCharacterFeat } from '$lib/types/character';
+
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
+
+    let character = $derived(getCharacter(characterId));
 
     interface TransformedFeat extends DatabaseCharacterFeat {
         displayName: string;

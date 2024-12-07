@@ -1,23 +1,39 @@
 <script lang="ts">
-    import { character, updateHP } from '$lib/state/character.svelte';
+    import { getCharacter, updateHP } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 
-    let { currentHp, maxHp } = $props<{
-        currentHp: number;
-        maxHp: number;
-    }>();
+    let { characterId } = $props<{ characterId: number }>();
 
-    let sliderValue = $state(currentHp);
+    // Directly get the character once
+    const initialCharacter = getCharacter(characterId);
+    // Initialize sliderValue from a normal value, no reactivity yet
+    let sliderValue = $state<number>(initialCharacter.current_hp);
+
+    let character = $derived(getCharacter(characterId));
+    let currentHp = $derived(character.current_hp);
+    let maxHp = $derived(character.max_hp);
+
     let isSliding = $state(false);
     let updateState = $state<UpdateState>({
         status: 'idle',
         error: null
     });
 
-    let displayHP = $derived(isSliding ? sliderValue : currentHp);
-    let hpPercentage = $derived(Math.round((displayHP / maxHp) * 100));
+    // If you want sliderValue to follow currentHp when not sliding:
+    $effect(() => {
+        if (!isSliding) {
+            sliderValue = currentHp;
+        }
+    });
 
-    // Quick actions with improved visual feedback
+    // For hpPercentage, convert the if-check into a single expression using a ternary
+    let hpPercentage = $derived(
+        maxHp === 0
+            ? 0
+            : Math.round((sliderValue / maxHp) * 100)
+    );
+
+    // Quick actions remain the same
     let quickActions = $state([
         { amount: -5, label: '-5', class: 'text-accent hover:bg-accent/10' },
         { amount: -1, label: '-1', class: 'text-accent hover:bg-accent/10' },
@@ -40,9 +56,9 @@
         const previousValue = currentHp;
 
         await executeUpdate({
-            key: `hp-${character.id}`,
+            key: `hp-${characterId}`,
             status: updateState,
-            operation: () => updateHP(newValue),
+            operation: () => updateHP(characterId, newValue),
             optimisticUpdate: () => {
                 character.current_hp = newValue;
             },
@@ -55,15 +71,17 @@
     async function handleSliderUpdate(newValue: number) {
         if (newValue === currentHp) return;
 
+        const previousValue = currentHp;
+
         await executeUpdate({
-            key: `hp-${character.id}`,
+            key: `hp-${characterId}`,
             status: updateState,
-            operation: () => updateHP(newValue),
+            operation: () => updateHP(characterId, newValue),
             optimisticUpdate: () => {
                 character.current_hp = newValue;
             },
             rollback: () => {
-                character.current_hp = currentHp;
+                character.current_hp = previousValue;
             }
         });
     }
@@ -112,7 +130,7 @@
     <div class="grid grid-cols-4 gap-3">
         {#each quickActions as { amount, label, class: buttonClass }}
             {@const isDisabled = updateState.status === 'syncing' || 
-                (amount < 0 ? displayHP <= 0 : displayHP >= maxHp)}
+                (amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp)}
             <button
                 class="interactive focus-ring rounded-lg border-2 border-transparent 
                        bg-white/50 py-3 font-medium shadow-sm backdrop-blur-sm
@@ -127,7 +145,7 @@
 
     <!-- Current HP Display -->
     <div class="flex items-baseline justify-center gap-2">
-        <div class="text-4xl font-bold text-primary">{displayHP}</div>
+        <div class="text-4xl font-bold text-primary">{sliderValue}</div>
         <div class="text-xl text-ink-light">/ {maxHp}</div>
     </div>
 
@@ -137,25 +155,3 @@
         </div>
     {/if}
 </div>
-
-<style>
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 16px;
-        height: 16px;
-        opacity: 0;
-    }
-
-    input[type="range"]::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        opacity: 0;
-        border: 0;
-    }
-    
-    input[type="range"]::-ms-thumb {
-        width: 16px;
-        height: 16px;
-        opacity: 0;
-    }
-</style>

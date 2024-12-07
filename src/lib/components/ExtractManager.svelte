@@ -1,8 +1,13 @@
 <script lang="ts">
-    import { character, updateExtract } from '$lib/state/character.svelte';
+    import { getCharacter, updateExtract } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import type { DatabaseCharacterExtract } from '$lib/types/character';
 
+    let { characterId } = $props<{
+        characterId: number;
+    }>();
+
+    let character = $derived(getCharacter(characterId));
     let showPrepareModal = $state(false);
     let updateState = $state<UpdateState>({
         status: 'idle',
@@ -54,7 +59,7 @@
         await executeUpdate({
             key: `extract-${character.id}-${extract.id}`,
             status: updateState,
-            operation: () => updateExtract(extract.id, { used: 1 }),
+            operation: () => updateExtract(character.id, extract.id, { used: 1 }),
             optimisticUpdate: () => {
                 if (character.character_extracts) {
                     const target = character.character_extracts.find(e => e.id === extract.id);
@@ -88,7 +93,7 @@
         await executeUpdate({
             key: `extract-prepare-${character.id}-${extract.id}`,
             status: updateState,
-            operation: () => updateExtract(extract.id, { prepared: 1, used: 0 }),
+            operation: () => updateExtract(character.id, extract.id, { prepared: 1, used: 0 }),
             optimisticUpdate: () => {
                 if (character.character_extracts) {
                     const target = character.character_extracts.find(e => e.id === extract.id);

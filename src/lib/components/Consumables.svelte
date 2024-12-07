@@ -1,9 +1,12 @@
 <!-- src/lib/components/Consumables.svelte -->
 <script lang="ts">
     import type { ConsumableKey } from '$lib/types/character';
-    import { character, updateConsumable } from '$lib/state/character.svelte';
+    import { getCharacter, updateConsumable } from '$lib/state/character.svelte';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 
+    let { characterId } = $props<{ characterId: number; }>();
+
+    let character = $derived(getCharacter(characterId));
     let editingType = $state<ConsumableKey | null>(null);
     let inputValue = $state(0);
     let updateState = $state<UpdateState>({
@@ -57,13 +60,14 @@
         const newValue = Math.max(0, Math.min(10, currentValue + amount));
         if (newValue === currentValue) return;
 
-        const previousValue = currentValue;
+        let previousValue = $state(currentValue);
 
         await executeUpdate({
             key: `consumable-${character.id}-${type}`,
             status: updateState,
-            operation: () => updateConsumable(type, newValue),
+            operation: () => updateConsumable(character.id, type, newValue),
             optimisticUpdate: () => {
+                previousValue = currentValue;
                 if (character.character_consumables?.[0]) {
                     character.character_consumables[0][type] = newValue;
                 }
@@ -91,14 +95,15 @@
         }
 
         const type = editingType;
-        const previousValue = consumableValues[type];
+        let previousValue = $state(consumableValues[type]);
         editingType = null;
 
         await executeUpdate({
             key: `consumable-${character.id}-${type}`,
             status: updateState,
-            operation: () => updateConsumable(type, inputValue),
+            operation: () => updateConsumable(character.id, type, inputValue),
             optimisticUpdate: () => {
+                previousValue = consumableValues[type];
                 if (character.character_consumables?.[0]) {
                     character.character_consumables[0][type] = inputValue;
                 }
