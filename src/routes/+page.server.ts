@@ -1,4 +1,4 @@
-import { supabase } from '$lib/supabaseClient';
+import { supabase } from '$lib/db/supabaseClient';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

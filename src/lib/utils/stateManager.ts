@@ -1,5 +1,5 @@
 // src/lib/utils/stateManager.ts
-import type { Character } from '$lib/types/character';
+import type { Character } from '$lib/domain/types/character';
 import { getCharacter } from '$lib/state/character.svelte';
 
 export interface StateUpdate<T> {

@@ -1,6 +1,6 @@
 <script lang="ts">
     import '../app.css';
-    import NetworkStatusIndicator from '$lib/components/NetworkStatusIndicator.svelte';
+    import NetworkStatusIndicator from '$lib/ui/NetworkStatusIndicator.svelte';
     import type { Snippet } from 'svelte';
 
     let { children } = $props<{

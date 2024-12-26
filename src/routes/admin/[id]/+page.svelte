@@ -1,16 +1,16 @@
 <!-- src/routes/admin/+page.svelte -->
 <script lang="ts">
     import { initializeCharacter } from '$lib/state/character.svelte';
-    import AttributesManager from '$lib/components/admin/AttributesManager.svelte';
-    import FeatsManager from '$lib/components/admin/FeatsManager.svelte';
-    import DiscoveriesManager from '$lib/components/admin/DiscoveriesManager.svelte';
-    import ClassFeaturesManager from '$lib/components/admin/ClassFeaturesManager.svelte';
-    import SkillsManager from '$lib/components/admin/SkillsManager.svelte';
-    import FavoredClassBonusesManager from '$lib/components/admin/FavoredClassBonusesManager.svelte';
-    import TraitsManager from '$lib/components/admin/TraitsManager.svelte';
-    import AncestryManager from '$lib/components/admin/AncestryManager.svelte';
-    import EquipmentManager from '$lib/components/admin/EquipmentManager.svelte';
-    import CorruptionManager from '$lib/components/admin/CorruptionManager.svelte';
+    import AttributesManager from '$lib/ui/admin/AttributesManager.svelte';
+    import FeatsManager from '$lib/ui/admin/FeatsManager.svelte';
+    import DiscoveriesManager from '$lib/ui/admin/DiscoveriesManager.svelte';
+    import ClassFeaturesManager from '$lib/ui/admin/ClassFeaturesManager.svelte';
+    import SkillsManager from '$lib/ui/admin/SkillsManager.svelte';
+    import FavoredClassBonusesManager from '$lib/ui/admin/FavoredClassBonusesManager.svelte';
+    import TraitsManager from '$lib/ui/admin/TraitsManager.svelte';
+    import AncestryManager from '$lib/ui/admin/AncestryManager.svelte';
+    import EquipmentManager from '$lib/ui/admin/EquipmentManager.svelte';
+    import CorruptionManager from '$lib/ui/admin/CorruptionManager.svelte';
     import type { PageData } from './$types';
 
     let activeTab = $state('attributes');

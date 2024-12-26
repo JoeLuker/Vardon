@@ -1,6 +1,6 @@
 // src/lib/state/calculatedStats.svelte.ts
-import { getCharacter } from './character.svelte';
-import { calculateCharacterStats } from '$lib/utils/characterCalculations';
+import { getCharacter } from '$lib/state/character.svelte';
+import { calculateCharacterStats } from '$lib/domain/calculations/characterCalculations';
 
 export function getCalculatedStats(id: number) {
     // Directly re-run calculations each time

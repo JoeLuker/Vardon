@@ -1,6 +1,6 @@
 // src/lib/state/buffs.svelte.ts
-import type { KnownBuffType } from '$lib/types/character';
-import type { Buff, BuffEffect } from '$lib/types/buffs';
+import type { KnownBuffType } from '$lib/domain/types/character';
+import type { Buff, BuffEffect } from '$lib/domain/types/buffs';
 
 export const MUTAGEN_TYPES = ['dex_mutagen', 'str_mutagen', 'con_mutagen'] as const;
 export const COGNATOGEN_TYPES = ['int_cognatogen', 'wis_cognatogen', 'cha_cognatogen'] as const;

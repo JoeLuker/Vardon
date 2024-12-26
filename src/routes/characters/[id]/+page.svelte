@@ -1,21 +1,21 @@
 <script lang="ts">
-    import CharacterHeader from '$lib/components/CharacterHeader.svelte';
-    import HPTracker from '$lib/components/HPTracker.svelte';
-    import Attributes from '$lib/components/Attributes.svelte';
-    import Skills from '$lib/components/Skills.svelte';
-    import CombatStats from '$lib/components/CombatStats.svelte';
-    import Consumables from '$lib/components/Consumables.svelte';
-    import BuffManager from '$lib/components/BuffManager.svelte';
-    import SpellManager from '$lib/components/SpellManager.svelte';
-    import ClassFeatures from '$lib/components/ClassFeatures.svelte';
-    import Discoveries from '$lib/components/Discoveries.svelte';
-    import Feats from '$lib/components/Feats.svelte';
-    import ABPDisplay from '$lib/components/ABPDisplay.svelte';
-    import Traits from '$lib/components/Traits.svelte';
+    import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
+    import HPTracker from '$lib/ui/HPTracker.svelte';
+    import Attributes from '$lib/ui/Attributes.svelte';
+    import Skills from '$lib/ui/Skills.svelte';
+    import CombatStats from '$lib/ui/CombatStats.svelte';
+    import Consumables from '$lib/ui/Consumables.svelte';
+    import BuffManager from '$lib/ui/BuffManager.svelte';
+    import SpellManager from '$lib/ui/SpellManager.svelte';
+    import ClassFeatures from '$lib/ui/ClassFeatures.svelte';
+    import Discoveries from '$lib/ui/Discoveries.svelte';
+    import Feats from '$lib/ui/Feats.svelte';
+    import ABPDisplay from '$lib/ui/ABPDisplay.svelte';
+    import Traits from '$lib/ui/Traits.svelte';
     import { initializeCharacter } from '$lib/state/character.svelte';
-    import AncestryDisplay from '$lib/components/AncestryDisplay.svelte';
-    import Equipment from '$lib/components/Equipment.svelte';
-    import CorruptionViewer from '$lib/components/CorruptionViewer.svelte';
+    import AncestryDisplay from '$lib/ui/AncestryDisplay.svelte';
+    import Equipment from '$lib/ui/Equipment.svelte';
+    import CorruptionViewer from '$lib/ui/CorruptionViewer.svelte';
     import type { PageData } from './$types';
 
     let { data } = $props<{ data: PageData }>();
