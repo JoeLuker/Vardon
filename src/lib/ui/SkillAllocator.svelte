@@ -1,10 +1,15 @@
 <script lang="ts">
     import { getCharacter, fetchSkillData } from '$lib/state/character.svelte';
     import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/domain/types/character';
-    import { supabase } from '$lib/db/supabaseClient';
     import { executeUpdate, type UpdateState } from '$lib/utils/updates';
     import { onMount } from 'svelte';
     import { calculateCharacterStats } from '$lib/domain/calculations/characterCalculations';
+    import {
+        getClassSkillRanks,
+        deleteSkillRanksByIds,
+        upsertSkillRanks,
+        type SkillRankInsert
+    } from '$lib/db/skillRanks';
 
     let { onClose, characterId } = $props<{
         onClose: () => void;
@@ -15,7 +20,7 @@
     let character = $derived(getCharacter(characterId));
     let stats = $derived.by(() => calculateCharacterStats(character));
 
-    let pendingChanges = $state<Required<Pick<CharacterSkillRank, 'skill_id' | 'ranks' | 'applied_at_level' | 'source'>>[]>([]);
+    let pendingChanges = $state<SkillRankInsert[]>([]);
     let isSaving = $state(false);
     let updateState = $state<UpdateState>({ 
         status: 'idle' as const, 
@@ -84,7 +89,6 @@
 
         // Check if total ranks would exceed character level
         const totalRanks = existingRanks.reduce((sum, rank) => sum + rank.ranks, 0);
-
         return totalRanks < level;
     }
 
@@ -93,12 +97,13 @@
         if (checked && !canAddRankAtLevel(skillName, level)) return;
 
         const skill = character.base_skills?.find(s => s.name === skillName);
-        if (!skill) return;
+        if (!skill?.id) return;
 
         if (checked) {
-            // Add new rank
-            const newRank: Required<Pick<CharacterSkillRank, 'skill_id' | 'ranks' | 'applied_at_level' | 'source'>> = {
+            // Add new rank with proper typing
+            const newRank: SkillRankInsert = {
                 skill_id: skill.id,
+                character_id: character.id,
                 applied_at_level: level,
                 ranks: 1,
                 source: SKILL_RANK_SOURCES.CLASS
@@ -111,7 +116,6 @@
                     ...character.character_skill_ranks,
                     {
                         ...newRank,
-                        character_id: character.id,
                         id: -Math.random(),
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString(),
@@ -154,17 +158,13 @@
         isSaving = true;
         
         const originalSkillRanks = [...(character.character_skill_ranks ?? [])];
-        
+
         try {
             await executeUpdate({
                 key: `skills-${character.id}`,
                 status: updateState,
                 operation: async () => {
-                    const { data: existingRanks } = await supabase
-                        .from('character_skill_ranks')
-                        .select('*')
-                        .eq('character_id', character.id)
-                        .eq('source', SKILL_RANK_SOURCES.CLASS);
+                    const existingRanks = await getClassSkillRanks(character.id, SKILL_RANK_SOURCES.CLASS);
 
                     const existingRankMap = new Map(
                         (existingRanks ?? []).map(rank => 
@@ -172,33 +172,32 @@
                         )
                     );
 
-                    const ranksToUpsert = pendingChanges.filter(rank => {
-                        const key = `${rank.skill_id}-${rank.applied_at_level}`;
-                        return !existingRankMap.has(key);
-                    });
+                    // Ensure we have valid skill_ids and create properly typed updates
+                    const ranksToUpsert: SkillRankInsert[] = pendingChanges
+                        .filter((change): change is Required<typeof change> => 
+                            change.skill_id !== null && 
+                            typeof change.skill_id === 'number'
+                        )
+                        .filter(change => {
+                            const key = `${change.skill_id}-${change.applied_at_level}`;
+                            return !existingRankMap.has(key);
+                        })
+                        .map(change => ({
+                            character_id: character.id,
+                            skill_id: change.skill_id,
+                            ranks: change.ranks,
+                            applied_at_level: change.applied_at_level,
+                            source: change.source
+                        }));
 
-                    // Delete unchecked ranks
+                    // Delete unchecked ranks first
                     if (uncheckedRanks.length > 0) {
-                        const { error: deleteError } = await supabase
-                            .from('character_skill_ranks')
-                            .delete()
-                            .in('id', uncheckedRanks);
-
-                        if (deleteError) throw deleteError;
+                        await deleteSkillRanksByIds(uncheckedRanks);
                     }
 
-                    // Insert new ranks
+                    // Upsert new ranks
                     if (ranksToUpsert.length > 0) {
-                        const { data: upsertedRanks, error: upsertError } = await supabase
-                            .from('character_skill_ranks')
-                            .upsert(ranksToUpsert.map(update => ({
-                                ...update,
-                                character_id: character.id
-                            })))
-                            .select();
-
-                        if (upsertError) throw upsertError;
-
+                        const upsertedRanks = await upsertSkillRanks(ranksToUpsert);
                         if (upsertedRanks) {
                             character.character_skill_ranks = [
                                 ...(character.character_skill_ranks?.filter(rank => 
@@ -234,6 +233,7 @@
     }
 </script>
 
+<!-- The rest of your component’s markup / styles remain mostly the same. -->
 <div class="skill-allocator">
     {#if isMobileView}
         <div class="mobile-view">
@@ -362,9 +362,11 @@
     {/if}
 </div>
 
-
-
 <style>
+    /* 
+      The CSS remains largely unchanged. 
+      Only the script has been refactored to remove direct supabase calls.
+    */
     .skill-allocator {
         width: 100%;
         max-width: 100%;
@@ -413,11 +415,10 @@
         z-index: 2;
     }
 
-    /* Update first column width and add text handling */
     td.sticky-col:nth-child(1),
     th.sticky-col:nth-child(1) {
         left: 0;
-        min-width: 240px; /* Increased from 160px */
+        min-width: 240px;
         width: 240px;
         white-space: nowrap;
         overflow: hidden;
@@ -426,14 +427,14 @@
 
     td.sticky-col:nth-child(2),
     th.sticky-col:nth-child(2) {
-        left: 240px; /* Updated to match new first column width */
+        left: 240px;
         min-width: 100px;
         width: 100px;
     }
 
     td.sticky-col:nth-child(3),
     th.sticky-col:nth-child(3) {
-        left: 340px; /* Updated to account for new first column width */
+        left: 340px;
         min-width: 80px;
         width: 80px;
     }
@@ -498,7 +499,6 @@
         to { transform: rotate(360deg); }
     }
 
-    /* Add some responsive behavior */
     @media (max-width: 768px) {
         .table-container {
             border-radius: 0;
@@ -507,7 +507,6 @@
         }
     }
 
-    /* Add mobile styles */
     .mobile-view {
         display: flex;
         flex-direction: column;
@@ -581,7 +580,6 @@
         border-top: 1px solid var(--color-border, #ddd);
     }
 
-    /* Update responsive styles */
     @media (max-width: 768px) {
         .skill-allocator {
             height: calc(100vh - 4rem);

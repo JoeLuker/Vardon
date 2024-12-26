@@ -171,11 +171,16 @@ CREATE TABLE class_skill_relations (
     UNIQUE(class_name, skill_id)
 );
 
+
+-- Create the ENUM type
+CREATE TYPE skill_rank_source AS ENUM ('class', 'favored_class', 'intelligence', 'other');
+
+-- Recreate the table with the new ENUM type
 CREATE TABLE character_skill_ranks (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     character_id BIGINT REFERENCES characters(id) ON DELETE CASCADE,
     skill_id BIGINT REFERENCES base_skills(id),
-    source TEXT NOT NULL,
+    source skill_rank_source NOT NULL,
     applied_at_level INTEGER NOT NULL,
     ranks INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

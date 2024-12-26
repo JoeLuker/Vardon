@@ -969,7 +969,7 @@ export type Database = {
           id: number
           ranks: number
           skill_id: number | null
-          source: string
+          source: Database["public"]["Enums"]["skill_rank_source"]
           sync_status: string | null
           updated_at: string | null
         }
@@ -980,7 +980,7 @@ export type Database = {
           id?: never
           ranks?: number
           skill_id?: number | null
-          source: string
+          source: Database["public"]["Enums"]["skill_rank_source"]
           sync_status?: string | null
           updated_at?: string | null
         }
@@ -991,7 +991,7 @@ export type Database = {
           id?: never
           ranks?: number
           skill_id?: number | null
-          source?: string
+          source?: Database["public"]["Enums"]["skill_rank_source"]
           sync_status?: string | null
           updated_at?: string | null
         }
@@ -1232,7 +1232,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      skill_rank_source: "class" | "favored_class" | "intelligence" | "other"
     }
     CompositeTypes: {
       skill_progression: {
