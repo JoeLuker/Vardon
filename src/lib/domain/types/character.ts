@@ -1,7 +1,10 @@
+// FILE: src/lib/domain/types/character.ts
 import type { Database } from '$lib/domain/types/supabase';
 import type { CharacterFeatWithBase } from '$lib/db/feats';
 
-// Type aliases for commonly used database types
+// ====================
+//  A) Database aliases
+// ====================
 export type DbTables = Database['public']['Tables'];
 export type DatabaseCharacter = DbTables['characters']['Row'];
 export type DatabaseCharacterBuff = DbTables['character_buffs']['Row'];
@@ -25,33 +28,41 @@ export type DatabaseCharacterKnownSpell = DbTables['character_known_spells']['Ro
 export type DatabaseCharacterSpellSlot = DbTables['character_spell_slots']['Row'];
 export type DatabaseBaseTrait = DbTables['base_traits']['Row'];
 export type DatabaseCharacterTrait = DbTables['character_traits']['Row'];
+
+// If the DB JSON might contain something not strictly an object of numbers, 
+// you can keep it as `any` or `Json`. But if you’re sure it’s always { [key: string]: number }, 
+// cast carefully or parse:
 export type DatabaseCharacterAncestry = DbTables['character_ancestries']['Row'] & {
 	ancestry?: {
 		id: number;
 		name: string;
 		size: string;
 		base_speed: number;
-		ability_modifiers: Record<string, number>;
+		ability_modifiers: Record<string, number>;  // or just `Json` if uncertain
 		description: string | null;
 	};
 };
 export type DatabaseCharacterAncestralTrait = DbTables['character_ancestral_traits']['Row'];
 export type DatabaseBaseAncestralTrait = DbTables['base_ancestral_traits']['Row'];
 
-// This excludes the `id` field from the Character interface
-export type CharacterUpdatableFields = Omit<Character, 'id' | 'created_at' | 'updated_at'>;
-
-// Type aliases for commonly used table types
+// ====================
+//  B) Core domain keys
+// ====================
+/** The list of attribute keys available in character_attributes. */
 export type AttributeKey = keyof Pick<
 	DbTables['character_attributes']['Row'],
 	'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 >;
+
+/** The list of consumable item keys (alchemist_fire, etc.). */
 export type ConsumableKey = keyof Pick<
 	DbTables['character_consumables']['Row'],
 	'alchemist_fire' | 'acid' | 'tanglefoot'
 >;
 
-// Game-specific constants
+// =====================
+//  C) Some constants
+// =====================
 export const KNOWN_BUFFS = [
 	'int_cognatogen',
 	'wis_cognatogen',
@@ -82,11 +93,13 @@ export const SKILL_RANK_SOURCES = {
 	OTHER: 'other'
 } as const;
 
-// Derived types from constants
+// Derived types from those constants
 export type KnownBuffType = (typeof KNOWN_BUFFS)[number];
 export type SkillRankSource = (typeof SKILL_RANK_SOURCES)[keyof typeof SKILL_RANK_SOURCES];
 
-// Core attribute interfaces
+// =====================
+//  D) Basic interfaces
+// =====================
 export interface CharacterAttributes {
 	str: number;
 	dex: number;
@@ -102,7 +115,9 @@ export interface Consumables {
 	tanglefoot: number;
 }
 
-// Type refinements
+// ===============================
+//  E) Extended from DB plus logic
+// ===============================
 export interface CharacterBuff extends Omit<DatabaseCharacterBuff, 'buff_type'> {
 	buff_type: KnownBuffType;
 }
@@ -111,7 +126,7 @@ export interface CharacterSkillRank extends Omit<DatabaseCharacterSkillRank, 'so
 	source: SkillRankSource;
 }
 
-// Combined view types
+/** A bigger “view” of a skill with local computations. */
 export interface SkillView {
 	character_id: number;
 	skill_id: number;
@@ -124,13 +139,16 @@ export interface SkillView {
 	is_class_skill: boolean;
 }
 
-// Add a type for character traits that includes the joined base_traits data
+/** A joined trait row with base_traits included. */
 export interface CharacterTraitWithBase extends DatabaseCharacterTrait {
 	base_traits?: DatabaseBaseTrait;
 }
 
-// Main Character interface combining multiple tables
-// Inherits `archetype` (string | null) from DatabaseCharacter
+/**
+ * The big `Character` interface merging:
+ *  - the row from DB (`DatabaseCharacter`)
+ *  - the optional arrays for sub-tables
+ */
 export interface Character extends DatabaseCharacter {
 	character_attributes?: DatabaseCharacterAttribute[];
 	character_buffs?: CharacterBuff[];
@@ -155,14 +173,17 @@ export interface Character extends DatabaseCharacter {
 	character_ancestral_traits?: DatabaseCharacterAncestralTrait[];
 }
 
-// Helper types for operations
+/** Helper types for partial inserts/updates. */
+export type CharacterUpdatableFields = Omit<Character, 'id' | 'created_at' | 'updated_at'>;
 export type NewCharacter = Omit<
 	Character,
 	'id' | 'created_at' | 'updated_at' | 'last_synced_at' | 'is_offline'
 >;
 export type CharacterUpdate = Partial<Omit<Character, 'id'>>;
 
-// Type guards and validation
+// =============
+//  F) Utilities
+// =============
 export const isKnownBuff = (buff: string): buff is KnownBuffType => {
 	return KNOWN_BUFFS.includes(buff as KnownBuffType);
 };
@@ -171,15 +192,17 @@ export const isValidSkillRankSource = (source: string): source is SkillRankSourc
 	return Object.values(SKILL_RANK_SOURCES).includes(source as SkillRankSource);
 };
 
-export const isValidAttributeKey = (key: string): key is keyof CharacterAttributes => {
+/** Example type guard if you need it */
+export const isValidAttributeKey = (key: string): key is AttributeKey => {
 	return ['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(key);
 };
 
-export const isValidConsumableKey = (key: string): key is keyof Consumables => {
+/** Another example type guard if you need it. */
+export const isValidConsumableKey = (key: string): key is ConsumableKey => {
 	return ['alchemist_fire', 'acid', 'tanglefoot'].includes(key);
 };
 
-// Add equipment properties type
+// Example helper for equipment properties
 export interface CharacterEquipmentProperties {
 	armor_bonus?: number;
 	max_dex?: number;
@@ -195,6 +218,7 @@ export interface CharacterEquipmentProperties {
 	};
 }
 
+// Example for combat stats
 export interface CombatStats {
 	bombs_left: number;
 	base_attack_bonus: number;

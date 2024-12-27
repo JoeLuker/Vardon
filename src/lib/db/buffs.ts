@@ -1,6 +1,7 @@
 // FILE: src/lib/db/buffs.ts
-
 import { supabase } from '$lib/db/supabaseClient';
+import { readable, type Readable } from 'svelte/store';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { Buff, BuffEffect } from '$lib/domain/types/buffs';
 import type { KnownBuffType } from '$lib/domain/types/character';
 import type { Json } from '$lib/domain/types/supabase';
@@ -53,10 +54,14 @@ export async function loadAllBuffs(): Promise<Buff[]> {
 }
 
 /**
- * 2) Load a single buff by ID or name (you can adapt as needed).
+ * 2) Load a single buff by ID (you can adapt as needed).
  */
 export async function loadBuffById(buffId: number): Promise<DBBaseBuff | null> {
-	const { data, error } = await supabase.from('base_buffs').select('*').eq('id', buffId).single();
+	const { data, error } = await supabase
+		.from('base_buffs')
+		.select('*')
+		.eq('id', buffId)
+		.single();
 
 	if (error?.message === 'Multiple or no rows found for the query') {
 		// not found
@@ -73,22 +78,6 @@ export async function loadBuffById(buffId: number): Promise<DBBaseBuff | null> {
 /**
  * 3) Insert or update a row in `base_buffs`.
  *    If `id` is present, do an update; otherwise insert a new row.
- *
- *    Example usage for new:
- *      saveBaseBuff({
- *        name: 'encumbered',
- *        label: 'Encumbered',
- *        description: 'Heavy load',
- *        effects: JSON.stringify([...]),
- *        conflicts: JSON.stringify([...])
- *      });
- *
- *    Example usage for update:
- *      saveBaseBuff({
- *        id: 5,
- *        name: 'encumbered',
- *        ...
- *      });
  */
 export interface BaseBuffSaveData {
 	id?: number;
@@ -100,7 +89,7 @@ export interface BaseBuffSaveData {
 }
 
 export async function saveBaseBuff(buff: BaseBuffSaveData): Promise<DBBaseBuff> {
-	const isNew = buff.id == null; // or `typeof buff.id === 'undefined'`
+	const isNew = buff.id == null;
 
 	const query = isNew
 		? supabase
@@ -146,4 +135,73 @@ export async function removeBaseBuff(id: number): Promise<void> {
 		console.error(`Error removing buff (ID=${id}):`, error);
 		throw new Error(error.message);
 	}
+}
+
+/* ---------------------------------------------------------------------------
+   REAL-TIME SUBSCRIPTIONS
+   We'll provide a watcher for base_buffs. 
+   It emits events in a store each time supabase sees INSERT/UPDATE/DELETE.
+--------------------------------------------------------------------------- */
+
+/** A single event from the 'base_buffs' table */
+export interface BuffChangeEvent {
+	eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+	newRow: DBBaseBuff | null;
+	oldRow: DBBaseBuff | null;
+}
+
+/**
+ * watchAllBuffs()
+ *
+ * Subscribes to real-time changes on the 'base_buffs' table (all rows).
+ * Returns a Svelte `readable` store that accumulates Realtime events in an array.
+ */
+export function watchAllBuffs() : Readable<BuffChangeEvent[]> {
+	return readable<BuffChangeEvent[]>([], (set) => {
+		// We'll keep events in a local array. Each time a new event arrives, we append to it.
+		let internalArray: BuffChangeEvent[] = [];
+
+		const channel = supabase.channel('base_buffs_all');
+
+		const handlePayload = (payload: RealtimePostgresChangesPayload<Partial<DBBaseBuff>>) => {
+			const newRow =
+				payload.new && Object.keys(payload.new).length > 0 
+					? (payload.new as DBBaseBuff)
+					: null;
+			const oldRow =
+				payload.old && Object.keys(payload.old).length > 0
+					? (payload.old as DBBaseBuff)
+					: null;
+
+			const event: BuffChangeEvent = {
+				eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+				newRow,
+				oldRow
+			};
+
+			internalArray = [...internalArray, event];
+			set(internalArray);
+		};
+
+		channel.on(
+			'postgres_changes',
+			{
+				event: '*',
+				schema: 'public',
+				table: 'base_buffs'
+			},
+			handlePayload
+		);
+
+		channel.subscribe((status) => {
+			if (status === 'SUBSCRIBED') {
+				console.log('[db/buffs] Subscribed to base_buffs (all rows).');
+			}
+		});
+
+		// Cleanup when unsubscribed
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	});
 }

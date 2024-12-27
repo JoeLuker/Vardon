@@ -1,24 +1,25 @@
 // FILE: src/lib/db/feats.ts
 
 import { supabase } from '$lib/db/supabaseClient';
+import { readable, type Readable } from 'svelte/store';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { Json } from '$lib/domain/types/supabase';
 
-/**
- * 1. BASE FEATS (the “master” feats table)
- *    Typically stored in `base_feats`.
- */
+/* ---------------------------------------------------------------------------
+ * 1. BASE FEATS (the “master” feats table) stored in `base_feats`.
+ * --------------------------------------------------------------------------- */
 
-// A shape for the row in `base_feats` if you want to do e.g. create/update
+/** The shape needed for creating a new base feat in `base_feats`. */
 export interface BaseFeatData {
   name: string;
-  label?: string;      // optional if your table has a label column
-  feat_type: string;   // e.g. "combat", "metamagic", etc.
+  label?: string; // optional if your table has a label column
+  feat_type: string; // e.g. "combat", "metamagic", etc.
   description?: string | null;
-  effects?: Json;      // optional JSON for the feat’s mechanical effects
+  effects?: Json; // optional JSON for the feat’s mechanical effects
   prerequisites?: Json | null; // optional JSON for prereqs
 }
 
-// The “Row” shape from your Supabase-generated types (for `base_feats`) might be:
+/** The row shape from your Supabase-generated types (for `base_feats`). */
 export interface DatabaseBaseFeat {
   id: number;
   name: string;
@@ -124,12 +125,78 @@ export async function getAllBaseFeats(): Promise<DatabaseBaseFeat[]> {
 }
 
 /* ---------------------------------------------------------------------------
+ * REAL-TIME SUBSCRIPTION FOR base_feats
+ * --------------------------------------------------------------------------- */
+
+/** The shape of real-time events for `base_feats`. */
+export interface BaseFeatChangeEvent {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  newRow: DatabaseBaseFeat | null;
+  oldRow: DatabaseBaseFeat | null;
+}
+
+/**
+ * watchAllBaseFeats()
+ *
+ * Subscribes to all changes (INSERT/UPDATE/DELETE) in the `base_feats` table.
+ * Returns a Svelte readable store that accumulates these events in an array.
+ */
+export function watchAllBaseFeats(): Readable<BaseFeatChangeEvent[]> {
+  return readable<BaseFeatChangeEvent[]>([], (set) => {
+    let internalArray: BaseFeatChangeEvent[] = [];
+
+    // Create a channel for entire `base_feats` table
+    const channel = supabase.channel('base_feats_all');
+
+    const handlePayload = (payload: RealtimePostgresChangesPayload<Partial<DatabaseBaseFeat>>) => {
+      // If supabase returns empty new/old, treat them as null
+      const newRow =
+        payload.new && Object.keys(payload.new).length > 0
+          ? (payload.new as DatabaseBaseFeat)
+          : null;
+      const oldRow =
+        payload.old && Object.keys(payload.old).length > 0
+          ? (payload.old as DatabaseBaseFeat)
+          : null;
+
+      const event: BaseFeatChangeEvent = {
+        eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+        newRow,
+        oldRow
+      };
+
+      internalArray = [...internalArray, event];
+      set(internalArray);
+    };
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'base_feats'
+      },
+      handlePayload
+    );
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[db/feats] Subscribed to base_feats (all rows).');
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  });
+}
+
+/* ---------------------------------------------------------------------------
  * 2. CHARACTER FEATS (the “junction” table `character_feats`)
  *    Linking a `character` to a `base_feat`.
- * ---------------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------------- */
 
-// The row shape from your Supabase types:
+/** The row shape from your Supabase types (for `character_feats`): */
 export interface DatabaseCharacterFeat {
   id: number;
   base_feat_id: number | null;
@@ -142,11 +209,11 @@ export interface DatabaseCharacterFeat {
 
 // Data shape for connecting a feat to a character
 export interface CharacterFeatData {
-  base_feat_id: number;  // which feat from base_feats
-  character_id: number;  // which character
+  base_feat_id: number; // which feat from base_feats
+  character_id: number; // which character
   selected_level: number;
-  properties?: Json;     // optional
-  id?: number;           // if present => update an existing row
+  properties?: Json; // optional
+  id?: number;       // if present => update an existing row
 }
 
 /**
@@ -203,6 +270,10 @@ export interface CharacterFeatWithBase extends DatabaseCharacterFeat {
   };
 }
 
+/**
+ * Returns an array of all feats a character has selected (from `character_feats`),
+ * optionally joining to `base_feats`.
+ */
 export async function getFeatsForCharacter(
   characterId: number,
   includeBaseFeatInfo = true
@@ -222,7 +293,8 @@ export async function getFeatsForCharacter(
 }
 
 /**
- * Example: you might also want a function that fetches a single `character_feat` row by ID
+ * Example: fetch a single `character_feat` row by ID,
+ * optionally joining to `base_feats`.
  */
 export async function getCharacterFeatById(
   id: number,
@@ -244,4 +316,77 @@ export async function getCharacterFeatById(
   if (error) throw new Error(error.message);
 
   return data as unknown as CharacterFeatWithBase;
+}
+
+/* ---------------------------------------------------------------------------
+ * REAL-TIME SUBSCRIPTION FOR character_feats
+ * --------------------------------------------------------------------------- */
+
+/** The shape of real-time events for `character_feats`. */
+export interface CharacterFeatChangeEvent {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  newRow: DatabaseCharacterFeat | null;
+  oldRow: DatabaseCharacterFeat | null;
+}
+
+/**
+ * watchCharacterFeats(characterId)
+ *
+ * Subscribes to the `character_feats` table for a specific `character_id`,
+ * returning a Svelte store that accumulates real-time events.
+ *
+ * Each time an INSERT/UPDATE/DELETE occurs for rows matching
+ * `character_id=eq.{characterId}`, we push a new event to the store array.
+ */
+export function watchCharacterFeats(characterId: number): Readable<CharacterFeatChangeEvent[]> {
+  return readable<CharacterFeatChangeEvent[]>([], (set) => {
+    let internalArray: CharacterFeatChangeEvent[] = [];
+
+    // Create a channel specific to this character's feats
+    const channel = supabase.channel(`character_feats_${characterId}`);
+
+    const handlePayload = (
+      payload: RealtimePostgresChangesPayload<Partial<DatabaseCharacterFeat>>
+    ) => {
+      // If supabase returns empty objects, treat them as null
+      const newRow =
+        payload.new && Object.keys(payload.new).length > 0
+          ? (payload.new as DatabaseCharacterFeat)
+          : null;
+      const oldRow =
+        payload.old && Object.keys(payload.old).length > 0
+          ? (payload.old as DatabaseCharacterFeat)
+          : null;
+
+      const event: CharacterFeatChangeEvent = {
+        eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+        newRow,
+        oldRow
+      };
+
+      internalArray = [...internalArray, event];
+      set(internalArray);
+    };
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'character_feats',
+        filter: `character_id=eq.${characterId}`
+      },
+      handlePayload
+    );
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log(`[db/feats] Subscribed to character_feats for character ${characterId}`);
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  });
 }

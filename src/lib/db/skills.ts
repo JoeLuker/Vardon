@@ -1,5 +1,7 @@
 // FILE: src/lib/db/skills.ts
 import { supabase } from '$lib/db/supabaseClient';
+import { readable, type Readable } from 'svelte/store';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { DatabaseBaseSkill } from '$lib/domain/types/character';
 
 /**
@@ -71,4 +73,76 @@ export async function removeBaseSkill(skillId: number): Promise<void> {
 	const { error: skillError } = await supabase.from('base_skills').delete().eq('id', skillId);
 
 	if (skillError) throw skillError;
+}
+
+/* ---------------------------------------------------------------------------
+   REAL-TIME SUBSCRIPTIONS
+   We'll provide a watcher for all `base_skills` rows.
+--------------------------------------------------------------------------- */
+
+/**
+ * The shape of real-time events for base_skills.
+ */
+export interface BaseSkillChangeEvent {
+	eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+	newRow: DatabaseBaseSkill | null;
+	oldRow: DatabaseBaseSkill | null;
+}
+
+/**
+ * watchAllBaseSkills()
+ *
+ * Subscribes to the `base_skills` table for ALL rows,
+ * returning a Svelte store that accumulates real-time events (INSERT/UPDATE/DELETE).
+ */
+export function watchAllBaseSkills(): Readable<BaseSkillChangeEvent[]> {
+	return readable<BaseSkillChangeEvent[]>([], (set) => {
+		let internalArray: BaseSkillChangeEvent[] = [];
+
+		const channel = supabase.channel('base_skills_all');
+
+		const handlePayload = (
+			payload: RealtimePostgresChangesPayload<Partial<DatabaseBaseSkill>>
+		) => {
+			// If supabase returns empty new/old, treat them as null
+			const newRow =
+				payload.new && Object.keys(payload.new).length > 0
+					? (payload.new as DatabaseBaseSkill)
+					: null;
+			const oldRow =
+				payload.old && Object.keys(payload.old).length > 0
+					? (payload.old as DatabaseBaseSkill)
+					: null;
+
+			const event: BaseSkillChangeEvent = {
+				eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+				newRow,
+				oldRow
+			};
+
+			internalArray = [...internalArray, event];
+			set(internalArray);
+		};
+
+		channel.on(
+			'postgres_changes',
+			{
+				event: '*',
+				schema: 'public',
+				table: 'base_skills'
+			},
+			handlePayload
+		);
+
+		channel.subscribe((status) => {
+			if (status === 'SUBSCRIBED') {
+				console.log('[db/skills] Subscribed to all base_skills.');
+			}
+		});
+
+		// Cleanup once the last subscriber unsubscribes
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	});
 }

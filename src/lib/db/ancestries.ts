@@ -131,26 +131,37 @@ export interface AncestralTraitChangeEvent {
  * 
  * Subscribes to real-time changes (INSERT, UPDATE, DELETE) on the 'base_ancestries' table,
  * returning a Svelte store that emits arrays of new events.
- *
- * Each time a new event occurs, it is appended to the store's array. It's up to you
- * to subscribe and handle them (e.g., update your local state, re-render UI, etc.).
  */
 export function watchAllAncestries(): Readable<AncestryChangeEvent[]> {
-	// We accumulate events in an array. The consumer can process them and optionally clear them out.
 	return readable<AncestryChangeEvent[]>([], (set) => {
-		// Create a channel for the entire 'base_ancestries' table
+		// We'll store the array internally.
+		let internalArray: AncestryChangeEvent[] = [];
+
 		const channel = supabase.channel('base_ancestries_all');
 
-		const handlePayload = (payload: RealtimePostgresChangesPayload<DBAncestry>) => {
+		const handlePayload = (
+			payload: RealtimePostgresChangesPayload<Partial<DBAncestry>>
+		) => {
+			// We do a small check to see if 'payload.new' is an actual row or empty
+			const newRow =
+				payload.new && Object.keys(payload.new).length > 0
+					? (payload.new as DBAncestry)
+					: null;
+			const oldRow =
+				payload.old && Object.keys(payload.old).length > 0
+					? (payload.old as DBAncestry)
+					: null;
+
 			const event: AncestryChangeEvent = {
-				eventType: payload.eventType,
-				newRow: payload.new ?? null,
-				oldRow: payload.old ?? null
+				eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+				newRow,
+				oldRow
 			};
-			set((prev) => [...prev, event]);
+
+			internalArray = [...internalArray, event];
+			set(internalArray);
 		};
 
-		// Listen to all changes in the 'base_ancestries' table
 		channel.on(
 			'postgres_changes',
 			{
@@ -182,15 +193,30 @@ export function watchAllAncestries(): Readable<AncestryChangeEvent[]> {
  */
 export function watchAllAncestralTraits(): Readable<AncestralTraitChangeEvent[]> {
 	return readable<AncestralTraitChangeEvent[]>([], (set) => {
+		let internalArray: AncestralTraitChangeEvent[] = [];
+
 		const channel = supabase.channel('base_ancestral_traits_all');
 
-		const handlePayload = (payload: RealtimePostgresChangesPayload<DBAncestralTrait>) => {
+		const handlePayload = (
+			payload: RealtimePostgresChangesPayload<Partial<DBAncestralTrait>>
+		) => {
+			const newRow =
+				payload.new && Object.keys(payload.new).length > 0
+					? (payload.new as DBAncestralTrait)
+					: null;
+			const oldRow =
+				payload.old && Object.keys(payload.old).length > 0
+					? (payload.old as DBAncestralTrait)
+					: null;
+
 			const event: AncestralTraitChangeEvent = {
-				eventType: payload.eventType,
-				newRow: payload.new ?? null,
-				oldRow: payload.old ?? null
+				eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+				newRow,
+				oldRow
 			};
-			set((prev) => [...prev, event]);
+
+			internalArray = [...internalArray, event];
+			set(internalArray);
 		};
 
 		channel.on(

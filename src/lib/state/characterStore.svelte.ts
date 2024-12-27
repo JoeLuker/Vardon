@@ -7,9 +7,7 @@
  */
 
 import { dbUpdateHP, dbToggleBuff, dbUpdateConsumable } from '$lib/db/character'; 
-import { updateQueue } from '$lib/utils/updateQueue.svelte'; 
 import type { Character, KnownBuffType, ConsumableKey } from '$lib/domain/types/character';
-import { executeUpdate } from '$lib/utils/updates';
 
 // 1) In-memory store: a reactive Map of characterId → Character
 let characterRecords = $state(new Map<number, Character>());
@@ -18,6 +16,7 @@ let characterRecords = $state(new Map<number, Character>());
 function createEmptyCharacter(): Character {
 	return {
 		id: 0,
+		user_id: '',
 		name: '',
 		ancestry: '',
 		class: '',
@@ -178,10 +177,6 @@ export function cleanupCharacter(characterId: number) {
 	characterRecords.delete(characterId);
 }
 
-
-================================================================================
-File: /Users/jluker/Vardon/src/lib/utils/updateQueue.svelte.ts
-================================================================================
 import { browser } from '$app/environment';
 
 export type UpdateStatus = 'idle' | 'processing' | 'error' | 'offline';
@@ -194,7 +189,7 @@ export interface QueueUpdate {
 }
 
 export class UpdateQueue {
-	private status = $state<UpdateStatus>('idle');
+	// private status = $state<UpdateStatus>('idle');
 	private pendingUpdates = $state(new Map<string, QueueUpdate>());
 
 	constructor() {

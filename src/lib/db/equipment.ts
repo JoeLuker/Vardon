@@ -1,8 +1,10 @@
 // FILE: src/lib/db/equipment.ts
-
 import { supabase } from '$lib/db/supabaseClient';
+import { readable, type Readable } from 'svelte/store';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { DatabaseCharacterEquipment } from '$lib/domain/types/character';
 import type { Json } from '$lib/domain/types/supabase';
+
 /**
  * Shape for saving/updating equipment
  * - if `id` is present, we do an update
@@ -14,7 +16,7 @@ export interface EquipmentSaveData {
 	equipped: boolean;
 	properties: Json; // Changed from 'object' to 'Json'
 	character_id: number;
-	id?: number; // optional, means update
+	id?: number; // optional => update if present, else insert
 }
 
 /**
@@ -48,7 +50,7 @@ export async function saveEquipment(data: EquipmentSaveData): Promise<DatabaseCh
 					properties: data.properties,
 					character_id: data.character_id
 				})
-				.eq('id', data.id!) // Added non-null assertion since we checked above
+				.eq('id', data.id!)
 				.select()
 				.single();
 
@@ -62,7 +64,10 @@ export async function saveEquipment(data: EquipmentSaveData): Promise<DatabaseCh
  * Delete a piece of equipment by ID
  */
 export async function removeEquipment(equipmentId: number): Promise<void> {
-	const { error } = await supabase.from('character_equipment').delete().eq('id', equipmentId);
+	const { error } = await supabase
+		.from('character_equipment')
+		.delete()
+		.eq('id', equipmentId);
 
 	if (error) throw error;
 }
@@ -84,4 +89,84 @@ export async function toggleEquipment(
 
 	if (error) throw error;
 	return data as DatabaseCharacterEquipment;
+}
+
+/* ---------------------------------------------------------------------------
+   REAL-TIME SUBSCRIPTIONS
+   We'll provide a watcher for `character_equipment`,
+   typically filtered by character_id=eq.{characterId}.
+--------------------------------------------------------------------------- */
+
+/**
+ * The shape of real-time equipment change events.
+ */
+export interface EquipmentChangeEvent {
+	eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+	newRow: DatabaseCharacterEquipment | null;
+	oldRow: DatabaseCharacterEquipment | null;
+}
+
+/**
+ * watchEquipmentForCharacter(characterId)
+ *
+ * Subscribes to the `character_equipment` table for the specified character,
+ * returning a Svelte store that accumulates real-time events (INSERT/UPDATE/DELETE).
+ *
+ * Each time a change occurs for rows with `character_id=eq.{characterId}`, 
+ * a new EquipmentChangeEvent is appended to the store array.
+ */
+export function watchEquipmentForCharacter(characterId: number): Readable<EquipmentChangeEvent[]> {
+	return readable<EquipmentChangeEvent[]>([], (set) => {
+		// We'll accumulate events in an internal array
+		let internalArray: EquipmentChangeEvent[] = [];
+
+		const channel = supabase.channel(`character_equipment_${characterId}`);
+
+		const handlePayload = (
+			payload: RealtimePostgresChangesPayload<Partial<DatabaseCharacterEquipment>>
+		) => {
+			// If we get an empty object for new/old, treat it as null
+			const newRow =
+				payload.new && Object.keys(payload.new).length > 0
+					? (payload.new as DatabaseCharacterEquipment)
+					: null;
+			const oldRow =
+				payload.old && Object.keys(payload.old).length > 0
+					? (payload.old as DatabaseCharacterEquipment)
+					: null;
+
+			const event: EquipmentChangeEvent = {
+				eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+				newRow,
+				oldRow
+			};
+
+			internalArray = [...internalArray, event];
+			set(internalArray);
+		};
+
+		channel.on(
+			'postgres_changes',
+			{
+				event: '*',
+				schema: 'public',
+				table: 'character_equipment',
+				filter: `character_id=eq.${characterId}`
+			},
+			handlePayload
+		);
+
+		channel.subscribe((status) => {
+			if (status === 'SUBSCRIBED') {
+				console.log(
+					`[db/equipment] Subscribed to character_equipment for character ${characterId}`
+				);
+			}
+		});
+
+		// Cleanup function
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	});
 }
