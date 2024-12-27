@@ -1,11 +1,9 @@
 // FILE: src/lib/domain/calculations/skills.ts
 
-import type { Character, CharacterSkillRank, DatabaseBaseSkill } from '$lib/domain/types/character';
-import type { CharacterAttributes } from '$lib/domain/types/character';
-import { getAbilityModifier } from './attributes'; // or wherever your getAbilityModifier is exported
+import type { Character, CharacterAttributes } from '$lib/domain/types/character';
 import type { KnownBuffType } from '$lib/domain/types/character';
-import { gatherSkillBuffMods } from './skillBuffs';
-// ^ If you want to handle buff-based skill mods, define a helper. See sample below.
+import { getAbilityModifier } from './attributes';
+import type { Buff } from '$lib/domain/types/buffs';
 
 // Structures that define the final computed skill.
 export interface ComputedSkill {
@@ -23,26 +21,18 @@ export interface ComputedSkill {
 }
 
 /**
- * Main function to compute all skill bonuses for a character.
- *
- * 1) We gather each known skill from `base_skills`.
- * 2) We find how many ranks the character has in that skill (from `character_skill_ranks`).
- * 3) We check if it's a class skill (using `class_skill_relations`).
- * 4) We compute the final ability mod from the given finalAttributes.
- * 5) We handle possible armor check penalty if skill.armor_check_penalty == true
- * 6) We check for buff-based bonuses, or trait/feat-based bonuses, etc.
- * 7) Return a list of `ComputedSkill`.
+ * Main function to compute all skills bonuses for a character.
  */
 export function computeAllSkills(
 	character: Character,
 	finalAttributes: CharacterAttributes,
-	activeBuffs: KnownBuffType[]
+	activeBuffs: KnownBuffType[],
+	allBuffs: Buff[]
 ): ComputedSkill[] {
 	const results: ComputedSkill[] = [];
 
 	// Gather potential skill buffs or misc mods from active buffs
-	const buffSkillMods = gatherSkillBuffMods(activeBuffs);
-	// an object like { "Stealth": +2, "Perception": +3 } or something similar
+	const buffSkillMods = gatherSkillBuffMods(activeBuffs, allBuffs);
 
 	// For armor check penalty from worn gear:
 	const armorCheckPenalty = computeArmorCheckPenalty(character);
@@ -148,20 +138,33 @@ function computeArmorCheckPenalty(character: Character): number {
 }
 
 /**
- * Sample function that collects skill-specific bonuses from active buffs.
- * Maybe your Buff definitions or effect objects specify a skill by name or ID.
- *
- * This example returns an object keyed by skillName (lowercased) => numeric bonus.
+ * Gathers skill-specific bonuses from all active buffs.
+ * Returns an object keyed by skillName (lowercased) => total bonus from buffs.
  */
-function gatherSkillBuffMods(activeBuffs: KnownBuffType[]): Record<string, number> {
-	// In a real system, you’d read BuffEffect objects that mention skill_name or a general “skillBonus” field.
-	// For now, a stub:
+export function gatherSkillBuffMods(
+	activeBuffs: KnownBuffType[],
+	allBuffs: Buff[]
+): Record<string, number> {
 	const result: Record<string, number> = {};
 
-	// e.g. if a buff says “+2 to Stealth,” do:
-	// result['stealth'] = (result['stealth'] ?? 0) + 2;
+	for (const buffName of activeBuffs) {
+		const buffDef = allBuffs.find((buff) => buff.name === buffName);
+		if (!buffDef) continue;
 
-	// Adapt this logic to your system’s buff effect structure.
-	// ...
+		for (const effect of buffDef.effects) {
+			// Check for skill bonus in effect properties
+			const skillBonus = (effect as any).skill_bonus as
+				| { skill: string; value: number }
+				| undefined;
+
+			if (skillBonus) {
+				const skillName = skillBonus.skill.toLowerCase();
+				const bonusValue = skillBonus.value;
+				// Accumulate
+				result[skillName] = (result[skillName] ?? 0) + bonusValue;
+			}
+		}
+	}
+
 	return result;
 }

@@ -33,6 +33,7 @@ export interface BuffEffect {
 export interface Buff {
 	name: string;
 	label: string;
+	buff_type: 'mutagen' | 'combat' | 'other';
 	effects: BuffEffect[];
 	description: string;
 }

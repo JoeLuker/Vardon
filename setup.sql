@@ -181,6 +181,7 @@ CREATE TABLE base_buffs (
     name TEXT NOT NULL UNIQUE,
     label TEXT NOT NULL,
     description TEXT,
+    buff_type TEXT,
     effects JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -910,17 +911,17 @@ BEGIN
     ON CONFLICT DO NOTHING;
 
     -- 13) Insert base buffs
-    INSERT INTO base_buffs (name, label, description)
+    INSERT INTO base_buffs (name, label, description, buff_type)
     VALUES
-      ('int_cognatogen', 'INT Cognatogen', 'Grants an Intelligence bonus'),
-      ('wis_cognatogen', 'WIS Cognatogen', 'Grants a Wisdom bonus'),
-      ('cha_cognatogen', 'CHA Cognatogen', 'Grants a Charisma bonus'),
-      ('dex_mutagen', 'DEX Mutagen', 'Grants a Dexterity bonus'),
-      ('str_mutagen', 'STR Mutagen', 'Grants a Strength bonus'),
-      ('con_mutagen', 'CON Mutagen', 'Grants a Constitution bonus'),
-      ('deadly_aim', 'Deadly Aim', 'Trade accuracy for damage with ranged attacks'),
-      ('rapid_shot', 'Rapid Shot', 'Make an extra ranged attack each round'),
-      ('two_weapon_fighting', 'Two-Weapon Fighting Buff', 'Reduce penalties when fighting with two weapons')
+      ('int_cognatogen', 'INT Cognatogen', 'Grants an Intelligence bonus', 'mutagen'),
+      ('wis_cognatogen', 'WIS Cognatogen', 'Grants a Wisdom bonus', 'mutagen'),
+      ('cha_cognatogen', 'CHA Cognatogen', 'Grants a Charisma bonus', 'mutagen'),
+      ('dex_mutagen', 'DEX Mutagen', 'Grants a Dexterity bonus', 'mutagen'),
+      ('str_mutagen', 'STR Mutagen', 'Grants a Strength bonus', 'mutagen'),
+      ('con_mutagen', 'CON Mutagen', 'Grants a Constitution bonus', 'mutagen'),
+      ('deadly_aim', 'Deadly Aim', 'Trade accuracy for damage with ranged attacks', NULL),
+      ('rapid_shot', 'Rapid Shot', 'Make an extra ranged attack each round', NULL),
+      ('two_weapon_fighting', 'Two-Weapon Fighting', 'Reduce penalties when fighting with two weapons', NULL)
     ON CONFLICT (name) DO NOTHING;
 
     -- Retrieve buff IDs

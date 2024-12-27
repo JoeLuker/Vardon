@@ -1,12 +1,10 @@
 // FILE: src/lib/domain/calculations/combat.ts
 
 import type { Character, KnownBuffType } from '$lib/domain/types/character';
-import type { Buff, BuffEffect } from '$lib/domain/types/buffs';
-import { isArmorEffect } from '$lib/domain/types/buffs'; // we only actually use isArmorEffect
-import { BUFF_CONFIG } from '$lib/domain/config/buffs'; // or wherever your Buff definitions live
+import type { Buff } from '$lib/domain/types/buffs';
 import type { CharacterAttributes } from '$lib/domain/types/character';
 import { getAbilityModifier } from '$lib/domain/calculations/attributes';
-import { getABPValue } from '$lib/domain/calculations/abp'; // <-- updated path for your ABP code
+import { getABPValue } from '$lib/domain/calculations/abp';
 
 /**
  * A structure for final, computed combat stats that includes
@@ -34,8 +32,6 @@ export interface CombatStats {
 	fort: number;
 	ref: number;
 	will: number;
-
-	// You can add more if needed, e.g. bomb damage, stamina, etc.
 }
 
 /**
@@ -52,17 +48,16 @@ export interface CombatStats {
 export function computeAllCombatStats(
 	character: Character,
 	finalAttributes: CharacterAttributes,
-	activeBuffNames: KnownBuffType[]
+	activeBuffNames: KnownBuffType[],
+	allBuffs: Buff[] // <-- pass in the loaded buffs from DB
 ): CombatStats {
 	// 1) Basic references to your final ability modifiers
 	const strMod = getAbilityModifier(finalAttributes.str);
 	const dexMod = getAbilityModifier(finalAttributes.dex);
 	const conMod = getAbilityModifier(finalAttributes.con);
 	const wisMod = getAbilityModifier(finalAttributes.wis);
-	// (Not currently using intMod or chaMod for any calculations)
 
 	// 2) Identify the base attack bonus.
-	//    By default, we read from `character_combat_stats?.[0]?.base_attack_bonus`, or fallback 0.
 	const bab = character.character_combat_stats?.[0]?.base_attack_bonus ?? 0;
 
 	// 3) Determine size modifiers if any
@@ -70,18 +65,21 @@ export function computeAllCombatStats(
 	const sizeMod = getSizeModifier(sizeCategory);
 
 	// 4) Gather ABP bonuses relevant to combat
-	const deflectionBonus = getABPValue(character, 'deflection'); // e.g. for AC
-	const armorAttunement = getABPValue(character, 'armor'); // If your code calls it 'armor_attunement'
-	// (weaponAttunement is not used in this snippet, so we omit it)
+	const deflectionBonus = getABPValue(character, 'deflection'); 
+	const armorAttunement = getABPValue(character, 'armor');
 
 	// 5) Collect feats (e.g. "Power Attack", "Rapid Shot")
-	const featSet = new Set(character.character_feats?.map((f) => f.feat_name.toLowerCase()) ?? []);
+	const featSet = new Set(
+		character.character_feats?.map((f) => {
+			// Now TypeScript knows about the joined base_feats data
+			return (f.base_feats?.name ?? '').toLowerCase();
+		}) ?? []
+	);
 
-	// 6) Buff-based mods. This function aggregates +attack, +damage, +AC (natural or deflection),
-	//    +saves, extraAttacks, etc. from the active buffs in `BUFF_CONFIG`.
-	const buffMods = collectBuffCombatMods(activeBuffNames);
+	// 6) Buff-based mods: +attack, +damage, +AC, +saves, etc.
+	const buffMods = collectBuffCombatMods(activeBuffNames, allBuffs);
 
-	// 7) Calculate base attack modifiers for both melee & ranged
+	// 7) Calculate base attack modifiers (melee & ranged)
 	const { powerAttackAttackMod } = computePowerAttack(bab, featSet);
 	const { deadlyAimAttackMod } = computeDeadlyAim(bab, featSet);
 	const { rapidShotAttackMod, rapidShotExtraAttack } = computeRapidShot(featSet);
@@ -102,7 +100,6 @@ export function computeAllCombatStats(
 		buildExtraAttacksString(rapidShotExtraAttack + buffMods.extraAttacksRanged);
 
 	// 9) Compute AC
-	//    AC = 10 + armor + Dex + size + nat + deflection + ...
 	let dodgeBonus = 0;
 	if (featSet.has('dodge')) {
 		dodgeBonus += 1;
@@ -125,9 +122,8 @@ export function computeAllCombatStats(
 	const acTouch = 10 + finalDexModForAC + sizeMod + dodgeBonus + deflectionBonus;
 
 	const acFlatFooted = 10 + sizeMod + totalArmorValue + natArmorBonus + deflectionBonus;
-	// (If you remove dodge when flat-footed, then omit dodgeBonus here.)
 
-	// 10) Compute Saves (placeholder logic):
+	// 10) Compute Saves (placeholder logic)
 	const { baseFort, baseRef, baseWill } = guessBaseSaves(character);
 	const abpResistance = getABPValue(character, 'resistance');
 	const fort = baseFort + conMod + buffMods.saveBonus.fort + abpResistance;
@@ -145,7 +141,7 @@ export function computeAllCombatStats(
 		initiative += 4;
 	}
 
-	// Return final object
+	// Final object
 	return {
 		baseAttackBonus: bab,
 		meleeAttack: meleeAttackString,
@@ -164,7 +160,6 @@ export function computeAllCombatStats(
 
 /* ------------------------------------------------------------------------------
    Helper to gather buffs for combat (attack, AC, saves, etc.).
-   We'll define the “blankCombatMods” function right here.
 ------------------------------------------------------------------------------ */
 function blankCombatMods(): {
 	attackBonus: number;
@@ -191,17 +186,22 @@ function blankCombatMods(): {
 }
 
 /**
- * Gathers a variety of buff-based changes from all active buffs in `BUFF_CONFIG`.
+ * Gathers a variety of buff-based changes from the given Buff array.
+ * Instead of referencing a hardcoded BUFF_CONFIG, we find each buff in `allBuffs`.
  */
-function collectBuffCombatMods(activeBuffs: KnownBuffType[]): ReturnType<typeof blankCombatMods> {
+function collectBuffCombatMods(
+	activeBuffs: KnownBuffType[],
+	allBuffs: Buff[] // pass in the loaded Buff array
+): ReturnType<typeof blankCombatMods> {
 	const mods = blankCombatMods();
 
 	for (const buffName of activeBuffs) {
-		const buffDef: Buff | undefined = BUFF_CONFIG.find((b) => b.name === buffName);
+		// find the Buff definition in the array
+		const buffDef = allBuffs.find((b) => b.name === buffName);
 		if (!buffDef) continue;
 
 		for (const eff of buffDef.effects) {
-			// Attack/ Damage
+			// Attack / Damage
 			if (typeof eff.attackRoll === 'number') {
 				mods.attackBonus += eff.attackRoll;
 			}
@@ -209,35 +209,34 @@ function collectBuffCombatMods(activeBuffs: KnownBuffType[]): ReturnType<typeof 
 				mods.damageBonus += eff.damageRoll;
 			}
 			if (eff.extraAttack) {
-				// If not specialized, we assume +1 extra to both melee & ranged
+				// +1 extra to both melee & ranged
 				mods.extraAttacksMelee += 1;
 				mods.extraAttacksRanged += 1;
 			}
-			// AC (natural armor)
+			// Natural Armor
 			if (typeof eff.naturalArmor === 'number') {
-				// We’ll choose to stack the highest or accumulate, your call
 				mods.naturalArmor = Math.max(mods.naturalArmor, eff.naturalArmor);
 			}
 			// Initiative
-			if ((eff as any).initiative) {
-				mods.initiativeBonus += (eff as any).initiative;
+			if (typeof eff.initiativeBonus === 'number') {
+				mods.initiativeBonus += eff.initiativeBonus;
 			}
 			// Saves
-			if ((eff as any).fortSave) {
-				mods.saveBonus.fort += (eff as any).fortSave;
+			if (typeof eff.fortSave === 'number') {
+				mods.saveBonus.fort += eff.fortSave;
 			}
-			if ((eff as any).refSave) {
-				mods.saveBonus.ref += (eff as any).refSave;
+			if (typeof eff.refSave === 'number') {
+				mods.saveBonus.ref += eff.refSave;
 			}
-			if ((eff as any).willSave) {
-				mods.saveBonus.will += (eff as any).willSave;
+			if (typeof eff.willSave === 'number') {
+				mods.saveBonus.will += eff.willSave;
 			}
-			// CMB/CMD
-			if ((eff as any).cmb) {
-				mods.cmbBonus += (eff as any).cmb;
+			// CMB / CMD
+			if (typeof eff.cmbBonus === 'number') {
+				mods.cmbBonus += eff.cmbBonus;
 			}
-			if ((eff as any).cmd) {
-				mods.cmdBonus += (eff as any).cmd;
+			if (typeof eff.cmdBonus === 'number') {
+				mods.cmdBonus += eff.cmdBonus;
 			}
 		}
 	}
@@ -246,7 +245,7 @@ function collectBuffCombatMods(activeBuffs: KnownBuffType[]): ReturnType<typeof 
 }
 
 /**
- * Summaries of “Power Attack” logic (just for the penalty to attack).
+ * Summaries of “Power Attack” logic (just the penalty to attack).
  */
 function computePowerAttack(
 	bab: number,
@@ -265,8 +264,7 @@ function computePowerAttack(
 }
 
 /**
- * “Deadly Aim” for ranged attacks:
- *  -1 penalty per step.
+ * “Deadly Aim” for ranged attacks: -1 penalty per step.
  */
 function computeDeadlyAim(
 	bab: number,
@@ -283,8 +281,7 @@ function computeDeadlyAim(
 }
 
 /**
- * “Rapid Shot”:
- *  -2 to all ranged attacks, +1 extra ranged attack
+ * “Rapid Shot”: -2 to all ranged attacks, +1 extra ranged attack
  */
 function computeRapidShot(featSet: Set<string>): {
 	rapidShotAttackMod: number;
@@ -300,8 +297,7 @@ function computeRapidShot(featSet: Set<string>): {
 }
 
 /**
- * “Two-Weapon Fighting”:
- *  -2 to all attacks, +1 extra off-hand
+ * “Two-Weapon Fighting”: -2 to all attacks, +1 extra off-hand
  */
 function computeTwoWeaponFighting(featSet: Set<string>): {
 	twfAttackMod: number;
@@ -323,8 +319,6 @@ function formatIterativeAttackString(attackTotal: number, bab: number): string {
 	const sign = attackTotal >= 0 ? '+' : '';
 	const lines: string[] = [];
 
-	// e.g. BAB=6 => 2 iterative attacks
-	// Typically: 1 + floor((BAB-1)/5)
 	let totalAttacksFromBAB = 1;
 	if (bab >= 6) totalAttacksFromBAB++;
 	if (bab >= 11) totalAttacksFromBAB++;
@@ -356,8 +350,7 @@ function buildExtraAttacksString(extraAttacks: number): string {
 }
 
 /**
- * Derives size category from ancestry or from an active “enlarge person” buff, etc.
- * This is just an example stub—adjust to your data.
+ * Derives size category from ancestry or from “enlarge person”/“reduce person” buffs.
  */
 function deriveSizeCategory(character: Character, activeBuffs: KnownBuffType[]): string {
 	const ancestryName = (character.ancestry ?? '').toLowerCase();
@@ -369,10 +362,10 @@ function deriveSizeCategory(character: Character, activeBuffs: KnownBuffType[]):
 		size = 'large';
 	}
 
-	if (activeBuffs.includes('enlarge_person' as KnownBuffType)) {
+	if (activeBuffs.includes('enlarge_person')) {
 		size = size === 'medium' ? 'large' : 'huge';
 	}
-	if (activeBuffs.includes('reduce_person' as KnownBuffType)) {
+	if (activeBuffs.includes('reduce_person')) {
 		size = size === 'medium' ? 'small' : 'tiny';
 	}
 
@@ -408,18 +401,57 @@ function getSizeModifier(size: string): number {
 }
 
 /**
- * Example function to guess the base saves from a character’s class/level.
- * Real code would reference a table or the DB.
+ * Quick helper for computing base save, given “good” or “poor” progression.
+ * (A simplified formula for Pathfinder-like systems.)
  */
-function guessBaseSaves(character: Character): {
+function getBaseSave(progression: 'good' | 'poor', level: number): number {
+	// Good progression => 2 + floor(level / 2)
+	// Poor progression => floor(level / 3)
+	if (progression === 'good') {
+	  return 2 + Math.floor(level / 2);
+	} else {
+	  return Math.floor(level / 3);
+	}
+  }
+  
+  /**
+   * We only have two classes here (plus a default fallback):
+   */
+  const CLASS_SAVE_PROFILES: Record<
+	string,
+	{ fort: 'good' | 'poor'; ref: 'good' | 'poor'; will: 'good' | 'poor' }
+  > = {
+	// Both Alchemist & Kineticist have good Fort, good Ref, poor Will
+	alchemist: { fort: 'good', ref: 'good', will: 'poor' },
+	kineticist: { fort: 'good', ref: 'good', will: 'poor' },
+  
+	// Fallback for unrecognized class
+	default: { fort: 'poor', ref: 'poor', will: 'poor' }
+  };
+  
+  /**
+   * Example function to compute base saves from a character’s class & level.
+   * This is more than a placeholder, but still simplified to only handle
+   * Alchemist & Kineticist in this demonstration.
+   */
+  function guessBaseSaves(character: Character): {
 	baseFort: number;
 	baseRef: number;
 	baseWill: number;
-} {
-	// Placeholder, e.g. Alchemist or Kineticist at level 5 => +4/+4/+1
-	return { baseFort: 4, baseRef: 4, baseWill: 1 };
-}
-
+  } {
+	const level = character.level || 1;
+  
+	// For safety, get the class name in lower case. If unrecognized, use “default”.
+	const classKey = (character.class || '').toLowerCase();
+	const saveProfile = CLASS_SAVE_PROFILES[classKey] ?? CLASS_SAVE_PROFILES.default;
+  
+	return {
+	  baseFort: getBaseSave(saveProfile.fort, level),
+	  baseRef: getBaseSave(saveProfile.ref, level),
+	  baseWill: getBaseSave(saveProfile.will, level)
+	};
+  }
+  
 /**
  * Example function to compute how much “armor” the character’s worn equipment grants.
  */

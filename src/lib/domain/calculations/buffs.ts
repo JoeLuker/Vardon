@@ -1,5 +1,4 @@
 import type { KnownBuffType } from '$lib/domain/types/character';
-import { BUFF_CONFIG } from '$lib/domain/config/buffs';
 
 /**
  * The BuffEffect union, reflecting all the ways a buff might alter the character.
@@ -49,28 +48,26 @@ export interface Buff {
 /**
  * Find the Buff definition for a given name.
  */
-export function getBuffDefinition(name: KnownBuffType): Buff | undefined {
-	return BUFF_CONFIG.find((buff) => buff.name === name);
+export function getBuffDefinition(name: KnownBuffType, allBuffs: Buff[]): Buff | undefined {
+	return allBuffs.find((buff) => buff.name === name);
 }
 
 /**
  * Check if buff1 conflicts with buff2.
- * e.g. `int_cognatogen` conflicts with `str_mutagen`.
  */
-export function doBuffsConflict(buffA: KnownBuffType, buffB: KnownBuffType): boolean {
-	const buff = getBuffDefinition(buffA);
+export function doBuffsConflict(buffA: KnownBuffType, buffB: KnownBuffType, allBuffs: Buff[]): boolean {
+	const buff = getBuffDefinition(buffA, allBuffs);
 	if (!buff?.conflicts) return false;
 	return buff.conflicts.includes(buffB);
 }
 
 /**
  * Gather all BuffEffect objects from an array of active buff names.
- * If you have a bunch of buffs active, this returns a combined list of all effects.
  */
-export function gatherBuffEffects(activeBuffs: KnownBuffType[]): BuffEffect[] {
+export function gatherBuffEffects(activeBuffs: KnownBuffType[], allBuffs: Buff[]): BuffEffect[] {
 	const effects: BuffEffect[] = [];
 	for (const name of activeBuffs) {
-		const def = getBuffDefinition(name);
+		const def = getBuffDefinition(name, allBuffs);
 		if (def) {
 			effects.push(...def.effects);
 		}
@@ -80,14 +77,14 @@ export function gatherBuffEffects(activeBuffs: KnownBuffType[]): BuffEffect[] {
 
 /**
  * Validate a newly activated buff, checking conflict with the current set of buffs.
- * Returns either null if no conflict, or { conflictWith } if it conflicts.
  */
 export function validateNewBuff(
 	newBuff: KnownBuffType,
-	activeBuffs: KnownBuffType[]
+	activeBuffs: KnownBuffType[],
+	allBuffs: Buff[]
 ): { conflictWith: KnownBuffType } | null {
 	for (const active of activeBuffs) {
-		if (doBuffsConflict(newBuff, active)) {
+		if (doBuffsConflict(newBuff, active, allBuffs)) {
 			return { conflictWith: active };
 		}
 	}

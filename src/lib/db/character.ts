@@ -5,7 +5,7 @@ import { supabase } from '$lib/db/supabaseClient';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // Import your domain types
-import type { Character, CharacterBuff, SkillRankSource } from '$lib/domain/types/character';
+import type { Character, SkillRankSource } from '$lib/domain/types/character';
 import type { ABPBonusType } from '$lib/domain/types/abp';
 import type { AttributeKey, ConsumableKey, KnownBuffType } from '$lib/domain/types/character';
 import type { Database } from '$lib/domain/types/supabase';
@@ -134,9 +134,9 @@ export async function getFullCharacterData(characterId: number): Promise<Charact
 	const character: Character = {
 		...characterData,
 		character_attributes: attributes ?? [],
-		character_buffs: (buffs ?? []).map((b) => ({
-			...b,
-			buff_type: b.buff_type as CharacterBuff['buff_type']
+		character_buffs: (buffs ?? []).map(buff => ({
+			...buff,
+			buff_type: buff.base_buff_id?.toString() as KnownBuffType
 		})),
 		character_skill_ranks: (skillRanks ?? []).map((rank) => ({
 			...rank,

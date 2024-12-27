@@ -1,4 +1,5 @@
 import type { Database } from '$lib/domain/types/supabase';
+import type { CharacterFeatWithBase } from '$lib/db/feats';
 
 // Type aliases for commonly used database types
 export type DbTables = Database['public']['Tables'];
@@ -68,6 +69,7 @@ export const KNOWN_BUFFS = [
 	'barkskin',
 	'bulls_strength',
 	'enlarge_person',
+	'reduce_person',
 	'resistance',
 	'divine_favor',
 	'owl_wisdom'
@@ -139,7 +141,7 @@ export interface Character extends DatabaseCharacter {
 	character_abp_bonuses?: DatabaseCharacterAbpBonus[];
 	character_combat_stats?: DatabaseCharacterCombatStats[];
 	character_equipment?: DatabaseCharacterEquipment[];
-	character_feats?: DatabaseCharacterFeat[];
+	character_feats?: CharacterFeatWithBase[];
 	character_discoveries?: DatabaseCharacterDiscovery[];
 	character_favored_class_bonuses?: DatabaseCharacterFavoredClassBonus[];
 	character_consumables?: DatabaseCharacterConsumables[];

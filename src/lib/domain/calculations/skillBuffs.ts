@@ -1,9 +1,7 @@
 // FILE: src/lib/domain/calculations/skillBuffs.ts
 
 import type { KnownBuffType } from '$lib/domain/types/character';
-import { BUFF_CONFIG } from '$lib/domain/config/buffs';
-// or wherever your Buff definitions are
-import type { BuffEffect } from '$lib/domain/types/buffs';
+import type { Buff } from '$lib/domain/types/buffs';
 
 /**
  * Gathers skill-specific bonuses from all active buffs.
@@ -12,20 +10,22 @@ import type { BuffEffect } from '$lib/domain/types/buffs';
  * For example, if you had a buff that granted +2 Stealth, it might appear in the
  * final record as { stealth: 2 }.
  */
-export function gatherSkillBuffMods(activeBuffs: KnownBuffType[]): Record<string, number> {
+export function gatherSkillBuffMods(
+	activeBuffs: KnownBuffType[],
+	allBuffs: Buff[]
+): Record<string, number> {
 	const result: Record<string, number> = {};
 
 	for (const buffName of activeBuffs) {
-		const buffDef = BUFF_CONFIG.find((b) => b.name === buffName);
+		const buffDef = allBuffs.find((buff) => buff.name === buffName);
 		if (!buffDef) continue;
 
 		for (const effect of buffDef.effects) {
-			// Suppose your BuffEffect can optionally have a `skill_bonus` field like:
-			//   { skill_bonus: { skill: 'Stealth', value: 3 } }
-			// If so, parse it here and accumulate.
+			// Check for skill bonus in effect properties
 			const skillBonus = (effect as any).skill_bonus as
 				| { skill: string; value: number }
 				| undefined;
+
 			if (skillBonus) {
 				const skillName = skillBonus.skill.toLowerCase();
 				const bonusValue = skillBonus.value;

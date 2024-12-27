@@ -16,6 +16,7 @@ export interface DBBaseBuff {
 	name: string; // e.g. "int_cognatogen"
 	label: string; // e.g. "Intelligence Cognatogen"
 	description?: string | null;
+	buff_type: 'mutagen' | 'combat' | 'other' | null;
 	effects?: Json; // JSON array of effect objects
 	conflicts?: Json; // JSON array of buff names
 	created_at?: string | null;
@@ -29,21 +30,23 @@ export interface DBBaseBuff {
 export async function loadAllBuffs(): Promise<Buff[]> {
 	const { data, error } = await supabase
 		.from('base_buffs')
-		.select('id, name, label, description, effects, conflicts')
-		.order('name'); // optional sorting
+		.select('name, label, description, effects, conflicts')
+		.returns<DBBaseBuff[]>()
+		.order('name');
 
 	if (error) {
 		console.error('Error loading base buffs:', error);
 		throw new Error(error.message);
 	}
 	if (!data) return [];
-	// Transform each DB row to your domain Buff interface
+
 	const buffs: Buff[] = data.map((row) => ({
 		name: row.name as KnownBuffType,
 		label: row.label,
 		description: row.description ?? '',
-		effects: (row.effects as BuffEffect[]) ?? [],
-		conflicts: (row.conflicts as KnownBuffType[]) ?? []
+		buff_type: row.buff_type as Buff['buff_type'],
+		effects: (row.effects as unknown as BuffEffect[]) ?? [],
+		conflicts: (row.conflicts as unknown as KnownBuffType[]) ?? []
 	}));
 
 	return buffs;
@@ -64,7 +67,7 @@ export async function loadBuffById(buffId: number): Promise<DBBaseBuff | null> {
 		throw new Error(error.message);
 	}
 
-	return data ?? null;
+	return data as DBBaseBuff;
 }
 
 /**
