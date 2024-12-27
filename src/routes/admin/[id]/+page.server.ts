@@ -1,11 +1,19 @@
-// src/routes/admin/+page.server.ts
-import { getFullCharacterData } from '$lib/db/character';
+// FILE: /src/routes/admin/[id]/+page.server.ts
+
 import type { PageServerLoad } from './$types';
+import { getFullCharacterData } from '$lib/db/character';
 
 export const load: PageServerLoad = async ({ params }) => {
-    if (!params.id) {
-        throw new Error('Character ID is required');
-    }
-    const characterId = parseInt(params.id);
-    return getFullCharacterData(characterId);
+	const characterId = parseInt(params.id);
+	if (isNaN(characterId)) {
+		throw new Error('Invalid character ID');
+	}
+
+	// 1) Actually fetch the data
+	const character = await getFullCharacterData(characterId);
+
+	// 2) Return it as an object
+	return {
+		character
+	};
 };

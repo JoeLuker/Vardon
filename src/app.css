@@ -6,7 +6,7 @@
 
 @layer base {
 	body {
-		@apply bg-yellow-50 overflow-x-hidden text-yellow-900;
+		@apply overflow-x-hidden bg-yellow-50 text-yellow-900;
 		position: relative;
 	}
 
@@ -36,7 +36,7 @@
 	input,
 	select,
 	textarea {
-		@apply bg-yellow-50/90 border border-yellow-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500;
+		@apply rounded border border-yellow-300 bg-yellow-50/90 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500;
 	}
 
 	button {
@@ -46,27 +46,27 @@
 
 @layer components {
 	.parchment-cell {
-		@apply bg-yellow-50/95 p-4 rounded-lg shadow-md mb-4 border border-yellow-200/50 backdrop-blur-sm;
+		@apply mb-4 rounded-lg border border-yellow-200/50 bg-yellow-50/95 p-4 shadow-md backdrop-blur-sm;
 	}
 
 	.stat-label {
-		@apply font-pirata text-yellow-800 text-sm;
+		@apply font-pirata text-sm text-yellow-800;
 	}
 
 	.stat-value {
-		@apply font-bold text-yellow-900 text-lg;
+		@apply text-lg font-bold text-yellow-900;
 	}
 
 	.primary-button {
-		@apply bg-yellow-700 text-yellow-50 px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed;
+		@apply rounded bg-yellow-700 px-4 py-2 text-yellow-50 hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-50;
 	}
 
 	.secondary-button {
-		@apply bg-yellow-100 text-yellow-800 px-4 py-2 rounded hover:bg-yellow-200 border border-yellow-300;
+		@apply rounded border border-yellow-300 bg-yellow-100 px-4 py-2 text-yellow-800 hover:bg-yellow-200;
 	}
 
 	.danger-button {
-		@apply bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200 border border-red-300;
+		@apply rounded border border-red-300 bg-red-100 px-4 py-2 text-red-700 hover:bg-red-200;
 	}
 
 	.input-group {
@@ -78,7 +78,7 @@
 	}
 
 	.badge {
-		@apply px-2 py-1 rounded-full text-xs font-medium;
+		@apply rounded-full px-2 py-1 text-xs font-medium;
 	}
 
 	.badge-primary {

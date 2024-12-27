@@ -1,267 +1,260 @@
+<!-- src/lib/ui/admin/CorruptionManager.svelte -->
 <script lang="ts">
-    import { getCharacter } from '$lib/state/character.svelte';
-    import { type UpdateState } from '$lib/state/updates.svelte';
-    import { supabase } from '$lib/db/supabaseClient';
-    import type { DatabaseCharacterCorruption } from '$lib/domain/types/character';
+	import { getCharacter } from '$lib/state/character.svelte';
+	import type { UpdateState } from '$lib/state/updates.svelte';
 
-    let { characterId } = $props<{ characterId: number; }>();
+	import {
+		upsertCorruption,
+		deleteCorruption,
+		type DBCorruption,
+		type CorruptionUpdate
+	} from '$lib/db/corruptions';
+	import type { Character } from '$lib/domain/types/character';
 
-    let character = $derived(getCharacter(characterId));
+	let { characterId } = $props<{ characterId: number }>();
 
-    let updateState = $state<UpdateState>({
-        status: 'idle',
-        error: null
-    });
+	// We create a derived store function that *returns* a Character
+	// We'll call it getChar() in code to emphasize that we invoke it.
+	let getChar = $derived((): Character => {
+		// If getCharacter might return undefined, use a fallback:
+		//   const c = getCharacter(characterId);
+		//   return c ?? someEmptyCharacter;
+		// but if you're sure it always returns a valid Character, just do this:
+		return getCharacter(characterId);
+	});
 
-    let showAddModal = $state(false);
-    let editingCorruption = $state<Partial<DatabaseCharacterCorruption> | null>(null);
+	let updateState = $state<UpdateState>({
+		status: 'idle',
+		error: null
+	});
 
-    let corruptionList = $derived(
-        [...(character.character_corruptions ?? [])].sort(
-            (a, b) => (a.corruption_stage ?? 0) - (b.corruption_stage ?? 0)
-        )
-    );
+	let showAddModal = $state(false);
 
-    interface VampireManifestationProperties {
-        lastFeedDate?: string;
-        constitutionDamageDealt?: number;
-        requiresDailyFeeding?: boolean;
-        hasSpiderClimb?: boolean;
-        invitedDwellings?: string[];  // List of places invited into
-    }
+	// editingCorruption can be null or a CorruptionUpdate object
+	let editingCorruption = $state<CorruptionUpdate | null>(null);
 
-    async function saveCorruption() {
-        if (!editingCorruption?.corruption_type || !editingCorruption.corruption_stage) {
-            return;
-        }
+	// A second derived store for the sorted corruption list
+	let getCorruptionList = $derived((): DBCorruption[] => {
+		// Ensure we always return an array, even if character_corruptions is undefined
+		return [...(getChar().character_corruptions ?? [])].sort(
+			(a, b) => (a.corruption_stage ?? 0) - (b.corruption_stage ?? 0)
+		);
+	});
 
-        const isNew = !editingCorruption.id;
-        const previousCorruptions = [...(character.character_corruptions ?? [])];
+	async function saveCorruption() {
+		if (!editingCorruption?.corruption_type || editingCorruption.corruption_stage == null) {
+			return;
+		}
 
-        try {
-            const saveData = {
-                corruption_type: editingCorruption.corruption_type,
-                corruption_stage: editingCorruption.corruption_stage,
-                character_id: character.id,
-                blood_consumed: editingCorruption.blood_consumed ?? 0,
-                blood_required: editingCorruption.blood_required ?? 0,
-                sync_status: editingCorruption.sync_status ?? 'pending',
-                properties: {
-                    lastFeedDate: new Date().toISOString(),
-                    constitutionDamageDealt: 0,
-                    requiresDailyFeeding: editingCorruption.corruption_type === 'Fangs',
-                    hasSpiderClimb: editingCorruption.corruption_type === 'Vampiric Grace' && 
-                                   (editingCorruption.corruption_stage >= 6),
-                    invitedDwellings: []
-                } as VampireManifestationProperties
-            };
+		const isNew = editingCorruption.id === 0;
+		const previousCorruptions = [...(getChar().character_corruptions ?? [])];
 
-            const { data, error } = await (isNew 
-                ? supabase
-                    .from('character_corruptions')
-                    .insert(saveData)
-                    .select()
-                    .single()
-                : supabase
-                    .from('character_corruptions')
-                    .update(saveData)
-                    .eq('id', editingCorruption.id!)
-                    .select()
-                    .single()
-            );
+		try {
+			updateState.status = 'syncing';
+			const savedCorruption = await upsertCorruption(editingCorruption);
 
-            if (error) throw error;
+			if (!getChar().character_corruptions) {
+				getChar().character_corruptions = [];
+			}
+			const arr = getChar().character_corruptions as DBCorruption[];
 
-            const savedCorruption = data as DatabaseCharacterCorruption;
+			if (isNew) {
+				arr.push(savedCorruption);
+			} else {
+				const index = arr.findIndex((c) => c.id === savedCorruption.id);
+				if (index >= 0) {
+					arr[index] = savedCorruption;
+				}
+			}
 
-            if (character.character_corruptions) {
-                if (isNew) {
-                    character.character_corruptions.push(savedCorruption);
-                } else {
-                    const index = character.character_corruptions.findIndex(c => c.id === savedCorruption.id);
-                    if (index >= 0) {
-                        character.character_corruptions[index] = savedCorruption;
-                    }
-                }
-            }
+			editingCorruption = null;
+			showAddModal = false;
+			updateState.status = 'idle';
+		} catch (err) {
+			console.error('Failed to save corruption:', err);
+			// Roll back if anything fails
+			getChar().character_corruptions = previousCorruptions;
+			updateState.error = new Error('Failed to save corruption');
+			updateState.status = 'error';
+		}
+	}
 
-            editingCorruption = null;
-            showAddModal = false;
-        } catch (err) {
-            console.error('Failed to save corruption:', err);
-            character.character_corruptions = previousCorruptions;
-            updateState.error = new Error('Failed to save corruption');
-        }
-    }
+	async function handleDeleteCorruption(corruption: DBCorruption) {
+		if (!confirm(`Are you sure you want to delete this corruption?`)) return;
 
-    async function deleteCorruption(corruption: DatabaseCharacterCorruption) {
-        if (!confirm(`Are you sure you want to delete this corruption?`)) return;
+		const previousCorruptions = [...(getChar().character_corruptions ?? [])];
 
-        const previousCorruptions = [...(character.character_corruptions ?? [])];
+		try {
+			updateState.status = 'syncing';
+			await deleteCorruption(corruption.id);
 
-        try {
-            const { error } = await supabase
-                .from('character_corruptions')
-                .delete()
-                .eq('id', corruption.id);
+			if (!getChar().character_corruptions) {
+				getChar().character_corruptions = [];
+			}
+			const arr = getChar().character_corruptions as DBCorruption[];
+			getChar().character_corruptions = arr.filter((c) => c.id !== corruption.id);
 
-            if (error) throw error;
-
-            if (character.character_corruptions) {
-                character.character_corruptions = character.character_corruptions.filter(
-                    c => c.id !== corruption.id
-                );
-            }
-        } catch (err) {
-            console.error('Failed to delete corruption:', err);
-            character.character_corruptions = previousCorruptions;
-            updateState.error = new Error('Failed to delete corruption');
-        }
-    }
+			updateState.status = 'idle';
+		} catch (err) {
+			console.error('Failed to delete corruption:', err);
+			getChar().character_corruptions = previousCorruptions;
+			updateState.error = new Error('Failed to delete corruption');
+			updateState.status = 'error';
+		}
+	}
 </script>
 
 <div class="space-y-4">
-    <div class="flex justify-between items-center">
-        <h2 class="text-xl font-bold">Corruptions</h2>
-        <button 
-            class="btn"
-            onclick={() => {
-                editingCorruption = { 
-                    corruption_stage: 0,
-                    blood_consumed: 0,
-                    blood_required: 0,
-                    sync_status: 'pending'
-                };
-                showAddModal = true;
-            }}
-        >
-            Add Corruption
-        </button>
-    </div>
+	<div class="flex items-center justify-between">
+		<h2 class="text-xl font-bold">Corruptions</h2>
+		<button
+			class="btn"
+			onclick={() => {
+				editingCorruption = {
+					id: 0,
+					corruption_type: '',
+					corruption_stage: 0,
+					character_id: getChar().id,
+					blood_consumed: 0,
+					blood_required: 0,
+					sync_status: 'pending',
+					properties: {}
+				};
+				showAddModal = true;
+			}}
+		>
+			Add Corruption
+		</button>
+	</div>
 
-    {#if updateState.error}
-        <div class="p-4 bg-red-100 text-red-700 rounded-lg">
-            {updateState.error.message}
-        </div>
-    {/if}
+	{#if updateState.error}
+		<div class="rounded-lg bg-red-100 p-4 text-red-700">
+			{updateState.error.message}
+		</div>
+	{/if}
 
-    <div class="grid gap-4 md:grid-cols-2">
-        {#each corruptionList as corruption (corruption.id)}
-            <div class="p-4 bg-gray-50 rounded-lg">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="font-medium">{corruption.corruption_type}</div>
-                        <div class="text-sm text-gray-500">
-                            Stage {corruption.corruption_stage ?? 0}
-                        </div>
-                        <div class="mt-2 text-sm space-y-1">
-                            <div>Blood Consumed: {corruption.blood_consumed ?? 0}</div>
-                            <div>Blood Required: {corruption.blood_required ?? 0}</div>
-                            <div>Status: {corruption.sync_status}</div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button
-                            class="text-primary hover:text-primary-dark"
-                            onclick={() => {
-                                editingCorruption = { ...corruption };
-                                showAddModal = true;
-                            }}
-                        >
-                            Edit
-                        </button>
-                        <button
-                            class="text-red-600 hover:text-red-700"
-                            onclick={() => deleteCorruption(corruption)}
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </div>
-        {/each}
-    </div>
+	<div class="grid gap-4 md:grid-cols-2">
+		<!-- Here's the important part — call getCorruptionList() rather than corruptionList -->
+		{#each getCorruptionList() as corruption (corruption.id)}
+			<div class="rounded-lg bg-gray-50 p-4">
+				<div class="flex items-start justify-between">
+					<div>
+						<div class="font-medium">{corruption.corruption_type}</div>
+						<div class="text-sm text-gray-500">
+							Stage {corruption.corruption_stage ?? 0}
+						</div>
+						<div class="mt-2 space-y-1 text-sm">
+							<div>Blood Consumed: {corruption.blood_consumed ?? 0}</div>
+							<div>Blood Required: {corruption.blood_required ?? 0}</div>
+							<div>Status: {corruption.sync_status}</div>
+						</div>
+					</div>
+					<div class="flex gap-2">
+						<button
+							class="hover:text-primary-dark text-primary"
+							onclick={() => {
+								editingCorruption = { ...corruption };
+								showAddModal = true;
+							}}
+						>
+							Edit
+						</button>
+						<button
+							class="text-red-600 hover:text-red-700"
+							onclick={() => handleDeleteCorruption(corruption)}
+						>
+							Delete
+						</button>
+					</div>
+				</div>
+			</div>
+		{/each}
+	</div>
 </div>
 
 {#if showAddModal}
-    <div class="fixed inset-0 bg-black/50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg max-w-2xl w-full">
-            <h3 class="text-xl font-bold mb-4">
-                {editingCorruption?.id ? 'Edit' : 'Add'} Corruption
-            </h3>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="corruption-type" class="block text-sm font-medium mb-1">
-                        Corruption Type
-                    </label>
-                    <input
-                        id="corruption-type"
-                        type="text"
-                        class="w-full p-2 border rounded"
-                        bind:value={editingCorruption!.corruption_type}
-                        placeholder="Enter corruption type"
-                    />
-                </div>
+	<div class="fixed inset-0 flex items-center justify-center bg-black/50">
+		<div class="w-full max-w-2xl rounded-lg bg-white p-6">
+			<h3 class="mb-4 text-xl font-bold">
+				{editingCorruption?.id ? 'Edit' : 'Add'} Corruption
+			</h3>
 
-                <div>
-                    <label for="corruption-stage" class="block text-sm font-medium mb-1">
-                        Corruption Stage
-                    </label>
-                    <input
-                        id="corruption-stage"
-                        type="number"
-                        class="w-full p-2 border rounded"
-                        bind:value={editingCorruption!.corruption_stage}
-                        min="0"
-                    />
-                </div>
+			<div class="space-y-4">
+				<div>
+					<label for="corruption-type" class="mb-1 block text-sm font-medium">
+						Corruption Type
+					</label>
+					<input
+						id="corruption-type"
+						type="text"
+						class="w-full rounded border p-2"
+						bind:value={editingCorruption!.corruption_type}
+						placeholder="Enter corruption type"
+					/>
+				</div>
 
-                <div>
-                    <label for="blood-consumed" class="block text-sm font-medium mb-1">
-                        Blood Consumed
-                    </label>
-                    <input
-                        id="blood-consumed"
-                        type="number"
-                        class="w-full p-2 border rounded"
-                        bind:value={editingCorruption!.blood_consumed}
-                        min="0"
-                    />
-                </div>
+				<div>
+					<label for="corruption-stage" class="mb-1 block text-sm font-medium">
+						Corruption Stage
+					</label>
+					<input
+						id="corruption-stage"
+						type="number"
+						class="w-full rounded border p-2"
+						bind:value={editingCorruption!.corruption_stage}
+						min="0"
+					/>
+				</div>
 
-                <div>
-                    <label for="blood-required" class="block text-sm font-medium mb-1">
-                        Blood Required
-                    </label>
-                    <input
-                        id="blood-required"
-                        type="number"
-                        class="w-full p-2 border rounded"
-                        bind:value={editingCorruption!.blood_required}
-                        min="0"
-                    />
-                </div>
+				<div>
+					<label for="blood-consumed" class="mb-1 block text-sm font-medium">
+						Blood Consumed
+					</label>
+					<input
+						id="blood-consumed"
+						type="number"
+						class="w-full rounded border p-2"
+						bind:value={editingCorruption!.blood_consumed}
+						min="0"
+					/>
+				</div>
 
-                <div class="flex justify-end gap-2">
-                    <button 
-                        class="btn btn-secondary"
-                        onclick={() => {
-                            editingCorruption = null;
-                            showAddModal = false;
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        class="btn btn-primary"
-                        disabled={!editingCorruption?.corruption_type}
-                        onclick={saveCorruption}
-                    >
-                        Save
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-{/if} 
+				<div>
+					<label for="blood-required" class="mb-1 block text-sm font-medium">
+						Blood Required
+					</label>
+					<input
+						id="blood-required"
+						type="number"
+						class="w-full rounded border p-2"
+						bind:value={editingCorruption!.blood_required}
+						min="0"
+					/>
+				</div>
+
+				<div class="flex justify-end gap-2">
+					<button
+						class="btn btn-secondary"
+						onclick={() => {
+							editingCorruption = null;
+							showAddModal = false;
+						}}
+					>
+						Cancel
+					</button>
+					<button
+						class="btn btn-primary"
+						disabled={!editingCorruption?.corruption_type}
+						onclick={saveCorruption}
+					>
+						Save
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<style>
+	/* You can keep your existing styles as-is */
+</style>

@@ -1,47 +1,51 @@
-import type { KNOWN_BUFFS } from "$lib/domain/types/character";
+import type { KNOWN_BUFFS } from '$lib/domain/types/character';
 
-export type KnownBuffType = typeof KNOWN_BUFFS[number];
+export type KnownBuffType = (typeof KNOWN_BUFFS)[number];
 
-export interface AttributeEffect {
-    attribute: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
-    modifier: number;
-    description: string;
+export interface BuffEffect {
+	// Base effect properties
+	description: string;
+
+	// Attribute modifications
+	attribute?: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
+	modifier?: number;
+
+	// Combat modifications
+	attackRoll?: number;
+	damageRoll?: number;
+	extraAttack?: boolean;
+	initiativeBonus?: number;
+
+	// Defense modifications
+	acBonus?: number;
+	naturalArmor?: number;
+
+	// Saves modifications
+	fortSave?: number;
+	refSave?: number;
+	willSave?: number;
+
+	// Combat maneuver modifications
+	cmbBonus?: number;
+	cmdBonus?: number;
 }
-
-export interface ArmorEffect {
-    naturalArmor: number;
-    description: string;
-}
-
-export interface AttackEffect {
-    attackRoll?: number;
-    damageRoll?: number;
-    mainHandPenalty?: number;
-    offHandPenalty?: number;
-    extraAttack?: boolean;
-    description: string;
-}
-
-export type BuffEffect = AttributeEffect | ArmorEffect | AttackEffect;
 
 export interface Buff {
-    name: string;
-    label: string;
-    effects: BuffEffect[];
-    conflicts?: string[];
-    description: string;
+	name: string;
+	label: string;
+	effects: BuffEffect[];
+	description: string;
 }
 
-export function isAttributeEffect(effect: BuffEffect): effect is AttributeEffect {
-    return 'attribute' in effect && 'modifier' in effect;
+// Type guards
+export function isAttributeEffect(effect: BuffEffect): boolean {
+	return 'attribute' in effect && 'modifier' in effect;
 }
 
-export function isArmorEffect(effect: BuffEffect): effect is ArmorEffect {
-    return 'naturalArmor' in effect;
+export function isArmorEffect(effect: BuffEffect): boolean {
+	return 'naturalArmor' in effect || 'acBonus' in effect;
 }
 
-export function isAttackEffect(effect: BuffEffect): effect is AttackEffect {
-    return 'attackRoll' in effect || 'damageRoll' in effect || 
-           'mainHandPenalty' in effect || 'offHandPenalty' in effect || 
-           'extraAttack' in effect;
+export function isCombatEffect(effect: BuffEffect): boolean {
+	return 'attackRoll' in effect || 'damageRoll' in effect || 'extraAttack' in effect;
 }
