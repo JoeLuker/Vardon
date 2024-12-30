@@ -1,61 +1,93 @@
-// Data Interfaces
+// Re-export types
 export type {
+    // Database-derived types
+    BaseSkill,
+    CharacterBuff,
+    BonusType,
+    CharacterClass,
+    FavoredClassBonus,
+    AncestralTraitBonus,
+    CharacterABPBonus,
+    CharacterABPBonusTarget,
+    CharacterABPBonusWithTargets,
+    ABPBonusAssignment,
+    CharacterSkillRank,
+    SkillDefinition,
+    ConditionalBonus,
+  
+    // Effect types
+    Effect,
+    BuffWithEffects,
+    FeatWithEffects,
+  
+    // Core interfaces
     AbilityScores,
     AbilityModifiers,
     CharacterLevelInfo,
-    FavoredClassBonus,
-    ABPBonusAssignment,
     ABPModifiers,
-    Buff,
-    ConditionalBonus,
-    ArmorItem,
-    SkillDefinition,
-    SkillRankRecord,
+    ItemProperty,
+    BaseItem,
+    ArmorStats,
+    WeaponStats,
     CharacterFinalStats,
-  } from './character';
   
-  // Helper Functions
+    // Calculation argument types
+    ComputeMaxHPArgs,
+    ComputeAttackBonusArgs,
+    ComputeSkillBonusArgs,
+    ComputeACArgs,
+    ComputeCmdArgs,
+    FinalizeCharacterArgs,
+  
+    // Additional types
+    SkillAbilityReplacement,
+    TypedBonus,
+    ArmorItem,
+    AncestralTrait,
+    Ancestry,
+    AncestralTraitEffects,
+    SaveResults,
+  } from './character'
+  
+  // Re-export constants
   export {
+    BAB_PROGRESSION,
+    SAVE_PROGRESSION,
+    SIZE_CATEGORIES,
+    SIZE_MODIFIERS,
+    SIZE_SPECIAL_MODIFIERS,
+  } from './character'
+  
+  // Re-export functions
+  export {
+    // Core calculation functions
     computeAbilityModifier,
     computeAllAbilityModifiers,
     consolidateABPBonuses,
-  } from './character';
-  
-  // HP & Favored Class
-  export type { ComputeMaxHPArgs } from './character';
-  export { computeMaxHP } from './character';
-  
-  // Saves
-  export {
+    computeMaxHP,
     getBaseSave,
     computeSaves,
-  } from './character';
-  
-  // Attack Calculations
-  export type { ComputeAttackBonusArgs } from './character';
-  export {
     getBaseAttackBonus,
     computeAttackBonus,
-  } from './character';
-  
-  // Skill Calculations
-  export type { ComputeSkillBonusArgs } from './character';
-  export { computeSkillBonus } from './character';
-  
-  // Armor & AC
-  export type {
-    ArmorStats,
-    ComputeACArgs,
-  } from './character';
-  export {
-    computeArmorStats,
+    computeSkillBonus,
     computeAC,
-  } from './character';
+    computeCMD,
+    finalizeCharacter,
   
-  // CMD
-  export type { ComputeCmdArgs } from './character';
-  export { computeCMD } from './character';
+    // Equipment related
+    parseNumericProperty,
+    parseArmorProperties,
+    parseWeaponProperties,
+    computeArmorStats,
   
-  // Final Pipeline
-  export type { FinalizeCharacterArgs } from './character';
-  export { finalizeCharacter } from './character';
+    // Helper functions
+    stackBonuses,
+    isValidBuff,
+    applyAttributeModifiers,
+    processSkillBonuses,
+    getSizeModifier,
+    getSpecialSizeModifier,
+    getEffectiveSkillAbility,
+    processAncestralTraits,
+    processTraitSkillModifiers,
+  } from './character'
