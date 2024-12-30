@@ -1,75 +1,72 @@
 <!-- FILE: src/lib/ui/admin/DiscoveriesManager.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/character.svelte';
-	import { type UpdateState } from '$lib/state/updates.svelte';
-
-	import { saveDiscovery, removeDiscovery, type DiscoverySaveData } from '$lib/db/discoveries';
-	import type { DatabaseCharacterDiscovery } from '$lib/domain/types/character';
-	import type { Json } from '$lib/domain/types/supabase';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { saveDiscovery, removeDiscovery } from '$lib/db/discoveries';
+	import type { DiscoverySaveData } from '$lib/db/discoveries';
 
 	let { characterId } = $props<{ characterId: number }>();
 
-	let updateState = $state<UpdateState>({
-		status: 'idle',
-		error: null
+	let character = $derived(getCharacter(characterId));
+	
+	let discoveryList = $derived([...(character.character_discoveries ?? [])].sort(
+		(a, b) => a.selected_level - b.selected_level
+	));
+
+	let updateState = $state({
+		status: 'idle' as 'idle' | 'syncing',
+		error: null as Error | null
 	});
 
 	let showAddModal = $state(false);
 	let editingDiscovery = $state<Partial<DatabaseCharacterDiscovery> | null>(null);
 
-	let character = $derived(getCharacter(characterId));
-
-	let discoveryList = $derived(
-		[...(character.character_discoveries ?? [])].sort((a, b) => a.selected_level - b.selected_level)
-	);
+	function isValidDiscovery(discovery: Partial<DatabaseCharacterDiscovery>): discovery is Required<Pick<DatabaseCharacterDiscovery, 'discovery_name' | 'selected_level'>> & Partial<DatabaseCharacterDiscovery> {
+		return typeof discovery.discovery_name === 'string' && typeof discovery.selected_level === 'number';
+	}
 
 	async function saveCurrentDiscovery() {
-		if (!editingDiscovery?.discovery_name || !editingDiscovery.selected_level) {
+		const discovery = editingDiscovery;
+		if (!discovery || !isValidDiscovery(discovery)) {
 			return;
 		}
 
-		const isNew = !editingDiscovery.id;
 		const previousDiscoveries = [...(character.character_discoveries ?? [])];
 
-		try {
-			updateState.status = 'syncing';
+		await executeUpdate({
+			key: `discovery-${character.id}-${discovery.id || 'new'}`,
+			operation: async () => {
+				const saveData: DiscoverySaveData = {
+					discovery_name: discovery.discovery_name,
+					selected_level: discovery.selected_level,
+					character_id: character.id,
+					properties: discovery.properties ?? null,
+					...(discovery.id ? { id: discovery.id } : {})
+				};
 
-			// Prepare data for our new saveDiscovery function
-			const saveData: DiscoverySaveData = {
-				discovery_name: editingDiscovery.discovery_name,
-				selected_level: editingDiscovery.selected_level,
-				character_id: character.id,
-				properties: editingDiscovery.properties as Json,
-				// If it has an id, pass it (meaning update)
-				...(editingDiscovery.id ? { id: editingDiscovery.id } : {})
-			};
-
-			// Use the new DB function
-			const savedDiscovery = await saveDiscovery(saveData);
-
-			// Update local state
-			if (character.character_discoveries) {
+				const savedDiscovery = await saveDiscovery(saveData);
+				
+				if (!character.character_discoveries) {
+					character.character_discoveries = [];
+				}
+				
+				const isNew = !discovery.id;
 				if (isNew) {
 					character.character_discoveries.push(savedDiscovery);
 				} else {
-					const index = character.character_discoveries.findIndex(
+					const idx = character.character_discoveries.findIndex(
 						(d) => d.id === savedDiscovery.id
 					);
-					if (index >= 0) {
-						character.character_discoveries[index] = savedDiscovery;
-					}
+					if (idx >= 0) character.character_discoveries[idx] = savedDiscovery;
 				}
+			},
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_discoveries = previousDiscoveries;
 			}
+		});
 
-			editingDiscovery = null;
-			showAddModal = false;
-		} catch (err) {
-			console.error('Failed to save discovery:', err);
-			character.character_discoveries = previousDiscoveries;
-			updateState.error = new Error('Failed to save discovery');
-		} finally {
-			updateState.status = 'idle';
-		}
+		editingDiscovery = null;
+		showAddModal = false;
 	}
 
 	async function deleteDiscovery(discovery: DatabaseCharacterDiscovery) {
@@ -77,25 +74,19 @@
 
 		const previousDiscoveries = [...(character.character_discoveries ?? [])];
 
-		try {
-			updateState.status = 'syncing';
-
-			// Use removeDiscovery from our new file
-			await removeDiscovery(discovery.id);
-
-			// Remove from local array
-			if (character.character_discoveries) {
-				character.character_discoveries = character.character_discoveries.filter(
+		await executeUpdate({
+			key: `delete-discovery-${discovery.id}`,
+			operation: async () => {
+				await removeDiscovery(discovery.id);
+				character.character_discoveries = character.character_discoveries?.filter(
 					(d) => d.id !== discovery.id
-				);
+				) ?? [];
+			}, 
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_discoveries = previousDiscoveries;
 			}
-		} catch (err) {
-			console.error('Failed to delete discovery:', err);
-			character.character_discoveries = previousDiscoveries;
-			updateState.error = new Error('Failed to delete discovery');
-		} finally {
-			updateState.status = 'idle';
-		}
+		});
 	}
 
 	function formatDiscoveryName(name: string): string {

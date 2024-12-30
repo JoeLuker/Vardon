@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { getCharacter, fetchSkillData } from '$lib/state/character.svelte';
-	import { SKILL_RANK_SOURCES, type CharacterSkillRank } from '$lib/domain/types/character';
-	import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+	import { getCharacter, fetchSkillData } from '$lib/state/characterStore.svelte';
 	import { onMount } from 'svelte';
-	import { calculateCharacterStats } from '$lib/domain/calculations/characterCalculations';
 	import {
 		getClassSkillRanks,
 		deleteSkillRanksByIds,

@@ -1,369 +1,48 @@
-// FILE: src/lib/db/feats.ts
-
 import { supabase } from '$lib/db/supabaseClient';
 import { readable, type Readable } from 'svelte/store';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import type { Json } from '$lib/domain/types/supabase';
+import { parseRow } from '$lib/db/utils';
+import type { Database } from '$lib/domain/types/supabase';
 
-/* ---------------------------------------------------------------------------
- * 1. BASE FEATS (the “master” feats table) stored in `base_feats`.
- * --------------------------------------------------------------------------- */
+// -----------------------------
+// Type Definitions
+// -----------------------------
 
-/** The shape needed for creating a new base feat in `base_feats`. */
-export interface BaseFeatData {
-  name: string;
-  label?: string; // optional if your table has a label column
-  feat_type: string; // e.g. "combat", "metamagic", etc.
-  description?: string | null;
-  effects?: Json; // optional JSON for the feat’s mechanical effects
-  prerequisites?: Json | null; // optional JSON for prereqs
+// Core feat types
+export type CharacterFeatRow = Database['public']['Tables']['character_feats']['Row'];
+export type CharacterFeatPropertyRow = Database['public']['Tables']['character_feat_properties']['Row'];
+
+// Extended interfaces
+export interface FeatWithProperties extends CharacterFeatRow {
+  properties: CharacterFeatPropertyRow[];
 }
 
-/** The row shape from your Supabase-generated types (for `base_feats`). */
-export interface DatabaseBaseFeat {
-  id: number;
-  name: string;
-  label: string;
-  feat_type: string;
-  description: string | null;
-  effects: Json;
-  prerequisites: Json | null;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Create a new base feat in `base_feats`.
- */
-export async function createBaseFeat(data: BaseFeatData): Promise<DatabaseBaseFeat> {
-  const { data: result, error } = await supabase
-    .from('base_feats')
-    .insert({
-      name: data.name,
-      label: data.label ?? data.name, // fallback if label is missing
-      feat_type: data.feat_type,
-      description: data.description ?? null,
-      effects: data.effects ?? {},
-      prerequisites: data.prerequisites ?? null
-      // plus any other columns you have
-    })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return result as DatabaseBaseFeat;
-}
-
-/**
- * Update an existing base feat in `base_feats` by ID.
- */
-export async function updateBaseFeat(
-  featId: number,
-  changes: Partial<BaseFeatData>
-): Promise<DatabaseBaseFeat> {
-  const { data: result, error } = await supabase
-    .from('base_feats')
-    .update({
-      ...(changes.name !== undefined && { name: changes.name }),
-      ...(changes.label !== undefined && { label: changes.label }),
-      ...(changes.feat_type !== undefined && { feat_type: changes.feat_type }),
-      ...(changes.description !== undefined && { description: changes.description }),
-      ...(changes.effects !== undefined && { effects: changes.effects }),
-      ...(changes.prerequisites !== undefined && { prerequisites: changes.prerequisites })
-    })
-    .eq('id', featId)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return result as DatabaseBaseFeat;
-}
-
-/**
- * Delete a base feat by ID from `base_feats`.
- * Typically you'd want to ensure no existing `character_feats`
- * rows reference it before removing.
- */
-export async function removeBaseFeat(featId: number): Promise<void> {
-  const { error } = await supabase
-    .from('base_feats')
-    .delete()
-    .eq('id', featId);
-
-  if (error) throw new Error(error.message);
-}
-
-/**
- * Get a single base feat by ID, including everything you need from the DB row.
- */
-export async function getBaseFeatById(featId: number): Promise<DatabaseBaseFeat | null> {
-  const { data, error } = await supabase
-    .from('base_feats')
-    .select('*')
-    .eq('id', featId)
-    .single();
-
-  if (error?.message === 'Multiple or no rows found for the query') {
-    return null; // not found
-  }
-  if (error) throw new Error(error.message);
-
-  return data as DatabaseBaseFeat;
-}
-
-/**
- * Get a list of all base feats (e.g. for picking from a UI).
- */
-export async function getAllBaseFeats(): Promise<DatabaseBaseFeat[]> {
-  const { data, error } = await supabase
-    .from('base_feats')
-    .select('*')
-    .order('name'); // or label, or id, etc.
-
-  if (error) throw new Error(error.message);
-  return data as DatabaseBaseFeat[];
-}
-
-/* ---------------------------------------------------------------------------
- * REAL-TIME SUBSCRIPTION FOR base_feats
- * --------------------------------------------------------------------------- */
-
-/** The shape of real-time events for `base_feats`. */
-export interface BaseFeatChangeEvent {
+// Real-time types
+export interface FeatChangeEvent {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  newRow: DatabaseBaseFeat | null;
-  oldRow: DatabaseBaseFeat | null;
+  newRow: CharacterFeatRow | null;
+  oldRow: CharacterFeatRow | null;
 }
 
-/**
- * watchAllBaseFeats()
- *
- * Subscribes to all changes (INSERT/UPDATE/DELETE) in the `base_feats` table.
- * Returns a Svelte readable store that accumulates these events in an array.
- */
-export function watchAllBaseFeats(): Readable<BaseFeatChangeEvent[]> {
-  return readable<BaseFeatChangeEvent[]>([], (set) => {
-    let internalArray: BaseFeatChangeEvent[] = [];
+// -----------------------------
+// Real-time Subscriptions
+// -----------------------------
 
-    // Create a channel for entire `base_feats` table
-    const channel = supabase.channel('base_feats_all');
-
-    const handlePayload = (payload: RealtimePostgresChangesPayload<Partial<DatabaseBaseFeat>>) => {
-      // If supabase returns empty new/old, treat them as null
-      const newRow =
-        payload.new && Object.keys(payload.new).length > 0
-          ? (payload.new as DatabaseBaseFeat)
-          : null;
-      const oldRow =
-        payload.old && Object.keys(payload.old).length > 0
-          ? (payload.old as DatabaseBaseFeat)
-          : null;
-
-      const event: BaseFeatChangeEvent = {
-        eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-        newRow,
-        oldRow
-      };
-
-      internalArray = [...internalArray, event];
-      set(internalArray);
-    };
-
-    channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'base_feats'
-      },
-      handlePayload
-    );
-
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('[db/feats] Subscribed to base_feats (all rows).');
-      }
-    });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  });
-}
-
-/* ---------------------------------------------------------------------------
- * 2. CHARACTER FEATS (the “junction” table `character_feats`)
- *    Linking a `character` to a `base_feat`.
- * --------------------------------------------------------------------------- */
-
-/** The row shape from your Supabase types (for `character_feats`): */
-export interface DatabaseCharacterFeat {
-  id: number;
-  base_feat_id: number | null;
-  character_id: number | null;
-  selected_level: number;
-  properties: Json | null;
-  sync_status: string | null;
-  updated_at: string;
-}
-
-// Data shape for connecting a feat to a character
-export interface CharacterFeatData {
-  base_feat_id: number; // which feat from base_feats
-  character_id: number; // which character
-  selected_level: number;
-  properties?: Json; // optional
-  id?: number;       // if present => update an existing row
-}
-
-/**
- * Creates a new row in `character_feats` linking a base_feat to a character,
- * or updates an existing row if `id` is provided.
- */
-export async function saveCharacterFeat(data: CharacterFeatData): Promise<DatabaseCharacterFeat> {
-  const query = !data.id
-    ? supabase
-        .from('character_feats')
-        .insert({
-          base_feat_id: data.base_feat_id,
-          character_id: data.character_id,
-          selected_level: data.selected_level,
-          properties: data.properties ?? null
-        })
-    : supabase
-        .from('character_feats')
-        .update({
-          base_feat_id: data.base_feat_id,
-          selected_level: data.selected_level,
-          ...(data.properties !== undefined && { properties: data.properties })
-        })
-        .eq('id', data.id);
-
-  const { data: result, error } = await query.select().single();
-  if (error) throw new Error(error.message);
-
-  return result as DatabaseCharacterFeat;
-}
-
-/**
- * Removes (unlinks) a specific row from `character_feats` by ID,
- * effectively removing that feat from the character’s build.
- */
-export async function removeCharacterFeat(id: number): Promise<void> {
-  const { error } = await supabase
-    .from('character_feats')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw new Error(error.message);
-}
-
-/**
- * List all feats a character has selected, optionally joining to base_feats
- * so we can see the feat name, label, type, etc.
- */
-export interface CharacterFeatWithBase extends DatabaseCharacterFeat {
-  base_feats?: {
-    name: string;
-    label: string;
-    feat_type: string;
-  };
-}
-
-/**
- * Returns an array of all feats a character has selected (from `character_feats`),
- * optionally joining to `base_feats`.
- */
-export async function getFeatsForCharacter(
-  characterId: number,
-  includeBaseFeatInfo = true
-): Promise<CharacterFeatWithBase[]> {
-  const columns = includeBaseFeatInfo
-    ? '*, base_feats!inner(name, label, feat_type)'
-    : '*';
-
-  const { data, error } = await supabase
-    .from('character_feats')
-    .select(columns)
-    .eq('character_id', characterId)
-    .order('selected_level', { ascending: true });
-
-  if (error) throw new Error(error.message);
-  return data as unknown as CharacterFeatWithBase[];
-}
-
-/**
- * Example: fetch a single `character_feat` row by ID,
- * optionally joining to `base_feats`.
- */
-export async function getCharacterFeatById(
-  id: number,
-  includeBaseFeatInfo = true
-): Promise<CharacterFeatWithBase | null> {
-  const columns = includeBaseFeatInfo
-    ? '*, base_feats!inner(name, label, feat_type)'
-    : '*';
-
-  const { data, error } = await supabase
-    .from('character_feats')
-    .select(columns)
-    .eq('id', id)
-    .single();
-
-  if (error?.message === 'Multiple or no rows found for the query') {
-    return null; // not found
-  }
-  if (error) throw new Error(error.message);
-
-  return data as unknown as CharacterFeatWithBase;
-}
-
-/* ---------------------------------------------------------------------------
- * REAL-TIME SUBSCRIPTION FOR character_feats
- * --------------------------------------------------------------------------- */
-
-/** The shape of real-time events for `character_feats`. */
-export interface CharacterFeatChangeEvent {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  newRow: DatabaseCharacterFeat | null;
-  oldRow: DatabaseCharacterFeat | null;
-}
-
-/**
- * watchCharacterFeats(characterId)
- *
- * Subscribes to the `character_feats` table for a specific `character_id`,
- * returning a Svelte store that accumulates real-time events.
- *
- * Each time an INSERT/UPDATE/DELETE occurs for rows matching
- * `character_id=eq.{characterId}`, we push a new event to the store array.
- */
-export function watchCharacterFeats(characterId: number): Readable<CharacterFeatChangeEvent[]> {
-  return readable<CharacterFeatChangeEvent[]>([], (set) => {
-    let internalArray: CharacterFeatChangeEvent[] = [];
-
-    // Create a channel specific to this character's feats
+export function watchCharacterFeats(characterId: number): Readable<FeatChangeEvent[]> {
+  return readable<FeatChangeEvent[]>([], (set) => {
+    let internalArray: FeatChangeEvent[] = [];
     const channel = supabase.channel(`character_feats_${characterId}`);
-
-    const handlePayload = (
-      payload: RealtimePostgresChangesPayload<Partial<DatabaseCharacterFeat>>
-    ) => {
-      // If supabase returns empty objects, treat them as null
-      const newRow =
-        payload.new && Object.keys(payload.new).length > 0
-          ? (payload.new as DatabaseCharacterFeat)
-          : null;
-      const oldRow =
-        payload.old && Object.keys(payload.old).length > 0
-          ? (payload.old as DatabaseCharacterFeat)
-          : null;
-
-      const event: CharacterFeatChangeEvent = {
+    
+    const handlePayload = (payload: RealtimePostgresChangesPayload<Partial<CharacterFeatRow>>) => {
+      const newRow = parseRow<CharacterFeatRow>(payload.new);
+      const oldRow = parseRow<CharacterFeatRow>(payload.old);
+      
+      const event: FeatChangeEvent = {
         eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
         newRow,
         oldRow
       };
-
+      
       internalArray = [...internalArray, event];
       set(internalArray);
     };
@@ -377,16 +56,164 @@ export function watchCharacterFeats(characterId: number): Readable<CharacterFeat
         filter: `character_id=eq.${characterId}`
       },
       handlePayload
-    );
-
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log(`[db/feats] Subscribed to character_feats for character ${characterId}`);
-      }
-    });
+    ).subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   });
+}
+
+// -----------------------------
+// Feat Operations
+// -----------------------------
+
+/**
+ * Get all feats for a character with properties
+ */
+export async function getFeats(characterId: number): Promise<FeatWithProperties[]> {
+  const { data, error } = await supabase
+    .from('character_feats')
+    .select(`
+      *,
+      properties:character_feat_properties(*)
+    `)
+    .eq('character_id', characterId)
+    .order('selected_level');
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/**
+ * Add new feat
+ */
+export async function addFeat(
+  characterId: number,
+  baseFeatId: number,
+  selectedLevel: number,
+  properties?: Array<{ property_key: string; property_value: string }>
+): Promise<FeatWithProperties> {
+  // Add the base feat
+  const { data: featData, error: featError } = await supabase
+    .from('character_feats')
+    .insert({
+      character_id: characterId,
+      base_feat_id: baseFeatId,
+      selected_level: selectedLevel,
+      sync_status: 'pending'
+    })
+    .select()
+    .single();
+
+  if (featError) throw new Error(featError.message);
+
+  // Add properties if provided
+  if (properties && properties.length > 0) {
+    const { error: propertiesError } = await supabase
+      .from('character_feat_properties')
+      .insert(
+        properties.map(prop => ({
+          character_feat_id: featData.id,
+          property_key: prop.property_key,
+          property_value: prop.property_value,
+          sync_status: 'pending' as const
+        }))
+      );
+
+    if (propertiesError) throw new Error(propertiesError.message);
+  }
+
+  // Return complete feat with properties
+  return getFeatById(featData.id);
+}
+
+/**
+ * Get feat by ID with properties
+ */
+export async function getFeatById(featId: number): Promise<FeatWithProperties> {
+  const { data, error } = await supabase
+    .from('character_feats')
+    .select(`
+      *,
+      properties:character_feat_properties(*)
+    `)
+    .eq('id', featId)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
+ * Remove feat
+ */
+export async function removeFeat(featId: number): Promise<void> {
+  const { error } = await supabase
+    .from('character_feats')
+    .delete()
+    .eq('id', featId);
+
+  if (error) throw new Error(error.message);
+}
+
+// -----------------------------
+// Feat Properties
+// -----------------------------
+
+/**
+ * Add property to feat
+ */
+export async function addFeatProperty(
+  featId: number,
+  propertyKey: string,
+  propertyValue: string
+): Promise<CharacterFeatPropertyRow> {
+  const { data, error } = await supabase
+    .from('character_feat_properties')
+    .insert({
+      character_feat_id: featId,
+      property_key: propertyKey,
+      property_value: propertyValue,
+      sync_status: 'pending'
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
+ * Update feat property
+ */
+export async function updateFeatProperty(
+  propertyId: number,
+  propertyValue: string
+): Promise<CharacterFeatPropertyRow> {
+  const { data, error } = await supabase
+    .from('character_feat_properties')
+    .update({
+      property_value: propertyValue,
+      sync_status: 'pending',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', propertyId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
+ * Remove feat property
+ */
+export async function removeFeatProperty(propertyId: number): Promise<void> {
+  const { error } = await supabase
+    .from('character_feat_properties')
+    .delete()
+    .eq('id', propertyId);
+
+  if (error) throw new Error(error.message);
 }

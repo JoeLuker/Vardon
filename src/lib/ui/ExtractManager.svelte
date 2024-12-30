@@ -1,8 +1,5 @@
 <script lang="ts">
-	import { getCharacter, updateExtract } from '$lib/state/character.svelte';
-	import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-	import type { DatabaseCharacterExtract } from '$lib/domain/types/character';
-
+	import { getCharacter, updateExtract } from '$lib/state/characterStore.svelte';
 	let { characterId } = $props<{
 		characterId: number;
 	}>();

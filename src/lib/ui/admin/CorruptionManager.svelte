@@ -1,130 +1,98 @@
 <!-- src/lib/ui/admin/CorruptionManager.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/character.svelte';
-	import type { UpdateState } from '$lib/state/updates.svelte';
-
-	import {
-		upsertCorruption,
-		deleteCorruption,
-		type DBCorruption,
-		type CorruptionUpdate
-	} from '$lib/db/corruptions';
-	import type { Character } from '$lib/domain/types/character';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { upsertCorruption, deleteCorruption } from '$lib/db/corruptions';
+	import type { DBCorruption, CorruptionUpdate } from '$lib/db/corruptions';
 
 	let { characterId } = $props<{ characterId: number }>();
 
-	// We create a derived store function that *returns* a Character
-	// We'll call it getChar() in code to emphasize that we invoke it.
-	let getChar = $derived((): Character => {
-		// If getCharacter might return undefined, use a fallback:
-		//   const c = getCharacter(characterId);
-		//   return c ?? someEmptyCharacter;
-		// but if you're sure it always returns a valid Character, just do this:
-		return getCharacter(characterId);
-	});
+	// Get the character directly
+	let character = $derived(getCharacter(characterId));
 
-	let updateState = $state<UpdateState>({
-		status: 'idle',
-		error: null
+	// Sort corruptions directly with $derived
+	let corruptions = $derived([...(character.character_corruptions ?? [])].sort(
+		(a, b) => (a.corruption_stage ?? 0) - (b.corruption_stage ?? 0)
+	));
+
+	let updateState = $state({
+		status: 'idle' as const,
+		error: null as Error | null
 	});
 
 	let showAddModal = $state(false);
-
-	// editingCorruption can be null or a CorruptionUpdate object
 	let editingCorruption = $state<CorruptionUpdate | null>(null);
-
-	// A second derived store for the sorted corruption list
-	let getCorruptionList = $derived((): DBCorruption[] => {
-		// Ensure we always return an array, even if character_corruptions is undefined
-		return [...(getChar().character_corruptions ?? [])].sort(
-			(a, b) => (a.corruption_stage ?? 0) - (b.corruption_stage ?? 0)
-		);
-	});
 
 	async function saveCorruption() {
 		if (!editingCorruption?.corruption_type || editingCorruption.corruption_stage == null) {
 			return;
 		}
 
-		const isNew = editingCorruption.id === 0;
-		const previousCorruptions = [...(getChar().character_corruptions ?? [])];
+		const previousCorruptions = [...(character.character_corruptions ?? [])];
 
-		try {
-			updateState.status = 'syncing';
-			const savedCorruption = await upsertCorruption(editingCorruption);
-
-			if (!getChar().character_corruptions) {
-				getChar().character_corruptions = [];
-			}
-			const arr = getChar().character_corruptions as DBCorruption[];
-
-			if (isNew) {
-				arr.push(savedCorruption);
-			} else {
-				const index = arr.findIndex((c) => c.id === savedCorruption.id);
-				if (index >= 0) {
-					arr[index] = savedCorruption;
+		await executeUpdate({
+			key: `corruption-${character.id}-${editingCorruption.id || 'new'}`,
+			operation: async () => {
+				const savedCorruption = await upsertCorruption(editingCorruption!);
+				if (!character.character_corruptions) {
+					character.character_corruptions = [];
 				}
+				const isNew = editingCorruption!.id === 0;
+				if (isNew) {
+					character.character_corruptions.push(savedCorruption);
+				} else {
+					const idx = character.character_corruptions.findIndex((c) => c.id === savedCorruption.id);
+					if (idx >= 0) character.character_corruptions[idx] = savedCorruption;
+				}
+			},
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_corruptions = previousCorruptions;
 			}
+		});
 
-			editingCorruption = null;
-			showAddModal = false;
-			updateState.status = 'idle';
-		} catch (err) {
-			console.error('Failed to save corruption:', err);
-			// Roll back if anything fails
-			getChar().character_corruptions = previousCorruptions;
-			updateState.error = new Error('Failed to save corruption');
-			updateState.status = 'error';
-		}
+		editingCorruption = null;
+		showAddModal = false;
 	}
 
 	async function handleDeleteCorruption(corruption: DBCorruption) {
-		if (!confirm(`Are you sure you want to delete this corruption?`)) return;
+		if (!confirm('Are you sure you want to delete this corruption?')) return;
 
-		const previousCorruptions = [...(getChar().character_corruptions ?? [])];
+		const previousCorruptions = [...(character.character_corruptions ?? [])];
 
-		try {
-			updateState.status = 'syncing';
-			await deleteCorruption(corruption.id);
-
-			if (!getChar().character_corruptions) {
-				getChar().character_corruptions = [];
+		await executeUpdate({
+			key: `delete-corruption-${corruption.id}`,
+			operation: async () => {
+				await deleteCorruption(corruption.id);
+				character.character_corruptions = character.character_corruptions?.filter(
+					(c) => c.id !== corruption.id
+				) ?? [];
+			},
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_corruptions = previousCorruptions;
 			}
-			const arr = getChar().character_corruptions as DBCorruption[];
-			getChar().character_corruptions = arr.filter((c) => c.id !== corruption.id);
+		});
+	}
 
-			updateState.status = 'idle';
-		} catch (err) {
-			console.error('Failed to delete corruption:', err);
-			getChar().character_corruptions = previousCorruptions;
-			updateState.error = new Error('Failed to delete corruption');
-			updateState.status = 'error';
-		}
+	function addNewCorruption() {
+		editingCorruption = {
+			id: 0,
+			corruption_type: '',
+			corruption_stage: 0,
+			character_id: character.id,
+			blood_consumed: 0,
+			blood_required: 0,
+			sync_status: 'pending',
+			properties: {}
+		};
+		showAddModal = true;
 	}
 </script>
 
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<h2 class="text-xl font-bold">Corruptions</h2>
-		<button
-			class="btn"
-			onclick={() => {
-				editingCorruption = {
-					id: 0,
-					corruption_type: '',
-					corruption_stage: 0,
-					character_id: getChar().id,
-					blood_consumed: 0,
-					blood_required: 0,
-					sync_status: 'pending',
-					properties: {}
-				};
-				showAddModal = true;
-			}}
-		>
-			Add Corruption
-		</button>
+		<button class="btn" onclick={addNewCorruption}>Add Corruption</button>
 	</div>
 
 	{#if updateState.error}
@@ -134,8 +102,7 @@
 	{/if}
 
 	<div class="grid gap-4 md:grid-cols-2">
-		<!-- Here's the important part — call getCorruptionList() rather than corruptionList -->
-		{#each getCorruptionList() as corruption (corruption.id)}
+		{#each corruptions as corruption (corruption.id)}
 			<div class="rounded-lg bg-gray-50 p-4">
 				<div class="flex items-start justify-between">
 					<div>

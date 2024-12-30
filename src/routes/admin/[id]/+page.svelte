@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { initializeCharacter } from '$lib/state/character.svelte';
+	import { initializeCharacter } from '$lib/state/characterStore.svelte';
 
 	// Admin UI components
 	import AttributesManager from '$lib/ui/admin/AttributesManager.svelte';

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { Character } from '$lib/domain/types/character';
 
 	let { characters } = $props<{
 		characters: Pick<Character, 'id' | 'name' | 'class' | 'ancestry' | 'level'>[];

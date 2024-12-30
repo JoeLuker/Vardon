@@ -12,7 +12,7 @@
 	import Feats from '$lib/ui/Feats.svelte';
 	import ABPDisplay from '$lib/ui/ABPDisplay.svelte';
 	import Traits from '$lib/ui/Traits.svelte';
-	import { initializeCharacter } from '$lib/state/character.svelte';
+	import { initializeCharacter } from '$lib/state/characterStore.svelte';
 	import AncestryDisplay from '$lib/ui/AncestryDisplay.svelte';
 	import Equipment from '$lib/ui/Equipment.svelte';
 	import CorruptionViewer from '$lib/ui/CorruptionViewer.svelte';

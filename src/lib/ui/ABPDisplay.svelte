@@ -1,21 +1,31 @@
-<!-- src/lib/ui/ABPDisplay.svelte -->
+<!-- FILE: src/lib/ui/ABPDisplay.svelte -->
 <script lang="ts">
-	import type { ABPBonuses } from '$lib/domain/types/abp';
-	import { getCharacter } from '$lib/state/character.svelte';
-	import { calculateCharacterStats } from '$lib/domain/calculations/characterCalculations';
+	/**
+	 * We'll retrieve the ABP bonuses by calling getABPBonuses() directly
+	 * from '$lib/domain/calculations/abp'.
+	 */
+	import { getCharacter } from '$lib/state/characterStore.svelte';
+	import { getABPBonuses } from '$lib/domain/calculations/abp';
 
-	// Destructure props using $props and add TypeScript typing
 	let { characterId }: { characterId: number } = $props();
 
-	// Derive the character from state
-	let character = $derived.by(() => getCharacter(characterId));
+	/**
+	 * 1) Derive the character from your store.
+	 */
+	let character = $derived(getCharacter(characterId));
 
-	// Derive stats by recalculating each time 'character' changes
-	let stats = $derived.by(() => calculateCharacterStats(character));
+	/**
+	 * 2) Compute ABP bonuses by calling `getABPBonuses(character.character_abp_bonuses)`.
+	 *    If the array doesn't exist, default to `[]`.
+	 */
+	let bonuses = $derived(() =>
+		getABPBonuses(character.character_abp_bonuses ?? [])
+	);
 
-	// Extract ABP bonuses from the recalculated stats
-	let bonuses = $derived(stats.defenses.abpBonuses);
-
+	/**
+	 * 3) We'll display only the bonuses that have a value > 0.
+	 *    Use `bonusLabels` to give them a user-friendly label.
+	 */
 	const bonusLabels: Record<keyof ABPBonuses, string> = {
 		resistance: 'Resistance',
 		armor: 'Armor',

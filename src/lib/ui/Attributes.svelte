@@ -1,8 +1,7 @@
-<!-- src/lib/ui/Stats.svelte -->
+<!-- src/lib/ui/Attributes.svelte -->
 <script lang="ts">
-	import type { CharacterAttributes } from '$lib/domain/types/character';
-	import { getCharacter } from '$lib/state/character.svelte';
-	import { calculateCharacterStats } from '$lib/domain/calculations/characterCalculations';
+	import { getCharacter } from '$lib/state/characterStore.svelte';
+	import { getAbilityModifier } from '$lib/domain/calculations/attributes';
 
 	let { characterId } = $props<{ characterId: number }>();
 
@@ -12,7 +11,21 @@
 		description?: string;
 	}
 
-	// Define attributes configuration
+	interface Buff {
+		source: string;
+		values: Record<string, number>;
+	}
+
+	interface ABPBonus {
+		bonus_type: string;
+		character_id: number | null;
+		id: number;
+		sync_status: string | null;
+		updated_at: string | null;
+		value: number;
+		value_target: string | null;
+	}
+
 	const attributeDefinitions = $state.raw<AttributeDefinition[]>([
 		{ key: 'str', label: 'Strength', description: 'Melee attacks, climbing, carrying capacity' },
 		{ key: 'dex', label: 'Dexterity', description: 'Ranged attacks, AC, reflex saves' },
@@ -22,11 +35,69 @@
 		{ key: 'cha', label: 'Charisma', description: 'Social interactions' }
 	]);
 
-	// Derive the character from state
 	let character = $derived(getCharacter(characterId));
 
-	// Derive stats by recalculating each time 'character' changes
-	let stats = $derived.by(() => calculateCharacterStats(character));
+	// Calculate base attributes and modifiers
+	let stats = $derived.by(() => {
+		const baseAttributes = character.character_attributes?.[0] ?? {
+			str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10
+		};
+
+		const mentalProwess = character.character_abp_bonuses?.find(
+			(b: ABPBonus) => b.bonus_type === 'mental_prowess'
+		);
+		const physicalProwess = character.character_abp_bonuses?.find(
+			(b: ABPBonus) => b.bonus_type === 'physical_prowess'
+		);
+
+		return {
+			attributes: {
+				base: baseAttributes,
+				permanent: baseAttributes,
+				temporary: baseAttributes,
+				modifiers: {
+					permanent: {
+						str: getAbilityModifier(baseAttributes.str),
+						dex: getAbilityModifier(baseAttributes.dex),
+						con: getAbilityModifier(baseAttributes.con),
+						int: getAbilityModifier(baseAttributes.int),
+						wis: getAbilityModifier(baseAttributes.wis),
+						cha: getAbilityModifier(baseAttributes.cha)
+					},
+					temporary: {
+						str: getAbilityModifier(baseAttributes.str),
+						dex: getAbilityModifier(baseAttributes.dex),
+						con: getAbilityModifier(baseAttributes.con),
+						int: getAbilityModifier(baseAttributes.int),
+						wis: getAbilityModifier(baseAttributes.wis),
+						cha: getAbilityModifier(baseAttributes.cha)
+					}
+				},
+				bonuses: {
+					ancestry: {
+						source: character.ancestry ?? 'Unknown',
+						values: {} as Record<keyof CharacterAttributes, number>
+					},
+					abp: {
+						mental: mentalProwess ? {
+							...mentalProwess,
+							attribute: mentalProwess.value_target
+						} : null,
+						physical: physicalProwess ? {
+							...physicalProwess,
+							attribute: physicalProwess.value_target
+						} : null
+					},
+					buffs: (character.character_buffs ?? [])
+						.filter(buff => buff.is_active)
+						.map(buff => ({
+							source: buff.buff_type,
+							values: {} as Record<string, number>
+						}))
+				}
+			}
+		};
+	});
 
 	// Transform attributes for display with modifier sources
 	let attributesList = $derived.by(() => {
@@ -69,8 +140,8 @@
 									}
 								: null,
 						buffs: stats.attributes.bonuses.buffs
-							.filter((buff) => buff.values[attr.key])
-							.map((buff) => ({
+							.filter((buff: Buff) => buff.values[attr.key])
+							.map((buff: Buff) => ({
 								source: buff.source,
 								value: buff.values[attr.key] ?? 0
 							}))

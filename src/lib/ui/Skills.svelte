@@ -1,12 +1,7 @@
 <!-- src/lib/ui/Skills.svelte -->
 <script lang="ts">
-	import type { UpdateState } from '$lib/utils/updates';
 	import SkillAllocator from './SkillAllocator.svelte';
-	import { getCharacter, fetchSkillData } from '$lib/state/character.svelte';
-	import {
-		calculateCharacterStats,
-		type CalculatedStats
-	} from '$lib/domain/calculations/characterCalculations';
+	import { getCharacter, fetchSkillData } from '$lib/state/characterStore.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';

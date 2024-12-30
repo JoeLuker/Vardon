@@ -1,86 +1,68 @@
 <!-- FILE: src/lib/ui/admin/EquipmentManager.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/character.svelte';
-	import { type UpdateState, executeUpdate } from '$lib/utils/updates';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { saveEquipment as saveEquipmentToDb, removeEquipment, toggleEquipment } from '$lib/db/equipment';
+		import type { EquipmentSaveData } from '$lib/db/equipment';
 
-	import {
-		saveEquipment as dbSaveEquipment,
-		removeEquipment as dbRemoveEquipment,
-		toggleEquipment as dbToggleEquipment,
-		type EquipmentSaveData
-	} from '$lib/db/equipment';
+	let { characterId } = $props<{ characterId: number; }>();
 
-	import type { DatabaseCharacterEquipment } from '$lib/domain/types/character';
+	let character = $derived(getCharacter(characterId));
+	
+	let equipmentList = $derived([...(character.character_equipment ?? [])].sort(
+		(a, b) => (a.type as string).localeCompare(b.type) || a.name.localeCompare(b.name)
+	));
 
-	let { characterId } = $props<{
-		characterId: number;
-	}>();
-
-	let updateState = $state<UpdateState>({
-		status: 'idle',
-		error: null
+	let updateState = $state({
+		status: 'idle' as 'idle' | 'syncing',
+		error: null as Error | null
 	});
 
 	let showAddModal = $state(false);
 	let editingEquipment = $state<Partial<DatabaseCharacterEquipment> | null>(null);
 
-	const equipmentTypes = [
-		'weapon',
-		'armor',
-		'shield',
-		'ring',
-		'wondrous',
-		'potion',
-		'scroll',
-		'wand',
-		'gear'
-	] as const;
+	const equipmentTypes = ['weapon', 'armor', 'shield', 'ring', 'wondrous', 
+		'potion', 'scroll', 'wand', 'gear'] as const;
 
-	let character = $derived(getCharacter(characterId));
-
-	let equipmentList = $derived(
-		[...(character.character_equipment ?? [])].sort(
-			(a, b) => (a.type as string).localeCompare(b.type) || a.name.localeCompare(b.name)
-		)
-	);
+	function isValidEquipment(equipment: Partial<DatabaseCharacterEquipment>): 
+		equipment is Required<Pick<DatabaseCharacterEquipment, 'name' | 'type'>> & Partial<DatabaseCharacterEquipment> {
+		return typeof equipment.name === 'string' && typeof equipment.type === 'string';
+	}
 
 	async function saveEquipment() {
-		if (!editingEquipment?.name || !editingEquipment?.type) {
+		const equipment = editingEquipment;
+		if (!equipment || !isValidEquipment(equipment)) {
 			return;
 		}
 
-		const equipment = editingEquipment;
-		const isNew = !equipment.id;
 		const previousEquipment = [...(character.character_equipment ?? [])];
 
 		await executeUpdate({
 			key: `save-equipment-${equipment.id ?? 'new'}`,
-			status: updateState,
 			operation: async () => {
-				// Build the data object to pass to dbSaveEquipment
 				const saveData: EquipmentSaveData = {
-					name: equipment.name as string,
-					type: equipment.type as string,
+					name: equipment.name,
+					type: equipment.type,
 					equipped: equipment.equipped ?? false,
-					properties: equipment.properties ?? {},
+					properties: equipment.properties ?? null,
 					character_id: character.id,
 					...(equipment.id ? { id: equipment.id } : {})
 				};
 
-				// Actually call the DB function
-				return await dbSaveEquipment(saveData);
-			},
-			optimisticUpdate: () => {
-				if (!character.character_equipment) character.character_equipment = [];
+				const savedEquipment = await saveEquipmentToDb(saveData);
+				
+				if (!character.character_equipment) {
+					character.character_equipment = [];
+				}
+				
+				const isNew = !equipment.id;
 				if (isNew) {
-					character.character_equipment.push(equipment as DatabaseCharacterEquipment);
+					character.character_equipment.push(savedEquipment);
 				} else {
-					const index = character.character_equipment.findIndex((e) => e.id === equipment.id);
-					if (index >= 0) {
-						character.character_equipment[index] = equipment as DatabaseCharacterEquipment;
-					}
+					const idx = character.character_equipment.findIndex(e => e.id === savedEquipment.id);
+					if (idx >= 0) character.character_equipment[idx] = savedEquipment;
 				}
 			},
+			optimisticUpdate: () => {},
 			rollback: () => {
 				character.character_equipment = previousEquipment;
 			}
@@ -90,6 +72,24 @@
 		showAddModal = false;
 	}
 
+	async function toggleEquipped(equipment: DatabaseCharacterEquipment) {
+		const previousEquipment = [...(character.character_equipment ?? [])];
+
+		await executeUpdate({
+			key: `toggle-equipment-${equipment.id}`,
+			operation: async () => {
+				const updatedEquipment = await toggleEquipment(equipment.id, !equipment.equipped);
+				if (!character.character_equipment) return;
+				const idx = character.character_equipment.findIndex(e => e.id === equipment.id);
+				if (idx >= 0) character.character_equipment[idx] = updatedEquipment;
+			},
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_equipment = previousEquipment;
+			}
+		});
+	}
+
 	async function deleteEquipment(equipment: DatabaseCharacterEquipment) {
 		if (!confirm(`Are you sure you want to delete ${equipment.name}?`)) return;
 
@@ -97,45 +97,13 @@
 
 		await executeUpdate({
 			key: `delete-equipment-${equipment.id}`,
-			status: updateState,
 			operation: async () => {
-				// Call the new removeEquipment helper
-				await dbRemoveEquipment(equipment.id);
+				await removeEquipment(equipment.id);
+				character.character_equipment = character.character_equipment?.filter(
+					e => e.id !== equipment.id
+				) ?? [];
 			},
-			optimisticUpdate: () => {
-				if (character.character_equipment) {
-					character.character_equipment = character.character_equipment.filter(
-						(e) => e.id !== equipment.id
-					);
-				}
-			},
-			rollback: () => {
-				character.character_equipment = previousEquipment;
-			}
-		});
-	}
-
-	async function toggleEquipped(equipment: DatabaseCharacterEquipment) {
-		const previousEquipment = [...(character.character_equipment ?? [])];
-
-		await executeUpdate({
-			key: `toggle-equipment-${equipment.id}`,
-			status: updateState,
-			operation: async () => {
-				// We call dbToggleEquipment to set equipped => !equipment.equipped
-				return await dbToggleEquipment(equipment.id, !equipment.equipped);
-			},
-			optimisticUpdate: () => {
-				if (character.character_equipment) {
-					const index = character.character_equipment.findIndex((e) => e.id === equipment.id);
-					if (index >= 0) {
-						character.character_equipment[index] = {
-							...equipment,
-							equipped: !equipment.equipped
-						};
-					}
-				}
-			},
+			optimisticUpdate: () => {},
 			rollback: () => {
 				character.character_equipment = previousEquipment;
 			}

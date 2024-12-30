@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type UpdateState } from '$lib/utils/updates';
+	import { type UpdateState } from '$lib/state/characterStore.svelte';
 	import type { DBAncestry, DBAncestralTrait, SaveAncestryDTO } from '$lib/db/ancestries';
 	import {
 		loadAncestries,

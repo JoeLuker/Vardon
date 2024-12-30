@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { getCharacter } from '$lib/state/character.svelte';
-	import type { DatabaseCharacterClassFeature } from '$lib/domain/types/character';
+	import { getCharacter } from '$lib/state/characterStore.svelte';
 
 	let { characterId } = $props<{ characterId: number }>();
 

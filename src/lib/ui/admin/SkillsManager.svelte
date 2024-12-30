@@ -1,26 +1,38 @@
 <!-- FILE: src/lib/ui/admin/SkillsManager.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/character.svelte';
-	import { type UpdateState } from '$lib/state/updates.svelte';
-	import { saveBaseSkill, removeBaseSkill, type BaseSkillSaveData } from '$lib/db/skills';
+	/**
+	 * Instead of importing from '$lib/state/updates.svelte',
+	 * we import `executeUpdate` from your main character store—just like EquipmentManager does.
+	 */
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
 
-	import type { DatabaseBaseSkill } from '$lib/domain/types/character';
+	/**
+	 * We still use the DB calls for skills (saveBaseSkill, removeBaseSkill),
+	 * which presumably update the global 'base_skills' table.
+	 */
+	import { saveBaseSkill, removeBaseSkill, type BaseSkillSaveData } from '$lib/db/skills';
 
 	let { characterId } = $props<{ characterId: number }>();
 
-	let updateState = $state<UpdateState>({
-		status: 'idle',
-		error: null
+	// A simple local object to store any error state, if you want to display it
+	let updateState = $state({
+		error: null as Error | null
 	});
 
 	let showAddModal = $state(false);
 	let editingSkill = $state<Partial<DatabaseBaseSkill> | null>(null);
 
+	// Derive the character from your store
 	let character = $derived(getCharacter(characterId));
 
+	// We assume `character.base_skills` is already loaded with global base skills
 	let baseSkills = $derived(character.base_skills ?? []);
 	let classSkillRelations = $derived(character.class_skill_relations ?? []);
 
+	/**
+	 * We'll build a computed `skillsList` so we can mark
+	 * which ones are class skills for this character.
+	 */
 	type DisplaySkill = DatabaseBaseSkill & {
 		isClassSkill: boolean;
 	};
@@ -32,76 +44,99 @@
 		}))
 	);
 
+	/**
+	 * The list of valid abilities, e.g. 'str','dex'...
+	 * used for the <select> in the modal.
+	 */
+	const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+
+	/**
+	 * Create or update a base skill (in the global sense),
+	 * but also update the local `character.base_skills` array so our UI stays in sync.
+	 */
 	async function saveSkill() {
 		const skill = editingSkill;
 		if (!skill?.name || !skill?.ability) return;
 
 		const isNew = !skill.id;
-		const previousSkills = {
-			base: [...(character.base_skills ?? [])]
-		};
+		const previousSkills = [...(character.base_skills ?? [])];
 
-		try {
-			// Build the data we need for the DB function
-			const saveData: BaseSkillSaveData = {
-				name: skill.name,
-				ability: skill.ability,
-				trained_only: skill.trained_only ?? false,
-				armor_check_penalty: skill.armor_check_penalty ?? false
-			};
-			// If there's an id, we do an update
-			if (skill.id) {
-				saveData.id = skill.id;
-			}
-
-			// Call new helper
-			const skillData = await saveBaseSkill(saveData);
-
-			// Update local state
-			if (!character.base_skills) {
-				character.base_skills = [];
-			}
-			if (isNew) {
-				character.base_skills.push(skillData);
-			} else {
-				const index = character.base_skills.findIndex((s) => s.id === skillData.id);
-				if (index >= 0) {
-					character.base_skills[index] = skillData;
+		await executeUpdate({
+			key: `save-skill-${skill.id ?? 'new'}`,
+			operation: async () => {
+				// Build the data for DB with type assertions
+				const saveData: BaseSkillSaveData = {
+					name: skill.name as string,  // We can safely assert these as strings
+					ability: skill.ability as string,  // because of the check above
+					trained_only: skill.trained_only ?? false,
+					armor_check_penalty: skill.armor_check_penalty ?? false
+				};
+				// If it has an ID, we do an update
+				if (skill.id) {
+					saveData.id = skill.id;
 				}
-			}
 
-			editingSkill = null;
-			showAddModal = false;
-		} catch (err) {
+				// Perform the DB call
+				const savedSkill = await saveBaseSkill(saveData);
+
+				// Update local store
+				if (!character.base_skills) {
+					character.base_skills = [];
+				}
+				if (isNew) {
+					character.base_skills.push(savedSkill);
+				} else {
+					const idx = character.base_skills.findIndex((s) => s.id === savedSkill.id);
+					if (idx >= 0) {
+						character.base_skills[idx] = savedSkill;
+					}
+				}
+			},
+			optimisticUpdate: () => {
+				// Optional: You could do quick local updates here
+				// if you want immediate changes before the DB call finishes.
+			},
+			rollback: () => {
+				// If something fails, revert
+				character.base_skills = previousSkills;
+			}
+		}).catch((err) => {
 			console.error('Failed to save skill:', err);
-			character.base_skills = previousSkills.base;
 			updateState.error = new Error('Failed to save skill');
-		}
+		});
+
+		// Reset modal
+		editingSkill = null;
+		showAddModal = false;
 	}
 
+	/**
+	 * Remove a base skill from the DB, and from local state.
+	 */
 	async function deleteSkill(skill: DatabaseBaseSkill) {
 		if (!confirm(`Are you sure you want to delete ${skill.name}?`)) return;
 
-		const previousSkills = {
-			base: [...(character.base_skills ?? [])]
-		};
+		const previousSkills = [...(character.base_skills ?? [])];
 
-		try {
-			// Use our new removeBaseSkill helper
-			await removeBaseSkill(skill.id);
-
-			// Update local state
-			if (character.base_skills) {
-				character.base_skills = character.base_skills.filter((s) => s.id !== skill.id);
+		await executeUpdate({
+			key: `delete-skill-${skill.id}`,
+			operation: async () => {
+				await removeBaseSkill(skill.id);
+				if (character.base_skills) {
+					character.base_skills = character.base_skills.filter((s) => s.id !== skill.id);
+				}
+			},
+			optimisticUpdate: () => {
+				// Optionally remove it locally right away
+			},
+			rollback: () => {
+				character.base_skills = previousSkills;
 			}
-		} catch (err) {
+		}).catch((err) => {
 			console.error('Failed to delete skill:', err);
-			character.base_skills = previousSkills.base;
 			updateState.error = new Error('Failed to delete skill');
-		}
+		});
 	}
-
-	const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 </script>
 
 <div class="space-y-4">
@@ -124,6 +159,7 @@
 		</div>
 	{/if}
 
+	<!-- Display the aggregated skill list -->
 	<div class="grid gap-4 md:grid-cols-2">
 		{#each skillsList as skill (skill.id)}
 			<div class="rounded-lg bg-gray-50 p-4">
@@ -169,6 +205,7 @@
 	</div>
 </div>
 
+<!-- Modal for adding or editing a base skill -->
 {#if showAddModal}
 	<div class="fixed inset-0 flex items-center justify-center bg-black/50">
 		<div class="w-full max-w-2xl rounded-lg bg-white p-6">
@@ -204,12 +241,18 @@
 
 				<div class="flex gap-4">
 					<label class="flex items-center gap-2">
-						<input type="checkbox" bind:checked={editingSkill!.trained_only} />
+						<input
+							type="checkbox"
+							bind:checked={editingSkill!.trained_only}
+						/>
 						<span class="text-sm">Trained Only</span>
 					</label>
 
 					<label class="flex items-center gap-2">
-						<input type="checkbox" bind:checked={editingSkill!.armor_check_penalty} />
+						<input
+							type="checkbox"
+							bind:checked={editingSkill!.armor_check_penalty}
+						/>
 						<span class="text-sm">Armor Check Penalty</span>
 					</label>
 				</div>
@@ -224,7 +267,10 @@
 					>
 						Cancel
 					</button>
-					<button class="btn" onclick={saveSkill} disabled={updateState.status === 'syncing'}>
+					<button
+						class="btn"
+						onclick={saveSkill}
+					>
 						{editingSkill?.id ? 'Save Changes' : 'Add Skill'}
 					</button>
 				</div>

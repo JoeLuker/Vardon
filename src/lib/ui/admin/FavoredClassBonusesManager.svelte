@@ -1,105 +1,81 @@
 <!-- FILE: src/lib/ui/admin/FavoredClassBonusesManager.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/character.svelte';
-	import { type UpdateState } from '$lib/state/updates.svelte';
-
-	import {
-		saveFavoredClassBonus,
-		removeFavoredClassBonus,
-		type FavoredClassBonusSaveData
-	} from '$lib/db/favoredClassBonuses';
-
-	import type { DatabaseCharacterFavoredClassBonus } from '$lib/domain/types/character';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { saveFavoredClassBonus as saveFcbToDb, removeFavoredClassBonus } from '$lib/db/favoredClassBonuses';
+		import type { FavoredClassBonusSaveData } from '$lib/db/favoredClassBonuses';
 
 	let { characterId } = $props<{ characterId: number }>();
+
+	let character = $derived(getCharacter(characterId));
+
+	let fcbList = $derived([...(character.character_favored_class_bonuses ?? [])].sort(
+		(a, b) => a.level - b.level
+	));
 
 	type FCBLevelItem = {
 		level: number;
 		bonus: DatabaseCharacterFavoredClassBonus | null;
 	};
 
-	let updateState = $state<UpdateState>({
-		status: 'idle',
-		error: null
+	let fcbByLevel = $derived(Array.from({ length: character.level }, (_, i): FCBLevelItem => {
+		const currentLevel = i + 1;
+		const bonus = fcbList.find(b => b.level === currentLevel) ?? null;
+		return { level: currentLevel, bonus };
+	}));
+
+	let updateState = $state({
+		status: 'idle' as 'idle' | 'syncing',
+		error: null as Error | null
 	});
 
 	let showAddModal = $state(false);
 	let editingFCB = $state<Partial<DatabaseCharacterFavoredClassBonus> | null>(null);
 
-	let character = $derived(getCharacter(characterId));
-
-	// Utility to compute a sorted list
-	function computeFCBList(): DatabaseCharacterFavoredClassBonus[] {
-		return [...(character.character_favored_class_bonuses ?? [])].sort((a, b) => a.level - b.level);
+	function isValidFCB(fcb: Partial<DatabaseCharacterFavoredClassBonus>): 
+		fcb is Required<Pick<DatabaseCharacterFavoredClassBonus, 'level' | 'choice'>> & Partial<DatabaseCharacterFavoredClassBonus> {
+		return typeof fcb.level === 'number' && typeof fcb.choice === 'string';
 	}
-
-	// Utility to create FCBLevelItem array up to the character.level
-	function computeFCBByLevel(fcbs: DatabaseCharacterFavoredClassBonus[]): FCBLevelItem[] {
-		const levels = Array.from({ length: character.level }, (_, i): FCBLevelItem => {
-			const currentLevel = i + 1;
-			const bonus = fcbs.find((b) => b.level === currentLevel) ?? null;
-			return { level: currentLevel, bonus };
-		});
-		return levels;
-	}
-
-	let fcbList = $derived(computeFCBList());
-	let fcbByLevel = $derived(computeFCBByLevel(fcbList));
 
 	async function saveFCB() {
-		if (!editingFCB?.level || !editingFCB.choice) return;
+		const fcb = editingFCB;
+		if (!fcb || !isValidFCB(fcb)) {
+			return;
+		}
 
 		const previousFCBs = [...(character.character_favored_class_bonuses ?? [])];
 
-		try {
-			// Check if we already have an FCB for that level
-			const existingFCB = fcbList.find((fcb) => fcb.level === editingFCB!.level);
-
-			// We'll unify "insert vs update" logic in the new helper, but we can do a check here:
-			if (existingFCB) {
-				// If we want to keep the same .id
-				const saveData: FavoredClassBonusSaveData = {
-					id: existingFCB.id,
-					character_id: character.id,
-					level: existingFCB.level,
-					choice: editingFCB.choice as 'hp' | 'skill' | 'other'
-				};
-
-				// Call the helper
-				const saved = await saveFavoredClassBonus(saveData);
-
-				// Update local array
-				const index = fcbList.findIndex((fcb) => fcb.id === saved.id);
-				if (index >= 0 && character.character_favored_class_bonuses) {
-					character.character_favored_class_bonuses = [
-						...fcbList.slice(0, index),
-						saved,
-						...fcbList.slice(index + 1)
-					];
-				}
-			} else {
-				// Insert a brand new one
+		await executeUpdate({
+			key: `fcb-${character.id}-${fcb.id ?? 'new'}`,
+			operation: async () => {
 				const saveData: FavoredClassBonusSaveData = {
 					character_id: character.id,
-					level: editingFCB.level,
-					choice: editingFCB.choice as 'hp' | 'skill' | 'other'
+					level: fcb.level,
+					choice: fcb.choice as 'hp' | 'skill' | 'other',
+					...(fcb.id ? { id: fcb.id } : {})
 				};
 
-				const saved = await saveFavoredClassBonus(saveData);
-
+				const savedFCB = await saveFcbToDb(saveData);
+				
 				if (!character.character_favored_class_bonuses) {
 					character.character_favored_class_bonuses = [];
 				}
-				character.character_favored_class_bonuses = [...fcbList, saved];
+				
+				const isNew = !fcb.id;
+				if (isNew) {
+					character.character_favored_class_bonuses.push(savedFCB);
+				} else {
+					const idx = character.character_favored_class_bonuses.findIndex(f => f.id === savedFCB.id);
+					if (idx >= 0) character.character_favored_class_bonuses[idx] = savedFCB;
+				}
+			},
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_favored_class_bonuses = previousFCBs;
 			}
+		});
 
-			editingFCB = null;
-			showAddModal = false;
-		} catch (err) {
-			// rollback
-			character.character_favored_class_bonuses = previousFCBs;
-			updateState.error = new Error('Failed to save favored class bonus');
-		}
+		editingFCB = null;
+		showAddModal = false;
 	}
 
 	async function deleteFCB(fcbId: number) {
@@ -107,18 +83,19 @@
 
 		const previousFCBs = [...(character.character_favored_class_bonuses ?? [])];
 
-		try {
-			// Call our new removeFavoredClassBonus
-			await removeFavoredClassBonus(fcbId);
-
-			if (character.character_favored_class_bonuses) {
-				character.character_favored_class_bonuses =
-					character.character_favored_class_bonuses.filter((fcb) => fcb.id !== fcbId);
+		await executeUpdate({
+			key: `delete-fcb-${fcbId}`,
+			operation: async () => {
+				await removeFavoredClassBonus(fcbId);
+				character.character_favored_class_bonuses = character.character_favored_class_bonuses?.filter(
+					f => f.id !== fcbId
+				) ?? [];
+			},
+			optimisticUpdate: () => {},
+			rollback: () => {
+				character.character_favored_class_bonuses = previousFCBs;
 			}
-		} catch (err) {
-			character.character_favored_class_bonuses = previousFCBs;
-			updateState.error = new Error('Failed to delete favored class bonus');
-		}
+		});
 	}
 
 	const fcbChoices = [

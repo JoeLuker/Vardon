@@ -1,8 +1,18 @@
 <!-- FILE: src/lib/ui/admin/TraitsManager.svelte -->
+
 <script lang="ts">
-	import { executeUpdate, type UpdateState } from '$lib/utils/updates';
 	import { onMount } from 'svelte';
 
+	/**
+	 * If your real `executeUpdate` is declared in `$lib/state/characterStore.svelte`,
+	 * import it from there (same as in EquipmentManager).
+	 * That means `import { executeUpdate } from '$lib/state/characterStore.svelte';`
+	 */
+	import { executeUpdate } from '$lib/state/characterStore.svelte';
+
+	/**
+	 * Keep your DB calls from the same place as before:
+	 */
 	import {
 		loadBaseTraits,
 		insertBaseTrait,
@@ -10,8 +20,10 @@
 		removeBaseTrait
 	} from '$lib/db/traits';
 
-	import type { DatabaseBaseTrait } from '$lib/domain/types/character';
-
+		/**
+	 * We'll store a local array of all base traits from the DB,
+	 * plus the user's new-trait state, update status, etc.
+	 */
 	let traits = $state<DatabaseBaseTrait[]>([]);
 	let newTrait = $state<Omit<DatabaseBaseTrait, 'id' | 'created_at' | 'updated_at'>>({
 		name: '',
@@ -20,9 +32,12 @@
 		benefits: null
 	});
 
-	let updateState = $state<UpdateState>({
-		status: 'idle',
-		error: null
+	/**
+	 * We'll mimic the approach from EquipmentManager for an updateState:
+	 */
+	let updateState = $state({
+		status: 'idle' as 'idle' | 'syncing',
+		error: null as Error | null
 	});
 
 	let successMessage = $state<string | null>(null);
@@ -35,20 +50,23 @@
 		try {
 			const data = await loadBaseTraits();
 			traits = data;
+			successMessage = null;
+			updateState.error = null;
 		} catch (err) {
 			updateState.error = err instanceof Error ? err : new Error(String(err));
 		}
 	}
 
-	async function saveTrait(
-		trait: Omit<DatabaseBaseTrait, 'id' | 'created_at' | 'updated_at'> | DatabaseBaseTrait
-	) {
-		const isNew = !('id' in trait); // if trait.id is missing => insert
-		const previousTraits = [...traits];
+	/**
+	 * Save or update a trait in the global base_traits table.
+	 * If `trait` has no 'id' property => insert; otherwise => update.
+	 */
+	async function saveTrait(trait: Omit<DatabaseBaseTrait, 'id' | 'created_at' | 'updated_at'> | DatabaseBaseTrait) {
+		const isNew = !('id' in trait); // means no ID => insert
+		const previousTraits = [...traits]; // for rollback if needed
 
 		await executeUpdate({
 			key: `save-trait-${isNew ? 'new' : (trait as DatabaseBaseTrait).id}`,
-			status: updateState,
 			operation: async () => {
 				// If new => insert; else => update
 				if (isNew) {
@@ -62,6 +80,7 @@
 				}
 			},
 			optimisticUpdate: () => {
+				// If updating an existing trait, we can do a quick local update:
 				if (!isNew) {
 					const typedTrait = trait as DatabaseBaseTrait;
 					const index = traits.findIndex((t) => t.id === typedTrait.id);
@@ -82,8 +101,10 @@
 			}
 		});
 
-		// Reload from DB to get e.g. new IDs
+		// Reload from DB to ensure we have fresh data (IDs, etc.)
 		await loadTraits();
+
+		// If we just inserted a brand-new trait, clear the newTrait inputs
 		if (isNew) {
 			newTrait = {
 				name: '',
@@ -101,7 +122,6 @@
 
 		await executeUpdate({
 			key: `delete-trait-${id}`,
-			status: updateState,
 			operation: async () => {
 				await removeBaseTrait(id);
 				successMessage = 'Trait deleted successfully';
@@ -115,6 +135,7 @@
 			}
 		});
 
+		// Optionally reload from DB
 		await loadTraits();
 	}
 </script>
@@ -131,10 +152,24 @@
 
 	<div class="new-trait-form">
 		<h4>Add New Trait</h4>
-		<input type="text" bind:value={newTrait.name} placeholder="Trait Name" />
-		<input type="text" bind:value={newTrait.trait_type} placeholder="Trait Type" />
-		<textarea bind:value={newTrait.description} placeholder="Description"></textarea>
-		<textarea bind:value={newTrait.benefits} placeholder="Benefits (JSON)"></textarea>
+		<input
+			type="text"
+			bind:value={newTrait.name}
+			placeholder="Trait Name"
+		/>
+		<input
+			type="text"
+			bind:value={newTrait.trait_type}
+			placeholder="Trait Type"
+		/>
+		<textarea
+			bind:value={newTrait.description}
+			placeholder="Description"
+		></textarea>
+		<textarea
+			bind:value={newTrait.benefits}
+			placeholder="Benefits (JSON)"
+		></textarea>
 		<button onclick={() => saveTrait(newTrait)}>Add Trait</button>
 	</div>
 
@@ -142,12 +177,13 @@
 		<h3>Existing Traits</h3>
 		{#each traits as trait}
 			<div class="trait-item">
+				<!-- You can allow direct inline editing of each trait object:
+				     Or consider a dedicated “Edit” button & a modal, like your Add Equipment approach. -->
 				<input type="text" bind:value={trait.name} />
 				<input type="text" bind:value={trait.trait_type} />
 				<textarea bind:value={trait.description}></textarea>
 				<textarea bind:value={trait.benefits}></textarea>
 				<div class="actions">
-					<!-- Save using the same function, but now trait has an id => update -->
 					<button onclick={() => saveTrait(trait)}>Save</button>
 					<button onclick={() => deleteTrait(trait.id)}>Delete</button>
 				</div>

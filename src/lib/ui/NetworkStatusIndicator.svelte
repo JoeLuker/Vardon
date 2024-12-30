@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { type UpdateState } from '$lib/utils/updates';
 
 	let status = $state<UpdateState>({
 		status: 'idle',

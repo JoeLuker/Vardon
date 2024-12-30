@@ -1,7 +1,5 @@
 <script lang="ts">
-	import type { ConsumableKey } from '$lib/domain/types/character';
-	import { getCharacter, updateConsumable } from '$lib/state/character.svelte';
-	import { executeUpdate, type UpdateState } from '$lib/utils/updates';
+	import { getCharacter, updateConsumable } from '$lib/state/characterStore.svelte';
 
 	let { characterId } = $props<{ characterId: number }>();
 

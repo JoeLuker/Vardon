@@ -1,172 +1,379 @@
 // FILE: src/lib/db/equipment.ts
+
 import { supabase } from '$lib/db/supabaseClient';
 import { readable, type Readable } from 'svelte/store';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import type { DatabaseCharacterEquipment } from '$lib/domain/types/character';
-import type { Json } from '$lib/domain/types/supabase';
+import { parseRow } from '$lib/db/utils';
+import type { Database } from '$lib/domain/types/supabase';
+
+// -----------------------------
+// Type Definitions
+// -----------------------------
+
+// Core equipment types
+export type CharacterEquipmentRow = Database['public']['Tables']['character_equipment']['Row'];
+export type CharacterEquipmentPropertyRow = Database['public']['Tables']['character_equipment_properties']['Row'];
+export type CharacterConsumableRow = Database['public']['Tables']['character_consumables']['Row'];
+
+// Extended interfaces
+export interface EquipmentWithProperties extends CharacterEquipmentRow {
+  properties: CharacterEquipmentPropertyRow[];
+}
+
+// Real-time types
+export interface EquipmentChangeEvent {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  newRow: CharacterEquipmentRow | null;
+  oldRow: CharacterEquipmentRow | null;
+}
+
+export interface ConsumableChangeEvent {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  newRow: CharacterConsumableRow | null;
+  oldRow: CharacterConsumableRow | null;
+}
+
+// -----------------------------
+// Real-time Subscriptions
+// -----------------------------
+
+export function watchCharacterEquipment(characterId: number): Readable<EquipmentChangeEvent[]> {
+  return readable<EquipmentChangeEvent[]>([], (set) => {
+    let internalArray: EquipmentChangeEvent[] = [];
+    const channel = supabase.channel(`character_equipment_${characterId}`);
+    
+    const handlePayload = (payload: RealtimePostgresChangesPayload<Partial<CharacterEquipmentRow>>) => {
+      const newRow = parseRow<CharacterEquipmentRow>(payload.new);
+      const oldRow = parseRow<CharacterEquipmentRow>(payload.old);
+      
+      const event: EquipmentChangeEvent = {
+        eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+        newRow,
+        oldRow
+      };
+      
+      internalArray = [...internalArray, event];
+      set(internalArray);
+    };
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'character_equipment',
+        filter: `character_id=eq.${characterId}`
+      },
+      handlePayload
+    ).subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  });
+}
+
+export function watchCharacterConsumables(characterId: number): Readable<ConsumableChangeEvent[]> {
+  return readable<ConsumableChangeEvent[]>([], (set) => {
+    let internalArray: ConsumableChangeEvent[] = [];
+    const channel = supabase.channel(`character_consumables_${characterId}`);
+    
+    const handlePayload = (payload: RealtimePostgresChangesPayload<Partial<CharacterConsumableRow>>) => {
+      const newRow = parseRow<CharacterConsumableRow>(payload.new);
+      const oldRow = parseRow<CharacterConsumableRow>(payload.old);
+      
+      const event: ConsumableChangeEvent = {
+        eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+        newRow,
+        oldRow
+      };
+      
+      internalArray = [...internalArray, event];
+      set(internalArray);
+    };
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'character_consumables',
+        filter: `character_id=eq.${characterId}`
+      },
+      handlePayload
+    ).subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  });
+}
+
+// -----------------------------
+// Equipment Operations
+// -----------------------------
 
 /**
- * Shape for saving/updating equipment
- * - if `id` is present, we do an update
- * - otherwise, we do an insert
+ * Get all equipment for a character with properties
  */
-export interface EquipmentSaveData {
-	name: string;
-	type: string;
-	equipped: boolean;
-	properties: Json; // Changed from 'object' to 'Json'
-	character_id: number;
-	id?: number; // optional => update if present, else insert
+export async function getEquipment(characterId: number): Promise<EquipmentWithProperties[]> {
+  const { data, error } = await supabase
+    .from('character_equipment')
+    .select(`
+      *,
+      properties:character_equipment_properties(*)
+    `)
+    .eq('character_id', characterId);
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 /**
- * Insert or update a piece of equipment
+ * Get equipment by type
  */
-export async function saveEquipment(data: EquipmentSaveData): Promise<DatabaseCharacterEquipment> {
-	const isNew = data.id == null;
+export async function getEquipmentByType(
+  characterId: number,
+  type: string
+): Promise<EquipmentWithProperties[]> {
+  const { data, error } = await supabase
+    .from('character_equipment')
+    .select(`
+      *,
+      properties:character_equipment_properties(*)
+    `)
+    .eq('character_id', characterId)
+    .eq('type', type);
 
-	if (!isNew && data.id === undefined) {
-		throw new Error('ID is required for updates');
-	}
-
-	const query = isNew
-		? supabase
-				.from('character_equipment')
-				.insert({
-					name: data.name,
-					type: data.type,
-					equipped: data.equipped,
-					properties: data.properties,
-					character_id: data.character_id
-				})
-				.select()
-				.single()
-		: supabase
-				.from('character_equipment')
-				.update({
-					name: data.name,
-					type: data.type,
-					equipped: data.equipped,
-					properties: data.properties,
-					character_id: data.character_id
-				})
-				.eq('id', data.id!)
-				.select()
-				.single();
-
-	const { data: result, error } = await query;
-	if (error) throw error;
-
-	return result as DatabaseCharacterEquipment;
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 /**
- * Delete a piece of equipment by ID
+ * Add new equipment
+ */
+export async function addEquipment(
+  characterId: number,
+  equipment: {
+    name: string;
+    type: string;
+    equipped?: boolean;
+    properties?: Array<{ property_key: string; property_value: string }>;
+  }
+): Promise<EquipmentWithProperties> {
+  // Add the base equipment
+  const { data: equipmentData, error: equipmentError } = await supabase
+    .from('character_equipment')
+    .insert({
+      character_id: characterId,
+      name: equipment.name,
+      type: equipment.type,
+      equipped: equipment.equipped ?? false
+    })
+    .select()
+    .single();
+
+  if (equipmentError) throw new Error(equipmentError.message);
+
+  // Add properties if provided
+  if (equipment.properties && equipment.properties.length > 0) {
+    const { error: propertiesError } = await supabase
+      .from('character_equipment_properties')
+      .insert(
+        equipment.properties.map(prop => ({
+          equipment_id: equipmentData.id,
+          property_key: prop.property_key,
+          property_value: prop.property_value
+        }))
+      );
+
+    if (propertiesError) throw new Error(propertiesError.message);
+  }
+
+  // Return complete equipment with properties
+  return getEquipmentById(equipmentData.id);
+}
+
+/**
+ * Get equipment by ID with properties
+ */
+export async function getEquipmentById(equipmentId: number): Promise<EquipmentWithProperties> {
+  const { data, error } = await supabase
+    .from('character_equipment')
+    .select(`
+      *,
+      properties:character_equipment_properties(*)
+    `)
+    .eq('id', equipmentId)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
+ * Update equipment
+ */
+export async function updateEquipment(
+  equipmentId: number,
+  updates: Partial<Pick<CharacterEquipmentRow, 'name' | 'type' | 'equipped'>>
+): Promise<EquipmentWithProperties> {
+  const { data, error } = await supabase
+    .from('character_equipment')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', equipmentId)
+    .select(`
+      *,
+      properties:character_equipment_properties(*)
+    `)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
+ * Remove equipment
  */
 export async function removeEquipment(equipmentId: number): Promise<void> {
-	const { error } = await supabase
-		.from('character_equipment')
-		.delete()
-		.eq('id', equipmentId);
+  const { error } = await supabase
+    .from('character_equipment')
+    .delete()
+    .eq('id', equipmentId);
 
-	if (error) throw error;
+  if (error) throw new Error(error.message);
+}
+
+// -----------------------------
+// Equipment Properties
+// -----------------------------
+
+/**
+ * Add property to equipment
+ */
+export async function addEquipmentProperty(
+  equipmentId: number,
+  propertyKey: string,
+  propertyValue: string
+): Promise<CharacterEquipmentPropertyRow> {
+  const { data, error } = await supabase
+    .from('character_equipment_properties')
+    .insert({
+      equipment_id: equipmentId,
+      property_key: propertyKey,
+      property_value: propertyValue
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 /**
- * Toggle a piece of equipment's equipped status
- * (or you could just do a general 'updateEquipment' if you prefer)
+ * Update equipment property
  */
-export async function toggleEquipment(
-	equipmentId: number,
-	newValue: boolean
-): Promise<DatabaseCharacterEquipment> {
-	const { data, error } = await supabase
-		.from('character_equipment')
-		.update({ equipped: newValue })
-		.eq('id', equipmentId)
-		.select()
-		.single();
+export async function updateEquipmentProperty(
+  propertyId: number,
+  propertyValue: string
+): Promise<CharacterEquipmentPropertyRow> {
+  const { data, error } = await supabase
+    .from('character_equipment_properties')
+    .update({
+      property_value: propertyValue,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', propertyId)
+    .select()
+    .single();
 
-	if (error) throw error;
-	return data as DatabaseCharacterEquipment;
-}
-
-/* ---------------------------------------------------------------------------
-   REAL-TIME SUBSCRIPTIONS
-   We'll provide a watcher for `character_equipment`,
-   typically filtered by character_id=eq.{characterId}.
---------------------------------------------------------------------------- */
-
-/**
- * The shape of real-time equipment change events.
- */
-export interface EquipmentChangeEvent {
-	eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-	newRow: DatabaseCharacterEquipment | null;
-	oldRow: DatabaseCharacterEquipment | null;
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 /**
- * watchEquipmentForCharacter(characterId)
- *
- * Subscribes to the `character_equipment` table for the specified character,
- * returning a Svelte store that accumulates real-time events (INSERT/UPDATE/DELETE).
- *
- * Each time a change occurs for rows with `character_id=eq.{characterId}`, 
- * a new EquipmentChangeEvent is appended to the store array.
+ * Remove equipment property
  */
-export function watchEquipmentForCharacter(characterId: number): Readable<EquipmentChangeEvent[]> {
-	return readable<EquipmentChangeEvent[]>([], (set) => {
-		// We'll accumulate events in an internal array
-		let internalArray: EquipmentChangeEvent[] = [];
+export async function removeEquipmentProperty(propertyId: number): Promise<void> {
+  const { error } = await supabase
+    .from('character_equipment_properties')
+    .delete()
+    .eq('id', propertyId);
 
-		const channel = supabase.channel(`character_equipment_${characterId}`);
+  if (error) throw new Error(error.message);
+}
 
-		const handlePayload = (
-			payload: RealtimePostgresChangesPayload<Partial<DatabaseCharacterEquipment>>
-		) => {
-			// If we get an empty object for new/old, treat it as null
-			const newRow =
-				payload.new && Object.keys(payload.new).length > 0
-					? (payload.new as DatabaseCharacterEquipment)
-					: null;
-			const oldRow =
-				payload.old && Object.keys(payload.old).length > 0
-					? (payload.old as DatabaseCharacterEquipment)
-					: null;
+// -----------------------------
+// Consumables
+// -----------------------------
 
-			const event: EquipmentChangeEvent = {
-				eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-				newRow,
-				oldRow
-			};
+/**
+ * Get all consumables for a character
+ */
+export async function getConsumables(characterId: number): Promise<CharacterConsumableRow[]> {
+  const { data, error } = await supabase
+    .from('character_consumables')
+    .select('*')
+    .eq('character_id', characterId);
 
-			internalArray = [...internalArray, event];
-			set(internalArray);
-		};
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
 
-		channel.on(
-			'postgres_changes',
-			{
-				event: '*',
-				schema: 'public',
-				table: 'character_equipment',
-				filter: `character_id=eq.${characterId}`
-			},
-			handlePayload
-		);
+/**
+ * Add consumable
+ */
+export async function addConsumable(
+  characterId: number,
+  consumableType: string,
+  quantity: number = 1
+): Promise<CharacterConsumableRow> {
+  const { data, error } = await supabase
+    .from('character_consumables')
+    .insert({
+      character_id: characterId,
+      consumable_type: consumableType,
+      quantity
+    })
+    .select()
+    .single();
 
-		channel.subscribe((status) => {
-			if (status === 'SUBSCRIBED') {
-				console.log(
-					`[db/equipment] Subscribed to character_equipment for character ${characterId}`
-				);
-			}
-		});
+  if (error) throw new Error(error.message);
+  return data;
+}
 
-		// Cleanup function
-		return () => {
-			supabase.removeChannel(channel);
-		};
-	});
+/**
+ * Update consumable quantity
+ */
+export async function updateConsumableQuantity(
+  consumableId: number,
+  quantity: number
+): Promise<CharacterConsumableRow> {
+  const { data, error } = await supabase
+    .from('character_consumables')
+    .update({
+      quantity,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', consumableId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
+ * Remove consumable
+ */
+export async function removeConsumable(consumableId: number): Promise<void> {
+  const { error } = await supabase
+    .from('character_consumables')
+    .delete()
+    .eq('id', consumableId);
+
+  if (error) throw new Error(error.message);
 }

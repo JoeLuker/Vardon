@@ -5,12 +5,7 @@
 		updateBombs,
 		optimisticUpdateBombs,
 		rollbackUpdateBombs
-	} from '$lib/state/character.svelte';
-	import { executeUpdate, type UpdateState } from '$lib/utils/updates';
-	import {
-		calculateCharacterStats,
-		type CalculatedStats
-	} from '$lib/domain/calculations/characterCalculations';
+	} from '$lib/state/characterStore.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	let { characterId } = $props<{ characterId: number }>();
