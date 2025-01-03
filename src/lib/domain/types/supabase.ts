@@ -33,245 +33,6 @@ export type Database = {
         }
         Relationships: []
       }
-      alt_trait_replacements: {
-        Row: {
-          alt_trait_id: number
-          created_at: string | null
-          id: number
-          replaced_trait_id: number
-          updated_at: string | null
-        }
-        Insert: {
-          alt_trait_id: number
-          created_at?: string | null
-          id?: number
-          replaced_trait_id: number
-          updated_at?: string | null
-        }
-        Update: {
-          alt_trait_id?: number
-          created_at?: string | null
-          id?: number
-          replaced_trait_id?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "alt_trait_replacements_alt_trait_id_fkey"
-            columns: ["alt_trait_id"]
-            isOneToOne: false
-            referencedRelation: "base_alt_ancestral_traits"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ancestral_trait_bonus_feats: {
-        Row: {
-          ancestral_trait_id: number | null
-          created_at: string | null
-          feat_name: string
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestral_trait_id?: number | null
-          created_at?: string | null
-          feat_name: string
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestral_trait_id?: number | null
-          created_at?: string | null
-          feat_name?: string
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ancestral_trait_conditional_bonuses: {
-        Row: {
-          ancestral_trait_id: number
-          apply_to: string
-          bonus_type: string
-          condition: string | null
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-          value: number
-        }
-        Insert: {
-          ancestral_trait_id: number
-          apply_to: string
-          bonus_type: string
-          condition?: string | null
-          created_at?: string | null
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          value: number
-        }
-        Update: {
-          ancestral_trait_id?: number
-          apply_to?: string
-          bonus_type?: string
-          condition?: string | null
-          created_at?: string | null
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          value?: number
-        }
-        Relationships: []
-      }
-      ancestral_trait_natural_attacks: {
-        Row: {
-          ancestral_trait_id: number
-          attack_count: number | null
-          attack_type: string
-          created_at: string | null
-          damage: string
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestral_trait_id: number
-          attack_count?: number | null
-          attack_type: string
-          created_at?: string | null
-          damage: string
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestral_trait_id?: number
-          attack_count?: number | null
-          attack_type?: string
-          created_at?: string | null
-          damage?: string
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ancestral_trait_skill_bonuses: {
-        Row: {
-          ancestral_trait_id: number
-          bonus: number
-          created_at: string | null
-          id: number
-          skill_name: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestral_trait_id: number
-          bonus: number
-          created_at?: string | null
-          id?: number
-          skill_name: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestral_trait_id?: number
-          bonus?: number
-          created_at?: string | null
-          id?: number
-          skill_name?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ancestral_trait_specials: {
-        Row: {
-          ancestral_trait_id: number
-          created_at: string | null
-          id: number
-          special_label: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestral_trait_id: number
-          created_at?: string | null
-          id?: number
-          special_label: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestral_trait_id?: number
-          created_at?: string | null
-          id?: number
-          special_label?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ancestral_trait_visions: {
-        Row: {
-          ancestral_trait_id: number | null
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-          vision_label: string
-        }
-        Insert: {
-          ancestral_trait_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          vision_label: string
-        }
-        Update: {
-          ancestral_trait_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          vision_label?: string
-        }
-        Relationships: []
-      }
-      ancestral_trait_weapon_proficiencies: {
-        Row: {
-          ancestral_trait_id: number
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-          weapon_name: string
-        }
-        Insert: {
-          ancestral_trait_id: number
-          created_at?: string | null
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          weapon_name: string
-        }
-        Update: {
-          ancestral_trait_id?: number
-          created_at?: string | null
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          weapon_name?: string
-        }
-        Relationships: []
-      }
       ancestry_ability_modifiers: {
         Row: {
           ability_name: string
@@ -359,42 +120,6 @@ export type Database = {
           },
         ]
       }
-      base_alt_ancestral_traits: {
-        Row: {
-          ancestry_id: number
-          created_at: string | null
-          description: string
-          id: number
-          is_optional: boolean | null
-          is_pfs_legal: boolean | null
-          name: string
-          source: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestry_id: number
-          created_at?: string | null
-          description: string
-          id?: number
-          is_optional?: boolean | null
-          is_pfs_legal?: boolean | null
-          name: string
-          source?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestry_id?: number
-          created_at?: string | null
-          description?: string
-          id?: number
-          is_optional?: boolean | null
-          is_pfs_legal?: boolean | null
-          name?: string
-          source?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       base_ancestral_traits: {
         Row: {
           ancestry_name: string | null
@@ -431,31 +156,33 @@ export type Database = {
         Row: {
           base_speed: number
           created_at: string | null
-          description: string | null
           id: number
-          name: string
           size: string
           updated_at: string | null
         }
         Insert: {
           base_speed?: number
           created_at?: string | null
-          description?: string | null
-          id?: number
-          name: string
-          size: string
+          id: number
+          size?: string
           updated_at?: string | null
         }
         Update: {
           base_speed?: number
           created_at?: string | null
-          description?: string | null
           id?: number
-          name?: string
           size?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "base_ancestries_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       base_archetypes: {
         Row: {
@@ -493,41 +220,40 @@ export type Database = {
           },
         ]
       }
-      base_buff_effects: {
+      base_attributes: {
         Row: {
-          base_buff_id: number
-          created_at: string
-          description: string | null
-          effect_type: string
+          attribute_type: string | null
+          created_at: string | null
+          default_value: number | null
           id: number
-          modifier: number | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          target: string | null
-          updated_at: string
+          is_core_attribute: boolean | null
+          updated_at: string | null
         }
         Insert: {
-          base_buff_id: number
-          created_at?: string
-          description?: string | null
-          effect_type: string
-          id?: number
-          modifier?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target?: string | null
-          updated_at?: string
+          attribute_type?: string | null
+          created_at?: string | null
+          default_value?: number | null
+          id: number
+          is_core_attribute?: boolean | null
+          updated_at?: string | null
         }
         Update: {
-          base_buff_id?: number
-          created_at?: string
-          description?: string | null
-          effect_type?: string
+          attribute_type?: string | null
+          created_at?: string | null
+          default_value?: number | null
           id?: number
-          modifier?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target?: string | null
-          updated_at?: string
+          is_core_attribute?: boolean | null
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "base_attributes_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       base_buffs: {
         Row: {
@@ -564,72 +290,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      base_class_feature_effects: {
-        Row: {
-          base_class_feature_id: number
-          created_at: string | null
-          description: string | null
-          effect_type: string
-          id: number
-          modifier: number | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          target: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          base_class_feature_id: number
-          created_at?: string | null
-          description?: string | null
-          effect_type: string
-          id?: number
-          modifier?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          base_class_feature_id?: number
-          created_at?: string | null
-          description?: string | null
-          effect_type?: string
-          id?: number
-          modifier?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      base_class_feature_prerequisites: {
-        Row: {
-          base_class_feature_id: number
-          created_at: string | null
-          id: number
-          prereq_type: string
-          prereq_value: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          base_class_feature_id: number
-          created_at?: string | null
-          id?: number
-          prereq_type: string
-          prereq_value: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          base_class_feature_id?: number
-          created_at?: string | null
-          id?: number
-          prereq_type?: string
-          prereq_value?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       base_class_features: {
         Row: {
@@ -670,56 +330,37 @@ export type Database = {
           },
         ]
       }
-      base_class_progression: {
-        Row: {
-          base_attack_bonus: number
-          class_id: number
-          created_at: string | null
-          id: number
-          level: number
-          updated_at: string | null
-        }
-        Insert: {
-          base_attack_bonus: number
-          class_id: number
-          created_at?: string | null
-          id?: number
-          level: number
-          updated_at?: string | null
-        }
-        Update: {
-          base_attack_bonus?: number
-          class_id?: number
-          created_at?: string | null
-          id?: number
-          level?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       base_classes: {
         Row: {
           created_at: string | null
-          description: string | null
+          hit_die: number | null
           id: number
-          name: string
+          skill_ranks_per_level: number | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          description?: string | null
-          id?: number
-          name: string
+          hit_die?: number | null
+          id: number
+          skill_ranks_per_level?: number | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          description?: string | null
+          hit_die?: number | null
           id?: number
-          name?: string
+          skill_ranks_per_level?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "base_classes_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       base_corruptions: {
         Row: {
@@ -740,6 +381,70 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "base_corruptions_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_discoveries: {
+        Row: {
+          created_at: string | null
+          discovery_level: number | null
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          discovery_level?: number | null
+          id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          discovery_level?: number | null
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_discoveries_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_equipment: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          equipment_category: string | null
+          id: number
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          equipment_category?: string | null
+          id: number
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          equipment_category?: string | null
+          id?: number
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_equipment_id_fkey"
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "rpg_entities"
@@ -785,7 +490,6 @@ export type Database = {
           armor_check_penalty: boolean | null
           created_at: string | null
           id: number
-          name: string
           trained_only: boolean | null
           updated_at: string | null
         }
@@ -793,8 +497,7 @@ export type Database = {
           ability: string
           armor_check_penalty?: boolean | null
           created_at?: string | null
-          id?: number
-          name: string
+          id: number
           trained_only?: boolean | null
           updated_at?: string | null
         }
@@ -803,11 +506,18 @@ export type Database = {
           armor_check_penalty?: boolean | null
           created_at?: string | null
           id?: number
-          name?: string
           trained_only?: boolean | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "base_skills_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       base_traits: {
         Row: {
@@ -831,6 +541,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "base_traits_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_wild_talents: {
+        Row: {
+          created_at: string | null
+          id: number
+          talent_level: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: number
+          talent_level?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          talent_level?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_wild_talents_id_fkey"
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "rpg_entities"
@@ -886,524 +625,6 @@ export type Database = {
         }
         Relationships: []
       }
-      character_abp_bonus_targets: {
-        Row: {
-          abp_bonus_id: number
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          target_key: string
-          target_value: string
-          updated_at: string | null
-        }
-        Insert: {
-          abp_bonus_id: number
-          created_at?: string | null
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target_key: string
-          target_value: string
-          updated_at?: string | null
-        }
-        Update: {
-          abp_bonus_id?: number
-          created_at?: string | null
-          id?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target_key?: string
-          target_value?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_abp_bonus_targets_abp_bonus_id_fkey"
-            columns: ["abp_bonus_id"]
-            isOneToOne: false
-            referencedRelation: "character_abp_bonuses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_abp_bonuses: {
-        Row: {
-          bonus_type_id: number | null
-          character_id: number | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-          value: number
-        }
-        Insert: {
-          bonus_type_id?: number | null
-          character_id?: number | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          value: number
-        }
-        Update: {
-          bonus_type_id?: number | null
-          character_id?: number | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          value?: number
-        }
-        Relationships: []
-      }
-      character_alt_ancestral_traits: {
-        Row: {
-          alt_trait_id: number
-          character_id: number
-          created_at: string | null
-          id: number
-          updated_at: string | null
-        }
-        Insert: {
-          alt_trait_id: number
-          character_id: number
-          created_at?: string | null
-          id?: number
-          updated_at?: string | null
-        }
-        Update: {
-          alt_trait_id?: number
-          character_id?: number
-          created_at?: string | null
-          id?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_alt_ancestral_traits_alt_trait_id_fkey"
-            columns: ["alt_trait_id"]
-            isOneToOne: false
-            referencedRelation: "base_alt_ancestral_traits"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_ancestral_traits: {
-        Row: {
-          ancestral_trait_id: number | null
-          character_id: number | null
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestral_trait_id?: number | null
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestral_trait_id?: number | null
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_ancestries: {
-        Row: {
-          ancestry_id: number | null
-          character_id: number | null
-          created_at: string | null
-          id: number
-          is_primary: boolean | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          ancestry_id?: number | null
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          is_primary?: boolean | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestry_id?: number | null
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          is_primary?: boolean | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_attributes: {
-        Row: {
-          cha: number
-          character_id: number
-          con: number
-          created_at: string | null
-          dex: number
-          id: number
-          int: number
-          str: number
-          updated_at: string | null
-          wis: number
-        }
-        Insert: {
-          cha?: number
-          character_id: number
-          con?: number
-          created_at?: string | null
-          dex?: number
-          id?: number
-          int?: number
-          str?: number
-          updated_at?: string | null
-          wis?: number
-        }
-        Update: {
-          cha?: number
-          character_id?: number
-          con?: number
-          created_at?: string | null
-          dex?: number
-          id?: number
-          int?: number
-          str?: number
-          updated_at?: string | null
-          wis?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_attributes_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_bombs: {
-        Row: {
-          bomb_type: string
-          bombs_left: number
-          character_id: number | null
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          bomb_type?: string
-          bombs_left?: number
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          bomb_type?: string
-          bombs_left?: number
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_buffs: {
-        Row: {
-          base_buff_id: number | null
-          character_id: number | null
-          id: number
-          is_active: boolean | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string
-        }
-        Insert: {
-          base_buff_id?: number | null
-          character_id?: number | null
-          id?: number
-          is_active?: boolean | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Update: {
-          base_buff_id?: number | null
-          character_id?: number | null
-          id?: number
-          is_active?: boolean | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      character_class_feature_properties: {
-        Row: {
-          class_feature_id: number
-          created_at: string | null
-          id: number
-          property_key: string
-          property_value: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          class_feature_id: number
-          created_at?: string | null
-          id?: number
-          property_key: string
-          property_value: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          class_feature_id?: number
-          created_at?: string | null
-          id?: number
-          property_key?: string
-          property_value?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_class_feature_properties_class_feature_id_fkey"
-            columns: ["class_feature_id"]
-            isOneToOne: false
-            referencedRelation: "character_class_features"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_class_features: {
-        Row: {
-          active: boolean | null
-          character_id: number | null
-          feature_level: number
-          feature_name: string
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          character_id?: number | null
-          feature_level: number
-          feature_name: string
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          character_id?: number | null
-          feature_level?: number
-          feature_name?: string
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_consumables: {
-        Row: {
-          character_id: number
-          consumable_type: string
-          created_at: string | null
-          id: number
-          quantity: number
-          updated_at: string | null
-        }
-        Insert: {
-          character_id: number
-          consumable_type: string
-          created_at?: string | null
-          id?: number
-          quantity?: number
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number
-          consumable_type?: string
-          created_at?: string | null
-          id?: number
-          quantity?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_consumables_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_corruption_manifestations: {
-        Row: {
-          character_id: number | null
-          corruption_id: number | null
-          created_at: string | null
-          gift_active: boolean | null
-          id: number
-          manifestation_name: string
-          min_manifestation_level: number | null
-          prerequisite_manifestation: string | null
-          stain_active: boolean | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          character_id?: number | null
-          corruption_id?: number | null
-          created_at?: string | null
-          gift_active?: boolean | null
-          id?: never
-          manifestation_name: string
-          min_manifestation_level?: number | null
-          prerequisite_manifestation?: string | null
-          stain_active?: boolean | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number | null
-          corruption_id?: number | null
-          created_at?: string | null
-          gift_active?: boolean | null
-          id?: never
-          manifestation_name?: string
-          min_manifestation_level?: number | null
-          prerequisite_manifestation?: string | null
-          stain_active?: boolean | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_corruption_manifestations_corruption_id_fkey"
-            columns: ["corruption_id"]
-            isOneToOne: false
-            referencedRelation: "character_corruptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_corruptions: {
-        Row: {
-          blood_consumed: number | null
-          blood_required: number | null
-          character_id: number | null
-          corruption_stage: number | null
-          corruption_type: string
-          created_at: string | null
-          id: number
-          last_feed_date: string | null
-          manifestation_level: number | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          blood_consumed?: number | null
-          blood_required?: number | null
-          character_id?: number | null
-          corruption_stage?: number | null
-          corruption_type: string
-          created_at?: string | null
-          id?: never
-          last_feed_date?: string | null
-          manifestation_level?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          blood_consumed?: number | null
-          blood_required?: number | null
-          character_id?: number | null
-          corruption_stage?: number | null
-          corruption_type?: string
-          created_at?: string | null
-          id?: never
-          last_feed_date?: string | null
-          manifestation_level?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_discoveries: {
-        Row: {
-          character_id: number | null
-          discovery_name: string
-          id: number
-          selected_level: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          character_id?: number | null
-          discovery_name: string
-          id?: never
-          selected_level: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number | null
-          discovery_name?: string
-          id?: never
-          selected_level?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_discovery_properties: {
-        Row: {
-          character_discovery_id: number
-          created_at: string | null
-          id: number
-          property_key: string
-          property_value: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          character_discovery_id: number
-          created_at?: string | null
-          id?: number
-          property_key: string
-          property_value: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          character_discovery_id?: number
-          created_at?: string | null
-          id?: number
-          property_key?: string
-          property_value?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_discovery_properties_character_discovery_id_fkey"
-            columns: ["character_discovery_id"]
-            isOneToOne: false
-            referencedRelation: "character_discoveries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       character_entity_choices: {
         Row: {
           character_entity_id: number
@@ -1429,238 +650,15 @@ export type Database = {
           id?: number
           updated_at?: string | null
         }
-        Relationships: []
-      }
-      character_equipment: {
-        Row: {
-          character_id: number
-          created_at: string | null
-          equipped: boolean | null
-          id: number
-          name: string
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          character_id: number
-          created_at?: string | null
-          equipped?: boolean | null
-          id?: number
-          name: string
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number
-          created_at?: string | null
-          equipped?: boolean | null
-          id?: number
-          name?: string
-          type?: string
-          updated_at?: string | null
-        }
         Relationships: [
           {
-            foreignKeyName: "character_equipment_character_id_fkey"
-            columns: ["character_id"]
+            foreignKeyName: "character_entity_choices_character_entity_id_fkey"
+            columns: ["character_entity_id"]
             isOneToOne: false
-            referencedRelation: "characters"
+            referencedRelation: "character_rpg_entities"
             referencedColumns: ["id"]
           },
         ]
-      }
-      character_equipment_properties: {
-        Row: {
-          created_at: string | null
-          equipment_id: number
-          id: number
-          property_key: string
-          property_value: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          equipment_id: number
-          id?: number
-          property_key: string
-          property_value: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          equipment_id?: number
-          id?: number
-          property_key?: string
-          property_value?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_equipment_properties_equipment_id_fkey"
-            columns: ["equipment_id"]
-            isOneToOne: false
-            referencedRelation: "character_equipment"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_extracts: {
-        Row: {
-          character_id: number | null
-          created_at: string | null
-          extract_level: number
-          extract_name: string
-          id: number
-          prepared: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-          used: number
-        }
-        Insert: {
-          character_id?: number | null
-          created_at?: string | null
-          extract_level: number
-          extract_name: string
-          id?: never
-          prepared?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          used?: number
-        }
-        Update: {
-          character_id?: number | null
-          created_at?: string | null
-          extract_level?: number
-          extract_name?: string
-          id?: never
-          prepared?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-          used?: number
-        }
-        Relationships: []
-      }
-      character_favored_class_bonuses: {
-        Row: {
-          character_id: number | null
-          created_at: string | null
-          favored_choice_id: number | null
-          id: number
-          level: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          character_id?: number | null
-          created_at?: string | null
-          favored_choice_id?: number | null
-          id?: never
-          level: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number | null
-          created_at?: string | null
-          favored_choice_id?: number | null
-          id?: never
-          level?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_feat_properties: {
-        Row: {
-          character_feat_id: number
-          created_at: string
-          id: number
-          property_key: string
-          property_value: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string
-        }
-        Insert: {
-          character_feat_id: number
-          created_at?: string
-          id?: number
-          property_key: string
-          property_value: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Update: {
-          character_feat_id?: number
-          created_at?: string
-          id?: number
-          property_key?: string
-          property_value?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_feat_properties_character_feat_id_fkey"
-            columns: ["character_feat_id"]
-            isOneToOne: false
-            referencedRelation: "character_feats"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_feats: {
-        Row: {
-          base_feat_id: number | null
-          character_id: number | null
-          id: number
-          selected_level: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string
-        }
-        Insert: {
-          base_feat_id?: number | null
-          character_id?: number | null
-          id?: number
-          selected_level: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Update: {
-          base_feat_id?: number | null
-          character_id?: number | null
-          id?: number
-          selected_level?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      character_known_spells: {
-        Row: {
-          character_id: number | null
-          created_at: string | null
-          id: number
-          spell_level: number
-          spell_name: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-        }
-        Insert: {
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          spell_level: number
-          spell_name: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-        }
-        Update: {
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          spell_level?: number
-          spell_name?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-        }
-        Relationships: []
       }
       character_rpg_entities: {
         Row: {
@@ -1669,7 +667,6 @@ export type Database = {
           entity_id: number
           id: number
           is_active: boolean | null
-          selected_level: number | null
           updated_at: string | null
         }
         Insert: {
@@ -1678,7 +675,6 @@ export type Database = {
           entity_id: number
           id?: number
           is_active?: boolean | null
-          selected_level?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -1687,7 +683,6 @@ export type Database = {
           entity_id?: number
           id?: number
           is_active?: boolean | null
-          selected_level?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1703,6 +698,41 @@ export type Database = {
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_rpg_entity_properties: {
+        Row: {
+          character_rpg_entity_id: number
+          created_at: string | null
+          id: number
+          property_key: string
+          property_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          character_rpg_entity_id: number
+          created_at?: string | null
+          id?: number
+          property_key: string
+          property_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          character_rpg_entity_id?: number
+          created_at?: string | null
+          id?: number
+          property_key?: string
+          property_value?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_rpg_entity_properties_character_rpg_entity_id_fkey"
+            columns: ["character_rpg_entity_id"]
+            isOneToOne: false
+            referencedRelation: "character_rpg_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -1759,99 +789,30 @@ export type Database = {
           },
         ]
       }
-      character_spell_slots: {
-        Row: {
-          character_id: number | null
-          id: number
-          remaining: number
-          spell_level: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          total: number
-          updated_at: string | null
-        }
-        Insert: {
-          character_id?: number | null
-          id?: never
-          remaining: number
-          spell_level: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          total: number
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number | null
-          id?: never
-          remaining?: number
-          spell_level?: number
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          total?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_traits: {
-        Row: {
-          character_id: number | null
-          created_at: string | null
-          id: number
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          trait_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          trait_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number | null
-          created_at?: string | null
-          id?: never
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          trait_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       characters: {
         Row: {
-          ancestry_name: string | null
-          archetype_name: string | null
-          class_name: string | null
           created_at: string | null
           current_hp: number
           id: number
           is_offline: boolean | null
-          level: number
           max_hp: number
           name: string
           updated_at: string | null
         }
         Insert: {
-          ancestry_name?: string | null
-          archetype_name?: string | null
-          class_name?: string | null
           created_at?: string | null
           current_hp?: number
           id?: number
           is_offline?: boolean | null
-          level?: number
           max_hp?: number
           name: string
           updated_at?: string | null
         }
         Update: {
-          ancestry_name?: string | null
-          archetype_name?: string | null
-          class_name?: string | null
           created_at?: string | null
           current_hp?: number
           id?: number
           is_offline?: boolean | null
-          level?: number
           max_hp?: number
           name?: string
           updated_at?: string | null
@@ -2049,72 +1010,6 @@ export type Database = {
         }
         Relationships: []
       }
-      feat_effects: {
-        Row: {
-          base_feat_id: number
-          created_at: string
-          description: string | null
-          effect_type: string
-          id: number
-          modifier: number | null
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          target: string | null
-          updated_at: string
-        }
-        Insert: {
-          base_feat_id: number
-          created_at?: string
-          description?: string | null
-          effect_type: string
-          id?: number
-          modifier?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target?: string | null
-          updated_at?: string
-        }
-        Update: {
-          base_feat_id?: number
-          created_at?: string
-          description?: string | null
-          effect_type?: string
-          id?: number
-          modifier?: number | null
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          target?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      feat_prerequisites: {
-        Row: {
-          base_feat_id: number
-          created_at: string
-          id: number
-          prereq_type: string
-          prereq_value: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          updated_at: string
-        }
-        Insert: {
-          base_feat_id: number
-          created_at?: string
-          id?: number
-          prereq_type: string
-          prereq_value: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Update: {
-          base_feat_id?: number
-          created_at?: string
-          id?: number
-          prereq_type?: string
-          prereq_value?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       natural_attacks: {
         Row: {
           attack_count: number | null
@@ -2239,39 +1134,6 @@ export type Database = {
         }
         Relationships: []
       }
-      trait_skill_replacements: {
-        Row: {
-          created_at: string | null
-          from_ability: string
-          id: number
-          skill_name: string
-          sync_status: Database["public"]["Enums"]["sync_status"] | null
-          to_ability: string
-          trait_id: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          from_ability: string
-          id?: number
-          skill_name: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          to_ability: string
-          trait_id: number
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          from_ability?: string
-          id?: number
-          skill_name?: string
-          sync_status?: Database["public"]["Enums"]["sync_status"] | null
-          to_ability?: string
-          trait_id?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       weapon_proficiencies: {
         Row: {
           created_at: string | null
@@ -2309,68 +1171,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      distribute_skill_ranks: {
-        Args: {
-          p_character_id: number
-          p_progressions: Database["public"]["CompositeTypes"]["skill_progression"][]
-        }
-        Returns: undefined
-      }
-      uuid_generate_v1: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_generate_v1mc: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_generate_v3: {
-        Args: {
-          namespace: string
-          name: string
-        }
-        Returns: string
-      }
-      uuid_generate_v4: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_generate_v5: {
-        Args: {
-          namespace: string
-          name: string
-        }
-        Returns: string
-      }
-      uuid_nil: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_dns: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_oid: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_url: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      uuid_ns_x500: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
-      sync_status: "synced" | "pending" | "conflict"
+      [_ in never]: never
     }
     CompositeTypes: {
-      skill_progression: {
-        skill_name: string | null
-        ranks_per_level: number[] | null
-      }
+      [_ in never]: never
     }
   }
 }

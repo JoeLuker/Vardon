@@ -1,6 +1,6 @@
 <!-- src/lib/ui/admin/CorruptionManager.svelte -->
 <script lang="ts">
-	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore';
 	import { upsertCorruption, deleteCorruption } from '$lib/db/corruptions';
 	import type { DBCorruption, CorruptionUpdate } from '$lib/db/corruptions';
 

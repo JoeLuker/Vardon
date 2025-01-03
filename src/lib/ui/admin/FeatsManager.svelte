@@ -1,7 +1,7 @@
 <!-- FILE: src/lib/ui/admin/FeatsManager.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getCharacter, executeUpdate, type UpdateState } from '$lib/state/characterStore.svelte';
+	import { getCharacter, executeUpdate, type UpdateState } from '$lib/state/characterStore';
 	import {
 		getAllBaseFeats,
 		createBaseFeat, 

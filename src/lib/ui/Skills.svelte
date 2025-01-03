@@ -1,7 +1,7 @@
 <!-- src/lib/ui/Skills.svelte -->
 <script lang="ts">
 	import SkillAllocator from './SkillAllocator.svelte';
-	import { getCharacter, fetchSkillData } from '$lib/state/characterStore.svelte';
+	import { getCharacter, fetchSkillData } from '$lib/state/characterStore';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';

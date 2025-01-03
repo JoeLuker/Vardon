@@ -8,7 +8,7 @@
 	 * import it from there (same as in EquipmentManager).
 	 * That means `import { executeUpdate } from '$lib/state/characterStore.svelte';`
 	 */
-	import { executeUpdate } from '$lib/state/characterStore.svelte';
+	import { executeUpdate } from '$lib/state/characterStore';
 
 	/**
 	 * Keep your DB calls from the same place as before:

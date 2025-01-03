@@ -1,6 +1,6 @@
 <!-- FILE: src/lib/ui/admin/FavoredClassBonusesManager.svelte -->
 <script lang="ts">
-	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore';
 	import { saveFavoredClassBonus as saveFcbToDb, removeFavoredClassBonus } from '$lib/db/favoredClassBonuses';
 		import type { FavoredClassBonusSaveData } from '$lib/db/favoredClassBonuses';
 

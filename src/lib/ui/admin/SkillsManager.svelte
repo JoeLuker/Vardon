@@ -4,7 +4,7 @@
 	 * Instead of importing from '$lib/state/updates.svelte',
 	 * we import `executeUpdate` from your main character store—just like EquipmentManager does.
 	 */
-	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore';
 
 	/**
 	 * We still use the DB calls for skills (saveBaseSkill, removeBaseSkill),

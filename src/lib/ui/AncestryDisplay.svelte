@@ -1,6 +1,6 @@
 <!-- FILE: src/lib/ui/AncestryDisplay.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/characterStore.svelte';
+	import { getCharacter } from '$lib/state/characterStore';
 
 	let { characterId } = $props<{ characterId: number }>();
 

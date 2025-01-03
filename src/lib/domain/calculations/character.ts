@@ -1,74 +1,87 @@
 // FILE: calculations.ts
 
+/******************************************************************************
+ * S U P A B A S E   T Y P E   I M P O R T S
+ *****************************************************************************/
+
+/**
+ * We'll assume your Supabase types are in `../types/supabase.ts`, 
+ * which exports a `Database` interface. 
+ */
 import type { Database } from '../types/supabase'
 
-// -----------------------------------------------------------------------------
-// 1) RE-USE THE DB ROW TYPES INSTEAD OF DUPLICATING
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 1) DB ROW TYPE ALIASES
+ ******************************************************************************
+ * These alias definitions let us talk about your actual DB rows by name, 
+ * e.g. `CharacterBuff`, `FavoredClassBonus`, etc., 
+ * without rewriting them from scratch.
+ *****************************************************************************/
 
-// Re-use your DB row (and enum) types so you don’t redefine them manually.
+/** Example: A single skill row from `base_skills`. */
 export type BaseSkill = Database['public']['Tables']['base_skills']['Row']
-export type CharacterBuff = Database['public']['Tables']['character_buffs']['Row']
+
+/** A row from your `bonus_types` table. */
 export type BonusType = Database['public']['Tables']['bonus_types']['Row']
-// type WeaponProficiency = Database['public']['Tables']['weapon_proficiencies']['Row']
+
+/** Example: A row from `base_classes`. */
 export type CharacterClass = Database['public']['Tables']['base_classes']['Row']
-// type NaturalAttack = Database['public']['Tables']['natural_attacks']['Row']
-export type FavoredClassBonus = Database['public']['Tables']['character_favored_class_bonuses']['Row']
-export type AncestralTraitBonus = Database['public']['Tables']['ancestral_trait_conditional_bonuses']['Row']
 
-// ABP bonus row + optional child row (character_abp_bonus_targets)
-export type CharacterABPBonus = Database['public']['Tables']['character_abp_bonuses']['Row']
-export type CharacterABPBonusTarget = Database['public']['Tables']['character_abp_bonus_targets']['Row']
-export type CharacterABPBonusWithTargets = CharacterABPBonus & {
-  targets?: CharacterABPBonusTarget[]
-  choices?: Array<{
-    key: string
-    value: string
-  }>
-}
 
-// If you want to unify both forms (with/without targets) under a single alias:
-export type ABPBonusAssignment = CharacterABPBonusWithTargets
 
-// If you store skill ranks in character_skill_ranks
+/**
+ * If you store skill ranks in `character_skill_ranks`:
+ */
 export type CharacterSkillRank = Database['public']['Tables']['character_skill_ranks']['Row']
 
-// Instead of re-declaring “SkillDefinition”, we’ll *extend* BaseSkill if needed.
-export type SkillDefinition = BaseSkill & {
-  // If you want an extra field that doesn’t exist in your DB row:
-  ability_key?: string
-}
 
-// If you have “conditional bonuses” from multiple tables, you can union them,
-// but for now we’ll treat them as the same shape as AncestralTraitBonus:
-export type ConditionalBonus = AncestralTraitBonus
+/**
+ * Example of referencing a future `base_buff_effects` table:
+ */
+// type BaseBuffEffect = Database['public']['Tables']['base_buff_effects']['Row']
+// But let's define a more general interface below instead
 
-// -----------------------------------------------------------------------------
-// 1) EFFECT TYPES FROM DB
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 2) EFFECTS & EXTENDED BUFF/FEAT INTERFACES
+ *****************************************************************************/
 
-type BaseBuffEffect = Database['public']['Tables']['base_buff_effects']['Row']
-// type FeatEffect = Database['public']['Tables']['feat_effects']['Row']
-// type SkillBonus = Database['public']['Tables']['skill_bonuses']['Row']
-
-/** Unified interface for effects from different sources */
+/**
+ * In many PF1-style systems, we have "effects" that do things like 
+ * "attribute_modifier," "skill_bonus," etc. 
+ * 
+ * You might store them in e.g. base_buff_effects, feat_effects, or 
+ * anywhere else, each with a DB schema. For now, define 
+ * a simplified `Effect` interface that merges them.
+ */
 export interface Effect {
-  effect_type: string
-  target?: string | null
-  modifier?: number | null
+  effect_type: string        // e.g. "attribute_modifier" | "skill_bonus" | "attack_bonus" ...
+  target?: string | null     // e.g. "dex", "stealth", "attack", etc.
+  modifier?: number | null   // numeric amount
   description?: string | null
-  bonus_type?: string
+  bonus_type?: string        // e.g. "enhancement", "dodge", etc.
 }
 
-/** Extended buff type that includes its effects */
+/**
+ * A "buff" that includes an array of Effects. 
+ * In a real schema, you'd join `character_buffs` with `base_buff_effects`.
+ */
 export interface BuffWithEffects {
+  /** The buff row ID. */
   id: number
+
+  /** Whether the buff is active. */
   is_active: boolean
+
+  /** Type references the buff_types table or something. */
   buff_type_id: number | null
-  effects?: BaseBuffEffect[]
+
+  /** The array of effects from a join. */
+  effects?: Effect[]
 }
 
-/** Extended feat type that includes its effects */
+/**
+ * A "feat" that includes an array of Effects. 
+ */
 export interface FeatWithEffects {
   id: number
   name: string
@@ -80,11 +93,11 @@ export interface FeatWithEffects {
   }>
 }
 
-// -----------------------------------------------------------------------------
-// 2) SIMPLE / NON-DB INTERFACES
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 3) SIMPLE/NON-DB INTERFACES (PF1-LIKE)
+ *****************************************************************************/
 
-/** Simple representation of a character’s 6 ability scores. */
+/** Standard 6 ability scores. */
 export interface AbilityScores {
   str: number
   dex: number
@@ -94,7 +107,7 @@ export interface AbilityScores {
   cha: number
 }
 
-/** The 6 derived ability modifiers. */
+/** The derived modifiers for each ability. */
 export interface AbilityModifiers {
   strMod: number
   dexMod: number
@@ -104,7 +117,7 @@ export interface AbilityModifiers {
   chaMod: number
 }
 
-/** PF1-like BAB progression. */
+/** PF1-like BAB progressions. */
 export const BAB_PROGRESSION = {
   FULL: 'full',
   THREE_FOURTHS: 'threeFourths',
@@ -112,14 +125,19 @@ export const BAB_PROGRESSION = {
 } as const
 export type BABProgression = typeof BAB_PROGRESSION[keyof typeof BAB_PROGRESSION]
 
-/** PF1-like save progression. */
+/** PF1-like save progressions. */
 export const SAVE_PROGRESSION = {
   GOOD: 'good',
   POOR: 'poor',
 } as const
 export type SaveProgression = typeof SAVE_PROGRESSION[keyof typeof SAVE_PROGRESSION]
 
-/** Summarizes a character’s class-level info. */
+/**
+ * Summarizes a single class's level details: 
+ * - what level (1..20?), 
+ * - the class's hitDie (e.g. d8 => 8),
+ * - babProgression, etc.
+ */
 export interface CharacterLevelInfo {
   level: number
   hitDie: number
@@ -132,8 +150,8 @@ export interface CharacterLevelInfo {
 }
 
 /**
- * For final ABP results after applying “sum” or “take highest”.
- * Not stored in DB, purely computed.
+ * For the ABP system: after we collect ABP from DB and unify them, 
+ * the final result is this structure. 
  */
 export interface ABPModifiers {
   resistance?: number
@@ -143,19 +161,23 @@ export interface ABPModifiers {
   mentalProwess?: number
   physicalProwess?: number
   toughening?: number
+
+  /** If you have other weird ABP bonuses. */
   otherBonuses?: Array<{ label: string; value: number }>
+
+  /** For mental/physical prowess if the user selected a specific ability. */
   mentalProwessChoice?: keyof AbilityScores
   physicalProwessChoice?: keyof AbilityScores
 }
 
-/** Generic property interface matching your YAML/DB structure */
+/** Generic property interface used by items. */
 export interface ItemProperty {
   property_key: string
   property_value: string
   property_type?: string
 }
 
-/** Base interface for equipment items */
+/** A base item (weapon, armor, gear, etc.). */
 export interface BaseItem {
   id: number
   name: string
@@ -164,7 +186,10 @@ export interface BaseItem {
   properties: ItemProperty[]
 }
 
-/** Parsed armor stats from properties */
+/******************************************************************************
+ * 3A) ARMOR & WEAPON STATS PARSING
+ *****************************************************************************/
+
 export interface ArmorStats {
   totalArmorBonus: number
   maxDex: number
@@ -177,7 +202,8 @@ export interface ArmorStats {
 }
 
 /**
- * Parse numeric property value, with fallback
+ * Parse a numeric property from an item’s property list. 
+ * e.g. parse the integer value from property_key="armor_bonus".
  */
 export function parseNumericProperty(
   properties: ItemProperty[],
@@ -185,38 +211,42 @@ export function parseNumericProperty(
   defaultValue: number = 0
 ): number {
   const prop = properties.find(p => p.property_key === key)
-  return prop ? Number(prop.property_value) || defaultValue : defaultValue
+  if (!prop) return defaultValue
+  const numeric = Number(prop.property_value)
+  return Number.isNaN(numeric) ? defaultValue : numeric
 }
 
-/**
- * Parse armor properties into structured data
+/** 
+ * Parse an item’s properties to produce an ArmorStats. 
+ * E.g. from a chain shirt: armor_bonus=4, max_dex=6, etc.
  */
 export function parseArmorProperties(item: BaseItem): ArmorStats {
   const armorBonus = parseNumericProperty(item.properties, 'armor_bonus')
   const maxDex = parseNumericProperty(item.properties, 'max_dex', 99)
   const armorCheckPenalty = parseNumericProperty(item.properties, 'armor_check_penalty')
   const spellFailure = parseNumericProperty(item.properties, 'spell_failure')
-  
-  // Parse speed modifications if present
-  const speed30Prop = item.properties.find(p => p.property_key === 'speed_30')
-  const speed20Prop = item.properties.find(p => p.property_key === 'speed_20')
-  
-  const speed = speed30Prop || speed20Prop ? {
-    base30: speed30Prop ? Number(speed30Prop.property_value) : undefined,
-    base20: speed20Prop ? Number(speed20Prop.property_value) : undefined
-  } : undefined
+
+  // Maybe parse special "speed_30" or "speed_20" if the armor reduces movement.
+  const speed30 = item.properties.find(p => p.property_key === 'speed_30')
+  const speed20 = item.properties.find(p => p.property_key === 'speed_20')
+  const speed = (speed30 || speed20)
+    ? {
+        base30: speed30 ? Number(speed30.property_value) : undefined,
+        base20: speed20 ? Number(speed20.property_value) : undefined
+      }
+    : undefined
 
   return {
     totalArmorBonus: armorBonus,
     maxDex,
     armorCheckPenalty,
-    spellFailure,
+    spellFailure: spellFailure || undefined,
     speed
   }
 }
 
-/**
- * Parse weapon properties into structured data
+/** 
+ * For weapons, we might parse damage, crit range, etc.
  */
 export interface WeaponStats {
   damage: string
@@ -227,32 +257,58 @@ export interface WeaponStats {
   special?: string[]
 }
 
+/**
+ * Example function to parse weapon properties. 
+ * This is purely domain logic, ignoring actual DB calls.
+ */
 export function parseWeaponProperties(item: BaseItem): WeaponStats {
-  const damage = item.properties.find(p => p.property_key === 'damage')?.property_value || '1d4'
-  const critRange = parseNumericProperty(item.properties, 'critical_range', 20)
-  const critMult = parseNumericProperty(item.properties, 'critical_multiplier', 2)
+  const damage = 
+    item.properties.find(p => p.property_key === 'damage')?.property_value || '1d4'
+  const criticalRange = parseNumericProperty(item.properties, 'critical_range', 20)
+  const criticalMultiplier = parseNumericProperty(item.properties, 'critical_multiplier', 2)
   const range = parseNumericProperty(item.properties, 'range')
-  
-  // Parse damage types (e.g., "S,P" for slash and pierce)
+
   const damageTypeProp = item.properties.find(p => p.property_key === 'damage_type')
-  const damageType = damageTypeProp?.property_value.split(',').map(t => t.trim())
-  
-  // Parse special properties (e.g., "brace,reach")
+  const damageType = damageTypeProp
+    ? damageTypeProp.property_value.split(',').map(s => s.trim())
+    : undefined
+
   const specialProp = item.properties.find(p => p.property_key === 'special')
-  const special = specialProp?.property_value.split(',').map(s => s.trim())
+  const special = specialProp
+    ? specialProp.property_value.split(',').map(s => s.trim())
+    : undefined
 
   return {
     damage,
-    criticalRange: critRange,
-    criticalMultiplier: critMult,
+    criticalRange,
+    criticalMultiplier,
     damageType,
     range,
     special
   }
 }
 
-/** 
- * Aggregates equipped armor's total bonus, the min "maxDex," sum of ACP, etc.
+/**
+ * If you have multiple armor items equipped (like armor + shield),
+ * sum them up.
+ */
+export interface ArmorItem {
+  id: number
+  armorBonus: number
+  maxDex: number
+  armorCheckPenalty: number
+  equipped: boolean
+  properties?: Array<{
+    property_key: string
+    property_value: string
+  }>
+}
+
+/**
+ * Combine an array of equipped armor items:
+ * - sum totalArmorBonus
+ * - min of all maxDex
+ * - sum of all armor check penalty
  */
 export function computeArmorStats(equippedItems: ArmorItem[]): ArmorStats {
   let totalArmorBonus = 0
@@ -266,66 +322,24 @@ export function computeArmorStats(equippedItems: ArmorItem[]): ArmorStats {
     totalACP += item.armorCheckPenalty
   }
 
-  // The limiting maxDex is the smallest among the equipped pieces
-  const finalMaxDex = maxDexList.length > 0 ? Math.min(...maxDexList) : 99
-
+  const finalMaxDex = maxDexList.length ? Math.min(...maxDexList) : 99
   return {
     totalArmorBonus,
     maxDex: finalMaxDex,
-    armorCheckPenalty: totalACP,
+    armorCheckPenalty: totalACP
   }
 }
 
-/** 
- * A final "computed" stats shape that you might store in Redux or pass 
- * around your front-end. 
- */
-export interface CharacterFinalStats {
-  level: number
-  abilityScores: AbilityScores
-  abilityModifiers: AbilityModifiers
-  maxHP: number
-  currentHP: number
-  baseAttackBonus: number
-  meleeAttackBonus: number
-  rangedAttackBonus: number
-  AC: number
-  touchAC: number
-  flatFootedAC: number
-  saves: SaveResults
-  cmd: number
-  skillBonuses: { [skillId: number]: number }
-  weaponProficiencies: string[]
-  naturalAttacks: Array<{
-    id: number
-    type: string
-    count: number
-    damage: string
-    entity_id: number
-    created_at: string | null
-    updated_at: string | null
-    properties: Array<{
-      property_key: string
-      property_value: string
-    }>
-  }>
-  visions: string[]
-  specialAbilities: string[]
-  activeBuffs: number[]
-  activeConditions: string[]
-  equippedWeapons: any[] // Replace 'any' with proper weapon type
-}
+/******************************************************************************
+ * 4) ABILITY SCORES & MODIFIERS
+ *****************************************************************************/
 
-// -----------------------------------------------------------------------------
-// 3) BASIC HELPER FUNCTIONS
-// -----------------------------------------------------------------------------
-
-/** Standard PF1-ish ability mod formula: floor((score - 10)/2). */
+/** Standard PF formula for ability mod: floor((score - 10)/2). */
 export function computeAbilityModifier(score: number): number {
   return Math.floor((score - 10) / 2)
 }
 
-/** Compute all 6 modifiers at once. */
+/** Apply that function to all six abilities. */
 export function computeAllAbilityModifiers(abilities: AbilityScores): AbilityModifiers {
   return {
     strMod: computeAbilityModifier(abilities.str),
@@ -333,98 +347,33 @@ export function computeAllAbilityModifiers(abilities: AbilityScores): AbilityMod
     conMod: computeAbilityModifier(abilities.con),
     intMod: computeAbilityModifier(abilities.int),
     wisMod: computeAbilityModifier(abilities.wis),
-    chaMod: computeAbilityModifier(abilities.cha),
+    chaMod: computeAbilityModifier(abilities.cha)
   }
 }
 
-/**
- * Combine an array of ABP bonuses into a single object. 
- * For example, "deflection" is take-highest, "physical_prowess" is sum, etc.
+
+/******************************************************************************
+ * 6) HIT POINTS & FAVORED CLASS
+ *****************************************************************************/
+
+/** 
+ * Example logic for calculating max HP from class, level, CON, and favored 
+ * class bonus. You can adapt this if you do rolling vs. fixed hp, etc.
  */
-export function consolidateABPBonuses(bonuses: ABPBonusAssignment[]): ABPModifiers {
-  if (!Array.isArray(bonuses)) {
-    throw new Error('Expected array of ABP bonuses')
-  }
-
-  const result: ABPModifiers = {
-    resistance: 0,
-    armorAttunement: 0,
-    weaponAttunement: 0,
-    deflection: 0,
-    mentalProwess: 0,
-    physicalProwess: 0,
-    toughening: 0,
-    otherBonuses: [],
-    mentalProwessChoice: undefined,
-    physicalProwessChoice: undefined,
-  }
-
-  for (const b of bonuses) {
-    if (b.bonus_type_id == null) continue
-
-    switch (b.bonus_type_id) {
-      case 1: // resistance
-        result.resistance = Math.max(result.resistance || 0, b.value)
-        break
-      case 2: // armor_attunement
-        result.armorAttunement = Math.max(result.armorAttunement || 0, b.value)
-        break
-      case 3: // weapon_attunement
-        result.weaponAttunement = Math.max(result.weaponAttunement || 0, b.value)
-        break
-      case 4: // deflection
-        result.deflection = Math.max(result.deflection || 0, b.value)
-        break
-      case 5: // mental_prowess
-        result.mentalProwess = (result.mentalProwess || 0) + b.value
-        break
-      case 6: // mental_prowess_choice
-        result.mentalProwess = (result.mentalProwess || 0) + b.value
-        if (b.choices && b.choices.length > 0) {
-          const choice = b.choices.find(c => c.key === 'target')
-          if (choice) {
-            result.mentalProwessChoice = choice.value as keyof AbilityScores
-          }
-        }
-        break
-      case 7: // physical_prowess
-        result.physicalProwess = (result.physicalProwess || 0) + b.value
-        break
-      case 8: // physical_prowess_choice
-        result.physicalProwess = (result.physicalProwess || 0) + b.value
-        if (b.choices && b.choices.length > 0) {
-          const choice = b.choices.find(c => c.key === 'target')
-          if (choice) {
-            result.physicalProwessChoice = choice.value as keyof AbilityScores
-          }
-        }
-        break
-      case 9: // toughening
-        result.toughening = Math.max(result.toughening || 0, b.value)
-        break
-      default:
-        result.otherBonuses?.push({ label: b.bonus_type_id.toString(), value: b.value })
-        break
-    }
-  }
-
-  return result
-}
-
-// -----------------------------------------------------------------------------
-// 4) HIT POINTS & FAVORED CLASS BONUSES
-// -----------------------------------------------------------------------------
-
 export interface ComputeMaxHPArgs {
   level: number
   hitDie: number
   conMod: number
+  /** e.g. a row array from `character_favored_class_bonuses`. */
   favoredClassBonuses: Array<{ choiceId: number }>
 }
 
 /**
- * Basic example logic for summing up HP from class Hit Die, Con, favored class, etc.
- * Adjust for your house rules or rolling method.
+ * Summation logic:
+ * - level 1 => full HD
+ * - subsequent => average
+ * - + CON*level
+ * - +1 for each favored_class HP choice
  */
 export function computeMaxHP(args: ComputeMaxHPArgs): number {
   const { level, hitDie, conMod, favoredClassBonuses } = args
@@ -432,91 +381,82 @@ export function computeMaxHP(args: ComputeMaxHPArgs): number {
   let baseHp = 0
   for (let lvl = 1; lvl <= level; lvl++) {
     if (lvl === 1) {
-      baseHp += hitDie // full at level 1
+      baseHp += hitDie
     } else {
-      baseHp += Math.floor(hitDie / 2) + 1 // average
+      baseHp += Math.floor(hitDie / 2) + 1
     }
   }
   const conHp = conMod * level
-  // Example assumption: favored_choice_id = 1 => +1 HP
-  const fcHp = favoredClassBonuses.filter((fcb) => fcb.choiceId === 1).length
+
+  // Suppose favored_class HP = choiceId=1
+  const fcHp = favoredClassBonuses.filter(f => f.choiceId === 1).length
 
   return baseHp + conHp + fcHp
 }
 
-// -----------------------------------------------------------------------------
-// 5) SAVE CALCULATIONS
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 7) SAVES
+ *****************************************************************************/
 
-/** Simple "good" vs "poor" progression for Fort/Ref/Will. Adjust as needed. */
+/** 
+ * PF1 typical “good” progression => +2 at level 1, up to +12 at level 20. 
+ * “poor” => start at +0, up to +6 at level 20. 
+ */
 export function getBaseSave(level: number, progression: SaveProgression): number {
   if (progression === 'good') {
+    // e.g. +2 at L1, each 2 levels => +1 
+    // formula: floor(level*2/3 + 2)
     return Math.floor((level * 2) / 3 + 2)
   } else {
+    // “poor” => floor(level/3)
     return Math.floor(level / 3)
   }
 }
 
-/**
- * Consolidates base saves, ability mods, ABP "resistance," and 
- * conditional bonuses if the conditions are active.
+export interface SaveResults {
+  fort: number
+  ref: number
+  will: number
+}
+
+/** 
+ * Summation logic for saves:
+ * - base from class 
+ * - + ability mod 
+ * - + ABP resistance 
+ * - + conditional if condition is active
  */
 export function computeSaves(
   level: number,
   baseSaveProgs: { fort: SaveProgression; ref: SaveProgression; will: SaveProgression },
   abilityMods: AbilityModifiers,
-  abpResistance?: number,
-  conditionalBonuses?: ConditionalBonus[],
-  activeConditions?: string[],
-): { fort: number; ref: number; will: number } {
-  const baseFort = getBaseSave(level, baseSaveProgs.fort)
-  const baseRef = getBaseSave(level, baseSaveProgs.ref)
-  const baseWill = getBaseSave(level, baseSaveProgs.will)
+): SaveResults {
+  const { fort: fortProg, ref: refProg, will: willProg } = baseSaveProgs
 
-  let fort = baseFort + abilityMods.conMod
-  let ref = baseRef + abilityMods.dexMod
-  let will = baseWill + abilityMods.wisMod
+  let fort = getBaseSave(level, fortProg) + abilityMods.conMod
+  let ref = getBaseSave(level, refProg) + abilityMods.dexMod
+  let will = getBaseSave(level, willProg) + abilityMods.wisMod
 
-  // Apply ABP "resistance" to all saves
-  if (abpResistance && abpResistance > 0) {
-    fort += abpResistance
-    ref += abpResistance
-    will += abpResistance
-  }
 
-  // Apply conditional bonuses if conditions are met
-  if (conditionalBonuses && activeConditions) {
-    for (const cb of conditionalBonuses) {
-      if (
-        cb.apply_to === 'saves' &&
-        cb.condition &&
-        activeConditions.includes(cb.condition)
-      ) {
-        fort += cb.value
-        ref += cb.value
-        will += cb.value
-      }
-    }
-  }
 
   return { fort, ref, will }
 }
 
-// -----------------------------------------------------------------------------
-// 6) BASE ATTACK BONUS & ATTACK CALCULATIONS
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 8) ATTACK BONUSES
+ *****************************************************************************/
 
-/**
- * PF1 typical:
- * - full = +1 / level
- * - threeFourths = +3/4 per level
- * - half = +1/2 per level
+/** 
+ * PF1 standard:
+ * - full = +1/level 
+ * - 3/4 
+ * - 1/2 
  */
 export function getBaseAttackBonus(level: number, progression: BABProgression): number {
   switch (progression) {
-    case 'full':
+    case 'full': 
       return level
-    case 'threeFourths':
+    case 'threeFourths': 
       return Math.floor((3 * level) / 4)
     case 'half':
       return Math.floor(level / 2)
@@ -535,51 +475,68 @@ export interface ComputeAttackBonusArgs {
 }
 
 /**
- * Start with BAB + ability mod, add ABP "weaponAttunement," 
- * factor in feats or buffs. 
+ * Basic approach: 
+ *   totalAttack = bab + abilityMod + weaponAttunement + (size) + ...
+ *   minus any feats like Power Attack, plus any buffs that apply.
  */
 export function computeAttackBonus(args: ComputeAttackBonusArgs): number {
   let bonus = args.bab + args.abilityMod
 
-  if (args.weaponAttunement && args.weaponAttunement > 0) {
+  // ABP
+  if (args.weaponAttunement) {
     bonus += args.weaponAttunement
   }
-  // Very simplified: e.g. if feats includes "PowerAttack," -1 to attack
-  if (args.feats?.some(feat => feat.name === 'PowerAttack')) {
+
+  // e.g. if we detect “PowerAttack” among feats => -1
+  if (args.feats?.some(f => f.name === 'PowerAttack')) {
     bonus -= 1
   }
 
-  // Buffs might store extra attack bonuses in a related table (e.g. base_buff_effects).
-  // You’d look them up, sum them, etc. Here’s a trivial placeholder:
-  if (args.buffs) {
-    for (const b of args.buffs) {
-      if (!b.is_active) continue
-      // If you have e.g. a "target_key = 'attack'" or "effect_type = 'attack'", 
-      // then add it. We skip the details since it depends on your DB structure.
-    }
-  }
-
-  // Apply size modifier if provided
+  // size
   if (args.sizeModifier) {
     bonus += args.sizeModifier
+  }
+
+  // if buffs are relevant to Attack bonus, you could sum them. 
+  // This is highly dependent on how you store the buff effect data
+  if (args.buffs) {
+    for (const b of args.buffs) {
+      if (!b.is_active || !b.effects) continue
+      // e.g. check if effect_type = 'attack_bonus' => add effect.modifier
+    }
   }
 
   return bonus
 }
 
-// -----------------------------------------------------------------------------
-// 7) SKILL CALCULATIONS
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 9) SKILL CALCULATIONS
+ *****************************************************************************/
 
-/** Represents a skill's ability score replacement from a trait/feat/etc. */
-export interface SkillAbilityReplacement {
-  skillName: string
-  fromAbility: keyof AbilityScores
-  toAbility: keyof AbilityScores
-  source?: string // e.g. "trait:clever_wordplay"
+/** 
+ * If you want each skill to store e.g. skill.ability = "int" 
+ * plus an optional `ability_key`.
+ */
+export type SkillDefinition = BaseSkill & {
+  // e.g. if you want extra fields not in DB
+  ability_key?: string
+  name: string
 }
 
-/** Extended args for skill bonus computation */
+/** 
+ * Some feats/traits let you use Int instead of Cha for a skill. 
+ * We'll define a small interface to represent that replacement.
+ */
+export interface SkillAbilityReplacement {
+  skillName: string            // e.g. "Use Magic Device"
+  fromAbility: keyof AbilityScores
+  toAbility: keyof AbilityScores
+  source?: string
+}
+
+/** 
+ * The extended arguments to compute a single skill bonus. 
+ */
 export interface ComputeSkillBonusArgs {
   skill: SkillDefinition
   totalRanks: number
@@ -587,72 +544,66 @@ export interface ComputeSkillBonusArgs {
   abilityModifiers: AbilityModifiers
   armorCheckPenalty: number
   typedBonuses: Array<{
-    bonusType: BonusType['name']
+    bonusType: string
     value: number
     appliesTo: string
   }>
-  // Add new field for ability replacements
   abilityReplacements?: SkillAbilityReplacement[]
 }
 
 /**
- * Determines which ability modifier to use for a skill, accounting for
- * traits/feats that might replace the default ability.
+ * Sometimes a skill’s DB row might store `.ability = "int"`. 
+ * This helper picks the correct ability to use for that skill, 
+ * factoring in optional replacements. 
  */
 export function getEffectiveSkillAbility(
   skill: SkillDefinition,
   replacements?: SkillAbilityReplacement[]
 ): keyof AbilityScores {
-  if (!replacements?.length) {
-    return skill.ability.toLowerCase() as keyof AbilityScores
+  // If no replacements, fallback to skill.ability
+  const defaultAbility = (skill.ability?.toLowerCase() ||
+                          skill.ability_key ||
+                          'int') as keyof AbilityScores
+
+  if (!replacements || replacements.length === 0) {
+    return defaultAbility
   }
 
-  // Find any replacement that matches this skill
-  const replacement = replacements.find(
-    (r) => r.skillName.toLowerCase() === skill.name.toLowerCase() && 
-          r.fromAbility === skill.ability.toLowerCase()
+  // If we find a matching replacement, use that
+  const found = replacements.find(r => 
+    r.skillName.toLowerCase() === skill.name.toLowerCase() &&
+    r.fromAbility === defaultAbility
   )
-
-  return replacement?.toAbility || (skill.ability.toLowerCase() as keyof AbilityScores)
+  return found?.toAbility || defaultAbility
 }
 
 /**
- * A single skill's total bonus = ranks + abilityMod + (class skill +3) + typed bonuses - ACP...
+ * A single skill’s total = ranks + abilityMod + classSkill + typedBonuses - ACP
  */
 export function computeSkillBonus(args: ComputeSkillBonusArgs): number {
-  const { 
-    skill, 
-    totalRanks, 
-    isClassSkill, 
-    abilityModifiers, 
-    armorCheckPenalty,
-    abilityReplacements 
-  } = args
-
   let bonus = 0
-  bonus += totalRanks
+  bonus += args.totalRanks
 
-  // Get the effective ability after any replacements
-  const effectiveAbility = getEffectiveSkillAbility(skill, abilityReplacements)
-  
-  // Use the appropriate ability modifier
-  const abilityMod = abilityModifiers[`${effectiveAbility}Mod` as keyof AbilityModifiers] || 0
-  bonus += abilityMod
-
-  // Class skill +3 if ranks > 0
-  if (isClassSkill && totalRanks > 0) {
+  // if ranks > 0 and isClassSkill => +3
+  if (args.isClassSkill && args.totalRanks > 0) {
     bonus += 3
   }
 
-  // Armor check penalty if skill.armor_check_penalty is true
-  if (skill.armor_check_penalty) {
-    bonus -= armorCheckPenalty
+  // check if the skill uses an alternate ability mod
+  const effAbility = getEffectiveSkillAbility(args.skill, args.abilityReplacements)
+  const abilityMod = args.abilityModifiers[`${effAbility}Mod` as keyof AbilityModifiers] || 0
+  bonus += abilityMod
+
+  // if skill has armor check penalty
+  if (args.skill.armor_check_penalty) {
+    bonus -= args.armorCheckPenalty
   }
 
-  // Additional typed bonuses if they specifically apply to skill.name
+  // typed bonuses that specifically apply to skillName
   for (const tb of args.typedBonuses) {
-    if (tb.appliesTo === skill.name) {
-      // The rules for stacking might differ by bonusType
+    if (tb.appliesTo.toLowerCase() === args.skill.name.toLowerCase()) {
+      // PF rules: some typed bonuses might not stack. 
+      // For simplicity, just sum them. 
       bonus += tb.value
     }
   }
@@ -660,15 +611,15 @@ export function computeSkillBonus(args: ComputeSkillBonusArgs): number {
   return bonus
 }
 
-/**
- * Process trait effects that modify skill ability scores.
- * Returns an array of ability replacements to apply.
+/** 
+ * If you have traits that do e.g. “Use Int for UMD instead of Cha,” 
+ * gather them into an array of replacements. 
  */
 export function processTraitSkillModifiers(
-  traits: Array<{ 
+  traits: Array<{
     id: number
     name: string
-    effects?: { 
+    effects?: {
       skill_modifier_replacements?: Array<{
         skill_name: string
         from_ability: string
@@ -677,28 +628,77 @@ export function processTraitSkillModifiers(
     }
   }>
 ): SkillAbilityReplacement[] {
-  const replacements: SkillAbilityReplacement[] = []
-
-  for (const trait of traits) {
-    const mods = trait.effects?.skill_modifier_replacements
-    if (!mods?.length) continue
-
-    for (const mod of mods) {
-      replacements.push({
-        skillName: mod.skill_name,
-        fromAbility: mod.from_ability.toLowerCase() as keyof AbilityScores,
-        toAbility: mod.to_ability.toLowerCase() as keyof AbilityScores,
-        source: `trait:${trait.name.toLowerCase()}`
+  const result: SkillAbilityReplacement[] = []
+  for (const t of traits) {
+    if (!t.effects?.skill_modifier_replacements) continue
+    for (const rep of t.effects.skill_modifier_replacements) {
+      result.push({
+        skillName: rep.skill_name,
+        fromAbility: rep.from_ability.toLowerCase() as keyof AbilityScores,
+        toAbility: rep.to_ability.toLowerCase() as keyof AbilityScores,
+        source: t.name
       })
     }
   }
-
-  return replacements
+  return result
 }
 
-// -----------------------------------------------------------------------------
-// 8) EQUIPMENT (ARMOR) & AC CALCULATIONS
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 10) SIZE CATEGORIES
+ *****************************************************************************/
+
+export const SIZE_CATEGORIES = {
+  FINE: 'fine',
+  DIMINUTIVE: 'diminutive',
+  TINY: 'tiny',
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+  HUGE: 'huge',
+  GARGANTUAN: 'gargantuan',
+  COLOSSAL: 'colossal'
+} as const
+export type SizeCategory = typeof SIZE_CATEGORIES[keyof typeof SIZE_CATEGORIES]
+
+/** Standard size modifiers for AC, Attack, Stealth, etc. */
+export const SIZE_MODIFIERS: Record<SizeCategory, number> = {
+  fine: 8,
+  diminutive: 4,
+  tiny: 2,
+  small: 1,
+  medium: 0,
+  large: -1,
+  huge: -2,
+  gargantuan: -4,
+  colossal: -8
+}
+
+/** For CMB/CMD, the sign flips. */
+export const SIZE_SPECIAL_MODIFIERS: Record<SizeCategory, number> = {
+  fine: -8,
+  diminutive: -4,
+  tiny: -2,
+  small: -1,
+  medium: 0,
+  large: 1,
+  huge: 2,
+  gargantuan: 4,
+  colossal: 8
+}
+
+/** AC & Attack get this. */
+export function getSizeModifier(size: SizeCategory): number {
+  return SIZE_MODIFIERS[size] ?? 0
+}
+
+/** CMD uses the special version. */
+export function getSpecialSizeModifier(size: SizeCategory): number {
+  return SIZE_SPECIAL_MODIFIERS[size] ?? 0
+}
+
+/******************************************************************************
+ * 11) ARMOR CLASS
+ *****************************************************************************/
 
 export interface ComputeACArgs {
   baseDexMod: number
@@ -708,80 +708,65 @@ export interface ComputeACArgs {
   abilityModifiers: AbilityModifiers
   size: SizeCategory
   armor: ArmorStats
-  bonuses: ConditionalBonus[]
 }
 
 /**
- * Basic AC formula: 10 + armorBonus + Dex + deflection + size modifier + etc.
+ * Basic AC formula:
+ * AC = 10 + armorBonus + Dex + deflection + armorAttunement + size ...
  */
 export function computeAC(args: ComputeACArgs): number {
-  const {
-    baseDexMod,
-    armorBonus,
-    deflectionBonus = 0,
-    armorAttunement = 0,
-    size
-  } = args
+  const sizeMod = getSizeModifier(args.size)
+  let ac = 10 + args.armorBonus + args.baseDexMod + sizeMod
+  if (args.deflectionBonus) ac += args.deflectionBonus
+  if (args.armorAttunement) ac += args.armorAttunement
 
-  // Add size modifier to AC
-  const sizeModifier = getSizeModifier(size)
-  
-  const AC = 10 + 
-    armorBonus + 
-    baseDexMod + 
-    deflectionBonus + 
-    armorAttunement +
-    sizeModifier
+  // You can also factor in conditionalBonuses if they apply to “ac” or “armor_class”
+  // for (const cond of args.bonuses) { ... }
 
-  return AC
+  return ac
 }
 
-// -----------------------------------------------------------------------------
-// 9) CMD CALCULATIONS
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 12) CMD
+ *****************************************************************************/
 
 export interface ComputeCmdArgs {
   baseAttackBonus: number
   abilityModifiers: AbilityModifiers
   size: SizeCategory
-  conditionalBonuses: ConditionalBonus[]
   activeConditions: string[]
 }
 
 /**
- * PF1 typical: CMD = 10 + BAB + STR mod + DEX mod + size special modifier
+ * PF1 typical: 
+ *   CMD = 10 + BAB + STR + DEX + sizeSpecial
  */
 export function computeCMD(args: ComputeCmdArgs): number {
-  const sizeModifier = getSpecialSizeModifier(args.size)
-  
-  let cmd =
-    10 +
-    args.baseAttackBonus +
-    args.abilityModifiers.strMod +
-    args.abilityModifiers.dexMod +
-    sizeModifier
+  const specialSizeMod = getSpecialSizeModifier(args.size)
+  let cmd = 10 + args.baseAttackBonus 
+              + args.abilityModifiers.strMod 
+              + args.abilityModifiers.dexMod 
+              + specialSizeMod
 
-  // Apply conditional bonuses
-  for (const cb of args.conditionalBonuses) {
-    if (cb.apply_to === 'cmd' && cb.condition && args.activeConditions.includes(cb.condition)) {
-      cmd += cb.value
-    }
-  }
+
 
   return cmd
 }
 
-// -----------------------------------------------------------------------------
-// 10) FINAL PIPELINE EXAMPLE
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 13) ANCESTRAL TRAITS 
+ *****************************************************************************/
 
-/** Types for ancestry traits and their effects */
+/** 
+ * Example shape of a single ancestry trait, with subfields 
+ * that might add skill bonuses, vision, natural attacks, etc. 
+ */
 export interface AncestralTrait {
   id: number
   name: string
   effects?: {
-    natural_armor: undefined
-    racial_bonuses: any
+    natural_armor?: number
+    racial_bonuses?: any
     skill_bonuses?: Array<{
       skill_name: string
       bonus: number
@@ -810,143 +795,160 @@ export interface AncestralTrait {
   }
 }
 
-/** Extended ancestry interface with traits */
+/** 
+ * A full ancestry containing multiple traits. 
+ */
 export interface Ancestry {
   id: number
   name: string
   size: SizeCategory
   base_speed: number
   traits: AncestralTrait[]
-  // Add other ancestry fields as needed
 }
 
-/** Extended ancestry effects interface */
+/** The consolidated effects from an ancestry’s traits. */
 export interface AncestryEffects {
   skillBonuses: Array<{ skillName: string; bonus: number; type?: string }>
-  conditionalBonuses: ConditionalBonus[]
   visions: string[]
   naturalAttacks: Array<{ type: string; damage: string; count: number }>
   weaponProficiencies: string[]
   specialAbilities: string[]
-  // Add new properties for natural armor and other racial bonuses
   naturalArmor?: number
-  racialBonuses: Array<{
-    type: string
-    value: number
-    target: string
-  }>
+  racialBonuses: Array<{ type: string; value: number; target: string }>
 }
 
 /**
- * Enhanced ancestry trait processing
+ * For each trait in the ancestry, gather skill/conditional bonuses, vision, 
+ * naturalAttacks, etc.
  */
 export function processAncestralTraits(ancestry: Ancestry): AncestryEffects {
-  const result = {
-    skillBonuses: [] as Array<{ skillName: string; bonus: number; type?: string }>,
-    conditionalBonuses: [] as ConditionalBonus[],
-    visions: [] as string[],
-    naturalAttacks: [] as Array<{ type: string; damage: string; count: number }>,
-    weaponProficiencies: [] as string[],
-    specialAbilities: [] as string[],
+  const result: AncestryEffects = {
+    skillBonuses: [],
+    visions: [],
+    naturalAttacks: [],
+    weaponProficiencies: [],
+    specialAbilities: [],
     naturalArmor: undefined,
-    racialBonuses: [] as Array<{ type: string; value: number; target: string }>
+    racialBonuses: []
   }
 
-  // Process each trait's effects
   for (const trait of ancestry.traits) {
     if (!trait.effects) continue
 
-    // Skill bonuses (e.g., Sneaky giving +2 Stealth)
+    // skill_bonuses
     if (trait.effects.skill_bonuses) {
-      result.skillBonuses.push(
-        ...trait.effects.skill_bonuses.map(sb => ({
+      for (const sb of trait.effects.skill_bonuses) {
+        result.skillBonuses.push({
           skillName: sb.skill_name,
           bonus: sb.bonus,
           type: sb.type || 'racial'
-        }))
-      )
+        })
+      }
     }
 
-    // Conditional bonuses (e.g., +2 vs. fear effects)
-    if (trait.effects.conditional_bonuses) {
-      result.conditionalBonuses.push(
-        ...trait.effects.conditional_bonuses.map(cb => ({
-          ancestral_trait_id: trait.id,
-          apply_to: cb.apply_to,
-          bonus_type: cb.bonus_type,
-          condition: cb.condition || null,
-          value: cb.value,
-          created_at: null,
-          updated_at: null,
-          id: 0,
-          sync_status: null
-        }))
-      )
-    }
-
-    // Vision types (e.g., Low-Light Vision)
+    // visions
     if (trait.effects.visions) {
-      result.visions.push(
-        ...trait.effects.visions.map(v => v.vision_label)
-      )
+      for (const v of trait.effects.visions) {
+        result.visions.push(v.vision_label)
+      }
     }
 
-    // Natural attacks (e.g., Bite)
+    // natural_attacks
     if (trait.effects.natural_attacks) {
-      result.naturalAttacks.push(
-        ...trait.effects.natural_attacks.map(na => ({
+      for (const na of trait.effects.natural_attacks) {
+        result.naturalAttacks.push({
           type: na.attack_type,
           damage: na.damage,
           count: na.attack_count
-        }))
-      )
+        })
+      }
     }
 
-    // Weapon proficiencies (e.g., Tengu Sword Training)
+    // weapon_proficiencies
     if (trait.effects.weapon_proficiencies) {
-      result.weaponProficiencies.push(
-        ...trait.effects.weapon_proficiencies.map(wp => wp.weapon_name)
-      )
+      for (const wp of trait.effects.weapon_proficiencies) {
+        result.weaponProficiencies.push(wp.weapon_name)
+      }
     }
 
-    // Special abilities (e.g., Gifted Linguist)
+    // specials => e.g. "Gifted Linguist", "Skilled", etc.
     if (trait.effects.specials) {
-      result.specialAbilities.push(
-        ...trait.effects.specials.map(s => s.special_label)
-      )
+      for (const s of trait.effects.specials) {
+        result.specialAbilities.push(s.special_label)
+      }
     }
 
-    // Add natural armor processing
-    if (trait.effects?.natural_armor) {
+    // natural_armor 
+    if (typeof trait.effects.natural_armor === 'number') {
       result.naturalArmor = trait.effects.natural_armor
     }
 
-    // Add racial bonus processing
-    if (trait.effects?.racial_bonuses) {
-      result.racialBonuses.push(
-        ...trait.effects.racial_bonuses.map((rb: { type: string; value: number; target: string }) => ({
-          type: rb.type,
-          value: rb.value,
-          target: rb.target
-        }))
-      )
+    // racial_bonuses 
+    if (trait.effects.racial_bonuses) {
+      // You might define how you interpret "racial_bonuses"
+      // If it's an array, parse them
     }
   }
 
   return result
 }
 
+/******************************************************************************
+ * 14) FINAL CHARACTER STATS
+ *****************************************************************************/
+
+export interface CharacterFinalStats {
+  level: number
+  abilityScores: AbilityScores
+  abilityModifiers: AbilityModifiers
+  maxHP: number
+  currentHP: number
+  baseAttackBonus: number
+  meleeAttackBonus: number
+  rangedAttackBonus: number
+
+  AC: number
+  touchAC: number
+  flatFootedAC: number
+
+  saves: SaveResults
+  cmd: number
+  skillBonuses: Record<number, number> // keyed by skillId => total bonus
+
+  weaponProficiencies: string[]
+  naturalAttacks: Array<{
+    id: number
+    type: string
+    count: number
+    damage: string
+    entity_id: number
+    created_at: string | null
+    updated_at: string | null
+    properties: Array<{ property_key: string; property_value: string }>
+  }>
+  visions: string[]
+  specialAbilities: string[]
+  activeBuffs: number[]
+  activeConditions: string[]
+  equippedWeapons: any[] // or replace "any" with your real typed structure
+}
+
+/******************************************************************************
+ * 15) THE "BIG" FINALIZE FUNCTION
+ *****************************************************************************/
+
+/** 
+ * We define the shape of inputs needed to produce the final stats. 
+ * 
+ * Typically, your store would gather data from DB, supply them here, 
+ * then get a `CharacterFinalStats`.
+ */
 export interface FinalizeCharacterArgs {
   // Basic
   levelInfo: CharacterLevelInfo
   baseAbilityScores: AbilityScores
   characterClass: CharacterClass
 
-  // Favored class
-  favoredClassBonuses: Array<FavoredClassBonus> 
-
-  // ABP
-  abpAssignments: ABPBonusAssignment[]
 
   // Equipment
   equippedArmor: ArmorItem[]
@@ -958,10 +960,9 @@ export interface FinalizeCharacterArgs {
   // Skills
   skillDefinitions: SkillDefinition[]
   skillRanks: CharacterSkillRank[]
-  classSkills: number[] // i.e. array of skill IDs
+  classSkills: number[] // skill IDs that are "class skills"
 
   // Bonuses & Conditions
-  conditionalBonuses: ConditionalBonus[]
   activeConditions: string[]
 
   // Current HP
@@ -988,57 +989,45 @@ export interface FinalizeCharacterArgs {
 }
 
 /**
- * A "big" function that ties everything together. 
- * In practice, you might prefer smaller steps or a pipeline, 
- * but here’s one approach.
+ * The "pipeline" that unifies everything:
+ *   1) Consolidate ABP 
+ *   2) Build final ability scores 
+ *   3) Compute HP 
+ *   4) Compute saves 
+ *   5) Compute AC 
+ *   6) Attack bonuses 
+ *   7) Skills 
+ *   8) CMD 
+ *   9) Return a big `CharacterFinalStats` object
  */
 export function finalizeCharacter(args: FinalizeCharacterArgs): CharacterFinalStats {
-  // 1) Consolidate ABP
-  const abpMods = consolidateABPBonuses(args.abpAssignments)
 
-  // 2) Build final ability scores
-  const finalAbilityScores = structuredClone(args.baseAbilityScores)
 
-  // 2a) ABP prowess bonuses (unchanged)
-  if (abpMods.mentalProwess) {
-    const targetAbility = abpMods.mentalProwessChoice || 'int'
-    finalAbilityScores[targetAbility] += abpMods.mentalProwess
-  }
-  
-  if (abpMods.physicalProwess) {
-    const targetAbility = abpMods.physicalProwessChoice || 'dex'
-    finalAbilityScores[targetAbility] += abpMods.physicalProwess
+  // 2) Build final ability scores from base
+  const finalScores = structuredClone(args.baseAbilityScores) as AbilityScores
+
+
+
+  // 2b) Buff-based ability modifiers
+  for (const b of args.activeBuffs) {
+    if (!b.is_active || !b.effects) continue
+    applyAttributeModifiers(finalScores, b.effects, `buff:${b.id}`)
   }
 
-  // 2b) Buff-based ability score changes
-  for (const buff of args.activeBuffs) {
-    if (!buff.is_active || !buff.effects) continue
-    
-    // Apply attribute modifiers from buff effects
-    applyAttributeModifiers(finalAbilityScores, buff.effects, `buff:${buff.id}`)
-  }
+  // 2c) Feats could also apply attribute modifiers
+  // (In PF1, it’s rare that feats directly raise an ability, 
+  // but you might have a homebrew.)
+  // for (const ft of args.feats || []) { ... }
 
-  // 2c) Feat-based ability score changes
-  for (const feat of args.feats || []) {
-    if (typeof feat === 'string') {
-      // Handle string-based feat references
-      continue
-    }
-    if (!feat.effects) continue
-    // Process feat effects...
-  }
+  // 3) Compute final ability mods
+  const finalMods = computeAllAbilityModifiers(finalScores)
 
-  // 3) Compute final ability modifiers
-  const finalAbilityMods = computeAllAbilityModifiers(finalAbilityScores)
-
-  // 4) Compute HP
+  // 4) HP
   const maxHP = computeMaxHP({
     level: args.levelInfo.level,
     hitDie: args.levelInfo.hitDie,
-    conMod: finalAbilityMods.conMod,
-    favoredClassBonuses: args.favoredClassBonuses.map((fcb) => ({
-      choiceId: fcb.favored_choice_id || 0,
-    })),
+    conMod: finalMods.conMod,
+    favoredClassBonuses: []
   })
 
   // 5) Base Attack Bonus
@@ -1048,145 +1037,128 @@ export function finalizeCharacter(args: FinalizeCharacterArgs): CharacterFinalSt
   const saves = computeSaves(
     args.levelInfo.level,
     args.levelInfo.baseSaveProgressions,
-    finalAbilityMods,
-    abpMods.resistance,
-    args.conditionalBonuses,
-    args.activeConditions,
+    finalMods
   )
 
-  // 7) Armor stats - now using property-based parsing
+  // 7) Armor
   const armorStats = computeArmorStats(args.equippedArmor)
-
-  // Process equipped weapons if present
-  const weaponStats = args.equippedWeapons?.map(parseWeaponProperties) || []
-
-  // 8) AC
-  const dexToAC = Math.min(finalAbilityMods.dexMod, armorStats.maxDex)
+  const dexToAC = Math.min(finalMods.dexMod, armorStats.maxDex)
   const baseAC = computeAC({
     baseDexMod: dexToAC,
     armorBonus: armorStats.totalArmorBonus,
-    deflectionBonus: abpMods.deflection,
-    armorAttunement: abpMods.armorAttunement,
-    abilityModifiers: finalAbilityMods,
+    deflectionBonus: 0,
+    armorAttunement: 0,
+    abilityModifiers: finalMods,
     size: args.ancestry.size,
     armor: armorStats,
-    bonuses: args.conditionalBonuses,
   })
 
-  // 9) Attack Bonuses
-  const sizeModifier = getSizeModifier(args.ancestry.size)
+  // 8) Attack Bonuses (melee = STR mod, ranged = DEX mod)
+  const sizeMod = getSizeModifier(args.ancestry.size)
   const meleeAttack = computeAttackBonus({
     bab,
-    abilityMod: finalAbilityMods.strMod,
-    weaponAttunement: abpMods.weaponAttunement,
+    abilityMod: finalMods.strMod,
     buffs: args.activeBuffs,
-    feats: args.feats?.filter((feat): feat is FeatWithEffects => typeof feat !== 'string'),
-    sizeModifier
+    feats: (args.feats || []).filter((f): f is FeatWithEffects => typeof f !== 'string'),
+    sizeModifier: sizeMod
   })
   const rangedAttack = computeAttackBonus({
     bab,
-    abilityMod: finalAbilityMods.dexMod,
-    weaponAttunement: abpMods.weaponAttunement,
+    abilityMod: finalMods.dexMod,
     buffs: args.activeBuffs,
-    feats: args.feats?.filter((feat): feat is FeatWithEffects => typeof feat !== 'string'),
-    sizeModifier
+    feats: (args.feats || []).filter((f): f is FeatWithEffects => typeof f !== 'string'),
+    sizeModifier: sizeMod
   })
 
-  // Process trait-based skill ability replacements
-  const skillAbilityReplacements = processTraitSkillModifiers(args.traits || [])
+  // 9) Trait-based skill ability replacements
+  const skillAbilityReps = args.traits ? processTraitSkillModifiers(args.traits) : []
 
-  // 10) Skills with effect-based bonuses
-  const skillBonuses: { [skillId: number]: number } = {}
-  
-  // Collect all skill bonuses from various sources
-  const allSkillBonuses: Array<{ skillName: string; bonus: number; type?: string }> = []
+  // We'll gather skill bonuses from buffs, feats, ancestry, etc.
+  const globalSkillBonuses: Array<{ skillName: string; bonus: number; type?: string }> = []
 
-  // Add buff-based skill bonuses
-  for (const buff of args.activeBuffs) {
-    if (!buff.is_active || !buff.effects) continue
-    allSkillBonuses.push(...processSkillBonuses(buff.effects))
+  // 9a) Buff-based skill bonuses
+  for (const b of args.activeBuffs) {
+    if (!b.is_active || !b.effects) continue
+    // We'll parse skill bonuses from those effects
+    globalSkillBonuses.push(...processSkillBonuses(b.effects))
   }
 
-  // Add feat-based skill bonuses
-  for (const feat of args.feats || []) {
-    if (typeof feat === 'string') {
-      // Handle string-based feat references
-      continue
-    }
-    if (!feat.effects) continue
-    const processedEffects = feat.effects.map(effect => ({
-      value: effect.value,
-      target: effect.target,
-      effect_type: effect.effect_type
+  // 9b) Feat-based skill bonuses
+  for (const ft of args.feats || []) {
+    if (typeof ft === 'string') continue
+    if (!ft.effects) continue
+    // adapt to a common shape
+    const eArr = ft.effects.map(e => ({
+      effect_type: e.effect_type,
+      target: e.target || '',
+      modifier: e.value,
+      bonus_type: e.type
     }))
-    allSkillBonuses.push(...processSkillBonuses(processedEffects))
+    globalSkillBonuses.push(...processSkillBonuses(eArr))
   }
 
-  // Process ancestry traits early to get all effects
+  // 9c) Ancestry-based bonuses 
   const ancestryEffects = processAncestralTraits(args.ancestry)
+  globalSkillBonuses.push(...ancestryEffects.skillBonuses)
 
-  // Add ancestry-based skill bonuses to the pool
-  allSkillBonuses.push(...ancestryEffects.skillBonuses)
+  // 10) Actually compute skill bonuses
+  const skillBonuses: Record<number, number> = {}
 
-  // Add ancestry-based conditional bonuses
-  const allConditionalBonuses = [
-    ...args.conditionalBonuses,
-    ...ancestryEffects.conditionalBonuses
-  ]
-
-  // Process each skill with ancestry bonuses included
   for (const skillDef of args.skillDefinitions) {
-    const totalRanks = args.skillRanks.filter((sr) => sr.skill_id === skillDef.id).length
+    // how many ranks in this skill?
+    const totalRanks = args.skillRanks.filter(sr => sr.skill_id === skillDef.id).length
     const isClassSkill = args.classSkills.includes(skillDef.id)
 
-    // Get relevant bonuses for this skill
-    const relevantBonuses = allSkillBonuses
-      .filter(b => b.skillName === skillDef.name)
-      .map(b => ({
-        bonusType: b.type || 'untyped',
-        value: b.bonus,
-        appliesTo: b.skillName
+    // gather typed bonuses for this skill
+    const typedBonuses = globalSkillBonuses
+      .filter(x => x.skillName.toLowerCase() === skillDef.name.toLowerCase())
+      .map(x => ({
+        bonusType: x.type || 'untyped',
+        value: x.bonus,
+        appliesTo: x.skillName
       }))
 
     skillBonuses[skillDef.id] = computeSkillBonus({
       skill: skillDef,
       totalRanks,
       isClassSkill,
-      abilityModifiers: finalAbilityMods,
+      abilityModifiers: finalMods,
       armorCheckPenalty: armorStats.armorCheckPenalty,
-      typedBonuses: relevantBonuses,
-      abilityReplacements: skillAbilityReplacements
+      typedBonuses,
+      abilityReplacements: skillAbilityReps
     })
   }
 
   // 11) CMD
   const cmd = computeCMD({
     baseAttackBonus: bab,
-    abilityModifiers: finalAbilityMods,
+    abilityModifiers: finalMods,
     size: args.ancestry.size,
-    conditionalBonuses: allConditionalBonuses,
-    activeConditions: args.activeConditions,
+    activeConditions: []
   })
 
-  // 12) Construct the final stats object
-  const finalStats: CharacterFinalStats = {
+  // 12) Weapons
+  const weaponStats = args.equippedWeapons?.map(parseWeaponProperties) || []
+
+  // 13) Construct final stats
+  const final: CharacterFinalStats = {
     level: args.levelInfo.level,
-    abilityScores: finalAbilityScores,
-    abilityModifiers: finalAbilityMods,
+    abilityScores: finalScores,
+    abilityModifiers: finalMods,
     maxHP,
     currentHP: Math.min(args.currentHP, maxHP),
     baseAttackBonus: bab,
     meleeAttackBonus: meleeAttack,
     rangedAttackBonus: rangedAttack,
     AC: baseAC,
-    touchAC: 10 + finalAbilityMods.dexMod,
-    flatFootedAC: baseAC - finalAbilityMods.dexMod,
+    touchAC: 10 + finalMods.dexMod,
+    flatFootedAC: baseAC - finalMods.dexMod,
     saves,
     cmd,
     skillBonuses,
     weaponProficiencies: ancestryEffects.weaponProficiencies,
-    naturalAttacks: ancestryEffects.naturalAttacks?.map(na => ({
-      id: 0,
+    naturalAttacks: ancestryEffects.naturalAttacks.map(na => ({
+      id: 0, // or real ID
       type: na.type,
       count: na.count,
       damage: na.damage,
@@ -1194,172 +1166,102 @@ export function finalizeCharacter(args: FinalizeCharacterArgs): CharacterFinalSt
       created_at: null,
       updated_at: null,
       properties: []
-    })) || [],
-    visions: ancestryEffects.visions || [],
+    })),
+    visions: ancestryEffects.visions,
     specialAbilities: ancestryEffects.specialAbilities,
     activeBuffs: args.activeBuffs.map(b => b.id),
     activeConditions: args.activeConditions,
     equippedWeapons: weaponStats
   }
 
-  return finalStats
+  return final
 }
 
-// -----------------------------------------------------------------------------
-// 11) EXTRAS: STACKING RULES, EFFECT PROCESSING, ETC.
-// -----------------------------------------------------------------------------
+/******************************************************************************
+ * 16) STACKING RULES & EFFECT HELPERS
+ *****************************************************************************/
 
 /** 
- * Example: how you might handle multiple typed bonuses. 
- * "dodge" & "untyped" stack; everything else takes only the highest. 
+ * Example: "dodge" & "untyped" stack fully. 
+ * "enhancement"/"morale"/"insight" => only highest. 
  */
 export function stackBonuses(bonuses: Array<{ type: string; value: number }>): number {
   const byType: Record<string, number[]> = {}
 
-  for (const bonus of bonuses) {
-    if (!byType[bonus.type]) {
-      byType[bonus.type] = []
-    }
-    byType[bonus.type].push(bonus.value)
+  for (const b of bonuses) {
+    if (!byType[b.type]) byType[b.type] = []
+    byType[b.type].push(b.value)
   }
 
   let total = 0
   for (const [type, values] of Object.entries(byType)) {
-    switch (type) {
+    const lower = type.toLowerCase()
+    switch (lower) {
       case 'dodge':
       case 'untyped':
-        // These stack fully
-        total += values.reduce((sum, v) => sum + v, 0)
+      case 'circumstance':
+        // sum them up
+        total += values.reduce((a, b) => a + b, 0)
         break
       default:
-        // Only take the highest
+        // only highest
         total += Math.max(...values)
         break
     }
   }
+
   return total
 }
 
-// /**
-//  * Example of applying "Effects." If your DB stores them differently, 
-//  * adapt this logic to read & apply them in one pass.
-//  */
-// export interface Effect {
-//   attribute_modifiers?: Array<{
-//     attribute: string
-//     modifier: number
-//     type: string
-//   }>
-//   skill_bonus?: Array<{
-//     skill_name: string
-//     bonus: number
-//     type: string
-//   }>
-//   // Add more fields for spells, etc.
-// }
-
-// export function processEffects(effects: Effect[], target: any): void {
-//   for (const effect of effects) {
-//     if (!effect.effect_type) continue
-
-//     switch (effect.effect_type) {
-//       case 'attribute_modifier':
-//         if (effect.target && effect.modifier) {
-//           // Process attribute modification
-//         }
-//         break
-//       case 'skill_bonus':
-//         if (effect.target && effect.modifier) {
-//           // Process skill bonus
-//         }
-//         break
-//       // ... other effect types ...
-//     }
-//   }
-// }
-
-/**
- * Example type guard if you want to confirm a "buff" 
- * object from the DB is valid in TS.
+/** 
+ * If a buff has effect_type="attribute_modifier", we accumulate them. 
  */
-export function isValidBuff(buff: Partial<CharacterBuff>): buff is CharacterBuff {
-  return (
-    typeof buff.id === 'number' &&
-    typeof buff.is_active === 'boolean'
-    // And so on, checking whichever fields you expect from your schema
-  )
-}
-
-/** Represents a typed bonus that may or may not stack */
 export interface TypedBonus {
   value: number
   type: string
   source?: string
 }
 
-/** Groups bonuses by type and handles stacking rules */
+/**
+ * Combine typed bonuses by stacking rules. 
+ */
 function consolidateTypedBonuses(bonuses: TypedBonus[]): number {
-  // Group bonuses by type
-  const byType: Record<string, TypedBonus[]> = {}
-  
+  // group by type
+  const byType: Record<string, number[]> = {}
   for (const bonus of bonuses) {
-    if (!byType[bonus.type]) {
-      byType[bonus.type] = []
-    }
-    byType[bonus.type].push(bonus)
+    const t = bonus.type.toLowerCase()
+    if (!byType[t]) byType[t] = []
+    byType[t].push(bonus.value)
   }
 
   let total = 0
-  
-  // Apply stacking rules for each type
-  for (const [type, values] of Object.entries(byType)) {
-    switch (type.toLowerCase()) {
-      // These bonus types always stack
+  for (const [type, arr] of Object.entries(byType)) {
+    switch (type) {
       case 'dodge':
       case 'circumstance':
       case 'untyped':
-        total += values.reduce((sum, b) => sum + b.value, 0)
+        total += arr.reduce((a, b) => a + b, 0)
         break
-        
-      // These bonus types take highest only
-      case 'enhancement':
-      case 'morale':
-      case 'sacred':
-      case 'profane':
-      case 'insight':
-      case 'resistance':
-      case 'competence':
-      case 'luck':
-      case 'racial':
-        total += Math.max(...values.map(b => b.value))
-        break
-        
-      // Alchemical and size typically don't stack either
-      case 'alchemical':
-      case 'size':
-        total += Math.max(...values.map(b => b.value))
-        break
-        
-      // Default to non-stacking for unknown types
       default:
-        total += Math.max(...values.map(b => b.value))
+        total += Math.max(...arr)
         break
     }
   }
-  
+
   return total
 }
 
 /**
- * Updated version that respects bonus types and stacking rules
+ * Gathers `attribute_modifier` effects from e.g. a buff 
+ * and applies them to the ability scores in place.
  */
 export function applyAttributeModifiers(
   scores: AbilityScores,
   effects: Effect[],
   source?: string
 ): void {
-  // Track typed bonuses for each ability score
-  const bonusesByAttribute: Record<keyof AbilityScores, TypedBonus[]> = {
+  // We'll track typed bonuses for each ability
+  const bonusesByAttr: Record<keyof AbilityScores, TypedBonus[]> = {
     str: [],
     dex: [],
     con: [],
@@ -1368,167 +1270,50 @@ export function applyAttributeModifiers(
     cha: []
   }
 
-  // Collect all bonuses first
-  for (const effect of effects) {
-    if (
-      effect.effect_type !== 'attribute_modifier' || 
-      !effect.target || 
-      !effect.modifier
-    ) continue
+  for (const e of effects) {
+    if (e.effect_type !== 'attribute_modifier') continue
+    if (!e.target || !e.modifier) continue
 
-    const attribute = effect.target.toLowerCase() as keyof AbilityScores
-    if (attribute in scores) {
-      bonusesByAttribute[attribute].push({
-        value: effect.modifier,
-        type: effect.bonus_type || 'untyped',
-        source: source
-      })
-    }
+    const attribute = e.target.toLowerCase() as keyof AbilityScores
+    if (!scores[attribute]) continue
+
+    bonusesByAttr[attribute].push({
+      value: e.modifier,
+      type: e.bonus_type || 'untyped',
+      source
+    })
   }
 
-  // Apply consolidated bonuses to each ability score
-  for (const [attribute, bonuses] of Object.entries(bonusesByAttribute)) {
-    if (bonuses.length > 0) {
-      scores[attribute as keyof AbilityScores] += consolidateTypedBonuses(bonuses)
-    }
+  // Now sum them per attribute
+  for (const [attr, arr] of Object.entries(bonusesByAttr)) {
+    if (arr.length === 0) continue
+    scores[attr as keyof AbilityScores] += consolidateTypedBonuses(arr)
   }
 }
 
 /**
- * Updated version that handles typed skill bonuses
+ * Gathers `skill_bonus` effects from e.g. a buff 
+ * and returns them in a simpler array. 
  */
-export function processSkillBonuses(
-  effects: Effect[]
-): Array<{ skillName: string; bonus: number; type: string }> {
-  // Group effects by skill first
-  const bonusesBySkill: Record<string, TypedBonus[]> = {}
+export function processSkillBonuses(effects: Effect[]): Array<{ skillName: string; bonus: number; type?: string }> {
+  // We'll group by skillName
+  const result: Array<{ skillName: string; bonus: number; type?: string }> = []
 
-  for (const effect of effects) {
-    if (
-      effect.effect_type !== 'skill_bonus' || 
-      !effect.target || 
-      !effect.modifier
-    ) continue
+  for (const e of effects) {
+    if (e.effect_type !== 'skill_bonus') continue
+    if (!e.target || !e.modifier) continue
 
-    if (!bonusesBySkill[effect.target]) {
-      bonusesBySkill[effect.target] = []
-    }
-
-    bonusesBySkill[effect.target].push({
-      value: effect.modifier,
-      type: effect.bonus_type || 'untyped'
+    result.push({
+      skillName: e.target,
+      bonus: e.modifier,
+      type: e.bonus_type || 'untyped'
     })
-  }
-
-  // Consolidate bonuses for each skill
-  const result: Array<{ skillName: string; bonus: number; type: string }> = []
-  
-  for (const [skillName, bonuses] of Object.entries(bonusesBySkill)) {
-    const totalBonus = consolidateTypedBonuses(bonuses)
-    if (totalBonus !== 0) {
-      result.push({
-        skillName,
-        bonus: totalBonus,
-        type: 'consolidated' // Or handle type differently if needed
-      })
-    }
   }
 
   return result
 }
 
-/** Standard size categories and their modifiers */
-export const SIZE_CATEGORIES = {
-  FINE: 'fine',
-  DIMINUTIVE: 'diminutive',
-  TINY: 'tiny',
-  SMALL: 'small',
-  MEDIUM: 'medium',
-  LARGE: 'large',
-  HUGE: 'huge',
-  GARGANTUAN: 'gargantuan',
-  COLOSSAL: 'colossal'
-} as const
 
-export type SizeCategory = typeof SIZE_CATEGORIES[keyof typeof SIZE_CATEGORIES]
-
-/** Size modifiers for AC and attack rolls */
-export const SIZE_MODIFIERS: Record<SizeCategory, number> = {
-  [SIZE_CATEGORIES.FINE]: 8,
-  [SIZE_CATEGORIES.DIMINUTIVE]: 4,
-  [SIZE_CATEGORIES.TINY]: 2,
-  [SIZE_CATEGORIES.SMALL]: 1,
-  [SIZE_CATEGORIES.MEDIUM]: 0,
-  [SIZE_CATEGORIES.LARGE]: -1,
-  [SIZE_CATEGORIES.HUGE]: -2,
-  [SIZE_CATEGORIES.GARGANTUAN]: -4,
-  [SIZE_CATEGORIES.COLOSSAL]: -8
-}
-
-/** Special size modifiers for Combat Maneuver Bonus/Defense */
-export const SIZE_SPECIAL_MODIFIERS: Record<SizeCategory, number> = {
-  [SIZE_CATEGORIES.FINE]: -8,
-  [SIZE_CATEGORIES.DIMINUTIVE]: -4,
-  [SIZE_CATEGORIES.TINY]: -2,
-  [SIZE_CATEGORIES.SMALL]: -1,
-  [SIZE_CATEGORIES.MEDIUM]: 0,
-  [SIZE_CATEGORIES.LARGE]: 1,
-  [SIZE_CATEGORIES.HUGE]: 2,
-  [SIZE_CATEGORIES.GARGANTUAN]: 4,
-  [SIZE_CATEGORIES.COLOSSAL]: 8
-}
-
-/** Get the standard size modifier for AC and attack rolls */
-export function getSizeModifier(size: SizeCategory): number {
-  return SIZE_MODIFIERS[size] || 0
-}
-
-/** Get the special size modifier for CMB/CMD */
-export function getSpecialSizeModifier(size: SizeCategory): number {
-  return SIZE_SPECIAL_MODIFIERS[size] || 0
-}
-
-export interface ArmorItem {
-  id: number
-  armorBonus: number
-  maxDex: number
-  armorCheckPenalty: number
-  equipped: boolean
-  properties?: Array<{
-    property_key: string
-    property_value: string
-  }>
-}
-
-export interface AncestralTraitEffects {
-  skill_bonuses?: Array<{
-    skill_name: string
-    bonus: number
-    type?: string
-  }>
-  conditional_bonuses?: Array<{
-    apply_to: string
-    bonus_type: string
-    condition?: string
-    value: number
-  }>
-  visions?: Array<{ vision_label: string }>
-  natural_attacks?: Array<{
-    attack_type: string
-    damage: string
-    attack_count: number
-  }>
-  weapon_proficiencies?: Array<{ weapon_name: string }>
-  natural_armor?: number
-  racial_bonuses?: Array<{
-    type: string
-    value: number
-    target: string
-  }>
-}
-
-export interface SaveResults {
-  fort: number
-  ref: number
-  will: number
-}
+/******************************************************************************
+ * E N D
+ *****************************************************************************/

@@ -4,8 +4,8 @@
 	 * We'll retrieve the ABP bonuses by calling getABPBonuses() directly
 	 * from '$lib/domain/calculations/abp'.
 	 */
-	import { getCharacter } from '$lib/state/characterStore.svelte';
-	import { getABPBonuses } from '$lib/domain/calculations/abp';
+	import { getCharacter } from '$lib/state/characterStore';
+	import { getABPBonuses } from '$lib/domain/calculations/character';
 
 	let { characterId }: { characterId: number } = $props();
 

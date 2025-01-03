@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import { getCharacter, updateSpellSlot } from '$lib/state/characterStore.svelte';
+	import { getCharacter, updateSpellSlot } from '$lib/state/characterStore';
 	import ResourceTracker from '$lib/ui/ResourceTracker.svelte';
 
 	let { characterId } = $props<{ characterId: number }>();

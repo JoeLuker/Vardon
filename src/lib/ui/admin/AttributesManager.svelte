@@ -8,7 +8,7 @@
 		getCharacter,
 		type UpdateState,
 		executeUpdate
-	} from '$lib/state/characterStore.svelte';
+	} from '$lib/state/characterStore';
 
 	import { updateCharacterAttributes } from '$lib/db/attributes';
 

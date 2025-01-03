@@ -2,11 +2,11 @@
 <script lang="ts">
 
 	import { onMount } from 'svelte';
-	import { getCharacter, executeUpdate, toggleBuff } from '$lib/state/characterStore.svelte';
+	import { getCharacter, executeUpdate, toggleBuff } from '$lib/state/characterStore';
 	import { loadAllBuffs } from '$lib/db/buffs';
 	import { doBuffsConflict } from '$lib/domain/calculations/buffs';
 
-	import type { UpdateState } from '$lib/state/characterStore.svelte';
+	import type { UpdateState } from '$lib/state/characterStore';
 
 	let { characterId } = $props<{ characterId: number }>();
 

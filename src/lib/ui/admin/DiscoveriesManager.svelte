@@ -1,6 +1,6 @@
 <!-- FILE: src/lib/ui/admin/DiscoveriesManager.svelte -->
 <script lang="ts">
-	import { getCharacter, executeUpdate } from '$lib/state/characterStore.svelte';
+	import { getCharacter, executeUpdate } from '$lib/state/characterStore';
 	import { saveDiscovery, removeDiscovery } from '$lib/db/discoveries';
 	import type { DiscoverySaveData } from '$lib/db/discoveries';
 

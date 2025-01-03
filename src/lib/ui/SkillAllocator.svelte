@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getCharacter, fetchSkillData } from '$lib/state/characterStore.svelte';
+	import { getCharacter, fetchSkillData } from '$lib/state/characterStore';
 	import { onMount } from 'svelte';
 	import {
 		getClassSkillRanks,

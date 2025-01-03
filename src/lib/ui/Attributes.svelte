@@ -1,6 +1,6 @@
 <!-- src/lib/ui/Attributes.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/characterStore.svelte';
+	import { getCharacter } from '$lib/state/characterStore';
 	import { getAbilityModifier } from '$lib/domain/calculations/attributes';
 
 	let { characterId } = $props<{ characterId: number }>();

@@ -5,7 +5,7 @@
 	 * Adjust or expand as needed for your error-handling logic.
 	 */
 
-	import { getCharacter, type UpdateState } from '$lib/state/characterStore.svelte'; // adjust if needed
+	import { getCharacter, type UpdateState } from '$lib/state/characterStore'; // adjust if needed
 	import {
 		saveClassFeature,
 		deleteClassFeature,

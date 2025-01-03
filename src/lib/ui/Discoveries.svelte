@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getCharacter } from '$lib/state/characterStore.svelte';
+	import { getCharacter } from '$lib/state/characterStore';
 
 	interface TransformedDiscovery extends DatabaseCharacterDiscovery {
 		displayName: string;
