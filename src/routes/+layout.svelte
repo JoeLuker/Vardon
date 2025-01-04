@@ -1,28 +1,24 @@
 <script lang="ts">
 	import '../app.css';
-	import NetworkStatusIndicator from '$lib/ui/NetworkStatusIndicator.svelte';
-	import type { Snippet } from 'svelte';
-
-	let { children } = $props<{
-		children?: Snippet | undefined;
-	}>();
+	import { cn } from '$lib/utils';
+	import ThemeToggle from '$lib/components/ui/theme-toggle.svelte';
 </script>
 
-<div class="bg-woodgrain text-ink min-h-screen">
-	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-		{@render children?.()}
+<div class="min-h-screen bg-background text-foreground relative overflow-hidden">
+	<div class="container flex h-14 justify-end items-center absolute top-10 right-10 z-50">
+			<ThemeToggle />
 	</div>
-	<NetworkStatusIndicator />
+
+	<!-- Main content -->
+	<div class="relative z-10">
+			<main class={cn(
+				"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8",
+				"prose dark:prose-invert max-w-none",
+				"prose-headings:font-display prose-headings:text-foreground prose-headings:mt-0",
+				"prose-p:text-muted-foreground prose-p:mt-2 prose-strong:text-foreground",
+				"prose-a:text-accent hover:prose-a:text-accent-foreground"
+			)}>
+				<slot />
+			</main>
+	</div>
 </div>
-
-<style lang="postcss">
-	/* Base styles */
-	:global(body) {
-		@apply bg-[#4a1f10] font-serif antialiased;
-	}
-
-	/* Card styles */
-	:global(.card) {
-		@apply relative rounded-lg border border-primary-300/10 bg-parchment-200/95 p-4 shadow-lg;
-	}
-</style>

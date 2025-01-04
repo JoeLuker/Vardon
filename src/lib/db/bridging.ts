@@ -14,6 +14,7 @@
  *   10) natural_attacks
  *   11) conditional_bonuses
  *   12) character_skill_ranks
+ *   13) archetype_feature_replacements
  *****************************************************************************/
 
 import { createDbApi } from './genericApi';
@@ -61,14 +62,14 @@ export const entityPrerequisitesApi = createDbApi<
 /* ------------------------------------------------------------------
    4) entity_choices
 ------------------------------------------------------------------ */
-export type EntityChoicesRow    = Database['public']['Tables']['entity_choices']['Row'];
-export type EntityChoicesInsert = Database['public']['Tables']['entity_choices']['Insert'];
-export type EntityChoicesUpdate = Database['public']['Tables']['entity_choices']['Update'];
+export type EntityChoiceRow    = Database['public']['Tables']['entity_choices']['Row'];
+export type EntityChoiceInsert = Database['public']['Tables']['entity_choices']['Insert'];
+export type EntityChoiceUpdate = Database['public']['Tables']['entity_choices']['Update'];
 
 export const entityChoicesApi = createDbApi<
-  EntityChoicesRow,
-  EntityChoicesInsert,
-  EntityChoicesUpdate
+  EntityChoiceRow,
+  EntityChoiceInsert,
+  EntityChoiceUpdate
 >('entity_choices');
 
 /* ------------------------------------------------------------------
@@ -174,3 +175,16 @@ export const characterSkillRanksApi = createDbApi<
   CharacterSkillRanksInsert,
   CharacterSkillRanksUpdate
 >('character_skill_ranks');
+
+/* ------------------------------------------------------------------
+   13) archetype_feature_replacements
+------------------------------------------------------------------ */
+export type ArchetypeFeatureReplacementRow    = Database['public']['Tables']['archetype_feature_replacements']['Row'];
+export type ArchetypeFeatureReplacementInsert = Database['public']['Tables']['archetype_feature_replacements']['Insert'];
+export type ArchetypeFeatureReplacementUpdate = Database['public']['Tables']['archetype_feature_replacements']['Update'];
+
+export const archetypeFeatureReplacementsApi = createDbApi<
+  ArchetypeFeatureReplacementRow,
+  ArchetypeFeatureReplacementInsert,
+  ArchetypeFeatureReplacementUpdate
+>('archetype_feature_replacements');

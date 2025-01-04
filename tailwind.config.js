@@ -1,12 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+	darkMode: 'class',
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme: {
 		extend: {
 			fontFamily: {
 				serif: ['Cinzel', 'serif'],
 				sans: ['Inter', 'system-ui', 'sans-serif'],
-				display: ['"Pirata One"', 'cursive'],
+				display: ['"Pirata One"', 'serif'],
 				decorative: ['"Bilbo Swash Caps"', 'cursive'],
 				special: ['Morris', 'serif'],
 				pirata: ['Pirata One', 'cursive'],
@@ -22,7 +23,8 @@ module.exports = {
 					400: '#e6d492'
 				},
 				primary: {
-					DEFAULT: '#c19a6b', // This adds support for bg-primary
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))',
 					50: '#f3e8dc',
 					100: '#e7d1b9',
 					200: '#d4b48c', // light
@@ -30,7 +32,21 @@ module.exports = {
 					400: '#a67b4b', // dark
 					500: '#8b5e2f'
 				},
+				secondary: {
+					DEFAULT: 'hsl(var(--secondary))',
+					foreground: 'hsl(var(--secondary-foreground))',
+				},
+				destructive: {
+					DEFAULT: 'hsl(var(--destructive))',
+					foreground: 'hsl(var(--destructive-foreground))',
+				},
+				muted: {
+					DEFAULT: 'hsl(var(--muted))',
+					foreground: 'hsl(var(--muted-foreground))',
+				},
 				accent: {
+					DEFAULT: 'hsl(var(--accent))',
+					foreground: 'hsl(var(--accent-foreground))',
 					50: '#f5e6dc',
 					100: '#ebc7b0',
 					200: '#a65d2b', // light
@@ -44,6 +60,23 @@ module.exports = {
 					200: '#2b1810', // DEFAULT
 					300: '#1a0f0a', // dark
 					400: '#0d0705'
+				},
+				border: 'hsl(var(--border))',
+				input: 'hsl(var(--input))',
+				ring: 'hsl(var(--ring))',
+				background: 'hsl(var(--background))',
+				foreground: 'hsl(var(--foreground))',
+				popover: {
+					DEFAULT: 'hsl(var(--popover))',
+					foreground: 'hsl(var(--popover-foreground))',
+				},
+				card: {
+					DEFAULT: 'hsl(var(--card))',
+					foreground: 'hsl(var(--card-foreground))',
+				},
+				woodgrain: {
+					DEFAULT: '#4a1f10',
+					dark: '#3a1705'
 				}
 			},
 			spacing: {

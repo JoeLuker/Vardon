@@ -10,18 +10,18 @@
 	import type { PageData } from './$types';
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
 	import HPTracker from '$lib/ui/HPTracker.svelte';
-
+	import Attributes from '$lib/ui/Attributes.svelte';
 	const { data } = $props<{ data: PageData }>();
 	const characterId = data.id;
 
 	onMount(() => {
-		// 1) Start watchers for real-time bridging changes
 		initCharacterWatchers();
 
-		// 2) Load the single character
-		loadCharacter(characterId);
+		// Add async/await to wait for the character to load
+		loadCharacter(characterId).then(() => {
+			console.log('Character loaded:', JSON.stringify($characterStore, null, 2));
+		});
 
-		// 3) On unmount, optionally clean watchers
 		return () => {
 			cleanupCharacterWatchers();
 		};
@@ -33,8 +33,9 @@
 	<p>Loading or no data found...</p>
 {:else}
 	<!-- Example usage of child component -->
-	<CharacterHeader {characterId} />
-	<HPTracker {characterId} />
+	<CharacterHeader />
+	<HPTracker />
+	<Attributes />
 
 	<!-- Possibly more child components, like HPTracker, Skills, Feats, etc. -->
 	<!--

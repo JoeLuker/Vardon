@@ -27,12 +27,12 @@
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each $multiCharStore as character}
 				<a
-					href="/characters/{character.character.id}"
+					href="/characters/{character.id}"
 					class="card transition-colors hover:bg-parchment-300/95"
 				>
 					<div class="space-y-2">
 						<h2 class="text-xl font-bold">
-							{character.character.name}
+							{character.name}
 						</h2>
 						<div class="text-ink/80 text-sm">
 							<span>{character.ancestry?.name ?? ''}</span>

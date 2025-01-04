@@ -44,12 +44,11 @@ export async function loadCharacter(charId: number) {
     }
 
     // Compare the fetched data to localChanges
-    const newCharacter = reconcileLocalChanges(fetched.character);
+    const newCharacter = reconcileLocalChanges(fetched);
 
-    // Rebuild the final state
+    // Rebuild the final state using newCharacter instead of fetched
     const newComplete: CompleteCharacter = {
-      ...fetched,
-      character: newCharacter
+      ...newCharacter
     };
 
     characterStore.set(newComplete);
@@ -69,7 +68,7 @@ export async function loadCharacter(charId: number) {
  * 
  * If they match, it means the DB is now in sync, so we can clear that entry from localChanges.
  */
-function reconcileLocalChanges(dbCharacter: CompleteCharacter['character']) {
+function reconcileLocalChanges(dbCharacter: CompleteCharacter) {
   const newChar = { ...dbCharacter };
 
   for (const [field, localValue] of Object.entries(localChanges)) {
@@ -120,15 +119,15 @@ async function handleCharacterTableChange(
   _type: 'insert' | 'update' | 'delete',  // Prefix with _ to indicate intentionally unused
   row: any
 ) {
-  const current = get(characterStore);
-  if (!current) return;
+  const currentCharacter = get(characterStore);
+  if (!currentCharacter) return;
 
-  if (row?.id !== current.character.id) return;
+  if (row?.id !== currentCharacter.id) return;
 
   if (_type === 'delete') {
     characterStore.set(null);
   } else {
-    await loadCharacter(current.character.id);
+    await loadCharacter(currentCharacter.id);
   }
 }
 
@@ -139,13 +138,13 @@ async function handleBridgingChange(
   _type: 'insert' | 'update' | 'delete',
   row: any
 ) {
-  const current = get(characterStore);
-  if (!current) return;
+  const currentCharacter = get(characterStore);
+  if (!currentCharacter) return;
 
-  if (row?.character_id !== current.character.id) return;
+  if (row?.character_id !== currentCharacter.id) return;
 
   // re-fetch
-  await loadCharacter(current.character.id);
+  await loadCharacter(currentCharacter.id);
 }
 
 /**
@@ -157,13 +156,13 @@ async function handleBridgingChange(
  * 3) Attempt DB update
  */
 export async function updateCharacterOptimistically(
-  changes: Partial<CompleteCharacter['character']>
+  changes: Partial<CompleteCharacter>
 ) {
   const oldState = get(characterStore);
   if (!oldState) return;
 
   // 1) new local store
-  const newCharacter = { ...oldState.character };
+  const newCharacter = { ...oldState };
 
   // For each field changed, update store and also localChanges
   for (const [field, value] of Object.entries(changes)) {
@@ -172,16 +171,13 @@ export async function updateCharacterOptimistically(
   }
 
   // 2) set store
-  characterStore.set({
-    ...oldState,
-    character: newCharacter
-  });
+  characterStore.set(newCharacter);
 
   // 3) DB update
   try {
     const payload = {
       ...newCharacter,
-      id: oldState.character.id
+      id: oldState.id
     };
     await charactersApi.updateRow(payload);
     // watchers trigger, loadCharacter => reconcileLocalChanges => removes local changes if matched
@@ -199,10 +195,10 @@ export async function updateCharacterOptimistically(
  * queueCharacterUpdate() – if you still want debouncing
  */
 let updateTimer: ReturnType<typeof setTimeout> | null = null;
-let pendingChanges: Partial<CompleteCharacter['character']> = {};
+let pendingChanges: Partial<CompleteCharacter> = {};
 const DEBOUNCE_MS = 400;
 
-export function queueCharacterUpdate(changes: Partial<CompleteCharacter['character']>) {
+export function queueCharacterUpdate(changes: Partial<CompleteCharacter>) {
   // merges into pendingChanges
   pendingChanges = { ...pendingChanges, ...changes };
 
@@ -213,33 +209,30 @@ export function queueCharacterUpdate(changes: Partial<CompleteCharacter['charact
   updateTimer = setTimeout(flushPending, DEBOUNCE_MS);
 }
 
-function applyOptimisticChanges(changes: Partial<CompleteCharacter['character']>) {
+function applyOptimisticChanges(changes: Partial<CompleteCharacter>) {
   const oldState = get(characterStore);
   if (!oldState) return;
 
-  const newCharacter = { ...oldState.character };
+  const newCharacter = { ...oldState };
 
   for (const [field, value] of Object.entries(changes)) {
     (newCharacter as any)[field] = value;
     localChanges[field] = value;
   }
 
-  characterStore.set({
-    ...oldState,
-    character: newCharacter
-  });
+  characterStore.set(newCharacter);
 }
 
 async function flushPending() {
-  const current = get(characterStore);
-  if (!current) return;
+  const currentCharacter = get(characterStore);
+  if (!currentCharacter) return;
 
   const changes = { ...pendingChanges };
   pendingChanges = {};
 
   const payload = {
     ...changes,
-    id: current.character.id
+    id: currentCharacter.id
   };
 
   try {
@@ -254,7 +247,7 @@ async function flushPending() {
  */
 export function updateHP(charId: number, newHP: number) {
   const state = get(characterStore);
-  if (!state || state.character.id !== charId) return;
+  if (!state || state.id !== charId) return;
   // Here we do a simple queued approach:
   queueCharacterUpdate({ current_hp: newHP });
 }

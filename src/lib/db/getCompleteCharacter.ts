@@ -25,7 +25,10 @@ import {
   baseEquipmentApi,
   baseAttributesApi,
   baseAncestralTraitsApi,
-  baseSkillsApi
+  baseSkillsApi,
+  baseClassFeaturesApi,
+  baseDiscoveriesApi,
+  baseArchetypesApi
 } from '$lib/db/baseSubtypes';
 import {
   bonusTypesApi,
@@ -35,6 +38,16 @@ import {
   favoredClassChoicesApi
 } from '$lib/db/references';
 import { rpgEntitiesApi } from '$lib/db/rpgEntities';
+import {
+  archetypeFeatureReplacementsApi,
+  entityPrerequisitesApi,
+  entityChoicesApi,
+  characterEntityChoicesApi,
+  skillBonusesApi,
+  weaponProficienciesApi,
+  naturalAttacksApi,
+  conditionalBonusesApi
+} from '$lib/db/bridging';
 
 import type {
   CharacterRow,
@@ -55,7 +68,20 @@ import type {
   BaseAncestralTraitRow,
   BaseClassFeatureRow,
   BaseSkillRow,
-  RpgEntityRow
+  RpgEntityRow,
+  EntityPrerequisiteRow,
+  EntityChoiceRow,
+  CharacterEntityChoiceRow,
+  SkillBonusesRow,
+  WeaponProficienciesRow,
+  NaturalAttacksRow,
+  ConditionalBonusesRow,
+  ArchetypeFeatureReplacementRow,
+  BonusTypeRow,
+  SkillRankSourceRow,
+  BuffTypeRow,
+  AbpBonusTypeRow,
+  FavoredClassChoiceRow
 } from '$lib/db';
 
 /** Helper to remove empty arrays in the final object. */
@@ -86,13 +112,12 @@ function omitKeysDeep<T>(obj: T, keysToOmit: string[]): T {
 
 /** Remove empty arrays and omit timestamps. */
 function cleanUpObject<T extends Record<string, any>>(obj: T): T {
-  removeEmptyArrays(obj);
+  // removeEmptyArrays(obj);
   return omitKeysDeep(obj, ['created_at', 'updated_at']);
 }
 
-/** The final “CompleteCharacter” interface. */
-export interface CompleteCharacter {
-  character: CharacterRow;
+/** The final "CompleteCharacter" interface. */
+export interface CompleteCharacter extends Omit<CharacterRow, 'created_at' | 'updated_at'> {
 
   ancestry: {
     base: BaseAncestryRow;
@@ -109,7 +134,7 @@ export interface CompleteCharacter {
   feats: Array<{ base: BaseFeatRow; name: string; [key: string]: any }>;
   traits: Array<{ base: BaseTraitRow; name: string; [key: string]: any }>;
   buffs: Array<{ base: BaseBuffRow; name: string; [key: string]: any }>;
-  corruptions: Array<{ base: BaseCorruptionRow; name: string; [key: string]: any }>;
+  corruption: Array<{ base: BaseCorruptionRow; name: string; [key: string]: any }>;
   wildTalents: Array<{ base: BaseWildTalentRow; name: string; [key: string]: any }>;
   equipment: Array<{ base: BaseEquipmentRow; name: string; [key: string]: any }>;
   ancestralTraits: Array<{ base: BaseAncestralTraitRow; name: string; [key: string]: any }>;
@@ -121,6 +146,53 @@ export interface CompleteCharacter {
     ability: string;
     totalRanks: number;
   }>;
+
+  classFeatures: Array<{ base: BaseClassFeatureRow; name: string; [key: string]: any }>;
+
+  discoveries: Array<{ base: BaseDiscoveryRow; name: string; [key: string]: any }>;
+
+  archetypes: Array<{
+    base: BaseArchetypeRow;
+    name: string;
+    [key: string]: any;
+  }>;
+
+  prerequisites: Record<number, Array<EntityPrerequisiteRow>>;
+
+  choices: Array<EntityChoiceRow>;
+
+  characterChoices: Array<CharacterEntityChoiceRow>;
+
+  skillBonuses: Array<SkillBonusesRow>;
+
+  weaponProficiencies: Array<WeaponProficienciesRow>;
+
+  naturalAttacks: Array<NaturalAttacksRow>;
+
+  conditionalBonuses: Array<ConditionalBonusesRow>;
+
+  archetypeReplacements: Array<ArchetypeFeatureReplacementRow>;
+
+  baseSkills: BaseSkillRow[];
+
+  skillsWithRanks: Array<{
+    skillId: number;
+    name: string;
+    ability: string;
+    totalRanks: number;
+    rankSources: Array<{
+      sourceName: string;
+    } & CharacterSkillRanksRow>;
+  }>;
+
+  // Group all references under one key, using proper types
+  references: {
+    bonusTypes: Record<BonusTypeRow['id'], BonusTypeRow['name']>;
+    skillRankSources: Record<SkillRankSourceRow['id'], SkillRankSourceRow['name']>;
+    buffTypes: Record<BuffTypeRow['id'], BuffTypeRow['name']>;
+    abpBonusTypes: Record<AbpBonusTypeRow['id'], AbpBonusTypeRow['name']>;
+    favoredClassChoices: Record<`${FavoredClassChoiceRow['id']}-${FavoredClassChoiceRow['id']}`, NonNullable<FavoredClassChoiceRow['name']>>;
+  };
 }
 
 /**
@@ -142,7 +214,15 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     allBuffTypes,
     allAbpBonusTypes,
     allFavoredClassChoices,
-    allBaseSkills
+    allBaseSkills,
+    allPrerequisites,
+    allEntityChoices,
+    allCharacterChoices,
+    allSkillBonuses,
+    allWeaponProficiencies,
+    allNaturalAttacks,
+    allConditionalBonuses,
+    allArchetypeReplacements
   ] = await Promise.all([
     characterRpgEntitiesApi.getAllRows(),
     characterRpgEntityPropsApi.getAllRows(),
@@ -153,16 +233,26 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     buffTypesApi.getAllRows(),
     abpBonusTypesApi.getAllRows(),
     favoredClassChoicesApi.getAllRows(),
-    baseSkillsApi.getAllRows()
+    baseSkillsApi.getAllRows(),
+    entityPrerequisitesApi.getAllRows(),
+    entityChoicesApi.getAllRows(),
+    characterEntityChoicesApi.getAllRows(),
+    skillBonusesApi.getAllRows(),
+    weaponProficienciesApi.getAllRows(),
+    naturalAttacksApi.getAllRows(),
+    conditionalBonusesApi.getAllRows(),
+    archetypeFeatureReplacementsApi.getAllRows()
   ]);
 
   // 3) Filter bridging data for this character
-  const bridgingEntities = allCharRpgEntities.filter(
+  const bridgingEntities: CharacterRpgEntitiesRow[] = allCharRpgEntities.filter(
     (be) => be.character_id === charRow.id
   );
-  const bridgingProps = allCharRpgProps.filter((prop) =>
+
+  const bridgingProps: CharRpgEntityPropRow[] = allCharRpgProps.filter((prop) =>
     bridgingEntities.some((be) => be.id === prop.character_rpg_entity_id)
   );
+
   const skillRanksForChar = allSkillRanks.filter(
     (sr) => sr.character_id === charRow.id
   );
@@ -201,18 +291,21 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     entityIdsByType[type].push(be.entity_id);
   }
 
-  // 6) “Batch fetch” subtypes by IDs
+  // 6) "Batch fetch" subtypes by IDs
   const [
     ancestries,
     classes,
     feats,
     traits,
     buffs,
-    corruptions,
+    corruption,
     wildTalents,
     equipmentRows,
     attributesRows,
-    ancestralTraitRows
+    ancestralTraitRows,
+    classFeatures,
+    discoveries,
+    archetypes
   ] = await Promise.all([
     baseAncestriesApi.getRowsByIds(entityIdsByType['ancestry'] || []),
     baseClassesApi.getRowsByIds(entityIdsByType['class'] || []),
@@ -223,7 +316,10 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     baseWildTalentsApi.getRowsByIds(entityIdsByType['wild_talent'] || []),
     baseEquipmentApi.getRowsByIds(entityIdsByType['equipment'] || []),
     baseAttributesApi.getRowsByIds(entityIdsByType['attribute'] || []),
-    baseAncestralTraitsApi.getRowsByIds(entityIdsByType['ancestral_trait'] || [])
+    baseAncestralTraitsApi.getRowsByIds(entityIdsByType['ancestral_trait'] || []),
+    baseClassFeaturesApi.getRowsByIds(entityIdsByType['class_feature'] || []),
+    baseDiscoveriesApi.getRowsByIds(entityIdsByType['discovery'] || []),
+    baseArchetypesApi.getRowsByIds(entityIdsByType['archetype'] || [])
   ]);
 
   // Build quick-lookup maps
@@ -232,11 +328,14 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
   const featMap           = new Map(feats.map((r) => [r.id, r]));
   const traitMap          = new Map(traits.map((r) => [r.id, r]));
   const buffMap           = new Map(buffs.map((r) => [r.id, r]));
-  const corruptionMap     = new Map(corruptions.map((r) => [r.id, r]));
+  const corruptionMap     = new Map(corruption.map((r) => [r.id, r]));
   const wildTalentMap     = new Map(wildTalents.map((r) => [r.id, r]));
   const equipmentMap      = new Map(equipmentRows.map((r) => [r.id, r]));
   const attributeMap      = new Map(attributesRows.map((r) => [r.id, r]));
   const ancestralTraitMap = new Map(ancestralTraitRows.map((r) => [r.id, r]));
+  const classFeatureMap   = new Map(classFeatures.map((r) => [r.id, r]));
+  const discoveryMap      = new Map(discoveries.map((r) => [r.id, r]));
+  const archetypeMap      = new Map(archetypes.map((r) => [r.id, r]));
 
   // Prepare final arrays
   let ancestry: CompleteCharacter['ancestry'] = null;
@@ -244,11 +343,14 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
   const finalFeats: CompleteCharacter['feats']               = [];
   const finalTraits: CompleteCharacter['traits']             = [];
   const finalBuffs: CompleteCharacter['buffs']               = [];
-  const finalCorruptions: CompleteCharacter['corruptions']   = [];
+  const finalCorruption: CompleteCharacter['corruption']   = [];
   const finalWildTalents: CompleteCharacter['wildTalents']   = [];
   const finalEquipment: CompleteCharacter['equipment']       = [];
   const finalAncestralTraits: CompleteCharacter['ancestralTraits'] = [];
   const finalAttributes: CompleteCharacter['attributes']     = [];
+  const finalClassFeatures: CompleteCharacter['classFeatures'] = [];
+  const finalDiscoveries: CompleteCharacter['discoveries']   = [];
+  const finalArchetypes: CompleteCharacter['archetypes']     = [];
 
   // 7) Loop bridgingEntities, tie them to subtypes with bridging props
   for (const be of bridgingEntities) {
@@ -296,7 +398,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
       case 'corruption': {
         const row = corruptionMap.get(be.entity_id);
         if (row) {
-          finalCorruptions.push({ base: row, name, ...props });
+          finalCorruption.push({ base: row, name, ...props });
         }
         break;
       }
@@ -325,6 +427,27 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
         const row = ancestralTraitMap.get(be.entity_id);
         if (row) {
           finalAncestralTraits.push({ base: row, name, ...props });
+        }
+        break;
+      }
+      case 'class_feature': {
+        const row = classFeatureMap.get(be.entity_id);
+        if (row) {
+          finalClassFeatures.push({ base: row, name, ...props });
+        }
+        break;
+      }
+      case 'discovery': {
+        const row = discoveryMap.get(be.entity_id);
+        if (row) {
+          finalDiscoveries.push({ base: row, name, ...props });
+        }
+        break;
+      }
+      case 'archetype': {
+        const row = archetypeMap.get(be.entity_id);
+        if (row) {
+          finalArchetypes.push({ base: row, name, ...props });
         }
         break;
       }
@@ -360,30 +483,184 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
   }
   const skills = [...skillAgg.values()];
 
-  // 9) references (optional)
-  const references = {
-    bonusTypes: allBonusTypes,
-    skillRankSources: allSkillRankSources,
-    buffTypes: allBuffTypes,
-    abpBonusTypes: allAbpBonusTypes,
-    favoredClassChoices: allFavoredClassChoices
-  };
+  // Process prerequisites
+  const prerequisites: CompleteCharacter['prerequisites'] = {};
+  for (const prereq of allPrerequisites) {
+    if (!prerequisites[prereq.entity_id]) {
+      prerequisites[prereq.entity_id] = [];
+    }
+    if (prereq.required_entity_id) {
+      prerequisites[prereq.entity_id].push({
+        required_entity_id: prereq.required_entity_id,
+        prereq_type: prereq.prereq_type,
+        prereq_value: prereq.prereq_value,
+        id: prereq.id,
+        entity_id: prereq.entity_id,
+        created_at: prereq.created_at,
+        updated_at: prereq.updated_at
+      });
+    }
+  }
+
+  // Process entity choices
+  const entityChoices = allEntityChoices
+    .filter(choice => bridgingEntities.some(be => be.entity_id === choice.entity_id))
+    .map(choice => ({
+      id: choice.id,
+      entity_id: choice.entity_id,
+      choice_key: choice.choice_key,
+      choice_value: choice.choice_value,
+      created_at: choice.created_at,
+      updated_at: choice.updated_at
+    }));
+
+  // Process character choices
+  const characterChoices = allCharacterChoices
+    .filter(choice => bridgingEntities.some(be => be.id === choice.character_entity_id))
+    .map(choice => ({
+      id: choice.id,
+      character_entity_id: choice.character_entity_id,
+      choice_key: choice.choice_key,
+      choice_value: choice.choice_value,
+      created_at: choice.created_at,
+      updated_at: choice.updated_at
+    }));
+
+  // Process skill bonuses
+  const skillBonusesWithTypes = allSkillBonuses
+    .filter(bonus => bridgingEntities.some(be => be.entity_id === bonus.entity_id))
+    .map(bonus => ({
+      id: bonus.id,
+      entity_id: bonus.entity_id,
+      skill_name: bonus.skill_name,
+      bonus: bonus.bonus,
+      created_at: bonus.created_at,
+      updated_at: bonus.updated_at
+    }));
+
+  // Process weapon proficiencies
+  const weaponProficiencies = allWeaponProficiencies
+    .filter(prof => bridgingEntities.some(be => be.entity_id === prof.entity_id))
+    .map(prof => ({
+      id: prof.id,
+      entity_id: prof.entity_id,
+      weapon_name: prof.weapon_name,
+      created_at: prof.created_at,
+      updated_at: prof.updated_at
+    }));
+
+  // Process natural attacks
+  const naturalAttacks = allNaturalAttacks
+    .filter(attack => bridgingEntities.some(be => be.entity_id === attack.entity_id))
+    .map(attack => ({
+      id: attack.id,
+      entity_id: attack.entity_id,
+      attack_type: attack.attack_type,
+      damage: attack.damage,
+      attack_count: attack.attack_count,
+      created_at: attack.created_at,
+      updated_at: attack.updated_at
+    }));
+
+  // Process conditional bonuses
+  const conditionalBonuses = allConditionalBonuses
+    .filter(bonus => bridgingEntities.some(be => be.entity_id === bonus.entity_id))
+    .map(bonus => ({
+      id: bonus.id,
+      entity_id: bonus.entity_id,
+      bonus_type_id: bonus.bonus_type_id,
+      value: bonus.value,
+      apply_to: bonus.apply_to,
+      condition: bonus.condition,
+      created_at: bonus.created_at,
+      updated_at: bonus.updated_at
+    }));
+
+  // Process archetype replacements
+  const archetypeReplacements = allArchetypeReplacements
+    .filter(replacement => 
+      bridgingEntities.some(be => be.entity_id === replacement.archetype_id)
+    )
+    .map(replacement => ({
+      id: replacement.id,
+      archetype_id: replacement.archetype_id,
+      replaced_feature_id: replacement.replaced_feature_id,
+      new_feature_id: replacement.new_feature_id,
+      replacement_level: replacement.replacement_level,
+      created_at: replacement.created_at,
+      updated_at: replacement.updated_at
+    }));
+
+  // Create lookup maps for references
+  const bonusTypeMap = new Map(allBonusTypes.map(bt => [bt.id, bt.name]));
+  const skillRankSourceMap = new Map(allSkillRankSources.map(src => [src.id, src.name]));
+  const buffTypeMap = new Map(allBuffTypes.map(bt => [bt.id, bt.name]));
+  const abpBonusTypeMap = new Map(allAbpBonusTypes.map(bt => [bt.id, bt.name]));
+  const favoredClassChoiceMap = new Map(
+    allFavoredClassChoices.map(fcc => [
+      fcc.id,
+      fcc.name ?? ''
+    ])
+  );
+
+  // Build skill data with rank sources
+  const skillsWithRanks = [...skillAgg.values()].map(skill => ({
+    ...skill,
+    rankSources: skillRanksForChar
+      .filter(sr => sr.skill_id === skill.skillId)
+      .map(sr => ({
+        ...sr,
+        sourceName: skillRankSourceMap.get(sr.source_id ?? 0) ?? ''
+      }))
+  }));
+
+  // Process buffs with type names
+  const buffWithTypes = finalBuffs.map(buff => ({
+    ...buff,
+    base: {
+      ...buff.base,
+      buffTypeName: buffTypeMap.get(buff.base.buff_type_id ?? 0) ?? ''
+    }
+  }));
 
   // 10) Construct the final object
   const finalObj = {
-    character: charRow,
+    id: charRow.id,
+    name: charRow.name,
+    current_hp: charRow.current_hp,
+    max_hp: charRow.max_hp,
+    is_offline: charRow.is_offline,
     ancestry,
     classes: finalClasses,
     feats: finalFeats,
     traits: finalTraits,
-    buffs: finalBuffs,
-    corruptions: finalCorruptions,
+    buffs: buffWithTypes,
+    corruption: finalCorruption,
     wildTalents: finalWildTalents,
     equipment: finalEquipment,
     ancestralTraits: finalAncestralTraits,
     attributes: finalAttributes,
-    skills
-    // references, // uncomment if you want them in the final data
+    classFeatures: finalClassFeatures,
+    discoveries: finalDiscoveries,
+    archetypes: finalArchetypes,
+    prerequisites,
+    choices: entityChoices,
+    characterChoices,
+    baseSkills: allBaseSkills,
+    skills,
+    skillsWithRanks,
+    skillBonuses: skillBonusesWithTypes,
+    references: {
+      bonusTypes: Object.fromEntries(bonusTypeMap),
+      skillRankSources: Object.fromEntries(skillRankSourceMap),
+      buffTypes: Object.fromEntries(buffTypeMap),
+      abpBonusTypes: Object.fromEntries(abpBonusTypeMap),
+      favoredClassChoices: Object.fromEntries(favoredClassChoiceMap)
+    },
+    weaponProficiencies,
+    naturalAttacks,
+    conditionalBonuses,
+    archetypeReplacements
   };
 
   // 11) Clean up (remove empty arrays, omit timestamps)

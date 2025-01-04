@@ -1,212 +1,119 @@
-<!-- src/lib/ui/Attributes.svelte -->
+<!-- FILE: src/lib/ui/Attributes.svelte -->
 <script lang="ts">
-	import { getCharacter } from '$lib/state/characterStore';
-	import { getAbilityModifier } from '$lib/domain/calculations/attributes';
+	import { characterStore } from '$lib/state/characterStore';
+	import { writable } from 'svelte/store';
+	import { StretchHorizontal } from 'lucide-svelte';
 
-	let { characterId } = $props<{ characterId: number }>();
+	const showModifierFirst = writable(false);
 
-	interface AttributeDefinition {
-		key: keyof CharacterAttributes;
-		label: string;
-		description?: string;
+	function getAbilityModifier(baseVal: number): number {
+		return Math.floor((baseVal - 10) / 2);
 	}
 
-	interface Buff {
-		source: string;
-		values: Record<string, number>;
-	}
-
-	interface ABPBonus {
-		bonus_type: string;
-		character_id: number | null;
-		id: number;
-		sync_status: string | null;
-		updated_at: string | null;
-		value: number;
-		value_target: string | null;
-	}
-
-	const attributeDefinitions = $state.raw<AttributeDefinition[]>([
-		{ key: 'str', label: 'Strength', description: 'Melee attacks, climbing, carrying capacity' },
-		{ key: 'dex', label: 'Dexterity', description: 'Ranged attacks, AC, reflex saves' },
-		{ key: 'con', label: 'Constitution', description: 'HP, fortitude saves' },
-		{ key: 'int', label: 'Intelligence', description: 'Skill points, extract DCs' },
-		{ key: 'wis', label: 'Wisdom', description: 'Will saves, perception' },
-		{ key: 'cha', label: 'Charisma', description: 'Social interactions' }
-	]);
-
-	let character = $derived(getCharacter(characterId));
-
-	// Calculate base attributes and modifiers
-	let stats = $derived.by(() => {
-		const baseAttributes = character.character_attributes?.[0] ?? {
-			str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10
-		};
-
-		const mentalProwess = character.character_abp_bonuses?.find(
-			(b: ABPBonus) => b.bonus_type === 'mental_prowess'
-		);
-		const physicalProwess = character.character_abp_bonuses?.find(
-			(b: ABPBonus) => b.bonus_type === 'physical_prowess'
-		);
-
-		return {
-			attributes: {
-				base: baseAttributes,
-				permanent: baseAttributes,
-				temporary: baseAttributes,
-				modifiers: {
-					permanent: {
-						str: getAbilityModifier(baseAttributes.str),
-						dex: getAbilityModifier(baseAttributes.dex),
-						con: getAbilityModifier(baseAttributes.con),
-						int: getAbilityModifier(baseAttributes.int),
-						wis: getAbilityModifier(baseAttributes.wis),
-						cha: getAbilityModifier(baseAttributes.cha)
-					},
-					temporary: {
-						str: getAbilityModifier(baseAttributes.str),
-						dex: getAbilityModifier(baseAttributes.dex),
-						con: getAbilityModifier(baseAttributes.con),
-						int: getAbilityModifier(baseAttributes.int),
-						wis: getAbilityModifier(baseAttributes.wis),
-						cha: getAbilityModifier(baseAttributes.cha)
-					}
-				},
-				bonuses: {
-					ancestry: {
-						source: character.ancestry ?? 'Unknown',
-						values: {} as Record<keyof CharacterAttributes, number>
-					},
-					abp: {
-						mental: mentalProwess ? {
-							...mentalProwess,
-							attribute: mentalProwess.value_target
-						} : null,
-						physical: physicalProwess ? {
-							...physicalProwess,
-							attribute: physicalProwess.value_target
-						} : null
-					},
-					buffs: (character.character_buffs ?? [])
-						.filter(buff => buff.is_active)
-						.map(buff => ({
-							source: buff.buff_type,
-							values: {} as Record<string, number>
-						}))
-				}
-			}
-		};
-	});
-
-	// Transform attributes for display with modifier sources
-	let attributesList = $derived.by(() => {
-		return attributeDefinitions.map((attr) => {
-			const base = stats.attributes.base[attr.key];
-			const permanent = stats.attributes.permanent[attr.key];
-			const temporary = stats.attributes.temporary[attr.key];
-
-			return {
-				...attr,
-				value: {
-					base,
-					permanent,
-					temporary,
-					modifier: {
-						permanent: stats.attributes.modifiers.permanent[attr.key],
-						temporary: stats.attributes.modifiers.temporary[attr.key]
-					},
-					sources: {
-						ancestry: stats.attributes.bonuses.ancestry.values[attr.key]
-							? {
-									label: stats.attributes.bonuses.ancestry.source,
-									value: stats.attributes.bonuses.ancestry.values[attr.key] ?? 0
-								}
-							: null,
-						abp:
-							(stats.attributes.bonuses.abp.mental?.attribute === attr.key &&
-								stats.attributes.bonuses.abp.mental) ||
-							(stats.attributes.bonuses.abp.physical?.attribute === attr.key &&
-								stats.attributes.bonuses.abp.physical)
-								? {
-										label:
-											(attr.key === stats.attributes.bonuses.abp.mental?.attribute
-												? 'Mental'
-												: 'Physical') + ' Prowess (ABP)',
-										value:
-											attr.key === stats.attributes.bonuses.abp.mental?.attribute
-												? stats.attributes.bonuses.abp.mental.value
-												: (stats.attributes.bonuses.abp.physical?.value ?? 0)
-									}
-								: null,
-						buffs: stats.attributes.bonuses.buffs
-							.filter((buff: Buff) => buff.values[attr.key])
-							.map((buff: Buff) => ({
-								source: buff.source,
-								value: buff.values[attr.key] ?? 0
-							}))
-					}
-				}
-			};
-		});
-	});
-
-	function formatModifier(num: number): string {
-		return num >= 0 ? `+${num}` : num.toString();
-	}
+	let abilityMods = $derived(
+		$characterStore?.attributes?.map((attr) => ({
+			name: attr.name,
+			value: attr.value ?? 10,
+			mod: getAbilityModifier(attr.value ?? 10)
+		})) ?? []
+	);
 </script>
 
-<section class="card p-4">
-	<div class="mb-4 flex items-center justify-between">
-		<h2 class="text-lg font-bold">Attributes</h2>
-	</div>
+<style lang="postcss">
+	.attribute-card {
+		@apply relative transition-transform duration-200 rounded-lg border shadow-sm bg-card;
+		border-color: hsl(var(--border) / 0.2);
 
-	<div class="space-y-1">
-		{#each attributesList as { label, description, value }}
-			<!-- One line per attribute, compact styling -->
-			<div
-				class="group relative flex items-center justify-between rounded bg-gray-50 px-2 py-1 text-sm hover:bg-gray-100"
+		&:hover {
+			@apply scale-105;
+		}
+	}
+
+	.card-inner {
+		@apply p-4 flex flex-col items-center space-y-2;
+	}
+
+	.attribute-name {
+		@apply text-sm font-medium text-muted-foreground;
+	}
+
+	.primary-value {
+		@apply text-2xl font-bold text-foreground;
+	}
+
+	.secondary-value {
+		@apply text-sm text-muted-foreground;
+	}
+
+	.toggle-switch {
+		@apply relative w-11 h-6 bg-secondary rounded-full cursor-pointer transition-colors duration-200;
+
+		&::after {
+			content: '';
+			@apply w-5 h-5 bg-background rounded-full shadow-md absolute left-0.5 top-0.5 transition-transform duration-200;
+		}
+
+		&.checked {
+			@apply bg-primary;
+
+			&::after {
+				transform: translateX(20px);
+			}
+		}
+
+		&:hover::after {
+			@apply shadow-lg;
+		}
+	}
+</style>
+
+{#if $characterStore}
+	<div class="card space-y-6">
+		<div class="section-header flex items-center justify-between">
+			<h2 class="section-title text-lg font-semibold text-foreground">Attributes</h2>
+			<button
+				type="button"
+				class="relative inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80"
+				onclick={() => $showModifierFirst = !$showModifierFirst}
 			>
-				<!-- Left side: attribute name -->
-				<div class="flex items-center space-x-2">
-					<span class="font-medium">{label}</span>
-				</div>
+				<span class="sr-only">Show modifiers first</span>
+				<StretchHorizontal
+					class={`w-5 h-5 transition-transform duration-200 ${$showModifierFirst ? 'rotate-180' : ''}`}
+				/>
+			</button>
+		</div>
 
-				<!-- Right side: show modifier and totals -->
-				<div class="text-right">
-					<!-- Show permanent and temporary if different -->
-					{#if value.temporary !== value.permanent}
-						<!-- Show temporary total -->
-						<div class="text-accent font-bold tabular-nums">{value.temporary}</div>
-						<div class="text-xs text-gray-500">({value.permanent} base)</div>
-					{:else}
-						<div class="font-bold tabular-nums">{value.permanent}</div>
-					{/if}
-					<!-- Modifier -->
-					<div class="text-sm text-gray-700">{formatModifier(value.modifier.temporary)}</div>
+		<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
+			{#each abilityMods as abilityMod}
+				<div class="attribute-card">
+					<div class="card-inner">
+						<div class="attribute-name">{abilityMod.name}</div>
+						{#if $showModifierFirst}
+							<div class="primary-value modifier">
+								{abilityMod.mod >= 0 ? '+' : ''}{abilityMod.mod}
+							</div>
+							<div class="secondary-value score">
+								{abilityMod.value}
+							</div>
+						{:else}
+							<div class="primary-value score">
+								{abilityMod.value}
+							</div>
+							<div class="secondary-value modifier">
+								<span>{abilityMod.mod >= 0 ? '+' : ''}{abilityMod.mod}</span>
+							</div>
+						{/if}
+					</div>
 				</div>
-
-				<!-- Tooltip with details -->
-				<div
-					class="invisible absolute left-1/2 top-full z-10 mt-1 w-48 -translate-x-1/2 transform rounded bg-gray-800 px-3 py-2 text-xs text-white opacity-0 transition-all group-hover:visible group-hover:opacity-100"
-				>
-					<div class="mb-2 font-medium">{description}</div>
-					<div>Base: {value.base}</div>
-					{#if value.sources.ancestry}
-						<div>
-							{value.sources.ancestry.label}: {formatModifier(value.sources.ancestry.value)}
-						</div>
-					{/if}
-					{#if value.sources.abp}
-						<div>{value.sources.abp.label}: {formatModifier(value.sources.abp.value)}</div>
-					{/if}
-					{#if value.sources.buffs.length > 0}
-						{#each value.sources.buffs as buff}
-							<div>{buff.source}: {formatModifier(buff.value)}</div>
-						{/each}
-					{/if}
-				</div>
-			</div>
-		{/each}
+			{/each}
+		</div>
 	</div>
-</section>
+{:else}
+	<div class="card">
+		<div class="flex items-center justify-center space-x-2 text-primary/70">
+			<div class="animate-spin h-5 w-5 border-2 border-primary/20 border-t-primary rounded-full"></div>
+			<p>Loading attributes...</p>
+		</div>
+	</div>
+{/if}
+  

@@ -1,3 +1,7 @@
+-- ===========================================================================
+--  DROP TABLES (in reverse dependency order)
+-- ===========================================================================
+DROP TABLE IF EXISTS character_rpg_entity_properties CASCADE;
 DROP TABLE IF EXISTS character_skill_ranks CASCADE;
 DROP TABLE IF EXISTS character_rpg_entities CASCADE;
 DROP TABLE IF EXISTS character_entity_choices CASCADE;
@@ -8,6 +12,9 @@ DROP TABLE IF EXISTS conditional_bonuses CASCADE;
 DROP TABLE IF EXISTS natural_attacks CASCADE;
 DROP TABLE IF EXISTS weapon_proficiencies CASCADE;
 DROP TABLE IF EXISTS skill_bonuses CASCADE;
+DROP TABLE IF EXISTS base_discoveries CASCADE;
+DROP TABLE IF EXISTS base_wild_talents CASCADE;
+DROP TABLE IF EXISTS base_corruption_manifestations CASCADE;
 DROP TABLE IF EXISTS base_corruptions CASCADE;
 DROP TABLE IF EXISTS base_traits CASCADE;
 DROP TABLE IF EXISTS base_buffs CASCADE;
@@ -15,12 +22,9 @@ DROP TABLE IF EXISTS base_ancestral_traits CASCADE;
 DROP TABLE IF EXISTS base_archetypes CASCADE;
 DROP TABLE IF EXISTS base_class_features CASCADE;
 DROP TABLE IF EXISTS base_feats CASCADE;
+DROP TABLE IF EXISTS base_equipment CASCADE;
+DROP TABLE IF EXISTS base_attributes CASCADE;
 DROP TABLE IF EXISTS rpg_entities CASCADE;
-
-DROP TABLE IF EXISTS character_consumables CASCADE;
-DROP TABLE IF EXISTS character_equipment_properties CASCADE;
-DROP TABLE IF EXISTS character_equipment CASCADE;
-DROP TABLE IF EXISTS character_attributes CASCADE;
 
 DROP TABLE IF EXISTS class_skill_relations CASCADE;
 DROP TABLE IF EXISTS base_skills CASCADE;
@@ -35,12 +39,9 @@ DROP TABLE IF EXISTS buff_types CASCADE;
 DROP TABLE IF EXISTS skill_rank_sources CASCADE;
 DROP TABLE IF EXISTS bonus_types CASCADE;
 
-
----------------------------------------------------------------------------
+-- ===========================================================================
 -- 1) REFERENCE TABLES
----------------------------------------------------------------------------
-
-
+-- ===========================================================================
 CREATE TABLE bonus_types (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -81,29 +82,38 @@ CREATE TABLE favored_class_choices (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
----------------------------------------------------------------------------
--- 2) CHARACTERS, ANCESTRIES, CLASSES, SKILLS
----------------------------------------------------------------------------
+-- ===========================================================================
+-- 2) CHARACTERS
+-- ===========================================================================
 CREATE TABLE characters (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    class_name TEXT,
-    ancestry_name TEXT,
-    level INT NOT NULL DEFAULT 1,
     current_hp INT NOT NULL DEFAULT 0,
     max_hp INT NOT NULL DEFAULT 0,
-    archetype_name TEXT,
     is_offline BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE base_ancestries (
+-- ===========================================================================
+-- 3) THE SUPERTYPE: rpg_entities
+-- ===========================================================================
+CREATE TABLE rpg_entities (
     id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    size TEXT NOT NULL,
-    base_speed INT NOT NULL DEFAULT 30,
+    entity_type TEXT NOT NULL,
+    name TEXT NOT NULL,
     description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================================================
+-- 4) ANCESTRIES as a Subtype of rpg_entities
+-- ===========================================================================
+CREATE TABLE base_ancestries (
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    size TEXT NOT NULL DEFAULT 'Medium',
+    base_speed INT NOT NULL DEFAULT 30,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -117,17 +127,22 @@ CREATE TABLE ancestry_ability_modifiers (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ===========================================================================
+-- 5) CLASSES as a Subtype of rpg_entities
+-- ===========================================================================
 CREATE TABLE base_classes (
-    id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    description TEXT,
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    hit_die INT,
+    skill_ranks_per_level INT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ===========================================================================
+-- 6) SKILLS as a Subtype of rpg_entities
+-- ===========================================================================
 CREATE TABLE base_skills (
-    id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
     ability TEXT NOT NULL,
     trained_only BOOLEAN DEFAULT FALSE,
     armor_check_penalty BOOLEAN DEFAULT FALSE,
@@ -144,65 +159,9 @@ CREATE TABLE class_skill_relations (
     UNIQUE(class_id, skill_id)
 );
 
----------------------------------------------------------------------------
--- 3) CHARACTER ATTRIBUTES, EQUIPMENT, CONSUMABLES, ETC.
----------------------------------------------------------------------------
-CREATE TABLE character_attributes (
-    id BIGSERIAL PRIMARY KEY,
-    character_id BIGINT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-    str INT NOT NULL DEFAULT 10,
-    dex INT NOT NULL DEFAULT 10,
-    con INT NOT NULL DEFAULT 10,
-    int INT NOT NULL DEFAULT 10,
-    wis INT NOT NULL DEFAULT 10,
-    cha INT NOT NULL DEFAULT 10,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE character_equipment (
-    id BIGSERIAL PRIMARY KEY,
-    character_id BIGINT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    equipped BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE character_equipment_properties (
-    id BIGSERIAL PRIMARY KEY,
-    equipment_id BIGINT NOT NULL REFERENCES character_equipment(id) ON DELETE CASCADE,
-    property_key TEXT NOT NULL,
-    property_value TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE character_consumables (
-    id BIGSERIAL PRIMARY KEY,
-    character_id BIGINT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-    consumable_type TEXT NOT NULL,
-    quantity INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
----------------------------------------------------------------------------
--- 4) THE SUPERTYPE: rpg_entities
----------------------------------------------------------------------------
-CREATE TABLE rpg_entities (
-    id BIGSERIAL PRIMARY KEY,
-    entity_type TEXT NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
----------------------------------------------------------------------------
--- 5) SUBTYPES
----------------------------------------------------------------------------
+-- ===========================================================================
+-- 8) ADDITIONAL SUBTYPES: FEATS, CLASS FEATURES, ETC.
+-- ===========================================================================
 CREATE TABLE base_feats (
     id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
     feat_label TEXT,
@@ -254,9 +213,57 @@ CREATE TABLE base_corruptions (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
----------------------------------------------------------------------------
--- 6) BRIDGING TABLES FOR "EFFECTS" (Skill Bonuses, Natural Attacks, etc.)
----------------------------------------------------------------------------
+CREATE TABLE base_corruption_manifestations (
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    corruption_id BIGINT NOT NULL REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    min_manifestation_level INT NOT NULL DEFAULT 1,
+    prerequisite_manifestation TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- base_discoveries
+CREATE TABLE base_discoveries (
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    discovery_level INT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- base_wild_talents
+CREATE TABLE base_wild_talents (
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    talent_level INT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================================================
+-- 9) NEW SUBTYPES: base_equipment & base_attributes
+-- ===========================================================================
+-- If you want to treat equipment as an entity: 
+CREATE TABLE base_equipment (
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    equipment_category TEXT,   -- e.g. "weapon", "armor", "tool"
+    weight NUMERIC,
+    cost NUMERIC,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- If you want to treat "Strength", "Dexterity", etc. as entities:
+CREATE TABLE base_attributes (
+    id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    default_value INT,
+    is_core_attribute BOOLEAN DEFAULT TRUE,
+    attribute_type TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================================================
+-- 10) BRIDGING TABLES FOR "EFFECTS" (Skill Bonuses, etc.)
+-- ===========================================================================
 CREATE TABLE skill_bonuses (
     id BIGSERIAL PRIMARY KEY,
     entity_id BIGINT NOT NULL REFERENCES rpg_entities(id) ON DELETE CASCADE,
@@ -295,9 +302,9 @@ CREATE TABLE conditional_bonuses (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
----------------------------------------------------------------------------
--- 7) PREREQUISITES & ARCHETYPE REPLACEMENTS
----------------------------------------------------------------------------
+-- ===========================================================================
+-- 11) PREREQUISITES & ARCHETYPE REPLACEMENTS
+-- ===========================================================================
 CREATE TABLE entity_prerequisites (
     id BIGSERIAL PRIMARY KEY,
     entity_id BIGINT NOT NULL REFERENCES rpg_entities(id) ON DELETE CASCADE,
@@ -318,9 +325,22 @@ CREATE TABLE archetype_feature_replacements (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
----------------------------------------------------------------------------
--- 8) CHOICE-BASED LOGIC (Two-tier bridging)
----------------------------------------------------------------------------
+-- ===========================================================================
+-- 12) CHARACTERS -> ENTITIES
+-- ===========================================================================
+CREATE TABLE character_rpg_entities (
+    id BIGSERIAL PRIMARY KEY,
+    character_id BIGINT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    entity_id BIGINT NOT NULL REFERENCES rpg_entities(id) ON DELETE CASCADE,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
+-- ===========================================================================
+-- 13) CHOICE-BASED LOGIC (Two-tier bridging)
+-- ===========================================================================
 CREATE TABLE entity_choices (
     id BIGSERIAL PRIMARY KEY,
     entity_id BIGINT NOT NULL REFERENCES rpg_entities(id) ON DELETE CASCADE,
@@ -332,30 +352,17 @@ CREATE TABLE entity_choices (
 
 CREATE TABLE character_entity_choices (
     id BIGSERIAL PRIMARY KEY,
-    character_entity_id BIGINT NOT NULL,
+    character_entity_id BIGINT NOT NULL REFERENCES character_rpg_entities(id) ON DELETE CASCADE,
     choice_key TEXT NOT NULL,
     choice_value TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
--- Note: 'character_entity_id' references the row in 'character_rpg_entities' (defined below)
 
----------------------------------------------------------------------------
--- 9) CHARACTERS -> ENTITIES
----------------------------------------------------------------------------
-CREATE TABLE character_rpg_entities (
-    id BIGSERIAL PRIMARY KEY,
-    character_id BIGINT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-    entity_id BIGINT NOT NULL REFERENCES rpg_entities(id) ON DELETE CASCADE,
-    selected_level INT,
-    is_active BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
 
----------------------------------------------------------------------------
--- 10) SKILL RANKS
----------------------------------------------------------------------------
+-- ===========================================================================
+-- 14) SKILL RANKS
+-- ===========================================================================
 CREATE TABLE character_skill_ranks (
     id BIGSERIAL PRIMARY KEY,
     character_id BIGINT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
@@ -366,9 +373,22 @@ CREATE TABLE character_skill_ranks (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--------------------------------------------------------------------------------
--- 1) Required helper functions
--------------------------------------------------------------------------------
+-- ===========================================================================
+-- 15) CHARACTER -> ENTITY PROPERTIES
+-- ===========================================================================
+CREATE TABLE character_rpg_entity_properties (
+    id BIGSERIAL PRIMARY KEY,
+    character_rpg_entity_id BIGINT NOT NULL 
+        REFERENCES character_rpg_entities(id) ON DELETE CASCADE,
+    property_key TEXT NOT NULL,
+    property_value TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================================================
+-- 16) HELPER FUNCTIONS
+-- ===========================================================================
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -380,6 +400,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION ensure_entity_type_matches()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- Confirms that the rpg_entities row matched by NEW.id has the correct entity_type
     PERFORM 1
       FROM rpg_entities
      WHERE id = NEW.id
@@ -431,45 +452,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--------------------------------------------------------------------------------
--- 2) Combine all dynamic trigger/policy creation into one DO block
--------------------------------------------------------------------------------
+-- ===========================================================================
+-- 17) DYNAMIC TRIGGERS & POLICIES
+-- ===========================================================================
 DO $$
 DECLARE
-    ---------------------------------------------------------------------------
-    -- (A) ALL TABLES (for realtime, update_timestamp, etc.)
-    ---------------------------------------------------------------------------
-    all_tables TEXT[] := ARRAY[
-      'bonus_types','skill_rank_sources','buff_types','abp_bonus_types','favored_class_choices',
-      'characters','base_ancestries','ancestry_ability_modifiers','base_classes',
-      'base_skills','class_skill_relations','character_attributes','character_equipment',
-      'character_equipment_properties','character_consumables','rpg_entities',
-      'base_feats','base_class_features','base_archetypes','base_ancestral_traits',
-      'base_buffs','base_traits','base_corruptions','skill_bonuses','weapon_proficiencies',
-      'natural_attacks','conditional_bonuses','entity_prerequisites',
-      'archetype_feature_replacements','entity_choices','character_entity_choices',
-      'character_rpg_entities','character_skill_ranks'
-    ];
+DECLARE
+    all_tables TEXT[];
 
-    ---------------------------------------------------------------------------
-    -- (B) Subtype combos for ensure_entity_type_matches(_required TEXT)
-    ---------------------------------------------------------------------------
+    -- (B) Subtype combos for ensure_entity_type_matches
     combos_subtypes TEXT[][] := ARRAY[
+      ARRAY['base_ancestries','ancestry'],
+      ARRAY['base_classes','class'],
+      ARRAY['base_skills','skill'],
       ARRAY['base_feats','feat'],
       ARRAY['base_class_features','class_feature'],
       ARRAY['base_archetypes','archetype'],
       ARRAY['base_ancestral_traits','ancestral_trait'],
       ARRAY['base_buffs','buff'],
       ARRAY['base_traits','trait'],
-      ARRAY['base_corruptions','corruption']
-      -- Add more if you have additional subtypes
+      ARRAY['base_corruptions','corruption'],
+      ARRAY['base_corruption_manifestations','corruption_manifestation'],
+      ARRAY['base_discoveries','discovery'],
+      ARRAY['base_wild_talents','wild_talent'],
+      ARRAY['base_equipment','equipment'],
+      ARRAY['base_attributes','attribute']
     ];
 
-    ---------------------------------------------------------------------------
-    -- (C) Pairs for ensure_multiple_entity_types(_pairs TEXT[])
-    ---------------------------------------------------------------------------
+    -- (C) Pairs for ensure_multiple_entity_types
     combos_multiples TEXT[][] := ARRAY[
-      -- Table name, Trigger name, Pairs array
       ARRAY[
          'archetype_feature_replacements',
          'trg_archetype_feature_replacements_check',
@@ -479,7 +490,6 @@ DECLARE
          'entity_prerequisites',
          'trg_entity_prerequisites_check',
          'entity_id=feat,required_entity_id=feat'
-         -- Example: only feats requiring feats, but expand as needed
       ]
     ];
 
@@ -489,6 +499,14 @@ DECLARE
     t_trigger TEXT;
     t_pairs TEXT;
 BEGIN
+
+    SELECT array_agg(table_name)
+    INTO all_tables
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_type = 'BASE TABLE';
+    
+
     ---------------------------------------------------------------------------
     -- (1) Create BEFORE UPDATE triggers for update_timestamp() on each table
     ---------------------------------------------------------------------------
@@ -505,7 +523,7 @@ BEGIN
     END LOOP;
 
     ---------------------------------------------------------------------------
-    -- (2) Generate subtype triggers for each table requiring a specific entity_type
+    -- (2) Generate subtype triggers for each table with ensure_entity_type_matches
     ---------------------------------------------------------------------------
     FOREACH c SLICE 1 IN ARRAY combos_subtypes
     LOOP

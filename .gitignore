@@ -33,3 +33,7 @@ temp-pf-output.txt
 .vscode/settings.json
 
 _backup/
+
+
+.venv
+
