@@ -362,20 +362,68 @@ export type Database = {
           },
         ]
       }
-      base_corruptions: {
+      base_corruption_manifestations: {
         Row: {
+          corruption_id: number
           created_at: string | null
           id: number
+          min_manifestation_level: number
+          prerequisite_manifestation: string | null
           updated_at: string | null
         }
         Insert: {
+          corruption_id: number
           created_at?: string | null
           id: number
+          min_manifestation_level?: number
+          prerequisite_manifestation?: string | null
           updated_at?: string | null
         }
         Update: {
+          corruption_id?: number
           created_at?: string | null
           id?: number
+          min_manifestation_level?: number
+          prerequisite_manifestation?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_corruption_manifestations_corruption_id_fkey"
+            columns: ["corruption_id"]
+            isOneToOne: false
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_corruption_manifestations_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "rpg_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_corruptions: {
+        Row: {
+          corruption_stage: number | null
+          created_at: string | null
+          id: number
+          manifestation_level: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          corruption_stage?: number | null
+          created_at?: string | null
+          id: number
+          manifestation_level?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          corruption_stage?: number | null
+          created_at?: string | null
+          id?: number
+          manifestation_level?: number | null
           updated_at?: string | null
         }
         Relationships: [

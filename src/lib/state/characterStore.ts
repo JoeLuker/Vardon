@@ -11,29 +11,21 @@ import {
 } from '$lib/db/bridging';
 import {
   getCompleteCharacter,
-  type CompleteCharacter
+  type CompleteCharacter,
 } from '$lib/db/getCompleteCharacter';
+import { enrichCharacterData, type EnrichedCharacter } from '$lib/domain/characterCalculations';
 
 // Our store: a single "active" character
-export const characterStore = writable<CompleteCharacter | null>(null);
+export const characterStore = writable<EnrichedCharacter | null>(null);
 
 // Track watchers so we only init once
 let watchersInitialized = false;
 
-/** 
- * localChanges: Tracks fields where our local store has made changes 
- * that may not be reflected in the DB yet.
- * 
- * Example: { current_hp: 25, max_hp: 40 }
- * 
- * Once we see the DB's data match these values, we remove them from localChanges.
- */
+/** localChanges: Tracks fields where our local store has made changes */
 const localChanges: Record<string, unknown> = {};
 
 /**
  * loadCharacter(charId)
- * 
- * Fetch from DB, but preserve localChanges if the DB is stale for those fields.
  */
 export async function loadCharacter(charId: number) {
   try {
@@ -46,12 +38,11 @@ export async function loadCharacter(charId: number) {
     // Compare the fetched data to localChanges
     const newCharacter = reconcileLocalChanges(fetched);
 
-    // Rebuild the final state using newCharacter instead of fetched
-    const newComplete: CompleteCharacter = {
-      ...newCharacter
-    };
+    // Enrich with calculations
+    const enrichedCharacter = enrichCharacterData(newCharacter);
 
-    characterStore.set(newComplete);
+    // Set the enriched character in store
+    characterStore.set(enrichedCharacter);
   } catch (err) {
     console.error(`Failed to load character #${charId}`, err);
     characterStore.set(null);
@@ -59,20 +50,9 @@ export async function loadCharacter(charId: number) {
   }
 }
 
-/**
- * reconcileLocalChanges(dbCharacter)
- * 
- * For each field in localChanges, if dbCharacter[field] differs from localChanges[field],
- * we overwrite dbCharacter[field] with localChanges[field], because we consider our
- * local version the truth (we have updated it, but the DB might not have caught up).
- * 
- * If they match, it means the DB is now in sync, so we can clear that entry from localChanges.
- */
 function reconcileLocalChanges(dbCharacter: CompleteCharacter) {
   const newChar = { ...dbCharacter };
-
   for (const [field, localValue] of Object.entries(localChanges)) {
-    // Type assertion for dynamic access
     const dbValue = (dbCharacter as any)[field];
     if (localValue !== dbValue) {
       (newChar as any)[field] = localValue;
@@ -80,7 +60,6 @@ function reconcileLocalChanges(dbCharacter: CompleteCharacter) {
       delete localChanges[field];
     }
   }
-
   return newChar;
 }
 
@@ -116,7 +95,7 @@ export function cleanupCharacterWatchers() {
  * handleCharacterTableChange(type, row)
  */
 async function handleCharacterTableChange(
-  _type: 'insert' | 'update' | 'delete',  // Prefix with _ to indicate intentionally unused
+  _type: 'insert' | 'update' | 'delete',
   row: any
 ) {
   const currentCharacter = get(characterStore);
@@ -143,7 +122,6 @@ async function handleBridgingChange(
 
   if (row?.character_id !== currentCharacter.id) return;
 
-  // re-fetch
   await loadCharacter(currentCharacter.id);
 }
 
@@ -170,8 +148,8 @@ export async function updateCharacterOptimistically(
     (localChanges as any)[field] = value; // track as local
   }
 
-  // 2) set store
-  characterStore.set(newCharacter);
+  // 2) set store with enriched data
+  characterStore.set(enrichCharacterData(newCharacter));
 
   // 3) DB update
   try {
@@ -183,7 +161,7 @@ export async function updateCharacterOptimistically(
     // watchers trigger, loadCharacter => reconcileLocalChanges => removes local changes if matched
   } catch (err) {
     console.error('Optimistic update failed, revert store:', err);
-    characterStore.set(oldState);
+    characterStore.set(enrichCharacterData(oldState));
     // Optionally revert localChanges for those fields
     for (const field of Object.keys(changes)) {
       delete localChanges[field];
@@ -220,7 +198,7 @@ function applyOptimisticChanges(changes: Partial<CompleteCharacter>) {
     localChanges[field] = value;
   }
 
-  characterStore.set(newCharacter);
+  characterStore.set(enrichCharacterData(newCharacter));
 }
 
 async function flushPending() {

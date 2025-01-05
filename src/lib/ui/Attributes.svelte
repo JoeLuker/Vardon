@@ -3,6 +3,7 @@
 	import { characterStore } from '$lib/state/characterStore';
 	import { writable } from 'svelte/store';
 	import { StretchHorizontal } from 'lucide-svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	const showModifierFirst = writable(false);
 
@@ -71,8 +72,9 @@
 	<div class="card space-y-6">
 		<div class="section-header flex items-center justify-between">
 			<h2 class="section-title text-lg font-semibold text-foreground">Attributes</h2>
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon"
 				class="relative inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80"
 				onclick={() => $showModifierFirst = !$showModifierFirst}
 			>
@@ -80,7 +82,7 @@
 				<StretchHorizontal
 					class={`w-5 h-5 transition-transform duration-200 ${$showModifierFirst ? 'rotate-180' : ''}`}
 				/>
-			</button>
+			</Button>
 		</div>
 
 		<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">

@@ -457,7 +457,6 @@ $$ LANGUAGE plpgsql;
 -- ===========================================================================
 DO $$
 DECLARE
-DECLARE
     all_tables TEXT[];
 
     -- (B) Subtype combos for ensure_entity_type_matches
@@ -490,6 +489,11 @@ DECLARE
          'entity_prerequisites',
          'trg_entity_prerequisites_check',
          'entity_id=feat,required_entity_id=feat'
+      ],
+      ARRAY[
+         'class_skill_relations',
+         'trg_class_skills_check',
+         'class_id=class,skill_id=skill'
       ]
     ];
 

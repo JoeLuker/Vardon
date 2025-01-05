@@ -11,37 +11,55 @@
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
 	import HPTracker from '$lib/ui/HPTracker.svelte';
 	import Attributes from '$lib/ui/Attributes.svelte';
-	const { data } = $props<{ data: PageData }>();
-	const characterId = data.id;
+	import Skills from '$lib/ui/Skills.svelte';
 
+	const { data } = $props<{ data: PageData }>();
+
+	let isLoading = $state(true);
+	let error = $state<string | null>(null);
+
+	// Initialize watchers once
 	onMount(() => {
 		initCharacterWatchers();
-
-		// Add async/await to wait for the character to load
-		loadCharacter(characterId).then(() => {
-			console.log('Character loaded:', JSON.stringify($characterStore, null, 2));
-		});
-
 		return () => {
 			cleanupCharacterWatchers();
 		};
 	});
+
+	// Watch for changes to data.id and reload character
+	$effect(() => {
+		isLoading = true;
+		error = null;
+		
+		loadCharacter(data.id)
+			.then(() => {
+				isLoading = false;
+			})
+			.catch((err) => {
+				console.error('Failed to load character:', err);
+				error = 'Failed to load character data';
+				isLoading = false;
+			});
+	});
 </script>
 
-<!-- Check if the store is loaded or not -->
-{#if $characterStore === null}
-	<p>Loading or no data found...</p>
+{#if isLoading}
+	<div class="flex justify-center items-center min-h-[200px]">
+		<div class="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full" ></div>
+	</div>
+{:else if error}
+	<div class="p-4 border border-destructive/50 bg-destructive/10 rounded-md text-destructive">
+		{error}
+	</div>
+{:else if $characterStore === null}
+	<div class="p-4 border border-muted rounded-md">
+		<p class="text-muted-foreground">No character data found</p>
+	</div>
 {:else}
-	<!-- Example usage of child component -->
-	<CharacterHeader />
-	<HPTracker />
-	<Attributes />
-
-	<!-- Possibly more child components, like HPTracker, Skills, Feats, etc. -->
-	<!--
-	<HPTracker />
-	<Skills />
-	<Feats />
-	... 
-	-->
+	<div class="space-y-8">
+		<CharacterHeader />
+		<HPTracker />
+		<Attributes />
+		<Skills />
+	</div>
 {/if}

@@ -48,6 +48,7 @@ import {
   naturalAttacksApi,
   conditionalBonusesApi
 } from '$lib/db/bridging';
+import { classSkillRelationsApi } from './bridging';
 
 import type {
   CharacterRow,
@@ -140,13 +141,6 @@ export interface CompleteCharacter extends Omit<CharacterRow, 'created_at' | 'up
   ancestralTraits: Array<{ base: BaseAncestralTraitRow; name: string; [key: string]: any }>;
   attributes: Array<{ base: BaseAttributeRow; name: string; [key: string]: any }>;
 
-  skills: Array<{
-    skillId: number;
-    name: string;
-    ability: string;
-    totalRanks: number;
-  }>;
-
   classFeatures: Array<{ base: BaseClassFeatureRow; name: string; [key: string]: any }>;
 
   discoveries: Array<{ base: BaseDiscoveryRow; name: string; [key: string]: any }>;
@@ -173,7 +167,7 @@ export interface CompleteCharacter extends Omit<CharacterRow, 'created_at' | 'up
 
   archetypeReplacements: Array<ArchetypeFeatureReplacementRow>;
 
-  baseSkills: BaseSkillRow[];
+  baseSkills: Array<BaseSkillRow & { name: string }>;
 
   skillsWithRanks: Array<{
     skillId: number;
@@ -193,7 +187,18 @@ export interface CompleteCharacter extends Omit<CharacterRow, 'created_at' | 'up
     abpBonusTypes: Record<AbpBonusTypeRow['id'], AbpBonusTypeRow['name']>;
     favoredClassChoices: Record<`${FavoredClassChoiceRow['id']}-${FavoredClassChoiceRow['id']}`, NonNullable<FavoredClassChoiceRow['name']>>;
   };
+
+  abpBonuses: Array<AbpBonus>;
 }
+
+type AbpBonus = {
+  bonus_type_id: number;
+  value: number;
+  choices?: Array<{
+    key: string;
+    value: string;
+  }>;
+};
 
 /**
  * Fetch and assemble a complete character by ID.
@@ -351,6 +356,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
   const finalClassFeatures: CompleteCharacter['classFeatures'] = [];
   const finalDiscoveries: CompleteCharacter['discoveries']   = [];
   const finalArchetypes: CompleteCharacter['archetypes']     = [];
+  const finalAbpBonuses: CompleteCharacter['abpBonuses'] = [];
 
   // 7) Loop bridgingEntities, tie them to subtypes with bridging props
   for (const be of bridgingEntities) {
@@ -370,7 +376,19 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
       case 'class': {
         const row = classMap.get(be.entity_id);
         if (row) {
-          finalClasses.push({ base: row, name, ...props });
+          // Get class skills for this class
+          const classSkillRows = await classSkillRelationsApi.getAllRows();
+          const classSkills = classSkillRows
+              .filter(r => r.class_id === be.entity_id)
+              .map((r: { skill_id: number | null }) => r.skill_id)
+              .filter((id): id is number => id !== null);
+          
+          finalClasses.push({ 
+              base: row, 
+              name, 
+              class_skills: classSkills,
+              ...props 
+          });
         }
         break;
       }
@@ -451,6 +469,31 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
         }
         break;
       }
+      case 'abp_bonus': {
+        const props = getPropsForEntity(be.id);
+        const bonus: AbpBonus = {
+          bonus_type_id: be.entity_id,
+          value: parseInt(props.value || '0', 10),
+        };
+        
+        // Handle choices if they exist
+        const choices: Array<{ key: string; value: string }> = [];
+        Object.entries(props).forEach(([key, value]) => {
+          if (key.startsWith('choice_')) {
+            choices.push({
+              key: key.replace('choice_', ''),
+              value
+            });
+          }
+        });
+        
+        if (choices.length > 0) {
+          bonus.choices = choices;
+        }
+        
+        finalAbpBonuses.push(bonus);
+        break;
+      }
       default:
         break;
     }
@@ -469,11 +512,15 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     const skillDef = baseSkillMap.get(sr.skill_id);
     if (!skillDef) continue;
 
+    // Get the name from rpgEntityMap instead of assuming it exists on skillDef
+    const entityInfo = rpgEntityMap.get(skillDef.id);
+    if (!entityInfo) continue;
+
     // Initialize aggregator if not present
     if (!skillAgg.has(sr.skill_id)) {
       skillAgg.set(sr.skill_id, {
         skillId: sr.skill_id,
-        name: rpgEntityMap.get(skillDef.id)?.name ?? '',
+        name: entityInfo.name,  // Use name from rpgEntityMap
         ability: skillDef.ability,
         totalRanks: 0
       });
@@ -481,7 +528,6 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     // For each row, increment totalRanks by 1
     skillAgg.get(sr.skill_id)!.totalRanks += 1;
   }
-  const skills = [...skillAgg.values()];
 
   // Process prerequisites
   const prerequisites: CompleteCharacter['prerequisites'] = {};
@@ -569,6 +615,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
       id: bonus.id,
       entity_id: bonus.entity_id,
       bonus_type_id: bonus.bonus_type_id,
+      bonus_type_name: bonusTypeMap.get(bonus.bonus_type_id) || '',
       value: bonus.value,
       apply_to: bonus.apply_to,
       condition: bonus.condition,
@@ -623,6 +670,12 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     }
   }));
 
+  // Add names to base skills
+  const baseSkillsWithNames = allBaseSkills.map(skill => ({
+    ...skill,
+    name: rpgEntityMap.get(skill.id)?.name ?? ''
+  }));
+
   // 10) Construct the final object
   const finalObj = {
     id: charRow.id,
@@ -646,8 +699,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     prerequisites,
     choices: entityChoices,
     characterChoices,
-    baseSkills: allBaseSkills,
-    skills,
+    baseSkills: baseSkillsWithNames,
     skillsWithRanks,
     skillBonuses: skillBonusesWithTypes,
     references: {
@@ -660,7 +712,8 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     weaponProficiencies,
     naturalAttacks,
     conditionalBonuses,
-    archetypeReplacements
+    archetypeReplacements,
+    abpBonuses: finalAbpBonuses
   };
 
   // 11) Clean up (remove empty arrays, omit timestamps)

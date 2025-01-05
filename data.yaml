@@ -14,14 +14,14 @@ user_id: &user_id "9c4e4bb1-db8d-41df-b796-b9454622eed2"
 reference_tables:
   # First define the string constants
   bonus_type_strings:
-    untyped: &untyped "untyped"
-    circumstance: &circumstance "circumstance"
-    inherent: &inherent "inherent"
-    enhancement: &enhancement "enhancement"
-    morale: &morale "morale"
-    dodge: &dodge "dodge"
-    racial: &racial "racial"
-    natural: &natural "natural"
+    untyped: &untyped "Untyped"
+    circumstance: &circumstance "Circumstance"
+    inherent: &inherent "Inherent"
+    enhancement: &enhancement "Enhancement"
+    morale: &morale "Morale"
+    dodge: &dodge "Dodge"
+    racial: &racial "Racial"
+    natural: &natural "Natural"
 
   # Then define the full bonus type objects
   bonus_types:
@@ -77,9 +77,9 @@ reference_tables:
     label: "Other"
   # Buff Types
   buff_type_strings:
-    mutagen: &buff_type_mutagen "mutagen"
-    combat: &buff_type_combat "combat"
-    other: &buff_type_other "other"
+    mutagen: &buff_type_mutagen "Mutagen"
+    combat: &buff_type_combat "Combat"
+    other: &buff_type_other "Other"
 
   buff_types:
   - &buff_mutagen
@@ -237,20 +237,6 @@ base_tables:
     - &skill_craft_alchemy
       id: &skill_craft_alchemy_id 32
       name: "Craft (Alchemy)"
-      ability: "int"
-      trained_only: false
-      armor_check_penalty: false
-
-    - &skill_craft_armor
-      id: &skill_craft_armor_id 33
-      name: "Craft (Armor)"
-      ability: "int"
-      trained_only: false
-      armor_check_penalty: false
-
-    - &skill_craft_weapons
-      id: &skill_craft_weapons_id 34
-      name: "Craft (Weapons)"
       ability: "int"
       trained_only: false
       armor_check_penalty: false
@@ -1393,8 +1379,8 @@ characters:
 - id: 1
   name: "Vardon Salvador"
   user_id: *user_id
-  current_hp: 30
-  max_hp: 30
+  current_hp: 37
+  max_hp: 37
   is_offline: false
 
   character_attributes:
@@ -1422,9 +1408,9 @@ characters:
     - entity_id: *class_alchemist_id
       properties:
       - property_key: "level"
-        property_value: "5"
+        property_value: "6"
       - property_key: "archetype"
-        property_value: "mindchemist"
+        property_value: "Mindchemist"
 
     ancestries:
     - entity_id: *tengu_id
@@ -1536,8 +1522,8 @@ characters:
     - entity_id: *corruption_vampirism_id
       corruption_type: "vampirism"
       corruption_stage: 0
-      manifestation_level: 5
-      blood_required: 5
+      manifestation_level: 6
+      blood_required: 6
       blood_consumed: 0
       active_manifestations:
       - entity_id: *corruption_vampiric_grace_id
@@ -1617,15 +1603,17 @@ characters:
 
   favored_class_bonuses:
   - level: 1
-    choice_id: *favored_hp_id
+    choice_id: *favored_skill_id
   - level: 2
     choice_id: *favored_skill_id
   - level: 3
-    choice_id: *favored_other_id
+    choice_id: *favored_skill_id
   - level: 4
-    choice_id: *favored_other_id
+    choice_id: *favored_skill_id
   - level: 5
-    choice_id: *favored_other_id
+    choice_id: *favored_skill_id
+  - level: 5
+    choice_id: *favored_skill_id
 
   skill_ranks:
   - skill_id: *skill_craft_alchemy_id
@@ -1636,6 +1624,7 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
   - skill_id: *skill_disable_device_id
     source_id: *source_class_id
@@ -1645,6 +1634,7 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
   - skill_id: *skill_knowledge_arcana_id
     source_id: *source_class_id
@@ -1654,12 +1644,13 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
 - id: 2
   name: "Kiliq Said"
   user_id: *user_id
-  current_hp: 65
-  max_hp: 65
+  current_hp: 67
+  max_hp: 67
   is_offline: false
 
   character_attributes:
@@ -1687,7 +1678,7 @@ characters:
     - entity_id: *class_kineticist_id
       properties:
       - property_key: "level"
-        property_value: "5"
+        property_value: "6"
 
     ancestries:
     - entity_id: *oread_id
@@ -1697,7 +1688,7 @@ characters:
       selected_level: 1
       properties:
       - property_key: "element"
-        property_value: "earth"
+        property_value: "Earth"
 
     - entity_id: *class_feature_burn_id
       selected_level: 1
@@ -1725,7 +1716,7 @@ characters:
       selected_level: 2
       properties:
       - property_key: "name"
-        property_value: "flesh_of_stone"
+        property_value: "Flesh_of_Stone"
 
     - entity_id: *class_feature_elemental_overflow_id
       selected_level: 3
@@ -1743,7 +1734,7 @@ characters:
       selected_level: 5
       properties:
       - property_key: "type"
-        property_value: "empower"
+        property_value: "Empower"
 
     wild_talents:
     - entity_id: *wild_talent_basic_geokinesis_id
@@ -1779,8 +1770,8 @@ characters:
     - entity_id: *corruption_vampirism_id
       corruption_type: "vampirism"
       corruption_stage: 0
-      manifestation_level: 5
-      blood_required: 5
+      manifestation_level: 6
+      blood_required: 6
       blood_consumed: 0
       active_manifestations:
       - entity_id: *corruption_vampiric_grace_id
@@ -1820,6 +1811,8 @@ characters:
     choice_id: *favored_hp_id
   - level: 5
     choice_id: *favored_hp_id
+  - level: 6
+    choice_id: *favored_hp_id
 
   skill_ranks:
   - skill_id: *skill_acrobatics_id
@@ -1830,6 +1823,7 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
   - skill_id: *skill_perception_id
     source_id: *source_class_id
@@ -1839,6 +1833,7 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
   - skill_id: *skill_stealth_id
     source_id: *source_class_id
@@ -1848,6 +1843,7 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
   - skill_id: *skill_climb_id
     source_id: *source_class_id
@@ -1857,6 +1853,7 @@ characters:
       3: 0
       4: 0
       5: 0
+      6: 0
 
   - skill_id: *skill_knowledge_dungeoneering_id
     source_id: *source_class_id
@@ -1866,6 +1863,7 @@ characters:
       3: 1
       4: 1
       5: 1
+      6: 1
 
 # =============================================================================
 # 5) CLASS SKILL RELATIONS
