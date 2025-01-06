@@ -17,9 +17,16 @@ export interface EnrichedCharacter extends CompleteCharacter {
   initiative: number;
   
   // Saving throws
-  fortitude: number;
-  reflex: number;
-  will: number;
+  saves: {
+    base: {
+      fortitude: number;
+      reflex: number;
+      will: number;
+    };
+    fortitude: number;
+    reflex: number;
+    will: number;
+  };
   
   // Derived attribute modifiers
   str_mod: number;
@@ -35,6 +42,43 @@ export interface EnrichedCharacter extends CompleteCharacter {
 
 function getAttributeModifier(score: number): number {
   return Math.floor((score - 10) / 2);
+}
+
+function calculateBaseSaves(rawCharacter: CompleteCharacter) {
+  /**
+   * Calculates base saving throw bonuses for a character's classes
+   * - Good saves: Base = 2 + level/2
+   * - Poor saves: Base = level/3
+   */
+  const calculateSaveBonus = (classes: any[], saveProgressionKey: string): number => {
+    let totalBonus = 0;
+
+    // Calculate bonus from each class
+    for (const cls of classes) {
+      
+      const level = Number(cls.level) || 1;
+      const isGoodSave = cls.base[saveProgressionKey] === "good";
+      
+      if (isGoodSave) {
+        totalBonus += 2;
+        totalBonus += level / 2; // Good save progression with +2 added
+      } else {
+        totalBonus += level / 3; // Poor save progression
+      }
+    }
+
+    rawCharacter.abpBonuses
+
+    // Round down total
+    return Math.floor(totalBonus);
+  };
+
+  // Calculate base saves for each type
+  return {
+    fortitude: calculateSaveBonus(rawCharacter.classes, 'fort_save_progression'),
+    reflex: calculateSaveBonus(rawCharacter.classes, 'ref_save_progression'), 
+    will: calculateSaveBonus(rawCharacter.classes, 'will_save_progression')
+  };
 }
 
 /**
@@ -84,11 +128,19 @@ export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCh
     return acc + lvl;
   }, 0);
 
-  // 3) Basic saving throws (simplistic approach — might differ by class)
-  //    For demonstration, we use floor(level/2) + ability_mod for each save.
-  const fortitude = Math.floor(level / 2) + con_mod;
-  const reflex = Math.floor(level / 2) + dex_mod;
-  const will = Math.floor(level / 2) + wis_mod;
+  // 3) Saving Throws
+  const baseSaves = calculateBaseSaves(rawCharacter);
+  const fortitude = baseSaves.fortitude + con_mod;
+  const reflex = baseSaves.reflex + dex_mod;
+  const will = baseSaves.will + wis_mod;
+
+  const saves = {
+    base: baseSaves,
+    fortitude,
+    reflex,
+    will
+  };
+
 
   // 4) Armor Class
   //    If the character has the Dodge feat, we add +1
@@ -146,9 +198,7 @@ export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCh
     cmd,
     cmb,
     initiative,
-    fortitude,
-    reflex,
-    will,
+    saves,
     str_mod,
     dex_mod,
     con_mod,

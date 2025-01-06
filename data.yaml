@@ -493,20 +493,25 @@ rpg_entities:
     description: "Masters of chemical mixtures and magical potions"
     hit_die: 8
     base_skill_ranks: 4
+    # Add saving throw progression
+    saving_throws:
+      fortitude: "good"
+      reflex: "good"
+      will: "poor"
     class_skills: &alchemist_class_skills
-      - *skill_appraise
-      - *skill_craft_alchemy
-      - *skill_disable_device
-      - *skill_fly
-      - *skill_heal
-      - *skill_knowledge_arcana
-      - *skill_knowledge_nature
-      - *skill_perception
-      - *skill_profession
-      - *skill_sleight_of_hand
-      - *skill_spellcraft
-      - *skill_survival
-      - *skill_use_magic_device
+      - *skill_appraise_id
+      - *skill_craft_alchemy_id
+      - *skill_disable_device_id
+      - *skill_fly_id
+      - *skill_heal_id
+      - *skill_knowledge_arcana_id
+      - *skill_knowledge_nature_id
+      - *skill_perception_id
+      - *skill_profession_id
+      - *skill_sleight_of_hand_id
+      - *skill_spellcraft_id
+      - *skill_survival_id
+      - *skill_use_magic_device_id
 
   - &class_kineticist
     id: &class_kineticist_id 65
@@ -514,15 +519,20 @@ rpg_entities:
     description: "Masters of elemental power"
     hit_die: 10
     base_skill_ranks: 4
+    # Add saving throw progression
+    saving_throws:
+      fortitude: "good"
+      reflex: "good"
+      will: "poor"
     class_skills: &kineticist_class_skills
-      - *skill_acrobatics
-      - *skill_craft_alchemy
-      - *skill_heal
-      - *skill_intimidate
-      - *skill_perception
-      - *skill_profession
-      - *skill_stealth
-      - *skill_use_magic_device
+      - *skill_acrobatics_id
+      - *skill_craft_alchemy_id
+      - *skill_heal_id
+      - *skill_intimidate_id
+      - *skill_perception_id
+      - *skill_profession_id
+      - *skill_stealth_id
+      - *skill_use_magic_device_id
   # Templates can stay as is
   templates:
     class_feature: &class_feature_template
@@ -1864,34 +1874,3 @@ characters:
       4: 1
       5: 1
       6: 1
-
-# =============================================================================
-# 5) CLASS SKILL RELATIONS
-# =============================================================================
-class_skill_relations:
-- class_id: *class_alchemist_id
-  skill_ids:
-  - *skill_appraise_id
-  - *skill_craft_alchemy_id
-  - *skill_disable_device_id
-  - *skill_fly_id
-  - *skill_heal_id
-  - *skill_knowledge_arcana_id
-  - *skill_knowledge_nature_id
-  - *skill_perception_id
-  - *skill_profession_id
-  - *skill_sleight_of_hand_id
-  - *skill_spellcraft_id
-  - *skill_survival_id
-  - *skill_use_magic_device_id
-
-- class_id: *class_kineticist_id
-  skill_ids:
-  - *skill_acrobatics_id
-  - *skill_craft_alchemy_id
-  - *skill_heal_id
-  - *skill_intimidate_id
-  - *skill_perception_id
-  - *skill_profession_id
-  - *skill_stealth_id
-  - *skill_use_magic_device_id

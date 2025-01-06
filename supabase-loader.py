@@ -248,11 +248,8 @@ def insert_base_tables_5nf(data: dict):
             }
             insert_entity_and_subtype("attribute", entity_data, "base_attributes", subtype_data)
     
-    # Insert skills if present
-    skills = base.get("skills", [])
-    if skills:
-        insert_skills_5nf(skills)
-        
+    # Skip skills since they're already handled earlier
+    
     # Insert ancestries if present
     ancestries = base.get("ancestries", [])
     if ancestries:
@@ -271,9 +268,16 @@ def insert_classes_5nf(cls_data: list):
             "name": cls["name"],
             "description": cls.get("description", "")
         }
+
+        # Get saving throws from the nested structure
+        saving_throws = cls.get("saving_throws", {})
+
         subtype_data = {
             "hit_die": cls.get("hit_die", None),
-            "skill_ranks_per_level": cls.get("base_skill_ranks", None)
+            "skill_ranks_per_level": cls.get("base_skill_ranks", None),
+            "fort_save_progression": saving_throws.get("fortitude", None),
+            "ref_save_progression": saving_throws.get("reflex", None),
+            "will_save_progression": saving_throws.get("will", None)
         }
         insert_entity_and_subtype("class", entity_data, "base_classes", subtype_data)
 
@@ -491,12 +495,8 @@ def insert_all_rpg_entities(rpg_data: dict):
     # Track counts for logging
     counts = {}
 
-    # 1. Classes first (they're often referenced by other entities)
-    classes = rpg_data.get("classes", [])
-    if classes:
-        insert_classes_5nf(classes)
-        counts["classes"] = len(classes)
-
+    # Skip classes since they're already handled earlier
+    
     # 2. Define all entity categories and their handlers
     handlers = {
         "class_features": insert_class_features_array,
@@ -1093,19 +1093,33 @@ def main():
     rpg_data = data.get("rpg_entities", {})
 
     try:
-        # 1) Insert reference tables
+        # 1) Insert reference tables first
         insert_reference_tables(data)
 
-        # 2) Insert base tables (skills, ancestries)
-        insert_base_tables_5nf(data)
+        # 2) Insert base tables, focusing on skills first
+        logger.info("Inserting base skills...")
+        skills = data.get("base_tables", {}).get("skills", [])
+        if skills:
+            insert_skills_5nf(skills)
 
-        # 3) Insert ALL rpg_entities in one consistent pass
-        insert_all_rpg_entities(rpg_data)
+        # 3) Insert classes next
+        logger.info("Inserting classes...")
+        classes = rpg_data.get("classes", [])
+        if classes:
+            insert_classes_5nf(classes)
 
-        # 4) Insert bridging: class->skills
+        # 4) Now we can safely create class->skill relations
         insert_class_skill_relations(data)
 
-        # 5) Insert characters + bridging child data
+        # 5) Insert remaining base tables
+        logger.info("Inserting remaining base tables...")
+        insert_base_tables_5nf(data)
+
+        # 6) Insert remaining rpg_entities
+        logger.info("Inserting remaining rpg_entities...")
+        insert_all_rpg_entities(rpg_data)
+
+        # 7) Finally, insert characters which depend on everything else
         insert_characters(data)
 
         logger.info("Data import COMPLETED successfully!")

@@ -60,32 +60,6 @@ export const entityPrerequisitesApi = createDbApi<
 >('entity_prerequisites');
 
 /* ------------------------------------------------------------------
-   4) entity_choices
------------------------------------------------------------------- */
-export type EntityChoiceRow    = Database['public']['Tables']['entity_choices']['Row'];
-export type EntityChoiceInsert = Database['public']['Tables']['entity_choices']['Insert'];
-export type EntityChoiceUpdate = Database['public']['Tables']['entity_choices']['Update'];
-
-export const entityChoicesApi = createDbApi<
-  EntityChoiceRow,
-  EntityChoiceInsert,
-  EntityChoiceUpdate
->('entity_choices');
-
-/* ------------------------------------------------------------------
-   5) character_entity_choices
------------------------------------------------------------------- */
-export type CharacterEntityChoiceRow    = Database['public']['Tables']['character_entity_choices']['Row'];
-export type CharacterEntityChoiceInsert = Database['public']['Tables']['character_entity_choices']['Insert'];
-export type CharacterEntityChoiceUpdate = Database['public']['Tables']['character_entity_choices']['Update'];
-
-export const characterEntityChoicesApi = createDbApi<
-  CharacterEntityChoiceRow,
-  CharacterEntityChoiceInsert,
-  CharacterEntityChoiceUpdate
->('character_entity_choices');
-
-/* ------------------------------------------------------------------
    6) character_rpg_entities
 ------------------------------------------------------------------ */
 export type CharacterRpgEntitiesRow    = Database['public']['Tables']['character_rpg_entities']['Row'];

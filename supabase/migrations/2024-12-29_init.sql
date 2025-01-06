@@ -134,6 +134,9 @@ CREATE TABLE base_classes (
     id BIGINT PRIMARY KEY REFERENCES rpg_entities(id) ON DELETE CASCADE,
     hit_die INT,
     skill_ranks_per_level INT,
+    fort_save_progression TEXT,
+    ref_save_progression TEXT,
+    will_save_progression TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

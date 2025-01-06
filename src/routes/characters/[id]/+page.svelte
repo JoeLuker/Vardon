@@ -12,6 +12,7 @@
 	import HPTracker from '$lib/ui/HPTracker.svelte';
 	import Attributes from '$lib/ui/Attributes.svelte';
 	import Skills from '$lib/ui/Skills.svelte';
+	import Saves from '$lib/ui/Saves.svelte';
 
 	const { data } = $props<{ data: PageData }>();
 
@@ -34,6 +35,7 @@
 		loadCharacter(data.id)
 			.then(() => {
 				isLoading = false;
+				console.log('Character loaded:', JSON.stringify($characterStore, null, 2));
 			})
 			.catch((err) => {
 				console.error('Failed to load character:', err);
@@ -60,6 +62,7 @@
 		<CharacterHeader />
 		<HPTracker />
 		<Attributes />
+		<Saves />
 		<Skills />
 	</div>
 {/if}

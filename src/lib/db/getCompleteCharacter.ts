@@ -41,8 +41,6 @@ import { rpgEntitiesApi } from '$lib/db/rpgEntities';
 import {
   archetypeFeatureReplacementsApi,
   entityPrerequisitesApi,
-  entityChoicesApi,
-  characterEntityChoicesApi,
   skillBonusesApi,
   weaponProficienciesApi,
   naturalAttacksApi,
@@ -71,8 +69,6 @@ import type {
   BaseSkillRow,
   RpgEntityRow,
   EntityPrerequisiteRow,
-  EntityChoiceRow,
-  CharacterEntityChoiceRow,
   SkillBonusesRow,
   WeaponProficienciesRow,
   NaturalAttacksRow,
@@ -153,10 +149,6 @@ export interface CompleteCharacter extends Omit<CharacterRow, 'created_at' | 'up
 
   prerequisites: Record<number, Array<EntityPrerequisiteRow>>;
 
-  choices: Array<EntityChoiceRow>;
-
-  characterChoices: Array<CharacterEntityChoiceRow>;
-
   skillBonuses: Array<SkillBonusesRow>;
 
   weaponProficiencies: Array<WeaponProficienciesRow>;
@@ -221,8 +213,6 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     allFavoredClassChoices,
     allBaseSkills,
     allPrerequisites,
-    allEntityChoices,
-    allCharacterChoices,
     allSkillBonuses,
     allWeaponProficiencies,
     allNaturalAttacks,
@@ -240,8 +230,6 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     favoredClassChoicesApi.getAllRows(),
     baseSkillsApi.getAllRows(),
     entityPrerequisitesApi.getAllRows(),
-    entityChoicesApi.getAllRows(),
-    characterEntityChoicesApi.getAllRows(),
     skillBonusesApi.getAllRows(),
     weaponProficienciesApi.getAllRows(),
     naturalAttacksApi.getAllRows(),
@@ -548,30 +536,6 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     }
   }
 
-  // Process entity choices
-  const entityChoices = allEntityChoices
-    .filter(choice => bridgingEntities.some(be => be.entity_id === choice.entity_id))
-    .map(choice => ({
-      id: choice.id,
-      entity_id: choice.entity_id,
-      choice_key: choice.choice_key,
-      choice_value: choice.choice_value,
-      created_at: choice.created_at,
-      updated_at: choice.updated_at
-    }));
-
-  // Process character choices
-  const characterChoices = allCharacterChoices
-    .filter(choice => bridgingEntities.some(be => be.id === choice.character_entity_id))
-    .map(choice => ({
-      id: choice.id,
-      character_entity_id: choice.character_entity_id,
-      choice_key: choice.choice_key,
-      choice_value: choice.choice_value,
-      created_at: choice.created_at,
-      updated_at: choice.updated_at
-    }));
-
   // Process skill bonuses
   const skillBonusesWithTypes = allSkillBonuses
     .filter(bonus => bridgingEntities.some(be => be.entity_id === bonus.entity_id))
@@ -697,8 +661,6 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
     discoveries: finalDiscoveries,
     archetypes: finalArchetypes,
     prerequisites,
-    choices: entityChoices,
-    characterChoices,
     baseSkills: baseSkillsWithNames,
     skillsWithRanks,
     skillBonuses: skillBonusesWithTypes,

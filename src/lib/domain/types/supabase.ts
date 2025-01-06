@@ -333,24 +333,33 @@ export type Database = {
       base_classes: {
         Row: {
           created_at: string | null
+          fort_save_progression: string | null
           hit_die: number | null
           id: number
+          ref_save_progression: string | null
           skill_ranks_per_level: number | null
           updated_at: string | null
+          will_save_progression: string | null
         }
         Insert: {
           created_at?: string | null
+          fort_save_progression?: string | null
           hit_die?: number | null
           id: number
+          ref_save_progression?: string | null
           skill_ranks_per_level?: number | null
           updated_at?: string | null
+          will_save_progression?: string | null
         }
         Update: {
           created_at?: string | null
+          fort_save_progression?: string | null
           hit_die?: number | null
           id?: number
+          ref_save_progression?: string | null
           skill_ranks_per_level?: number | null
           updated_at?: string | null
+          will_save_progression?: string | null
         }
         Relationships: [
           {
@@ -673,41 +682,6 @@ export type Database = {
         }
         Relationships: []
       }
-      character_entity_choices: {
-        Row: {
-          character_entity_id: number
-          choice_key: string
-          choice_value: string
-          created_at: string | null
-          id: number
-          updated_at: string | null
-        }
-        Insert: {
-          character_entity_id: number
-          choice_key: string
-          choice_value: string
-          created_at?: string | null
-          id?: number
-          updated_at?: string | null
-        }
-        Update: {
-          character_entity_id?: number
-          choice_key?: string
-          choice_value?: string
-          created_at?: string | null
-          id?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_entity_choices_character_entity_id_fkey"
-            columns: ["character_entity_id"]
-            isOneToOne: false
-            referencedRelation: "character_rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       character_rpg_entities: {
         Row: {
           character_id: number
@@ -947,41 +921,6 @@ export type Database = {
           },
           {
             foreignKeyName: "conditional_bonuses_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      entity_choices: {
-        Row: {
-          choice_key: string
-          choice_value: string
-          created_at: string | null
-          entity_id: number
-          id: number
-          updated_at: string | null
-        }
-        Insert: {
-          choice_key: string
-          choice_value: string
-          created_at?: string | null
-          entity_id: number
-          id?: number
-          updated_at?: string | null
-        }
-        Update: {
-          choice_key?: string
-          choice_value?: string
-          created_at?: string | null
-          entity_id?: number
-          id?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "entity_choices_entity_id_fkey"
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "rpg_entities"

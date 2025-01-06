@@ -56,6 +56,9 @@
     );
 </script>
 
+<div class="section-header">
+    <h2 class="section-title">Skills</h2>
+</div>
 <!-- Add container div -->
 <div class="skills-container">
     <Tabs.Root value={viewMode} onValueChange={(value) => viewMode = value} class="w-full">
