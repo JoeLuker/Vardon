@@ -3,12 +3,22 @@
  *****************************************************************************/
 
 import { writable, get } from 'svelte/store';
-import { charactersApi } from '$lib/db/characters';
+import { gameCharacterApi } from '$lib/db/references';
 import {
-  characterRpgEntitiesApi,
-  characterRpgEntityPropsApi,
-  characterSkillRanksApi,
-} from '$lib/db/bridging';
+  gameCharacterAttributeApi,
+  gameCharacterClassApi,
+  gameCharacterFeatApi,
+  gameCharacterSkillRankApi,
+  gameCharacterArchetypeApi,
+  gameCharacterAncestryApi,
+  gameCharacterClassFeatureApi,
+  gameCharacterCorruptionApi,
+  gameCharacterCorruptionManifestationApi,
+  gameCharacterWildTalentApi,
+  gameCharacterAbpBonusApi,
+  gameCharacterEquipmentApi,
+  gameCharacterArmorApi,
+} from '$lib/db/references';
 import {
   getCompleteCharacter,
   type CompleteCharacter,
@@ -66,16 +76,26 @@ function reconcileLocalChanges(dbCharacter: CompleteCharacter) {
 /**
  * initCharacterWatchers()
  * 
- * Watch the characters table + bridging. If there's a change, we reload.
+ * Watch the character table + bridging tables. If there's a change, we reload.
  * But that reload won't clobber local changes due to reconcileLocalChanges.
  */
 export function initCharacterWatchers() {
   if (watchersInitialized) return;
 
-  charactersApi.startWatch(handleCharacterTableChange);
-  characterRpgEntitiesApi.startWatch(handleBridgingChange);
-  characterRpgEntityPropsApi.startWatch(handleBridgingChange);
-  characterSkillRanksApi.startWatch(handleBridgingChange);
+  gameCharacterApi.startWatch(handleCharacterTableChange);
+  gameCharacterAttributeApi.startWatch(handleBridgingChange);
+  gameCharacterClassApi.startWatch(handleBridgingChange);
+  gameCharacterFeatApi.startWatch(handleBridgingChange);
+  gameCharacterSkillRankApi.startWatch(handleBridgingChange);
+  gameCharacterArchetypeApi.startWatch(handleBridgingChange);
+  gameCharacterAncestryApi.startWatch(handleBridgingChange);
+  gameCharacterClassFeatureApi.startWatch(handleBridgingChange);
+  gameCharacterCorruptionApi.startWatch(handleBridgingChange);
+  gameCharacterCorruptionManifestationApi.startWatch(handleBridgingChange);
+  gameCharacterWildTalentApi.startWatch(handleBridgingChange);
+  gameCharacterAbpBonusApi.startWatch(handleBridgingChange);
+  gameCharacterEquipmentApi.startWatch(handleBridgingChange);
+  gameCharacterArmorApi.startWatch(handleBridgingChange);
 
   watchersInitialized = true;
 }
@@ -83,10 +103,20 @@ export function initCharacterWatchers() {
 export function cleanupCharacterWatchers() {
   if (!watchersInitialized) return;
 
-  charactersApi.stopWatch();
-  characterRpgEntitiesApi.stopWatch();
-  characterRpgEntityPropsApi.stopWatch();
-  characterSkillRanksApi.stopWatch();
+  gameCharacterApi.stopWatch();
+  gameCharacterAttributeApi.stopWatch();
+  gameCharacterClassApi.stopWatch();
+  gameCharacterFeatApi.stopWatch();
+  gameCharacterSkillRankApi.stopWatch();
+  gameCharacterArchetypeApi.stopWatch();
+  gameCharacterAncestryApi.stopWatch();
+  gameCharacterClassFeatureApi.stopWatch();
+  gameCharacterCorruptionApi.stopWatch();
+  gameCharacterCorruptionManifestationApi.stopWatch();
+  gameCharacterWildTalentApi.stopWatch();
+  gameCharacterAbpBonusApi.stopWatch();
+  gameCharacterEquipmentApi.stopWatch();
+  gameCharacterArmorApi.stopWatch();
 
   watchersInitialized = false;
 }
@@ -120,7 +150,7 @@ async function handleBridgingChange(
   const currentCharacter = get(characterStore);
   if (!currentCharacter) return;
 
-  if (row?.character_id !== currentCharacter.id) return;
+  if (row?.game_character_id !== currentCharacter.id) return;
 
   await loadCharacter(currentCharacter.id);
 }
@@ -154,10 +184,10 @@ export async function updateCharacterOptimistically(
   // 3) DB update
   try {
     const payload = {
-      ...newCharacter,
+      ...changes,
       id: oldState.id
     };
-    await charactersApi.updateRow(payload);
+    await gameCharacterApi.updateRow(payload);
     // watchers trigger, loadCharacter => reconcileLocalChanges => removes local changes if matched
   } catch (err) {
     console.error('Optimistic update failed, revert store:', err);
@@ -214,7 +244,7 @@ async function flushPending() {
   };
 
   try {
-    await charactersApi.updateRow(payload);
+    await gameCharacterApi.updateRow(payload);
   } catch (err) {
     console.error('Failed to flush queued changes:', err);
   }

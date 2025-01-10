@@ -112,7 +112,7 @@
 						<div class="text-xs text-muted-foreground">
 							{character.classes
 								.map(rpgClass => 
-									`${rpgClass?.archetype ?? ''} ${rpgClass?.name ?? ''} ${rpgClass?.level ?? ''}`
+									`${rpgClass?.archetype ?? ''} ${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`
 								)
 								.join(', ')}
 						</div>

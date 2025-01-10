@@ -6,15 +6,13 @@
  *   - Possibly an admin or overview page
  *****************************************************************************/
 
-import { writable, get } from 'svelte/store';
-import { charactersApi } from '$lib/db/characters'; 
-// bridging watchers optional if you want them to auto-update list 
-import { characterRpgEntitiesApi, characterRpgEntityPropsApi, characterSkillRanksApi } from '$lib/db/bridging';
-
+import { writable } from 'svelte/store';
+import { gameCharacterApi } from '$lib/db';
 import { getCompleteCharacter, type CompleteCharacter } from '$lib/db/getCompleteCharacter';
 
 /** Holds an array of loaded characters. */
-export const characterList = writable<CompleteCharacter[]>([]);
+const characterList = writable<CompleteCharacter[]>([]);
+export { characterList };
 
 let watchersInitialized = false;
 
@@ -22,7 +20,7 @@ let watchersInitialized = false;
  * Load ALL characters from DB, storing them in `characterList`.
  */
 export async function loadAllCharacters() {
-  const rawRows = await charactersApi.getAllRows(); // raw from DB
+  const rawRows = await gameCharacterApi.getAllRows(); // raw from DB
   const tasks = rawRows.map((row) => getCompleteCharacter(row.id));
   const fetched = await Promise.all(tasks);
 
@@ -32,43 +30,25 @@ export async function loadAllCharacters() {
 }
 
 /**
- * Optional: Start watchers so that if changes happen in the DB,
- * we re-fetch the entire list. Probably not necessary for a "landing page" 
- * unless you want real-time updates on the list of characters.
+ * Initialize watchers for the character list.
+ * You don't need to call this unless you want real-time updates on the list of characters.
  */
 export function initMultiCharWatchers() {
   if (watchersInitialized) return;
 
   // Watch `characters` table
-  charactersApi.startWatch(handleCharactersChange);
-
-  // Watch bridging if you truly want real-time updates to the *list*:
-  characterRpgEntitiesApi.startWatch(handleBridgingChange);
-  characterRpgEntityPropsApi.startWatch(handleBridgingChange);
-  characterSkillRanksApi.startWatch(handleBridgingChange);
-  // ... more bridging watchers if needed
-
+  gameCharacterApi.startWatch(handleCharactersChange);
   watchersInitialized = true;
 }
+
 export function cleanupMultiCharWatchers() {
   if (!watchersInitialized) return;
-
-  charactersApi.stopWatch();
-  characterRpgEntitiesApi.stopWatch();
-  characterRpgEntityPropsApi.stopWatch();
-  characterSkillRanksApi.stopWatch();
+  gameCharacterApi.stopWatch();
   watchersInitialized = false;
 }
 
 /** Called by watchers on insert/update. Re-fetch entire list. */
-async function handleCharactersChange(type: 'insert'|'update'|'delete', row: any) {
-  // The simplest approach: re-fetch entire list. If your data is large, 
-  // you might do a partial approach. But for short lists, this is fine.
-  await loadAllCharacters();
-}
-
-/** Similarly bridging changes might also alter the "complete" data of each char. */
-async function handleBridgingChange(type: 'insert'|'update'|'delete', row: any) {
+async function handleCharactersChange(_type: 'insert'|'update'|'delete', _row: any) {
   await loadAllCharacters();
 }
 
@@ -76,19 +56,20 @@ async function handleBridgingChange(type: 'insert'|'update'|'delete', row: any) 
  * Example "optimistic" for multi-character changes, e.g. if you add a new character or remove.
  * Probably your landing page might just do a normal create or delete though.
  */
-export async function createNewCharacter(name: string) {
-  // 1) optimistic: get old array
-  const old = get(characterList);
+export async function createNewCharacter(_name: string) {
+  // 1) optimistic: get old value
+  let oldValue: CompleteCharacter[] = [];
+  characterList.subscribe(value => { oldValue = value; })();
 
   // 2) create row in DB
   try {
     // Suppose you have an API for creating a new character
-    // or you just do something like: await charactersApi.createRow({ name });
+    // or you just do something like: await gameCharacterApi.createRow({ name });
     // Then re-fetch the entire list or upsert the new result:
     await loadAllCharacters();
   } catch (err) {
     console.error('Failed to create character:', err);
     // revert if needed
-    characterList.set(old);
+    characterList.set(oldValue);
   }
 }

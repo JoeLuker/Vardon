@@ -59,7 +59,7 @@
 				  {character.classes
 					.map(
 					  (rpgClass) =>
-						`${rpgClass?.archetype ?? ''} ${rpgClass?.name ?? ''} ${rpgClass?.level ?? ''}`
+						`${rpgClass?.label ?? ''} ${rpgClass?.level ?? ''}`
 					)
 					.join(', ')}
 				</span>

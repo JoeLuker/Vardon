@@ -9,12 +9,52 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      abp_bonus_types: {
+      ancestral_trait: {
+        Row: {
+          ancestry_id: number | null
+          created_at: string | null
+          id: number
+          is_optional: boolean | null
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_id?: number | null
+          created_at?: string | null
+          id?: number
+          is_optional?: boolean | null
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_id?: number | null
+          created_at?: string | null
+          id?: number
+          is_optional?: boolean | null
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ancestral_trait_ancestry_id_fkey"
+            columns: ["ancestry_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ancestry: {
         Row: {
           created_at: string | null
           id: number
           label: string | null
           name: string
+          size: string
+          speed: number
           updated_at: string | null
         }
         Insert: {
@@ -22,6 +62,8 @@ export type Database = {
           id?: number
           label?: string | null
           name: string
+          size?: string
+          speed?: number
           updated_at?: string | null
         }
         Update: {
@@ -29,46 +71,145 @@ export type Database = {
           id?: number
           label?: string | null
           name?: string
+          size?: string
+          speed?: number
           updated_at?: string | null
         }
         Relationships: []
       }
-      ancestry_ability_modifiers: {
+      ancestry_attribute: {
         Row: {
-          ability_name: string
           ancestry_id: number
+          attribute_id: number
           created_at: string | null
           id: number
+          label: string | null
           modifier: number
+          name: string
           updated_at: string | null
         }
         Insert: {
-          ability_name: string
           ancestry_id: number
+          attribute_id: number
           created_at?: string | null
           id?: number
+          label?: string | null
           modifier: number
+          name: string
           updated_at?: string | null
         }
         Update: {
-          ability_name?: string
           ancestry_id?: number
+          attribute_id?: number
           created_at?: string | null
           id?: number
+          label?: string | null
           modifier?: number
+          name?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "ancestry_ability_modifiers_ancestry_id_fkey"
+            foreignKeyName: "ancestry_attribute_ancestry_id_fkey"
             columns: ["ancestry_id"]
             isOneToOne: false
-            referencedRelation: "base_ancestries"
+            referencedRelation: "ancestry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ancestry_attribute_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "ref_attribute"
             referencedColumns: ["id"]
           },
         ]
       }
-      archetype_feature_replacements: {
+      archetype: {
+        Row: {
+          class_id: number | null
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          class_id?: number | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: number | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archetype_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archetype_class_feature: {
+        Row: {
+          archetype_id: number
+          class_id: number
+          created_at: string | null
+          feature_id: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          archetype_id: number
+          class_id: number
+          created_at?: string | null
+          feature_id: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          archetype_id?: number
+          class_id?: number
+          created_at?: string | null
+          feature_id?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archetype_class_feature_archetype_id_fkey"
+            columns: ["archetype_id"]
+            isOneToOne: false
+            referencedRelation: "archetype"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archetype_class_feature_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archetype_class_feature_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archetype_feature_replacement: {
         Row: {
           archetype_id: number
           created_at: string | null
@@ -98,143 +239,92 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "archetype_feature_replacements_archetype_id_fkey"
+            foreignKeyName: "archetype_feature_replacement_archetype_id_fkey"
             columns: ["archetype_id"]
             isOneToOne: false
-            referencedRelation: "rpg_entities"
+            referencedRelation: "archetype"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "archetype_feature_replacements_new_feature_id_fkey"
+            foreignKeyName: "archetype_feature_replacement_new_feature_id_fkey"
             columns: ["new_feature_id"]
             isOneToOne: false
-            referencedRelation: "rpg_entities"
+            referencedRelation: "class_feature"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "archetype_feature_replacements_replaced_feature_id_fkey"
+            foreignKeyName: "archetype_feature_replacement_replaced_feature_id_fkey"
             columns: ["replaced_feature_id"]
             isOneToOne: false
-            referencedRelation: "rpg_entities"
+            referencedRelation: "class_feature"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_ancestral_traits: {
+      armor: {
         Row: {
-          ancestry_name: string | null
+          arcane_spell_failure_chance: number | null
+          armor_bonus: number
+          armor_check_penalty: number | null
+          armor_type: string
           created_at: string | null
           id: number
-          is_optional: boolean | null
+          label: string | null
+          max_dex: number | null
+          name: string
+          price: number | null
           updated_at: string | null
+          weight: number | null
         }
         Insert: {
-          ancestry_name?: string | null
-          created_at?: string | null
-          id: number
-          is_optional?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          ancestry_name?: string | null
+          arcane_spell_failure_chance?: number | null
+          armor_bonus: number
+          armor_check_penalty?: number | null
+          armor_type: string
           created_at?: string | null
           id?: number
-          is_optional?: boolean | null
+          label?: string | null
+          max_dex?: number | null
+          name: string
+          price?: number | null
           updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_ancestral_traits_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      base_ancestries: {
-        Row: {
-          base_speed: number
-          created_at: string | null
-          id: number
-          size: string
-          updated_at: string | null
-        }
-        Insert: {
-          base_speed?: number
-          created_at?: string | null
-          id: number
-          size?: string
-          updated_at?: string | null
+          weight?: number | null
         }
         Update: {
-          base_speed?: number
+          arcane_spell_failure_chance?: number | null
+          armor_bonus?: number
+          armor_check_penalty?: number | null
+          armor_type?: string
           created_at?: string | null
           id?: number
-          size?: string
+          label?: string | null
+          max_dex?: number | null
+          name?: string
+          price?: number | null
           updated_at?: string | null
+          weight?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "base_ancestries_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      base_archetypes: {
-        Row: {
-          class_id: number | null
-          created_at: string | null
-          id: number
-          updated_at: string | null
-        }
-        Insert: {
-          class_id?: number | null
-          created_at?: string | null
-          id: number
-          updated_at?: string | null
-        }
-        Update: {
-          class_id?: number | null
-          created_at?: string | null
-          id?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_archetypes_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "base_classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "base_archetypes_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      base_attributes: {
+      attribute: {
         Row: {
           attribute_type: string | null
           created_at: string | null
           default_value: number | null
           id: number
           is_core_attribute: boolean | null
+          label: string | null
+          name: string
           updated_at: string | null
         }
         Insert: {
           attribute_type?: string | null
           created_at?: string | null
           default_value?: number | null
-          id: number
+          id?: number
           is_core_attribute?: boolean | null
+          label?: string | null
+          name: string
           updated_at?: string | null
         }
         Update: {
@@ -243,67 +333,106 @@ export type Database = {
           default_value?: number | null
           id?: number
           is_core_attribute?: boolean | null
+          label?: string | null
+          name?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "base_attributes_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      base_buffs: {
+      buff: {
         Row: {
           buff_type_id: number | null
           created_at: string | null
           id: number
+          label: string | null
+          name: string
           updated_at: string | null
         }
         Insert: {
           buff_type_id?: number | null
           created_at?: string | null
-          id: number
+          id?: number
+          label?: string | null
+          name: string
           updated_at?: string | null
         }
         Update: {
           buff_type_id?: number | null
           created_at?: string | null
           id?: number
+          label?: string | null
+          name?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "base_buffs_buff_type_id_fkey"
+            foreignKeyName: "buff_buff_type_id_fkey"
             columns: ["buff_type_id"]
             isOneToOne: false
-            referencedRelation: "buff_types"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "base_buffs_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
+            referencedRelation: "ref_buff_type"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_class_features: {
+      class: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          fortitude: string | null
+          hit_die: number | null
+          id: number
+          label: string | null
+          name: string
+          reflex: string | null
+          skill_ranks_per_level: number | null
+          updated_at: string | null
+          will: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          fortitude?: string | null
+          hit_die?: number | null
+          id?: number
+          label?: string | null
+          name: string
+          reflex?: string | null
+          skill_ranks_per_level?: number | null
+          updated_at?: string | null
+          will?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          fortitude?: string | null
+          hit_die?: number | null
+          id?: number
+          label?: string | null
+          name?: string
+          reflex?: string | null
+          skill_ranks_per_level?: number | null
+          updated_at?: string | null
+          will?: string | null
+        }
+        Relationships: []
+      }
+      class_feature: {
         Row: {
           class_id: number
           created_at: string | null
           feature_level: number
           id: number
+          label: string | null
+          name: string
           updated_at: string | null
         }
         Insert: {
           class_id: number
           created_at?: string | null
           feature_level: number
-          id: number
+          id?: number
+          label?: string | null
+          name: string
           updated_at?: string | null
         }
         Update: {
@@ -311,80 +440,140 @@ export type Database = {
           created_at?: string | null
           feature_level?: number
           id?: number
+          label?: string | null
+          name?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "base_class_features_class_id_fkey"
+            foreignKeyName: "class_feature_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: "base_classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "base_class_features_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
+            referencedRelation: "class"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_classes: {
+      class_skill: {
         Row: {
+          class_id: number
           created_at: string | null
-          fort_save_progression: string | null
-          hit_die: number | null
           id: number
-          ref_save_progression: string | null
-          skill_ranks_per_level: number | null
+          skill_id: number
           updated_at: string | null
-          will_save_progression: string | null
         }
         Insert: {
+          class_id: number
           created_at?: string | null
-          fort_save_progression?: string | null
-          hit_die?: number | null
-          id: number
-          ref_save_progression?: string | null
-          skill_ranks_per_level?: number | null
+          id?: number
+          skill_id: number
           updated_at?: string | null
-          will_save_progression?: string | null
         }
         Update: {
+          class_id?: number
           created_at?: string | null
-          fort_save_progression?: string | null
-          hit_die?: number | null
           id?: number
-          ref_save_progression?: string | null
-          skill_ranks_per_level?: number | null
+          skill_id?: number
           updated_at?: string | null
-          will_save_progression?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "base_classes_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
+            foreignKeyName: "class_skill_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_skill_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skill"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_corruption_manifestations: {
+      consumable: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          description: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      corruption: {
+        Row: {
+          corruption_stage: number | null
+          created_at: string | null
+          id: number
+          label: string | null
+          manifestation_level: number | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          corruption_stage?: number | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          manifestation_level?: number | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          corruption_stage?: number | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          manifestation_level?: number | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      corruption_manifestation: {
         Row: {
           corruption_id: number
           created_at: string | null
           id: number
+          label: string | null
           min_manifestation_level: number
+          name: string
           prerequisite_manifestation: string | null
           updated_at: string | null
         }
         Insert: {
           corruption_id: number
           created_at?: string | null
-          id: number
+          id?: number
+          label?: string | null
           min_manifestation_level?: number
+          name: string
           prerequisite_manifestation?: string | null
           updated_at?: string | null
         }
@@ -392,136 +581,119 @@ export type Database = {
           corruption_id?: number
           created_at?: string | null
           id?: number
+          label?: string | null
           min_manifestation_level?: number
+          name?: string
           prerequisite_manifestation?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "base_corruption_manifestations_corruption_id_fkey"
+            foreignKeyName: "corruption_manifestation_corruption_id_fkey"
             columns: ["corruption_id"]
             isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "base_corruption_manifestations_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
+            referencedRelation: "corruption"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_corruptions: {
-        Row: {
-          corruption_stage: number | null
-          created_at: string | null
-          id: number
-          manifestation_level: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          corruption_stage?: number | null
-          created_at?: string | null
-          id: number
-          manifestation_level?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          corruption_stage?: number | null
-          created_at?: string | null
-          id?: number
-          manifestation_level?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_corruptions_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      base_discoveries: {
+      discovery: {
         Row: {
           created_at: string | null
           discovery_level: number | null
           id: number
+          label: string | null
+          name: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           discovery_level?: number | null
-          id: number
+          id?: number
+          label?: string | null
+          name: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           discovery_level?: number | null
           id?: number
+          label?: string | null
+          name?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "base_discoveries_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      base_equipment: {
+      equipment: {
         Row: {
+          bonus: number | null
+          bonus_type_id: number | null
           cost: number | null
           created_at: string | null
           equipment_category: string | null
+          equippable: boolean | null
           id: number
+          label: string | null
+          name: string
+          slot: string | null
           updated_at: string | null
           weight: number | null
         }
         Insert: {
+          bonus?: number | null
+          bonus_type_id?: number | null
           cost?: number | null
           created_at?: string | null
           equipment_category?: string | null
-          id: number
+          equippable?: boolean | null
+          id?: number
+          label?: string | null
+          name: string
+          slot?: string | null
           updated_at?: string | null
           weight?: number | null
         }
         Update: {
+          bonus?: number | null
+          bonus_type_id?: number | null
           cost?: number | null
           created_at?: string | null
           equipment_category?: string | null
+          equippable?: boolean | null
           id?: number
+          label?: string | null
+          name?: string
+          slot?: string | null
           updated_at?: string | null
           weight?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "base_equipment_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
+            foreignKeyName: "equipment_bonus_type_id_fkey"
+            columns: ["bonus_type_id"]
+            isOneToOne: false
+            referencedRelation: "ref_bonus_type"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_feats: {
+      feat: {
         Row: {
           created_at: string | null
           feat_label: string | null
           feat_type: string | null
           id: number
+          label: string | null
+          name: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           feat_label?: string | null
           feat_type?: string | null
-          id: number
+          id?: number
+          label?: string | null
+          name: string
           updated_at?: string | null
         }
         Update: {
@@ -529,24 +701,927 @@ export type Database = {
           feat_label?: string | null
           feat_type?: string | null
           id?: number
+          label?: string | null
+          name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      game_character: {
+        Row: {
+          created_at: string | null
+          current_hp: number
+          id: number
+          is_offline: boolean | null
+          label: string | null
+          max_hp: number
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_hp?: number
+          id?: number
+          is_offline?: boolean | null
+          label?: string | null
+          max_hp?: number
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_hp?: number
+          id?: number
+          is_offline?: boolean | null
+          label?: string | null
+          max_hp?: number
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_character_abp_bonus: {
+        Row: {
+          bonus_type_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          bonus_type_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+          value?: number
+        }
+        Update: {
+          bonus_type_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+          value?: number
         }
         Relationships: [
           {
-            foreignKeyName: "base_feats_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
+            foreignKeyName: "game_character_abp_bonus_bonus_type_id_fkey"
+            columns: ["bonus_type_id"]
+            isOneToOne: false
+            referencedRelation: "ref_abp_bonus_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_abp_bonus_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
             referencedColumns: ["id"]
           },
         ]
       }
-      base_skills: {
+      game_character_ancestry: {
+        Row: {
+          ancestry_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_ancestry_ancestry_id_fkey"
+            columns: ["ancestry_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_ancestry_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_archetype: {
+        Row: {
+          archetype_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          archetype_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          archetype_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_archetype_archetype_id_fkey"
+            columns: ["archetype_id"]
+            isOneToOne: false
+            referencedRelation: "archetype"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_archetype_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_armor: {
+        Row: {
+          armor_id: number
+          created_at: string | null
+          equipped: boolean | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          armor_id: number
+          created_at?: string | null
+          equipped?: boolean | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          armor_id?: number
+          created_at?: string | null
+          equipped?: boolean | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_armor_armor_id_fkey"
+            columns: ["armor_id"]
+            isOneToOne: false
+            referencedRelation: "armor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_armor_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_attribute: {
+        Row: {
+          attribute_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          attribute_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          attribute_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_attribute_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "attribute"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_attribute_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_class: {
+        Row: {
+          class_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          level: number
+          updated_at: string | null
+        }
+        Insert: {
+          class_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          level: number
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          level?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_class_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_class_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_class_feature: {
+        Row: {
+          class_feature_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          level_obtained: number
+          updated_at: string | null
+        }
+        Insert: {
+          class_feature_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          level_obtained: number
+          updated_at?: string | null
+        }
+        Update: {
+          class_feature_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          level_obtained?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_class_feature_class_feature_id_fkey"
+            columns: ["class_feature_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_class_feature_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_consumable: {
+        Row: {
+          consumable_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          quantity: number
+          updated_at: string | null
+        }
+        Insert: {
+          consumable_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          quantity?: number
+          updated_at?: string | null
+        }
+        Update: {
+          consumable_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          quantity?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_consumable_consumable_id_fkey"
+            columns: ["consumable_id"]
+            isOneToOne: false
+            referencedRelation: "consumable"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_consumable_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_corruption: {
+        Row: {
+          blood_consumed: number
+          blood_required: number
+          corruption_id: number
+          corruption_stage: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          manifestation_level: number
+          updated_at: string | null
+        }
+        Insert: {
+          blood_consumed?: number
+          blood_required?: number
+          corruption_id: number
+          corruption_stage?: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          manifestation_level?: number
+          updated_at?: string | null
+        }
+        Update: {
+          blood_consumed?: number
+          blood_required?: number
+          corruption_id?: number
+          corruption_stage?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          manifestation_level?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_corruption_corruption_id_fkey"
+            columns: ["corruption_id"]
+            isOneToOne: false
+            referencedRelation: "corruption"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_corruption_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_corruption_manifestation: {
+        Row: {
+          active: boolean
+          created_at: string | null
+          game_character_id: number
+          id: number
+          manifestation_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          manifestation_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          manifestation_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_corruption_manifestation_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_corruption_manifestation_manifestation_id_fkey"
+            columns: ["manifestation_id"]
+            isOneToOne: false
+            referencedRelation: "corruption_manifestation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_equipment: {
+        Row: {
+          created_at: string | null
+          equipment_id: number
+          equipped: boolean | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_id: number
+          equipped?: boolean | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_id?: number
+          equipped?: boolean | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_equipment_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_extract: {
+        Row: {
+          created_at: string | null
+          game_character_id: number
+          id: number
+          level: number
+          prepared: number
+          spell_extract_id: number
+          updated_at: string | null
+          used: number
+        }
+        Insert: {
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          level: number
+          prepared?: number
+          spell_extract_id: number
+          updated_at?: string | null
+          used?: number
+        }
+        Update: {
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          level?: number
+          prepared?: number
+          spell_extract_id?: number
+          updated_at?: string | null
+          used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_extract_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_extract_spell_extract_id_fkey"
+            columns: ["spell_extract_id"]
+            isOneToOne: false
+            referencedRelation: "spell_extract"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_favored_class_bonus: {
+        Row: {
+          choice_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          level: number
+          updated_at: string | null
+        }
+        Insert: {
+          choice_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          level: number
+          updated_at?: string | null
+        }
+        Update: {
+          choice_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          level?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_favored_class_bonus_choice_id_fkey"
+            columns: ["choice_id"]
+            isOneToOne: false
+            referencedRelation: "ref_favored_class_choice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_favored_class_bonus_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_feat: {
+        Row: {
+          created_at: string | null
+          feat_id: number
+          game_character_id: number
+          id: number
+          level_obtained: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feat_id: number
+          game_character_id: number
+          id?: number
+          level_obtained?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feat_id?: number
+          game_character_id?: number
+          id?: number
+          level_obtained?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_feat_feat_id_fkey"
+            columns: ["feat_id"]
+            isOneToOne: false
+            referencedRelation: "feat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_feat_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_skill_rank: {
+        Row: {
+          applied_at_level: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          skill_id: number
+          source_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          applied_at_level?: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          skill_id: number
+          source_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          applied_at_level?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          skill_id?: number
+          source_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_skill_rank_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_skill_rank_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skill"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_skill_rank_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "ref_skill_rank_source"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_wild_talent: {
+        Row: {
+          created_at: string | null
+          game_character_id: number
+          id: number
+          level_obtained: number
+          updated_at: string | null
+          wild_talent_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          level_obtained: number
+          updated_at?: string | null
+          wild_talent_id: number
+        }
+        Update: {
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          level_obtained?: number
+          updated_at?: string | null
+          wild_talent_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_wild_talent_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_wild_talent_wild_talent_id_fkey"
+            columns: ["wild_talent_id"]
+            isOneToOne: false
+            referencedRelation: "wild_talent"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      natural_attack: {
+        Row: {
+          attack_count: number | null
+          attack_type: string
+          created_at: string | null
+          damage: string
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          attack_count?: number | null
+          attack_type: string
+          created_at?: string | null
+          damage: string
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          attack_count?: number | null
+          attack_type?: string
+          created_at?: string | null
+          damage?: string
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ref_abp_bonus_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ref_attribute: {
+        Row: {
+          attribute_type: string | null
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          attribute_type?: string | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          attribute_type?: string | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ref_bonus_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ref_buff_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ref_favored_class_choice: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ref_skill_rank_source: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      skill: {
         Row: {
           ability: string
           armor_check_penalty: boolean | null
           created_at: string | null
           id: number
+          label: string | null
+          name: string
           trained_only: boolean | null
           updated_at: string | null
         }
@@ -554,7 +1629,9 @@ export type Database = {
           ability: string
           armor_check_penalty?: boolean | null
           created_at?: string | null
-          id: number
+          id?: number
+          label?: string | null
+          name: string
           trained_only?: boolean | null
           updated_at?: string | null
         }
@@ -563,546 +1640,166 @@ export type Database = {
           armor_check_penalty?: boolean | null
           created_at?: string | null
           id?: number
+          label?: string | null
+          name?: string
           trained_only?: boolean | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "base_skills_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      base_traits: {
-        Row: {
-          created_at: string | null
-          id: number
-          trait_type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: number
-          trait_type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          trait_type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_traits_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      base_wild_talents: {
-        Row: {
-          created_at: string | null
-          id: number
-          talent_level: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: number
-          talent_level?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          talent_level?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_wild_talents_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bonus_types: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
         Relationships: []
       }
-      buff_types: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      character_rpg_entities: {
-        Row: {
-          character_id: number
-          created_at: string | null
-          entity_id: number
-          id: number
-          is_active: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          character_id: number
-          created_at?: string | null
-          entity_id: number
-          id?: number
-          is_active?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          character_id?: number
-          created_at?: string | null
-          entity_id?: number
-          id?: number
-          is_active?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_rpg_entities_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "character_rpg_entities_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_rpg_entity_properties: {
-        Row: {
-          character_rpg_entity_id: number
-          created_at: string | null
-          id: number
-          property_key: string
-          property_value: string
-          updated_at: string | null
-        }
-        Insert: {
-          character_rpg_entity_id: number
-          created_at?: string | null
-          id?: number
-          property_key: string
-          property_value: string
-          updated_at?: string | null
-        }
-        Update: {
-          character_rpg_entity_id?: number
-          created_at?: string | null
-          id?: number
-          property_key?: string
-          property_value?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_rpg_entity_properties_character_rpg_entity_id_fkey"
-            columns: ["character_rpg_entity_id"]
-            isOneToOne: false
-            referencedRelation: "character_rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      character_skill_ranks: {
-        Row: {
-          applied_at_level: number
-          character_id: number
-          created_at: string | null
-          id: number
-          skill_id: number
-          source_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          applied_at_level?: number
-          character_id: number
-          created_at?: string | null
-          id?: number
-          skill_id: number
-          source_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          applied_at_level?: number
-          character_id?: number
-          created_at?: string | null
-          id?: number
-          skill_id?: number
-          source_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_skill_ranks_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "character_skill_ranks_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "base_skills"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "character_skill_ranks_source_id_fkey"
-            columns: ["source_id"]
-            isOneToOne: false
-            referencedRelation: "skill_rank_sources"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      characters: {
-        Row: {
-          created_at: string | null
-          current_hp: number
-          id: number
-          is_offline: boolean | null
-          max_hp: number
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          current_hp?: number
-          id?: number
-          is_offline?: boolean | null
-          max_hp?: number
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          current_hp?: number
-          id?: number
-          is_offline?: boolean | null
-          max_hp?: number
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      class_skill_relations: {
-        Row: {
-          class_id: number | null
-          created_at: string | null
-          id: number
-          skill_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          class_id?: number | null
-          created_at?: string | null
-          id?: number
-          skill_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          class_id?: number | null
-          created_at?: string | null
-          id?: number
-          skill_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "class_skill_relations_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "base_classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_skill_relations_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "base_skills"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      conditional_bonuses: {
-        Row: {
-          apply_to: string
-          bonus_type_id: number
-          condition: string | null
-          created_at: string | null
-          entity_id: number
-          id: number
-          updated_at: string | null
-          value: number
-        }
-        Insert: {
-          apply_to: string
-          bonus_type_id: number
-          condition?: string | null
-          created_at?: string | null
-          entity_id: number
-          id?: number
-          updated_at?: string | null
-          value: number
-        }
-        Update: {
-          apply_to?: string
-          bonus_type_id?: number
-          condition?: string | null
-          created_at?: string | null
-          entity_id?: number
-          id?: number
-          updated_at?: string | null
-          value?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conditional_bonuses_bonus_type_id_fkey"
-            columns: ["bonus_type_id"]
-            isOneToOne: false
-            referencedRelation: "bonus_types"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conditional_bonuses_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      entity_prerequisites: {
-        Row: {
-          created_at: string | null
-          entity_id: number
-          id: number
-          prereq_type: string | null
-          prereq_value: string | null
-          required_entity_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          entity_id: number
-          id?: number
-          prereq_type?: string | null
-          prereq_value?: string | null
-          required_entity_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          entity_id?: number
-          id?: number
-          prereq_type?: string | null
-          prereq_value?: string | null
-          required_entity_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "entity_prerequisites_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "entity_prerequisites_required_entity_id_fkey"
-            columns: ["required_entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      favored_class_choices: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      natural_attacks: {
-        Row: {
-          attack_count: number | null
-          attack_type: string
-          created_at: string | null
-          damage: string
-          entity_id: number
-          id: number
-          updated_at: string | null
-        }
-        Insert: {
-          attack_count?: number | null
-          attack_type: string
-          created_at?: string | null
-          damage: string
-          entity_id: number
-          id?: number
-          updated_at?: string | null
-        }
-        Update: {
-          attack_count?: number | null
-          attack_type?: string
-          created_at?: string | null
-          damage?: string
-          entity_id?: number
-          id?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "natural_attacks_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rpg_entities: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          entity_type: string
-          id: number
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          entity_type: string
-          id?: number
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          entity_type?: string
-          id?: number
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      skill_bonuses: {
+      skill_bonus: {
         Row: {
           bonus: number
           created_at: string | null
-          entity_id: number
           id: number
+          label: string | null
+          name: string
           skill_name: string
           updated_at: string | null
         }
         Insert: {
           bonus: number
           created_at?: string | null
-          entity_id: number
           id?: number
+          label?: string | null
+          name: string
           skill_name: string
           updated_at?: string | null
         }
         Update: {
           bonus?: number
           created_at?: string | null
-          entity_id?: number
           id?: number
+          label?: string | null
+          name?: string
           skill_name?: string
           updated_at?: string | null
         }
+        Relationships: []
+      }
+      spell: {
+        Row: {
+          casting_time: string | null
+          created_at: string | null
+          description: string | null
+          duration: string | null
+          id: number
+          level: number
+          name: string
+          school: string | null
+          spell_range: string | null
+          target: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          casting_time?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration?: string | null
+          id?: number
+          level: number
+          name: string
+          school?: string | null
+          spell_range?: string | null
+          target?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          casting_time?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration?: string | null
+          id?: number
+          level?: number
+          name?: string
+          school?: string | null
+          spell_range?: string | null
+          target?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_consumable: {
+        Row: {
+          caster_level: number | null
+          cost: number | null
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+          spell_id: number | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          caster_level?: number | null
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name: string
+          spell_id?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          caster_level?: number | null
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name?: string
+          spell_id?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "skill_bonuses_entity_id_fkey"
-            columns: ["entity_id"]
+            foreignKeyName: "spell_consumable_spell_id_fkey"
+            columns: ["spell_id"]
             isOneToOne: false
-            referencedRelation: "rpg_entities"
+            referencedRelation: "spell"
             referencedColumns: ["id"]
           },
         ]
       }
-      skill_rank_sources: {
+      spell_extract: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          label: string | null
+          level: number | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          level?: number | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          level?: number | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      trait: {
         Row: {
           created_at: string | null
           id: number
           label: string | null
           name: string
+          trait_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1110,6 +1807,7 @@ export type Database = {
           id?: number
           label?: string | null
           name: string
+          trait_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1117,41 +1815,100 @@ export type Database = {
           id?: number
           label?: string | null
           name?: string
+          trait_type?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
-      weapon_proficiencies: {
+      weapon: {
         Row: {
           created_at: string | null
-          entity_id: number
+          crit_mult: number
+          crit_range: number
+          damage_die_count: number
+          damage_die_size: number
           id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          crit_mult?: number
+          crit_range?: number
+          damage_die_count?: number
+          damage_die_size?: number
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          crit_mult?: number
+          crit_range?: number
+          damage_die_count?: number
+          damage_die_size?: number
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      weapon_proficiency: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
           updated_at: string | null
           weapon_name: string
         }
         Insert: {
           created_at?: string | null
-          entity_id: number
           id?: number
+          label?: string | null
+          name: string
           updated_at?: string | null
           weapon_name: string
         }
         Update: {
           created_at?: string | null
-          entity_id?: number
           id?: number
+          label?: string | null
+          name?: string
           updated_at?: string | null
           weapon_name?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "weapon_proficiencies_entity_id_fkey"
-            columns: ["entity_id"]
-            isOneToOne: false
-            referencedRelation: "rpg_entities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      wild_talent: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          talent_level: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          talent_level?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          talent_level?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

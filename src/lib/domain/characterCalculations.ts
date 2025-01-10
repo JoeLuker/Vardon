@@ -27,6 +27,14 @@ export interface EnrichedCharacter extends CompleteCharacter {
     reflex: number;
     will: number;
   };
+
+
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
   
   // Derived attribute modifiers
   str_mod: number;
@@ -75,9 +83,9 @@ function calculateBaseSaves(rawCharacter: CompleteCharacter) {
 
   // Calculate base saves for each type
   return {
-    fortitude: calculateSaveBonus(rawCharacter.classes, 'fort_save_progression'),
-    reflex: calculateSaveBonus(rawCharacter.classes, 'ref_save_progression'), 
-    will: calculateSaveBonus(rawCharacter.classes, 'will_save_progression')
+    fortitude: calculateSaveBonus(rawCharacter.classes, 'fortitude'),
+    reflex: calculateSaveBonus(rawCharacter.classes, 'reflex'), 
+    will: calculateSaveBonus(rawCharacter.classes, 'will')
   };
 }
 
@@ -100,19 +108,48 @@ function getAllClassSkillIds(rawCharacter: CompleteCharacter): Set<number> {
   return classSkillIds;
 }
 
+// New helper functions
+const ABP_MAP_BY_ATTR_NAME: Record<string, string> = {
+  strength: 'physical_prowess_str',
+  dexterity: 'physical_prowess_dex',
+  constitution: 'physical_prowess_con',
+  intelligence: 'mental_prowess_int',
+  wisdom: 'mental_prowess_wis',
+  charisma: 'mental_prowess_cha'
+};
+
+function getAbpBonusValueByName(char: CompleteCharacter, bonusName: string): number {
+  const byName = char.references?.abpBonusTypes?.byName;
+  if (!byName) return 0;
+  
+  const bonusTypeId = byName[bonusName];
+  if (!bonusTypeId) return 0;
+  
+  const match = char.abpBonuses?.find(b => b.bonus_type_id === bonusTypeId);
+  return match?.value ?? 0;
+}
+
 export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCharacter {
-  // 1) Calculate attribute modifiers
+  // Modified attribute getter to use string-based ABP lookup
   const getAttrValue = (attrName: string) => {
-    const found = rawCharacter.attributes.find(a => a.name === attrName);
-    return found?.value ? Number(found.value) : 10;
+    const found = rawCharacter.attributes?.find(
+      a => a.base?.name?.toLowerCase() === attrName.toLowerCase()
+    );
+    const baseValue = found?.value ? Number(found.value) : 10;
+    
+    const abpName = ABP_MAP_BY_ATTR_NAME[attrName.toLowerCase()];
+    if (!abpName) return baseValue;
+    
+    const abpBonus = getAbpBonusValueByName(rawCharacter, abpName);
+    return baseValue + abpBonus;
   };
 
-  const str = getAttrValue('Strength');
-  const dex = getAttrValue('Dexterity');
-  const con = getAttrValue('Constitution');
-  const int = getAttrValue('Intelligence');
-  const wis = getAttrValue('Wisdom');
-  const cha = getAttrValue('Charisma');
+  const str = getAttrValue('strength');
+  const dex = getAttrValue('dexterity');
+  const con = getAttrValue('constitution');
+  const int = getAttrValue('intelligence');
+  const wis = getAttrValue('wisdom');
+  const cha = getAttrValue('charisma');
 
   const str_mod = getAttributeModifier(str);
   const dex_mod = getAttributeModifier(dex);
@@ -130,9 +167,12 @@ export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCh
 
   // 3) Saving Throws
   const baseSaves = calculateBaseSaves(rawCharacter);
-  const fortitude = baseSaves.fortitude + con_mod;
-  const reflex = baseSaves.reflex + dex_mod;
-  const will = baseSaves.will + wis_mod;
+  
+  // Updated saves to include resistance bonus
+  const abpResistance = getAbpBonusValueByName(rawCharacter, 'resistance');
+  const fortitude = baseSaves.fortitude + con_mod + abpResistance;
+  const reflex = baseSaves.reflex + dex_mod + abpResistance;
+  const will = baseSaves.will + wis_mod + abpResistance;
 
   const saves = {
     base: baseSaves,
@@ -141,14 +181,22 @@ export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCh
     will
   };
 
-
   // 4) Armor Class
-  //    If the character has the Dodge feat, we add +1
+  const abpArmorBonus = getAbpBonusValueByName(rawCharacter, 'armor_attunement');
+  const abpDeflectionBonus = getAbpBonusValueByName(rawCharacter, 'deflection');
   const hasDodgeFeat = rawCharacter.feats.some(f => f.name === 'Dodge');
-  const baseAC = 10 + dex_mod + (hasDodgeFeat ? 1 : 0);
-  const ac = baseAC;
-  const touch_ac = baseAC; // no armor or shield being factored here
-  const flat_footed_ac = baseAC - dex_mod; // lose Dex to AC when flat-footed
+
+  // Base AC without situational bonuses
+  const baseAC = 10 + abpArmorBonus + abpDeflectionBonus;
+  
+  // Normal AC includes everything
+  const ac = baseAC + dex_mod + (hasDodgeFeat ? 1 : 0);
+  
+  // Touch AC loses armor bonus
+  const touch_ac = 10 + dex_mod + (hasDodgeFeat ? 1 : 0) + abpDeflectionBonus;
+  
+  // Flat-footed loses Dex bonus AND dodge bonus
+  const flat_footed_ac = baseAC + abpDeflectionBonus;
 
   // 5) CMB/CMD
   const cmb = str_mod + level;
@@ -199,6 +247,12 @@ export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCh
     cmb,
     initiative,
     saves,
+    str,
+    dex,
+    con,
+    int,
+    wis,
+    cha,
     str_mod,
     dex_mod,
     con_mod,

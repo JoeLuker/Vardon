@@ -7,16 +7,22 @@
 
 	const showModifierFirst = writable(false);
 
-	function getAbilityModifier(baseVal: number): number {
-		return Math.floor((baseVal - 10) / 2);
-	}
+	// Type-safe mapping of attribute names to their property keys
+	const attributeMap = {
+		Strength: { score: 'str', mod: 'str_mod' },
+		Dexterity: { score: 'dex', mod: 'dex_mod' },
+		Constitution: { score: 'con', mod: 'con_mod' },
+		Intelligence: { score: 'int', mod: 'int_mod' },
+		Wisdom: { score: 'wis', mod: 'wis_mod' },
+		Charisma: { score: 'cha', mod: 'cha_mod' }
+	} as const;
 
 	let abilityMods = $derived(
-		$characterStore?.attributes?.map((attr) => ({
-			name: attr.name,
-			value: attr.value ?? 10,
-			mod: getAbilityModifier(attr.value ?? 10)
-		})) ?? []
+		Object.entries(attributeMap).map(([name, mapping]) => ({
+			name,
+			value: $characterStore?.[mapping.score] ?? 10,
+			mod: $characterStore?.[mapping.mod] ?? 0
+		}))
 	);
 </script>
 

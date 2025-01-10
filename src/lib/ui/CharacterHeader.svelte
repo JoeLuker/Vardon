@@ -18,11 +18,11 @@
 					<Badge variant="secondary">Level {$characterStore.classes[0].level}</Badge>
 					
 					<span class="text-muted-foreground">
-						{$characterStore.ancestry?.name ?? '???'}
+						{$characterStore.ancestry?.base?.label ?? '???'}
 						{#if $characterStore.classes?.length}
 							{':'} 
 							{$characterStore.classes
-								.map((c) => c.name ?? '???')
+								.map((c) => c.base?.label ?? '???')
 								.join(', ')}
 						{/if}
 					</span>
