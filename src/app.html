@@ -6,7 +6,10 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
 			let darkMode = localStorage.getItem('darkMode');
-			if (darkMode === 'true' || (!darkMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+			if (
+				darkMode === 'true' ||
+				(!darkMode && window.matchMedia('(prefers-color-scheme: dark)').matches)
+			) {
 				document.documentElement.classList.add('dark');
 				localStorage.setItem('darkMode', 'true');
 			} else {

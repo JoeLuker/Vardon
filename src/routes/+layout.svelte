@@ -3,16 +3,16 @@
 	import { cn } from '$lib/utils';
 	import { Menu, X } from 'lucide-svelte';
 	import ThemeToggle from '$lib/components/ui/theme-toggle.svelte';
-	import { Button } from "$lib/components/ui/button";
-	import { 
+	import { Button } from '$lib/components/ui/button';
+	import {
 		characterList as multiCharStore,
 		initMultiCharWatchers,
 		loadAllCharacters,
-		cleanupMultiCharWatchers 
+		cleanupMultiCharWatchers
 	} from '$lib/state/multiCharacterStore';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	
+
 	// State for sidebar visibility
 	let isSidebarOpen = false;
 
@@ -35,7 +35,7 @@
 	// Initialize character list on mount
 	onMount(() => {
 		initMultiCharWatchers();
-		
+
 		// Load characters and update loading state
 		loadAllCharacters()
 			.then(() => {
@@ -54,8 +54,8 @@
 
 <!-- Add backdrop overlay -->
 {#if isSidebarOpen}
-	<div 
-		class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-opacity duration-200"
+	<div
+		class="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
 		onclick={handleOutsideClick}
 		onkeydown={handleOutsideClick}
 		role="button"
@@ -63,16 +63,12 @@
 	></div>
 {/if}
 
-<div class="min-h-screen bg-background text-foreground relative overflow-hidden">
+<div class="relative min-h-screen overflow-hidden bg-background text-foreground">
 	<!-- Header -->
 	<header class="h-16 border-b bg-background/95 backdrop-blur">
-		<div class="container h-full flex items-center justify-between">
+		<div class="container flex h-full items-center justify-between">
 			<!-- Left side: Nav button -->
-			<Button 
-				variant="ghost"
-				size="icon"
-				onclick={() => isSidebarOpen = !isSidebarOpen}
-			>
+			<Button variant="ghost" size="icon" onclick={() => (isSidebarOpen = !isSidebarOpen)}>
 				<Menu class="h-4 w-4" />
 			</Button>
 
@@ -82,37 +78,36 @@
 	</header>
 
 	<!-- Sidebar -->
-	<aside class={cn(
-		"fixed top-0 left-0 w-64 h-screen bg-sidebar border-r",
-		"transform transition-all duration-300 ease-in-out z-40",
-		isSidebarOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
-	)}>
+	<aside
+		class={cn(
+			'fixed left-0 top-0 h-screen w-64 border-r bg-sidebar',
+			'z-40 transform transition-all duration-300 ease-in-out',
+			isSidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'
+		)}
+	>
 		<!-- Add sidebar header -->
-		<div class="h-16 border-b flex items-center justify-between px-4">
+		<div class="flex h-16 items-center justify-between border-b px-4">
 			<span class="font-semibold">Navigation</span>
-			<Button 
-				variant="ghost" 
-				size="icon"
-				onclick={() => isSidebarOpen = false}
-			>
+			<Button variant="ghost" size="icon" onclick={() => (isSidebarOpen = false)}>
 				<X class="h-4 w-4" />
 			</Button>
 		</div>
 
-		<nav class="p-4 space-y-2">
+		<nav class="space-y-2 p-4">
 			{#if isLoading}
 				<p class="px-4 py-2 text-muted-foreground">Loading characters...</p>
 			{:else if $multiCharStore?.length}
 				{#each $multiCharStore as character}
-					<button 
-						class="block w-full text-left px-4 py-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground"
+					<button
+						class="block w-full rounded-md px-4 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 						onclick={() => handleCharacterClick(character.id)}
 					>
-						{character.name}
+						{character.label}
 						<div class="text-xs text-muted-foreground">
 							{character.classes
-								.map(rpgClass => 
-									`${rpgClass?.archetype ?? ''} ${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`
+								.map(
+									(rpgClass) =>
+										`${rpgClass?.archetype ?? ''} ${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`
 								)
 								.join(', ')}
 						</div>
@@ -126,13 +121,15 @@
 
 	<!-- Main content -->
 	<div class="relative z-10">
-		<main class={cn(
-			"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8",
-			"prose dark:prose-invert max-w-none",
-			"prose-headings:font-display prose-headings:text-foreground prose-headings:mt-0",
-			"prose-p:text-foreground prose-p:mt-2 prose-strong:text-foreground",
-			"prose-a:text-accent hover:prose-a:text-accent-foreground"
-		)}>
+		<main
+			class={cn(
+				'mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8',
+				'prose dark:prose-invert max-w-none',
+				'prose-headings:font-display prose-headings:text-foreground prose-headings:mt-0',
+				'prose-p:text-foreground prose-p:mt-2 prose-strong:text-foreground',
+				'prose-a:text-accent hover:prose-a:text-accent-foreground'
+			)}
+		>
 			<slot />
 		</main>
 	</div>

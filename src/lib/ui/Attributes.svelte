@@ -4,31 +4,123 @@
 	import { writable } from 'svelte/store';
 	import { StretchHorizontal } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
+	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
 
 	const showModifierFirst = writable(false);
 
 	// Type-safe mapping of attribute names to their property keys
 	const attributeMap = {
-		Strength: { score: 'str', mod: 'str_mod' },
-		Dexterity: { score: 'dex', mod: 'dex_mod' },
-		Constitution: { score: 'con', mod: 'con_mod' },
-		Intelligence: { score: 'int', mod: 'int_mod' },
-		Wisdom: { score: 'wis', mod: 'wis_mod' },
-		Charisma: { score: 'cha', mod: 'cha_mod' }
+		Strength: { score: 'strength', mod: 'strength.total' },
+		Dexterity: { score: 'dexterity', mod: 'dexterity.total' },
+		Constitution: { score: 'constitution', mod: 'constitution.total' },
+		Intelligence: { score: 'intelligence', mod: 'intelligence.total' },
+		Wisdom: { score: 'wisdom', mod: 'wisdom.total' },
+		Charisma: { score: 'charisma', mod: 'charisma.total' }
 	} as const;
 
-	let abilityMods = $derived(
-		Object.entries(attributeMap).map(([name, mapping]) => ({
-			name,
-			value: $characterStore?.[mapping.score] ?? 10,
-			mod: $characterStore?.[mapping.mod] ?? 0
-		}))
-	);
+	let abilityMods = $derived([
+		{
+			name: 'Strength',
+			value: $characterStore?.strength?.total ?? 10,
+			mod: $characterStore?.strMod ?? 0
+		},
+		{
+			name: 'Dexterity',
+			value: $characterStore?.dexterity?.total ?? 10,
+			mod: $characterStore?.dexMod ?? 0
+		},
+		{
+			name: 'Constitution',
+			value: $characterStore?.constitution?.total ?? 10,
+			mod: $characterStore?.conMod ?? 0
+		},
+		{
+			name: 'Intelligence',
+			value: $characterStore?.intelligence?.total ?? 10,
+			mod: $characterStore?.intMod ?? 0
+		},
+		{
+			name: 'Wisdom',
+			value: $characterStore?.wisdom?.total ?? 10,
+			mod: $characterStore?.wisMod ?? 0
+		},
+		{
+			name: 'Charisma',
+			value: $characterStore?.charisma?.total ?? 10,
+			mod: $characterStore?.chaMod ?? 0
+		}
+	]);
+
+	let { onSelectValue = () => {} } = $props<{
+		onSelectValue?: (breakdown: ValueWithBreakdown) => void;
+	}>();
 </script>
+
+{#if $characterStore}
+	<div class="card">
+		<div class="flex flex-col gap-4">
+			<div class="flex items-start justify-between">
+				<div class="flex-grow"></div>
+				<Button
+					variant="ghost"
+					size="icon"
+					class="opacity-50 transition-opacity hover:opacity-100"
+					onclick={() => ($showModifierFirst = !$showModifierFirst)}
+				>
+					<span class="sr-only">Show modifiers first</span>
+					<StretchHorizontal
+						class={`h-4 w-4 transition-transform duration-200 ${$showModifierFirst ? 'rotate-180' : ''}`}
+					/>
+				</Button>
+			</div>
+
+			<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
+				{#each abilityMods as abilityMod}
+					<button
+						class="attribute-card"
+						type="button"
+						onclick={() =>
+							onSelectValue(
+								$characterStore[attributeMap[abilityMod.name as keyof typeof attributeMap].score]
+							)}
+					>
+						<div class="card-inner">
+							<div class="attribute-name">{abilityMod.name}</div>
+							{#if $showModifierFirst}
+								<div class="primary-value modifier">
+									{abilityMod.mod >= 0 ? '+' : ''}{abilityMod.mod}
+								</div>
+								<div class="secondary-value score">
+									{abilityMod.value}
+								</div>
+							{:else}
+								<div class="primary-value score">
+									{abilityMod.value}
+								</div>
+								<div class="secondary-value modifier">
+									<span>{abilityMod.mod >= 0 ? '+' : ''}{abilityMod.mod}</span>
+								</div>
+							{/if}
+						</div>
+					</button>
+				{/each}
+			</div>
+		</div>
+	</div>
+{:else}
+	<div class="card">
+		<div class="flex items-center justify-center space-x-2 text-primary/70">
+			<div
+				class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
+			></div>
+			<p>Loading attributes...</p>
+		</div>
+	</div>
+{/if}
 
 <style lang="postcss">
 	.attribute-card {
-		@apply relative transition-transform duration-200 rounded-lg border shadow-sm bg-card;
+		@apply relative rounded-lg border bg-card shadow-sm transition-transform duration-200;
 		border-color: hsl(var(--border) / 0.2);
 
 		&:hover {
@@ -37,7 +129,7 @@
 	}
 
 	.card-inner {
-		@apply p-4 flex flex-col items-center space-y-2;
+		@apply flex flex-col items-center space-y-2 p-4;
 	}
 
 	.attribute-name {
@@ -53,11 +145,11 @@
 	}
 
 	.toggle-switch {
-		@apply relative w-11 h-6 bg-secondary rounded-full cursor-pointer transition-colors duration-200;
+		@apply relative h-6 w-11 cursor-pointer rounded-full bg-secondary transition-colors duration-200;
 
 		&::after {
 			content: '';
-			@apply w-5 h-5 bg-background rounded-full shadow-md absolute left-0.5 top-0.5 transition-transform duration-200;
+			@apply absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-background shadow-md transition-transform duration-200;
 		}
 
 		&.checked {
@@ -73,55 +165,3 @@
 		}
 	}
 </style>
-
-{#if $characterStore}
-	<div class="card space-y-6">
-		<div class="section-header flex items-center justify-between">
-			<h2 class="section-title text-lg font-semibold text-foreground">Attributes</h2>
-			<Button
-				variant="ghost"
-				size="icon"
-				class="relative inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80"
-				onclick={() => $showModifierFirst = !$showModifierFirst}
-			>
-				<span class="sr-only">Show modifiers first</span>
-				<StretchHorizontal
-					class={`w-5 h-5 transition-transform duration-200 ${$showModifierFirst ? 'rotate-180' : ''}`}
-				/>
-			</Button>
-		</div>
-
-		<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
-			{#each abilityMods as abilityMod}
-				<div class="attribute-card">
-					<div class="card-inner">
-						<div class="attribute-name">{abilityMod.name}</div>
-						{#if $showModifierFirst}
-							<div class="primary-value modifier">
-								{abilityMod.mod >= 0 ? '+' : ''}{abilityMod.mod}
-							</div>
-							<div class="secondary-value score">
-								{abilityMod.value}
-							</div>
-						{:else}
-							<div class="primary-value score">
-								{abilityMod.value}
-							</div>
-							<div class="secondary-value modifier">
-								<span>{abilityMod.mod >= 0 ? '+' : ''}{abilityMod.mod}</span>
-							</div>
-						{/if}
-					</div>
-				</div>
-			{/each}
-		</div>
-	</div>
-{:else}
-	<div class="card">
-		<div class="flex items-center justify-center space-x-2 text-primary/70">
-			<div class="animate-spin h-5 w-5 border-2 border-primary/20 border-t-primary rounded-full"></div>
-			<p>Loading attributes...</p>
-		</div>
-	</div>
-{/if}
-  

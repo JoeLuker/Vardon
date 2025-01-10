@@ -1,264 +1,388 @@
 /******************************************************************************
  * FILE: src/lib/state/characterCalculations.ts
  *
- * This file is responsible for adding "calculated" fields to a plain
- * CompleteCharacter object or turning it into a "reactive" object with Svelte 5 runes.
+ * In this version, each attribute/saving throw/etc. is stored as a ValueWithBreakdown
+ * object. For example, `character.ac` is not a plain number, but an object:
+ *
+ *   {
+ *     name: "AC",
+ *     base: 10,
+ *     modifiers: [ { source: "Dex mod", value: 3 }, ... ],
+ *     total: 17
+ *   }
+ *
+ * So if you need the numeric total, do `character.ac.total`.
+ * If you need details, do `character.ac.modifiers`.
  *****************************************************************************/
 
 import type { CompleteCharacter } from '$lib/db/getCompleteCharacter';
 
-export interface EnrichedCharacter extends CompleteCharacter {
-  // Combat stats
-  ac: number;
-  touch_ac: number;
-  flat_footed_ac: number;
-  cmd: number;
-  cmb: number;
-  initiative: number;
-  
-  // Saving throws
-  saves: {
-    base: {
-      fortitude: number;
-      reflex: number;
-      will: number;
-    };
-    fortitude: number;
-    reflex: number;
-    will: number;
-  };
-
-
-  str: number;
-  dex: number;
-  con: number;
-  int: number;
-  wis: number;
-  cha: number;
-  
-  // Derived attribute modifiers
-  str_mod: number;
-  dex_mod: number;
-  con_mod: number;
-  int_mod: number;
-  wis_mod: number;
-  cha_mod: number;
-  
-  // Skill calculations
-  skill_modifiers: Record<number, number>; // skillId -> total modifier
-}
-
-function getAttributeModifier(score: number): number {
-  return Math.floor((score - 10) / 2);
-}
-
-function calculateBaseSaves(rawCharacter: CompleteCharacter) {
-  /**
-   * Calculates base saving throw bonuses for a character's classes
-   * - Good saves: Base = 2 + level/2
-   * - Poor saves: Base = level/3
-   */
-  const calculateSaveBonus = (classes: any[], saveProgressionKey: string): number => {
-    let totalBonus = 0;
-
-    // Calculate bonus from each class
-    for (const cls of classes) {
-      
-      const level = Number(cls.level) || 1;
-      const isGoodSave = cls.base[saveProgressionKey] === "good";
-      
-      if (isGoodSave) {
-        totalBonus += 2;
-        totalBonus += level / 2; // Good save progression with +2 added
-      } else {
-        totalBonus += level / 3; // Poor save progression
-      }
-    }
-
-    rawCharacter.abpBonuses
-
-    // Round down total
-    return Math.floor(totalBonus);
-  };
-
-  // Calculate base saves for each type
-  return {
-    fortitude: calculateSaveBonus(rawCharacter.classes, 'fortitude'),
-    reflex: calculateSaveBonus(rawCharacter.classes, 'reflex'), 
-    will: calculateSaveBonus(rawCharacter.classes, 'will')
-  };
+/**
+ * The shape of each stat. You can call `.total` to get the numeric result,
+ * or look at `.modifiers` to see how that result was computed.
+ */
+export interface ValueWithBreakdown {
+	label: string;
+	modifiers: Array<{ source: string; value: number }>;
+	total: number;
 }
 
 /**
- * Collects all class skill IDs from all of the character’s classes.
- * If a character is multi-classed, we union them. 
+ * A "character" object that merges the raw DB fields with
+ * newly computed fields. Instead of plain numbers, we store
+ * ValueWithBreakdown for each stat.
  */
-function getAllClassSkillIds(rawCharacter: CompleteCharacter): Set<number> {
-  const classSkillIds = new Set<number>();
+export interface EnrichedCharacter extends CompleteCharacter {
+	// Abilities
+	strength: ValueWithBreakdown;
+	dexterity: ValueWithBreakdown;
+	constitution: ValueWithBreakdown;
+	intelligence: ValueWithBreakdown;
+	wisdom: ValueWithBreakdown;
+	charisma: ValueWithBreakdown;
 
-  for (const cls of rawCharacter.classes || []) {
-    // If the class object has a property like cls.class_skills = [28, 31, ...],
-    // we add them all to the set:
-    if (Array.isArray(cls.class_skills)) {
-      cls.class_skills.forEach(skillId => {
-        classSkillIds.add(skillId);
-      });
-    }
-  }
-  return classSkillIds;
+	strMod: number;
+	dexMod: number;
+	conMod: number;
+	intMod: number;
+	wisMod: number;
+	chaMod: number;
+
+	// Derived numeric stats
+	saves: {
+		fortitude: ValueWithBreakdown;
+		reflex: ValueWithBreakdown;
+		will: ValueWithBreakdown;
+	};
+
+	ac: ValueWithBreakdown;
+	touch_ac: ValueWithBreakdown;
+	flat_footed_ac: ValueWithBreakdown;
+	initiative: ValueWithBreakdown;
+
+	// If you want CMB/CMD as separate ValueWithBreakdown objects, you can do that:
+	cmb: ValueWithBreakdown;
+	cmd: ValueWithBreakdown;
+
+	/**
+	 * skill_modifiers is optional if you prefer a single numeric value,
+	 * or you can store each as a ValueWithBreakdown as well in "skills."
+	 */
+	skills: Record<number, ValueWithBreakdown>;
+
+	// Alternatively, you could do "attributes" or "calculation by name" if you want.
+
+	attacks: {
+		melee: ValueWithBreakdown;
+		ranged: ValueWithBreakdown;
+		bomb: {
+			attack: ValueWithBreakdown;
+			damage: ValueWithBreakdown;
+		};
+	};
 }
 
-// New helper functions
-const ABP_MAP_BY_ATTR_NAME: Record<string, string> = {
-  strength: 'physical_prowess_str',
-  dexterity: 'physical_prowess_dex',
-  constitution: 'physical_prowess_con',
-  intelligence: 'mental_prowess_int',
-  wisdom: 'mental_prowess_wis',
-  charisma: 'mental_prowess_cha'
+/** Quick helper to get the numeric ability modifier from a score, e.g. 14 -> +2. */
+function abilityMod(score: number): number {
+	return Math.floor((score - 10) / 2);
+}
+
+/**
+ * Create a "ValueWithBreakdown" builder. You start with a base (like 10 for AC),
+ * then call `.add("Dex mod", 3)`, etc. Finally call `.finalize()` to get the object.
+ */
+function createStatBuilder(label: string) {
+	const modifiers: Array<{ source: string; value: number }> = [];
+
+	return {
+		add(source: string, value: number) {
+			if (value !== 0) {
+				modifiers.push({ source, value });
+			}
+		},
+		finalize(): ValueWithBreakdown {
+			const sum = modifiers.reduce((acc, m) => acc + m.value, 0);
+			return {
+				label,
+				modifiers,
+				total: sum
+			};
+		}
+	};
+}
+
+/**
+ * If your database has special ABP bonus types like "physical_prowess_str",
+ * you can look them up here. Tweak as needed.
+ */
+const ABP_MAP_BY_ATTR: Record<string, string> = {
+	strength: 'physical_prowess_str',
+	dexterity: 'physical_prowess_dex',
+	constitution: 'physical_prowess_con',
+	intelligence: 'mental_prowess_int',
+	wisdom: 'mental_prowess_wis',
+	charisma: 'mental_prowess_cha'
 };
 
-function getAbpBonusValueByName(char: CompleteCharacter, bonusName: string): number {
-  const byName = char.references?.abpBonusTypes?.byName;
-  if (!byName) return 0;
-  
-  const bonusTypeId = byName[bonusName];
-  if (!bonusTypeId) return 0;
-  
-  const match = char.abpBonuses?.find(b => b.bonus_type_id === bonusTypeId);
-  return match?.value ?? 0;
+function getAbpBonusValue(char: CompleteCharacter, abpName: string): number {
+	const byName = char.references?.abpBonusTypes?.byName;
+	if (!byName) return 0;
+	const bonusTypeId = byName[abpName];
+	if (!bonusTypeId) return 0;
+	const match = char.abpBonuses?.find((b) => b.bonus_type_id === bonusTypeId);
+	return match?.value ?? 0;
 }
 
-export function enrichCharacterData(rawCharacter: CompleteCharacter): EnrichedCharacter {
-  // Modified attribute getter to use string-based ABP lookup
-  const getAttrValue = (attrName: string) => {
-    const found = rawCharacter.attributes?.find(
-      a => a.base?.name?.toLowerCase() === attrName.toLowerCase()
-    );
-    const baseValue = found?.value ? Number(found.value) : 10;
-    
-    const abpName = ABP_MAP_BY_ATTR_NAME[attrName.toLowerCase()];
-    if (!abpName) return baseValue;
-    
-    const abpBonus = getAbpBonusValueByName(rawCharacter, abpName);
-    return baseValue + abpBonus;
-  };
+/** Summarize each class as having 'good' or 'poor' saves. Then do 2 + level/2 for good, level/3 for poor. */
+function calculateBaseSave(char: CompleteCharacter, type: 'fortitude' | 'reflex' | 'will'): number {
+	let total = 0;
+	for (const cls of char.classes) {
+		const level = cls.level || 1;
+		const isGood = cls.base?.[type] === 'good';
+		if (isGood) {
+			total += 2;
+			total += level / 2;
+		} else {
+			total += level / 3;
+		}
+	}
+	return Math.floor(total);
+}
 
-  const str = getAttrValue('strength');
-  const dex = getAttrValue('dexterity');
-  const con = getAttrValue('constitution');
-  const int = getAttrValue('intelligence');
-  const wis = getAttrValue('wisdom');
-  const cha = getAttrValue('charisma');
+/** Gather the set of skill IDs that are class skills for the character (including multiclass). */
+function getClassSkillIds(char: CompleteCharacter): Set<number> {
+	const classSkillIds = new Set<number>();
+	for (const c of char.classes) {
+		if (Array.isArray(c.class_skills)) {
+			c.class_skills.forEach((skillId) => classSkillIds.add(skillId));
+		}
+	}
+	return classSkillIds;
+}
 
-  const str_mod = getAttributeModifier(str);
-  const dex_mod = getAttributeModifier(dex);
-  const con_mod = getAttributeModifier(con);
-  const int_mod = getAttributeModifier(int);
-  const wis_mod = getAttributeModifier(wis);
-  const cha_mod = getAttributeModifier(cha);
+/**
+ * The main function. Takes raw DB data, returns a "CharacterWithStats" with each
+ * field as a ValueWithBreakdown object. You can do `myChar.ac.total` or see `myChar.ac.modifiers`.
+ */
+export function enrichCharacterData(raw: CompleteCharacter): EnrichedCharacter {
+	// 1) Build each ability with an ABP-based score
+	function buildAbilityStat(attrName: string) {
+		const row = raw.attributes?.find((a) => a.base?.name?.toLowerCase() === attrName);
+		const baseScore = row?.value || 10;
+		const abpName = ABP_MAP_BY_ATTR[attrName];
+		const abpValue = abpName ? getAbpBonusValue(raw, abpName) : 0;
 
-  // 2) Calculate total level (assuming single-class or sum them up if needed)
-  //    For example, if you want total character level:
-  const level = rawCharacter.classes.reduce((acc, cls) => {
-    const lvl = cls.level ? Number(cls.level) : 1;
-    return acc + lvl;
-  }, 0);
+		// Capitalize the first letter of the attribute name if we don't have a label
+		const defaultLabel = attrName.charAt(0).toUpperCase() + attrName.slice(1);
+		const sb = createStatBuilder(row?.label || defaultLabel);
+		sb.add('Point Buy', baseScore);
+		sb.add('ABP Bonus', abpValue);
+		const final = sb.finalize();
+		return final;
+	}
 
-  // 3) Saving Throws
-  const baseSaves = calculateBaseSaves(rawCharacter);
-  
-  // Updated saves to include resistance bonus
-  const abpResistance = getAbpBonusValueByName(rawCharacter, 'resistance');
-  const fortitude = baseSaves.fortitude + con_mod + abpResistance;
-  const reflex = baseSaves.reflex + dex_mod + abpResistance;
-  const will = baseSaves.will + wis_mod + abpResistance;
+	const strength = buildAbilityStat('strength');
+	const dexterity = buildAbilityStat('dexterity');
+	const constitution = buildAbilityStat('constitution');
+	const intelligence = buildAbilityStat('intelligence');
+	const wisdom = buildAbilityStat('wisdom');
+	const charisma = buildAbilityStat('charisma');
 
-  const saves = {
-    base: baseSaves,
-    fortitude,
-    reflex,
-    will
-  };
+	// 2) We'll eventually need the numeric modifiers
+	const strMod = abilityMod(strength.total);
+	const dexMod = abilityMod(dexterity.total);
+	const conMod = abilityMod(constitution.total);
+	const wisMod = abilityMod(wisdom.total);
+	// intMod, chaMod if needed
+	const intMod = abilityMod(intelligence.total);
+	const chaMod = abilityMod(charisma.total);
 
-  // 4) Armor Class
-  const abpArmorBonus = getAbpBonusValueByName(rawCharacter, 'armor_attunement');
-  const abpDeflectionBonus = getAbpBonusValueByName(rawCharacter, 'deflection');
-  const hasDodgeFeat = rawCharacter.feats.some(f => f.name === 'Dodge');
+	// 3) Summed character level
+	const totalLevel = raw.classes.reduce((acc, c) => acc + (c.level || 1), 0);
 
-  // Base AC without situational bonuses
-  const baseAC = 10 + abpArmorBonus + abpDeflectionBonus;
-  
-  // Normal AC includes everything
-  const ac = baseAC + dex_mod + (hasDodgeFeat ? 1 : 0);
-  
-  // Touch AC loses armor bonus
-  const touch_ac = 10 + dex_mod + (hasDodgeFeat ? 1 : 0) + abpDeflectionBonus;
-  
-  // Flat-footed loses Dex bonus AND dodge bonus
-  const flat_footed_ac = baseAC + abpDeflectionBonus;
+	// Get BAB (Base Attack Bonus) - Alchemist uses 3/4 BAB progression
+	const bab = Math.floor((totalLevel * 3) / 4);
 
-  // 5) CMB/CMD
-  const cmb = str_mod + level;
-  const cmd = 10 + str_mod + dex_mod + level;
+	// 4) Saves
+	const baseFort = calculateBaseSave(raw, 'fortitude');
+	const baseRef = calculateBaseSave(raw, 'reflex');
+	const baseWill = calculateBaseSave(raw, 'will');
+	const abpResistance = getAbpBonusValue(raw, 'resistance');
 
-  // 6) Initiative
-  const initiative = dex_mod;
+	function buildSaveStat(label: string, baseVal: number, abilityMod: number) {
+		const sb = createStatBuilder(label);
+		sb.add('Class Progression', baseVal);
+		sb.add('Ability mod', abilityMod);
+		sb.add('ABP (Resistance)', abpResistance);
+		return sb.finalize();
+	}
 
-  // 7) Class-skill bonus logic 
-  //    — We gather all class-skill IDs from the classes:
-  const classSkillIds = getAllClassSkillIds(rawCharacter);
+	const fortitude = buildSaveStat('Fortitude', baseFort, conMod);
+	const reflex = buildSaveStat('Reflex', baseRef, dexMod);
+	const will = buildSaveStat('Will', baseWill, wisMod);
 
-  // 8) Calculate skill modifiers
-  const skill_modifiers: Record<number, number> = {};
+	// 5) AC. Start with 10, then add Dex, ABP, feats, etc.
+	const abpArmorAttunement = getAbpBonusValue(raw, 'armor_attunement');
+	const abpDeflection = getAbpBonusValue(raw, 'deflection');
 
-  for (const skill of rawCharacter.baseSkills) {
+	const hasDodgeFeat = raw.feats.some((f) => {
+		const name = f.base?.name?.toLowerCase() ?? '';
+		return name === 'dodge';
+	});
 
-    const skillWithRanks = rawCharacter.skillsWithRanks.find(s => s.skillId === skill.id);
-    // Find the ability mod for that skill’s ability
-    const ability_mod = {
-      'str': str_mod,
-      'dex': dex_mod,
-      'con': con_mod,
-      'int': int_mod,
-      'wis': wis_mod,
-      'cha': cha_mod
-    }[skill.ability] ?? 0;
+	// normal AC
+	const acBuilder = createStatBuilder('AC');
+	acBuilder.add('Base AC', 10);
+	acBuilder.add('Dex mod', dexMod);
+	acBuilder.add('Armor Attunement (ABP)', abpArmorAttunement);
+	acBuilder.add('Deflection (ABP)', abpDeflection);
+	acBuilder.add('Dodge feat', hasDodgeFeat ? 1 : 0);
+	const ac = acBuilder.finalize();
 
-    // Start with ability mod + ranks
-    let total = ability_mod + (skillWithRanks?.totalRanks || 0);
+	// touch AC
+	const touchBuilder = createStatBuilder('Touch AC');
+	touchBuilder.add('Dex mod', dexMod);
+	touchBuilder.add('Deflection (ABP)', abpDeflection);
+	touchBuilder.add('Dodge feat', hasDodgeFeat ? 1 : 0);
+	const touch_ac = touchBuilder.finalize();
 
-    // If this skill is in the set of class skills, and you have >=1 rank, add +3
-    if (classSkillIds.has(skill.id) && (skillWithRanks?.totalRanks ?? 0 > 0)) {
-      total += 3;
-    }
+	// flat-footed
+	const ffBuilder = createStatBuilder('Flat-Footed AC');
+	ffBuilder.add('Armor Attunement (ABP)', abpArmorAttunement);
+	ffBuilder.add('Deflection (ABP)', abpDeflection);
+	// no dex or dodge
+	const flat_footed_ac = ffBuilder.finalize();
 
-    // (You could also apply armor-check penalty, feats, synergy, etc. here)
-    skill_modifiers[skill.id] = total;
-  }
+	// 6) Initiative (just Dex mod or feats if you have them)
+	const initBuilder = createStatBuilder('Initiative');
+	initBuilder.add('Dex mod', dexMod);
+	// if the character had improved initiative or something, add it
+	// initBuilder.add("Improved Initiative feat", 4);
+	const initiative = initBuilder.finalize();
 
-  // Return the enriched object
-  return {
-    ...rawCharacter,
-    ac,
-    touch_ac,
-    flat_footed_ac,
-    cmd,
-    cmb,
-    initiative,
-    saves,
-    str,
-    dex,
-    con,
-    int,
-    wis,
-    cha,
-    str_mod,
-    dex_mod,
-    con_mod,
-    int_mod,
-    wis_mod,
-    cha_mod,
-    skill_modifiers
-  };
+	// 7) CMB, CMD
+	//   If you want them as ValueWithBreakdown, do it:
+	const cmbBuilder = createStatBuilder('CMB');
+	cmbBuilder.add('Str mod', strMod);
+	cmbBuilder.add('Base Attack', bab); // if you do BAB or just total level
+	const cmb = cmbBuilder.finalize();
+
+	const cmdBuilder = createStatBuilder('CMD');
+	cmdBuilder.add('Base CMD', 10);
+	cmdBuilder.add('Str mod', strMod);
+	cmdBuilder.add('Dex mod', dexMod);
+	cmdBuilder.add('Base Attack', bab); // if you do BAB or just total level
+	const cmd = cmdBuilder.finalize();
+
+	// 8) Skills
+	const skillIDs = getClassSkillIds(raw);
+	const skillResults: Record<number, ValueWithBreakdown> = {};
+
+	for (const skill of raw.baseSkills) {
+		const skillDetail = raw.skillsWithRanks.find((s) => s.skillId === skill.id);
+		const ranks = skillDetail?.totalRanks ?? 0;
+		// find the relevant ability mod
+		let ability = 0;
+		switch (skill.ability) {
+			case 'str':
+				ability = strMod;
+				break;
+			case 'dex':
+				ability = dexMod;
+				break;
+			case 'con':
+				ability = conMod;
+				break;
+			case 'int':
+				ability = intMod;
+				break;
+			case 'wis':
+				ability = wisMod;
+				break;
+			case 'cha':
+				ability = chaMod;
+				break;
+		}
+
+		const sb = createStatBuilder(skill.label);
+		sb.add(`${skill.ability.toUpperCase()} mod`, ability);
+		sb.add('Ranks', ranks);
+
+		if (skillIDs.has(skill.id) && ranks > 0) {
+			sb.add('Class skill', 3);
+		}
+		// if there's an armor check penalty, synergy, etc, add them here:
+		// sb.add("Armor check penalty", -2);
+
+		const finalSkill = sb.finalize();
+		skillResults[skill.id] = finalSkill;
+	}
+
+	// Calculate basic attack bonus
+	const attackBuilder = createStatBuilder('Attack');
+	attackBuilder.add('BAB', bab);
+	attackBuilder.add('Str mod', strMod);
+	attackBuilder.add('Weapon Attunement (ABP)', getAbpBonusValue(raw, 'weapon_attunement'));
+	const baseAttack = attackBuilder.finalize();
+
+	// Calculate ranged attack bonus (for bombs)
+	const rangedBuilder = createStatBuilder('Ranged Attack');
+	rangedBuilder.add('BAB', bab);
+	rangedBuilder.add('Dex mod', dexMod);
+	rangedBuilder.add('Weapon Attunement (ABP)', getAbpBonusValue(raw, 'weapon_attunement'));
+	const rangedAttack = rangedBuilder.finalize();
+
+	// Calculate bomb damage
+	const bombBuilder = createStatBuilder('Bomb Damage');
+	bombBuilder.add('Int mod', intMod);
+	const bombDamage = bombBuilder.finalize();
+
+	// 9) Return a big object that merges the original data with these new stats
+	return {
+		...raw,
+
+		// each attribute is now a ValueWithBreakdown
+		strength,
+		dexterity,
+		constitution,
+		intelligence,
+		wisdom,
+		charisma,
+
+		strMod,
+		dexMod,
+		conMod,
+		intMod,
+		wisMod,
+		chaMod,
+
+		// each save is a ValueWithBreakdown
+		saves: {
+			fortitude,
+			reflex,
+			will
+		},
+
+		// AC stuff
+		ac,
+		touch_ac,
+		flat_footed_ac,
+		initiative,
+
+		// CMB / CMD
+		cmb,
+		cmd,
+
+		// skill dictionary
+		skills: skillResults,
+
+		attacks: {
+			melee: baseAttack,
+			ranged: rangedAttack,
+			bomb: {
+				attack: rangedAttack,
+				damage: bombDamage
+			}
+		}
+	};
 }

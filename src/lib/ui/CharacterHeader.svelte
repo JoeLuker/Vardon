@@ -2,9 +2,9 @@
 
 <script lang="ts">
 	import { characterStore } from '$lib/state/characterStore';
-	import { Badge } from "$lib/components/ui/badge";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { Card, CardHeader } from "$lib/components/ui/card";
+	import { Badge } from '$lib/components/ui/badge';
+	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { Card, CardHeader } from '$lib/components/ui/card';
 </script>
 
 <Card>
@@ -16,14 +16,12 @@
 				</h1>
 				<div class="flex items-center space-x-2">
 					<Badge variant="secondary">Level {$characterStore.classes[0].level}</Badge>
-					
+
 					<span class="text-muted-foreground">
 						{$characterStore.ancestry?.base?.label ?? '???'}
 						{#if $characterStore.classes?.length}
-							{':'} 
-							{$characterStore.classes
-								.map((c) => c.base?.label ?? '???')
-								.join(', ')}
+							{':'}
+							{$characterStore.classes.map((c) => c.base?.label ?? '???').join(', ')}
 						{/if}
 					</span>
 				</div>
@@ -39,4 +37,3 @@
 		{/if}
 	</CardHeader>
 </Card>
-

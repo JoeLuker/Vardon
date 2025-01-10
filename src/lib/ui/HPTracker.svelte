@@ -1,27 +1,29 @@
 <!-- FILE: src/lib/ui/HPTracker.svelte -->
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button";
-	import { Progress } from "$lib/components/ui/progress";
+	import { Button } from '$lib/components/ui/button';
+	import { Progress } from '$lib/components/ui/progress';
 	import { characterStore, updateHP } from '$lib/state/characterStore';
-	
+
 	let isSliding = $state(false);
 	let sliderValue = $state<number>(0);
-	let updateStatus = $state<'idle'|'syncing'|'error'>('idle');
+	let updateStatus = $state<'idle' | 'syncing' | 'error'>('idle');
 	let errorMessage = $state<string | null>(null);
-	
+
 	let currentHp = $derived(Number($characterStore?.current_hp ?? 0));
 	let maxHp = $derived(Number($characterStore?.max_hp ?? 0));
 	let hpPercentage = $derived(maxHp === 0 ? 0 : Math.round((sliderValue / maxHp) * 100));
-	
-	$effect(() => { if (!isSliding) sliderValue = currentHp; });
-	
+
+	$effect(() => {
+		if (!isSliding) sliderValue = currentHp;
+	});
+
 	const quickActions = [
 		{ amount: -5, label: '-5', variant: 'destructive' as const },
 		{ amount: -1, label: '-1', variant: 'destructive' as const },
 		{ amount: 1, label: '+1', variant: 'default' as const },
 		{ amount: 5, label: '+5', variant: 'default' as const }
 	];
-	
+
 	async function handleUpdate(newValue: number) {
 		if (!$characterStore || newValue === currentHp) return;
 		try {
@@ -46,18 +48,31 @@
 
 		<div class="relative h-4">
 			<Progress value={hpPercentage} class="h-full" />
-			<input type="range" class="absolute inset-0 opacity-0 w-full cursor-pointer"
-				max={maxHp} min={0} value={sliderValue}
+			<input
+				type="range"
+				class="absolute inset-0 w-full cursor-pointer opacity-0"
+				max={maxHp}
+				min={0}
+				value={sliderValue}
 				disabled={updateStatus === 'syncing'}
-				oninput={(e) => { sliderValue = +(e.target as HTMLInputElement).value; isSliding = true; }}
-				onchange={(e) => { isSliding = false; handleUpdate(+(e.target as HTMLInputElement).value); }}
+				oninput={(e) => {
+					sliderValue = +(e.target as HTMLInputElement).value;
+					isSliding = true;
+				}}
+				onchange={(e) => {
+					isSliding = false;
+					handleUpdate(+(e.target as HTMLInputElement).value);
+				}}
 			/>
 		</div>
 
 		<div class="grid grid-cols-4 gap-3">
 			{#each quickActions as { amount, label, variant }}
-				<Button {variant} size="sm"
-					disabled={updateStatus === 'syncing' || (amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp)}
+				<Button
+					{variant}
+					size="sm"
+					disabled={updateStatus === 'syncing' ||
+						(amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp)}
 					onclick={() => handleUpdate(currentHp + amount)}
 				>
 					{label}
@@ -75,4 +90,3 @@
 		{/if}
 	</div>
 {/if}
-	
