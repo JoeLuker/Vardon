@@ -1,12 +1,14 @@
+<!-- FILE: src/lib/ui/Skills.svelte -->
 <script lang="ts">
-	import { characterStore } from '$lib/state/characterStore';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Eye, EyeOff } from 'lucide-svelte';
-	import * as Card from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
+	import * as Card from '$lib/components/ui/card';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
 
+	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
+
+	// The local type that we'll use internally
 	interface Skill {
 		id: number;
 		name: string;
@@ -17,59 +19,97 @@
 		armor_check_penalty?: boolean;
 	}
 
-	// Format modifier to always show + or -
+	// Props
+	let { character, onSelectValue = () => {} } = $props<{
+		character?: EnrichedCharacter | null;
+		onSelectValue?: (val: ValueWithBreakdown) => void;
+	}>();
+
+	/**
+	 * Local runes state:
+	 * - showUnusableSkills: toggles whether we show trained-only skills with 0 ranks
+	 * - viewMode: 'ability' or 'alphabetical'
+	 */
+	let showUnusableSkills = $state(false);
+	let viewMode = $state<'ability' | 'alphabetical'>('ability');
+
+	/**
+	 * Derive `classSkills` from the first class in `character.classes` if available.
+	 */
+	let classSkills = $derived.by(() => {
+		if (!character?.classes?.length) return [];
+		return character.classes[0].class_skills ?? [];
+	});
+
+	/**
+	 * Build a map from ability -> array of Skills,
+	 * reading from `character.baseSkills` and `character.skillsWithRanks`.
+	 */
+	let skillsByAbility = $derived.by(() => {
+		if (!character?.baseSkills) return {};
+
+		// We'll reduce them into a map like { str: Skill[], dex: Skill[], ... }
+		const result: Record<string, Skill[]> = {};
+
+		for (const base of character.baseSkills) {
+			const ability = base.ability.toLowerCase();
+
+			if (!result[ability]) {
+				result[ability] = [];
+			}
+
+			// find ranks
+			const rankInfo = character.skillsWithRanks?.find((s: { skillId: number }) => s.skillId === base.id);
+			const totalRanks = rankInfo?.totalRanks ?? 0;
+
+			result[ability].push({
+				id: base.id,
+				name: base.name,
+				label: base.label,
+				ability: base.ability,
+				ranks: totalRanks,
+				trained_only: base.trained_only ?? false,
+				armor_check_penalty: base.armor_check_penalty ?? false
+			});
+		}
+		return result;
+	});
+
+	/**
+	 * Also create an alphabetical list for 'alphabetical' view mode.
+	 */
+	let alphabeticalSkills = $derived.by(() => {
+		const allAbilities = Object.values(skillsByAbility);
+		const allSkills: Skill[] = allAbilities.flat();
+		return allSkills.sort((a, b) => a.name.localeCompare(b.name));
+	});
+
+	/**
+	 * formatModifier: add a plus sign if >= 0
+	 */
 	function formatModifier(mod: number): string {
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
-
-	let classSkills = $derived($characterStore?.classes[0]?.class_skills ?? []);
-
-	let skillsByAbility = $derived(
-		$characterStore?.baseSkills?.reduce(
-			(acc, skill) => {
-				const ability = skill.ability.toLowerCase();
-				if (!acc[ability]) {
-					acc[ability] = [];
-				}
-				acc[ability].push({
-					...skill,
-					ranks:
-						$characterStore?.skillsWithRanks?.find((s) => s.skillId === skill.id)?.totalRanks ?? 0,
-					name: skill.name,
-					trained_only: skill.trained_only ?? false,
-					armor_check_penalty: skill.armor_check_penalty ?? false
-				});
-				return acc;
-			},
-			{} as Record<string, Skill[]>
-		) ?? {}
-	);
-
-	// Add state for showing unusable skills
-	let showUnusableSkills = $state(false);
-
-	// Add view mode state
-	let viewMode = $state('ability'); // 'ability' or 'alphabetical'
-
-	// Add derived alphabetical skills list
-	let alphabeticalSkills = $derived(
-		Object.values(skillsByAbility)
-			.flat()
-			.sort((a, b) => a.name.localeCompare(b.name))
-	);
-
-	let { onSelectValue = () => {} } = $props<{
-		onSelectValue?: (breakdown: ValueWithBreakdown) => void;
-	}>();
 </script>
 
 <div class="skills-container">
-	<Tabs.Root value={viewMode} onValueChange={(value) => (viewMode = value)} class="w-full">
+	<!-- Switch between 'ability' or 'alphabetical' in a Tab -->
+	<Tabs.Root
+		value={viewMode}
+		onValueChange={(value) => {
+			if (value === 'ability' || value === 'alphabetical') {
+				viewMode = value;
+			}
+		}}
+		class="w-full"
+	>
+		<!-- Tabs header row -->
 		<div class="tabs-header">
 			<Tabs.List class="grid h-12 w-full grid-cols-[1fr_1fr_2px_auto]">
 				<Tabs.Trigger value="ability" class="h-full">By Ability</Tabs.Trigger>
 				<Tabs.Trigger value="alphabetical" class="h-full">Alphabetical</Tabs.Trigger>
 				<div class="pill-divider"></div>
+
 				<Button
 					variant="secondary"
 					size="icon"
@@ -85,92 +125,105 @@
 			</Tabs.List>
 		</div>
 
+		<!-- By Ability View -->
 		<Tabs.Content value="ability">
-			<div class="ability-cards">
-				{#each Object.entries(skillsByAbility) as [ability, skills]}
-					<Card.Root>
-						<Card.Header>
-							<Card.Title>{ability.toUpperCase()}</Card.Title>
-						</Card.Header>
-						<Card.Content>
-							<div class="skills-grid">
-								{#each skills.filter((skill) => showUnusableSkills || !(skill.trained_only && skill.ranks === 0)) as skill}
+			<!-- If no character, show fallback -->
+			{#if !character}
+				<div class="rounded-md border border-muted p-4">
+					<p class="text-muted-foreground">Loading skills...</p>
+				</div>
+			{:else}
+				<div class="ability-cards">
+					{#each Object.entries(skillsByAbility) as [ability, skills]}
+						<Card.Root>
+							<Card.Header>
+								<Card.Title>{ability.toUpperCase()}</Card.Title>
+							</Card.Header>
+							<Card.Content>
+								<div class="skills-grid">
+									{#each skills as skill}
+										<!-- Hide if trained_only && no ranks -->
+										{#if showUnusableSkills || !(skill.trained_only && skill.ranks === 0)}
+											{@const isClassSkill = classSkills.includes(skill.id)}
+											{@const isUnusable = skill.trained_only && skill.ranks === 0}
+
+											<button
+												class="skill"
+												class:is-class-skill={isClassSkill}
+												class:unusable={isUnusable}
+												onclick={() => {
+													const breakdown = character.skills?.[skill.id];
+													onSelectValue?.(breakdown);
+												}}
+												type="button"
+											>
+												<span class="skill-name">{skill.label}</span>
+												<span class="modifier">
+													{formatModifier(character.skills?.[skill.id]?.total ?? 0)}
+												</span>
+											</button>
+										{/if}
+									{/each}
+								</div>
+							</Card.Content>
+						</Card.Root>
+					{/each}
+				</div>
+			{/if}
+		</Tabs.Content>
+
+		<!-- Alphabetical View -->
+		<Tabs.Content value="alphabetical">
+			{#if !character}
+				<div class="rounded-md border border-muted p-4">
+					<p class="text-muted-foreground">Loading skills...</p>
+				</div>
+			{:else}
+				<Card.Root>
+					<Card.Content>
+						<div class="skills-grid">
+							{#each alphabeticalSkills as skill}
+								<!-- Hide if trained_only && no ranks -->
+								{#if showUnusableSkills || !(skill.trained_only && skill.ranks === 0)}
 									{@const isClassSkill = classSkills.includes(skill.id)}
 									{@const isUnusable = skill.trained_only && skill.ranks === 0}
+
 									<button
 										class="skill"
 										class:is-class-skill={isClassSkill}
 										class:unusable={isUnusable}
-										onclick={() => onSelectValue($characterStore?.skills[skill.id])}
+										onclick={() => {
+											const breakdown = character.skills?.[skill.id];
+											onSelectValue?.(breakdown);
+										}}
 										type="button"
 									>
-										<span class="skill-name">
-											{skill.label}
+										<span class="skill-name">{skill.label}</span>
+										<span class="modifier">
+											{formatModifier(character.skills?.[skill.id]?.total ?? 0)}
 										</span>
-										<span class="modifier"
-											>{formatModifier($characterStore?.skills[skill.id]?.total ?? 0)}</span
-										>
+										<Badge variant="secondary" class="ability-badge">
+											{skill.ability.toUpperCase()}
+										</Badge>
 									</button>
-								{/each}
-							</div>
-						</Card.Content>
-					</Card.Root>
-				{/each}
-			</div>
-		</Tabs.Content>
-
-		<Tabs.Content value="alphabetical">
-			<Card.Root>
-				<Card.Content>
-					<div class="skills-grid">
-						{#each alphabeticalSkills.filter((skill) => showUnusableSkills || !(skill.trained_only && skill.ranks === 0)) as skill}
-							{@const isClassSkill = classSkills.includes(skill.id)}
-							{@const isUnusable = skill.trained_only && skill.ranks === 0}
-							<button
-								class="skill"
-								class:is-class-skill={isClassSkill}
-								class:unusable={isUnusable}
-								onclick={() => onSelectValue($characterStore?.skills[skill.id])}
-								type="button"
-							>
-								<span class="skill-name">
-									{skill.label}
-								</span>
-								<span class="modifier"
-									>{formatModifier($characterStore?.skills[skill.id]?.total ?? 0)}</span
-								>
-								<Badge variant="secondary" class="ability-badge">
-									{skill.ability.toUpperCase()}
-								</Badge>
-							</button>
-						{/each}
-					</div>
-				</Card.Content>
-			</Card.Root>
+								{/if}
+							{/each}
+						</div>
+					</Card.Content>
+				</Card.Root>
+			{/if}
 		</Tabs.Content>
 	</Tabs.Root>
 </div>
 
 <style lang="postcss">
+	/* (same styles as your snippet, minus the store references) */
+
 	.skills-container {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 1rem;
-	}
-
-	.header {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		width: 100%;
-		margin-bottom: 1rem;
-	}
-
-	.header-content {
-		min-width: 150px; /* Match the new min-width of skill items */
-		display: flex;
-		justify-content: flex-end;
 	}
 
 	.ability-cards {
@@ -182,105 +235,36 @@
 		width: 100%;
 	}
 
-	.ability-group {
-		padding: 1.5rem;
-		background: hsl(var(--card));
-		border: 1px solid hsl(var(--border));
-		border-radius: var(--radius-lg);
-		box-shadow:
-			0 4px 6px -1px rgb(0 0 0 / 0.1),
-			0 2px 4px -2px rgb(0 0 0 / 0.1);
-		transition:
-			transform 0.2s ease,
-			box-shadow 0.2s ease;
-	}
-
-	.ability-group:hover {
-		transform: translateY(-2px);
-		box-shadow:
-			0 10px 15px -3px rgb(0 0 0 / 0.1),
-			0 4px 6px -4px rgb(0 0 0 / 0.1);
-	}
-
-	.ability-title {
-		font-size: 1.125rem;
-		font-weight: 700;
-		margin: 0.5rem 0;
-		color: hsl(var(--foreground));
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		border-bottom: 2px solid hsl(var(--border));
-		padding-bottom: 0.75rem;
-		text-align: center;
-	}
-
 	.skills-grid {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	.sheet-content {
-		padding: 1rem;
-		line-height: 1.6;
-	}
-
-	.trained-only-note {
-		margin-top: 1rem;
-		font-style: italic;
-		color: hsl(var(--text-2));
-	}
-
-	.skill-indicator {
-		width: 12px;
-		height: 12px;
-		border: 2px solid hsl(var(--border));
-		border-radius: 50%;
-		margin-right: 0.75rem;
-		flex-shrink: 0;
-	}
-
-	.skill-indicator.has-ranks {
-		background-color: hsl(var(--border));
-	}
-
 	.skill {
-		width: 100%;
-		padding: 0.75rem 1rem;
-		min-height: 48px;
-		text-align: left;
-		background: hsl(var(--background));
-		border: 1px solid hsl(var(--border) / 0.2);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		border-radius: var(--radius);
-		position: relative;
-		flex: 1;
-		transition: all 0.2s ease;
-	}
+		@apply flex items-center justify-between w-full min-h-[48px]
+			px-4 py-2 cursor-pointer rounded border border-transparent transition-all;
 
-	.skill:hover {
-		background-color: hsl(var(--accent));
-		border-color: hsl(var(--border));
-		transform: translateX(2px);
-	}
+		background-color: hsl(var(--background));
+		border-color: hsl(var(--border) / 0.2);
 
-	.skill.is-class-skill {
-		background-color: hsl(var(--primary) / 0.1);
-		border-color: hsl(var(--primary) / 0.2);
-	}
+		&:hover {
+			background-color: hsl(var(--accent));
+			border-color: hsl(var(--border));
+			transform: translateX(2px);
+		}
 
-	.skill.unusable {
-		opacity: 0.6;
-		cursor: not-allowed;
-		background-color: hsl(var(--muted));
-	}
+		&.is-class-skill {
+			background-color: hsl(var(--primary) / 0.1);
+			border-color: hsl(var(--primary) / 0.2);
+		}
 
-	.skill.unusable:hover {
-		background-color: hsl(var(--muted));
-		transform: none;
+		&.unusable {
+			opacity: 0.6;
+			cursor: not-allowed;
+			background-color: hsl(var(--muted));
+			transform: none;
+		}
 	}
 
 	.skill-name {
@@ -294,21 +278,6 @@
 		color: hsl(var(--primary));
 		min-width: 3rem;
 		text-align: right;
-	}
-
-	.toggle-unusable {
-		display: flex;
-		margin-left: auto;
-		padding: 0.5rem;
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: hsl(var(--foreground));
-		border-radius: var(--radius);
-	}
-
-	.toggle-unusable:hover {
-		background-color: hsl(var(--accent));
 	}
 
 	.ability-badge {
@@ -326,22 +295,18 @@
 		padding: 0 0.5rem;
 	}
 
-	.divider {
-		height: 1px;
-		background-color: hsl(var(--border));
-		margin: 0.5rem 0;
-		width: 100%;
-	}
-
-	.toggle-unusable {
-		flex-shrink: 0;
-	}
-
 	.pill-divider {
 		width: 2px;
 		height: 24px;
 		background-color: hsl(var(--muted-foreground) / 0.2);
 		border-radius: 9999px;
 		margin: auto 0;
+	}
+
+	.toggle-unusable {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 </style>

@@ -181,7 +181,6 @@ export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' |
 		}>;
 	}>;
 
-	getAbpBonusValueByName: (bonusName: string) => number;
 }
 
 // -----------------------------------------------------------------------------
@@ -450,14 +449,9 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		})),
 		skillsWithRanks,
 		references,
-		abpBonuses,
+		abpBonuses
 
-		getAbpBonusValueByName: (bonusName: string): number => {
-			const id = references.abpBonusTypes.byName[bonusName];
-			if (!id) return 0;
-			const match = abpBonuses.find((b) => b.bonus_type_id === id);
-			return match?.value ?? 0;
-		}
+
 	};
 
 	// 14) Cleanup (omits timestamps from nested objects)

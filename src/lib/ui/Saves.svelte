@@ -1,18 +1,27 @@
 <!-- FILE: src/lib/ui/Saves.svelte -->
 <script lang="ts">
-	import { characterStore } from '$lib/state/characterStore';
-	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
+	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
 
 	/**
-	 * We assume `characterStore` has a `saves` object:
+	 * Props:
+	 * - character: Possibly null if loading
+	 * - onSelectValue: callback that receives the breakdown of the selected save
+	 */
+	let { character, onSelectValue = () => {} } = $props<{
+		character?: EnrichedCharacter | null;
+		onSelectValue?: (val: ValueWithBreakdown) => void;
+	}>();
+
+	/**
+	 * We assume `character?.saves` is shaped like:
 	 * {
 	 *   fortitude: ValueWithBreakdown,
-	 *   reflex:    ValueWithBreakdown,
-	 *   will:      ValueWithBreakdown
+	 *   reflex: ValueWithBreakdown,
+	 *   will: ValueWithBreakdown
 	 * }
 	 */
 
-	// Derived values using $derived rune
+	// We'll list the keys and labels for each save
 	let saveKeys = $derived(['fortitude', 'reflex', 'will'] as const);
 	let saveLabels = $derived({
 		fortitude: 'Fortitude',
@@ -20,25 +29,25 @@
 		will: 'Will'
 	});
 
-	// Helper function
+	// Helper to format a numeric bonus with +/-
 	function formatBonus(bonus: number): string {
-		return bonus >= 0 ? `+${bonus}` : bonus.toString();
+		return bonus >= 0 ? `+${bonus}` : `${bonus}`;
 	}
-
-	let { onSelectValue = () => {} } = $props<{
-		onSelectValue?: (breakdown: ValueWithBreakdown) => void;
-	}>();
 </script>
 
-{#if $characterStore?.saves}
+{#if character?.saves}
 	<div class="card space-y-6">
 		<div class="grid grid-cols-3 gap-6">
 			{#each saveKeys as key}
-				<button class="save-card" onclick={() => onSelectValue($characterStore.saves[key])}>
+				<button
+					class="save-card"
+					type="button"
+					onclick={() => onSelectValue(character.saves[key])}
+				>
 					<div class="card-inner">
 						<div class="save-name">{saveLabels[key]}</div>
 						<div class="primary-value">
-							{formatBonus($characterStore.saves[key]?.total ?? 0)}
+							{formatBonus(character.saves[key]?.total ?? 0)}
 						</div>
 					</div>
 				</button>
@@ -58,9 +67,8 @@
 
 <style lang="postcss">
 	.save-card {
-		@apply relative rounded-lg border bg-card shadow-sm transition-transform duration-200;
+		@apply relative w-full text-left rounded-lg border bg-card shadow-sm transition-transform duration-200;
 		border-color: hsl(var(--border) / 0.2);
-		@apply w-full text-left;
 
 		&:hover {
 			@apply scale-105;

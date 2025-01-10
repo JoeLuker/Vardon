@@ -1,23 +1,37 @@
+<!-- FILE: src/lib/ui/CombatStats.svelte (or whatever you call it) -->
 <script lang="ts">
-	import { characterStore } from '$lib/state/characterStore';
+	// UI imports
 	import * as Card from '$lib/components/ui/card';
 	import { Sword, Target, Bomb } from 'lucide-svelte';
-	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
 
-	// Format modifier to always show + or -
+	// Domain
+	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
+	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+
+	/**
+	 * Props:
+	 *  - character: a plain EnrichedCharacter or null
+	 *  - onSelectValue: callback for clicking an attack or damage breakdown
+	 */
+	let { character, onSelectValue = () => {} } = $props<{
+		character?: EnrichedCharacter | null;
+		onSelectValue?: (val: ValueWithBreakdown) => void;
+	}>();
+
+	// A helper to format a numeric modifier with + or - sign
 	function formatModifier(mod: number): string {
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
 
-	// Get the total level for bomb damage calculation using $derived
-	let totalLevel = $derived(
-		$characterStore?.classes.reduce((acc, c) => acc + (c.level || 1), 0) ?? 0
-	);
-
-	// Props using new $props rune
-	let { onSelectValue = () => {} } = $props<{
-		onSelectValue?: (breakdown: ValueWithBreakdown) => void;
-	}>();
+	/**
+	 * totalLevel as a runes-based derived variable
+	 * If there's no character or classes, default to 0.
+	 */
+	let totalLevel = $derived.by(() => {
+		if (!character?.classes) return 0;
+		return character.classes.reduce((acc: number, cls: { level?: number }) => 
+			acc + (cls.level || 1), 0);
+	});
 </script>
 
 <Card.Root class="w-full">
@@ -25,57 +39,64 @@
 		<!-- Melee Attack -->
 		<button
 			class="grid w-full grid-cols-2 gap-4 rounded-md p-2 transition-colors hover:bg-accent"
-			onclick={() => onSelectValue($characterStore?.attacks.melee)}
+			onclick={() => {
+				onSelectValue?.(character?.attacks.melee);
+			}}
 		>
 			<div class="flex items-center gap-2">
 				<Sword class="h-4 w-4" />
 				<span class="font-semibold">Melee Attack</span>
 			</div>
 			<div class="text-right">
-				{formatModifier($characterStore?.attacks.melee.total ?? 0)}
+				{formatModifier(character?.attacks.melee.total ?? 0)}
 			</div>
 		</button>
 
 		<!-- Ranged Attack -->
 		<button
 			class="grid w-full grid-cols-2 gap-4 rounded-md p-2 transition-colors hover:bg-accent"
-			onclick={() => onSelectValue($characterStore?.attacks.ranged)}
+			onclick={() => {
+				onSelectValue?.(character?.attacks.ranged);
+			}}
 		>
 			<div class="flex items-center gap-2">
 				<Target class="h-4 w-4" />
 				<span class="font-semibold">Ranged Attack</span>
 			</div>
 			<div class="text-right">
-				{formatModifier($characterStore?.attacks.ranged.total ?? 0)}
+				{formatModifier(character?.attacks.ranged.total ?? 0)}
 			</div>
 		</button>
 
 		<!-- Bomb Attack -->
 		<button
 			class="grid w-full grid-cols-2 gap-4 rounded-md p-2 transition-colors hover:bg-accent"
-			onclick={() => onSelectValue($characterStore?.attacks.bomb.attack)}
+			onclick={() => {
+				onSelectValue?.(character?.attacks.bomb.attack);
+			}}
 		>
 			<div class="flex items-center gap-2">
 				<Bomb class="h-4 w-4" />
 				<span class="font-semibold">Bomb Attack</span>
 			</div>
 			<div class="text-right">
-				{formatModifier($characterStore?.attacks.bomb.attack.total ?? 0)}
+				{formatModifier(character?.attacks.bomb.attack.total ?? 0)}
 			</div>
 		</button>
 
 		<!-- Bomb Damage -->
 		<button
 			class="grid w-full grid-cols-2 gap-4 rounded-md p-2 pl-6 transition-colors hover:bg-accent"
-			onclick={() => onSelectValue($characterStore?.attacks.bomb.damage)}
+			onclick={() => {
+				onSelectValue?.(character?.attacks.bomb.damage);
+			}}
 		>
 			<div class="flex items-center gap-2">
 				<span class="font-semibold">Bomb Damage</span>
 			</div>
 			<div class="text-right">
-				{Math.floor((totalLevel + 1) / 2)}d6 {formatModifier(
-					$characterStore?.attacks.bomb.damage.total ?? 0
-				)}
+				{Math.floor((totalLevel + 1) / 2)}d6{" "}
+				{formatModifier(character?.attacks.bomb.damage.total ?? 0)}
 			</div>
 		</button>
 	</Card.Content>
