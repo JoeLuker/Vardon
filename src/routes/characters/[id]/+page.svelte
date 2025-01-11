@@ -1,14 +1,14 @@
 <!-- FILE: src/routes/characters/[id]/+page.svelte -->
 <script lang="ts">
-	// Svelte 5
+	// SvelteKit & Svelte 5
 	import { onMount } from 'svelte';
-	// If your build requires explicit imports:
-	// import { state as $state } from 'svelte/reactivity';
+	import { afterNavigate } from '$app/navigation';
+	import { page } from '$app/stores';
 
-	// Type imports
+	// Types
 	import type { PageData } from './$types';
-	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+	import type { ValueWithBreakdown, EnrichedCharacter } from '$lib/domain/characterCalculations';
+	import type { CompleteCharacter } from '$lib/db/getCompleteCharacter';
 
 	// Child components
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
@@ -20,7 +20,7 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
 
-	// DB and domain logic
+	// DB references
 	import {
 		gameCharacterApi,
 		gameCharacterAttributeApi,
@@ -35,66 +35,103 @@
 		gameCharacterWildTalentApi,
 		gameCharacterAbpBonusApi,
 		gameCharacterEquipmentApi,
-		gameCharacterArmorApi
+		gameCharacterArmorApi,
+		classApi,
+		featApi
 	} from '$lib/db/references';
+
 	import { getCompleteCharacter } from '$lib/db/getCompleteCharacter';
 	import { enrichCharacterData } from '$lib/domain/characterCalculations';
-
-	import { page } from '$app/stores';
-	import { afterNavigate } from '$app/navigation';
 
 	// Props from the load function
 	let { data } = $props<{ data: PageData }>();
 
-	// State
-	let character = $state<EnrichedCharacter | null>(
-		data.rawCharacter ? enrichCharacterData(data.rawCharacter) : null
-	);
+	// Svelte 5 runic state for reactivity
+	let rawCharacter = $state<CompleteCharacter | null>(null);
+	let character = $state<EnrichedCharacter | null>(null);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
 
-	// For watchers
+	// Optional: reference maps if we want to fetch class/feat details
+	let classMap = new Map<number, any>();
+	let featMap = new Map<number, any>();
+
+	// Watchers
 	let watchersInitialized = false;
 	let currentCharId: number | null = null;
 
-	// Breakdown sheet state
+	// Breakdown sheet
 	let selectedStatBreakdown = $state<ValueWithBreakdown | null>(null);
 	let breakdownSheetOpen = $state(false);
 
-	// Initialize watchers on mount
+	/**
+	 * initReferenceData: optional function to fetch classes/feats, store them in classMap/featMap
+	 */
+	async function initReferenceData(): Promise<void> {
+		try {
+			const [classes, feats] = await Promise.all([
+				classApi.getAllRows(),
+				featApi.getAllRows()
+			]);
+			classes.forEach((c) => classMap.set(c.id, c));
+			feats.forEach((f) => featMap.set(f.id, f));
+		} catch (err) {
+			console.error('Failed to load reference data:', err);
+			error = 'Failed to load reference data';
+		}
+	}
+
+	// Setup onMount
 	onMount(() => {
 		if (data.id !== null) {
 			currentCharId = data.id;
-			initWatchers();
+
+			// Do async work in an IIFE
+			(async () => {
+				// 1) (Optional) Load reference data
+				await initReferenceData();
+
+				// 2) Use the server-provided rawCharacter
+				rawCharacter = data.rawCharacter ?? null;
+				if (rawCharacter) {
+					character = enrichCharacterData(rawCharacter);
+				}
+
+				// 3) Initialize watchers
+				initWatchers();
+			})();
 		}
-		
+
+		// Return a synchronous cleanup function
 		return () => {
 			cleanupWatchers();
 		};
 	});
 
-	// Handle route changes
+	// If the user navigates to a different ID without a full refresh
 	afterNavigate(async () => {
 		const newId = Number($page.params.id);
 		if (newId !== currentCharId) {
-			// Clean up old watchers
+			// Clean up watchers from the old char
 			cleanupWatchers();
-			
-			// Set up for new character
+
+			// Load the new char
 			currentCharId = newId;
 			await loadCharacter(newId);
+
+			// Re-init watchers
 			initWatchers();
 		}
 	});
 
 	/**
-	 * Simplified loadCharacter that always uses fresh DB data
+	 * loadCharacter: fetch from DB and re-enrich
 	 */
 	async function loadCharacter(charId: number) {
 		try {
 			isLoading = true;
 			const fetched = await getCompleteCharacter(charId);
-			// Direct assignment - no merging with local state
+			rawCharacter = fetched;
 			character = fetched ? enrichCharacterData(fetched) : null;
 			isLoading = false;
 		} catch (err) {
@@ -105,42 +142,64 @@
 	}
 
 	/**
-	 * initWatchers: attach DB watchers to reload data on changes
+	 * initWatchers: attach supabase watchers (only once)
 	 */
 	function initWatchers() {
-		if (watchersInitialized || !currentCharId) return;
+		if (watchersInitialized) return;
 		watchersInitialized = true;
 
 		// Main table
 		gameCharacterApi.startWatch(handleCharacterTableChange);
 
-		// Bridging tables
-		gameCharacterAttributeApi.startWatch(handleBridgingChange);
-		gameCharacterClassApi.startWatch(handleBridgingChange);
-		gameCharacterFeatApi.startWatch(handleBridgingChange);
-		gameCharacterSkillRankApi.startWatch(handleBridgingChange);
-		gameCharacterArchetypeApi.startWatch(handleBridgingChange);
-		gameCharacterAncestryApi.startWatch(handleBridgingChange);
-		gameCharacterClassFeatureApi.startWatch(handleBridgingChange);
-		gameCharacterCorruptionApi.startWatch(handleBridgingChange);
-		gameCharacterCorruptionManifestationApi.startWatch(handleBridgingChange);
-		gameCharacterWildTalentApi.startWatch(handleBridgingChange);
-		gameCharacterAbpBonusApi.startWatch(handleBridgingChange);
-		gameCharacterEquipmentApi.startWatch(handleBridgingChange);
-		gameCharacterArmorApi.startWatch(handleBridgingChange);
+		// Bridging
+		gameCharacterClassApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_class')
+		);
+		gameCharacterFeatApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_feat')
+		);
+		gameCharacterSkillRankApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_skill_rank')
+		);
+
+		gameCharacterArchetypeApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_archetype')
+		);
+		gameCharacterAncestryApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_ancestry')
+		);
+		gameCharacterClassFeatureApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_class_feature')
+		);
+
+		gameCharacterCorruptionApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_corruption')
+		);
+		gameCharacterCorruptionManifestationApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_corruption_manifestation')
+		);
+
+		gameCharacterWildTalentApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_wild_talent')
+		);
+		gameCharacterAbpBonusApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_abp_bonus')
+		);
+		gameCharacterEquipmentApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_equipment')
+		);
+		gameCharacterArmorApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_armor')
+		);
 	}
 
 	/**
-	 * cleanupWatchers: stop DB watchers
+	 * cleanupWatchers: stop them
 	 */
 	function cleanupWatchers() {
 		if (!watchersInitialized) return;
-		watchersInitialized = false;
 
-		// main table
 		gameCharacterApi.stopWatch();
-
-		// bridging tables
 		gameCharacterAttributeApi.stopWatch();
 		gameCharacterClassApi.stopWatch();
 		gameCharacterFeatApi.stopWatch();
@@ -154,33 +213,80 @@
 		gameCharacterAbpBonusApi.stopWatch();
 		gameCharacterEquipmentApi.stopWatch();
 		gameCharacterArmorApi.stopWatch();
+
+		watchersInitialized = false;
 	}
 
 	/**
-	 * Simplified watcher handler - always reload on changes
+	 * handleCharacterTableChange: partial updates for main table
 	 */
-	async function handleCharacterTableChange(type: 'insert' | 'update' | 'delete', row: any) {
+	async function handleCharacterTableChange(
+		type: 'insert' | 'update' | 'delete',
+		row: any
+	) {
 		if (row?.id !== currentCharId) return;
-		
+
 		if (type === 'delete') {
+			rawCharacter = null;
 			character = null;
-		} else {
-			// Always reload from DB on changes
-			await loadCharacter(currentCharId!);
+			return;
 		}
+		if (!rawCharacter) return;
+
+		rawCharacter = {
+			...rawCharacter,
+			current_hp: row.current_hp,
+			max_hp: row.max_hp,
+			name: row.name,
+			label: row.label
+		};
+		character = enrichCharacterData(rawCharacter);
 	}
 
 	/**
-	 * Simplified bridging change handler
+	 * handleBridgingChange: partial update bridging tables
 	 */
-	async function handleBridgingChange(_type: 'insert' | 'update' | 'delete', row: any) {
-		if (row?.game_character_id !== currentCharId) return;
-		// Always reload from DB on any bridging table changes
-		await loadCharacter(currentCharId!);
+	async function handleBridgingChange(
+		type: 'insert' | 'update' | 'delete',
+		row: any,
+		tableName: string
+	) {
+		if (!rawCharacter || row?.game_character_id !== currentCharId) return;
+
+		switch (tableName) {
+			case 'game_character_class':
+				if (type === 'insert') {
+					const classData = classMap.get(row.class_id);
+					if (classData) {
+						rawCharacter.classes.push({
+							base: classData,
+							level: row.level,
+							class_skills: [] // required by your type
+						});
+					}
+				} else if (type === 'update') {
+					const idx = rawCharacter.classes.findIndex(
+						(c: any) => c.base.id === row.class_id
+					);
+					if (idx >= 0) {
+						rawCharacter.classes[idx].level = row.level;
+					}
+				} else if (type === 'delete') {
+					rawCharacter.classes = rawCharacter.classes.filter(
+						(c: any) => c.base.id !== row.class_id
+					);
+				}
+				break;
+
+			// add similar bridging logic for other tables
+		}
+
+		// Re-enrich after bridging update
+		character = enrichCharacterData(rawCharacter);
 	}
 
 	/**
-	 * handleSelectValue: let children show a breakdown sheet
+	 * handleSelectValue: show breakdown in the sheet
 	 */
 	function handleSelectValue(breakdown: ValueWithBreakdown) {
 		selectedStatBreakdown = breakdown;
@@ -189,32 +295,28 @@
 </script>
 
 <!-- Template -->
-
-<!-- Loading -->
 {#if isLoading}
+	<!-- Loading spinner -->
 	<div class="flex min-h-[200px] items-center justify-center">
 		<div class="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
 	</div>
-
-<!-- Error -->
 {:else if error}
+	<!-- Error message -->
 	<div class="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive">
 		{error}
 	</div>
-
-<!-- No Character Found -->
 {:else if !character}
+	<!-- If no character loaded -->
 	<div class="rounded-md border border-muted p-4">
 		<p class="text-muted-foreground">No character data found</p>
 	</div>
-
-<!-- Normal content -->
 {:else}
+	<!-- Normal content -->
 	<div class="space-y-2">
-		<!-- Some custom UI / Header -->
+		<!-- Header -->
 		<CharacterHeader character={character} />
 
-		<!-- Tab container for different character sections -->
+		<!-- Tabs -->
 		<Tabs.Root value="attributes" class="w-full">
 			<Tabs.List class="grid w-full grid-cols-3">
 				<Tabs.Trigger value="attributes">Attributes</Tabs.Trigger>
@@ -222,25 +324,27 @@
 				<Tabs.Trigger value="combat">Combat</Tabs.Trigger>
 			</Tabs.List>
 
-			<!-- Attributes Section -->
+			<!-- Attributes -->
 			<Tabs.Content value="attributes">
 				<div class="rounded-lg bg-secondary p-6">
-					<!-- Pass the plain object, not a store -->
 					<Attributes
-					character={character}
+						character={character}
 						onSelectValue={handleSelectValue}
 					/>
 				</div>
 			</Tabs.Content>
 
-			<!-- Skills Section -->
+			<!-- Skills -->
 			<Tabs.Content value="skills">
 				<div class="rounded-lg bg-secondary p-6">
-					<Skills character={character} onSelectValue={handleSelectValue} />
+					<Skills
+						character={character}
+						onSelectValue={handleSelectValue}
+					/>
 				</div>
 			</Tabs.Content>
 
-			<!-- Combat Section -->
+			<!-- Combat -->
 			<Tabs.Content value="combat">
 				<div class="space-y-6 rounded-lg bg-secondary p-6">
 					<HPTracker
@@ -253,27 +357,31 @@
 							});
 						}}
 					/>
-					<Saves character={character} onSelectValue={handleSelectValue} />
-					<CombatStats character={character} onSelectValue={handleSelectValue} />
+					<Saves
+						character={character}
+						onSelectValue={handleSelectValue}
+					/>
+					<CombatStats
+						character={character}
+						onSelectValue={handleSelectValue}
+					/>
 				</div>
 			</Tabs.Content>
 		</Tabs.Root>
 	</div>
 
-	<!-- Slide-up breakdown sheet -->
+	<!-- Bottom sheet for breakdown -->
 	<Sheet.Root bind:open={breakdownSheetOpen}>
 		<Sheet.Content side="bottom">
 			{#if selectedStatBreakdown}
 				<Sheet.Header>
 					<Sheet.Title>{selectedStatBreakdown.label} Breakdown</Sheet.Title>
 					<Sheet.Description>
-						A detailed breakdown of how 
-						{selectedStatBreakdown.label} is calculated.
+						A detailed breakdown of how {selectedStatBreakdown.label} is calculated.
 					</Sheet.Description>
 				</Sheet.Header>
-
 				<div class="space-y-3 p-4">
-					<!-- List each modifier and value -->
+					<!-- Show each modifier -->
 					<ul class="space-y-1 text-sm">
 						{#each selectedStatBreakdown.modifiers as m}
 							<li>
@@ -282,7 +390,6 @@
 							</li>
 						{/each}
 					</ul>
-
 					<p class="text-lg font-semibold">
 						Total: {selectedStatBreakdown.total >= 0 ? '+' : ''}{selectedStatBreakdown.total}
 					</p>

@@ -40,12 +40,15 @@
 	});
 
 	/**
-	 * If user isn't currently dragging the slider, mirror sliderValue to the 
-	 * character's currentHp. That way if watchers or something else updates HP,
-	 * we revert to the newly-fetched value.
+	 * Only sync with database value if:
+	 * 1. We're not sliding
+	 * 2. There's no pending update
+	 * 3. We're not currently syncing with the DB
 	 */
 	$effect(() => {
-		if (!isSliding) sliderValue = currentHp;
+		if (!isSliding && pendingHP === null && updateStatus !== 'syncing') {
+			sliderValue = currentHp;
+		}
 	});
 
 	/**
@@ -65,18 +68,19 @@
 	function queueHPUpdate(newHP: number) {
 		if (!character) return;
 
-		// 1) local optimistic UI
-		character = {
-			...character,
-			current_hp: Math.max(0, Math.min(maxHp, newHP))
-		};
+		const boundedHP = Math.max(0, Math.min(maxHp, newHP));
+		
+		// Save to pending
+		pendingHP = boundedHP;
 
-		// 2) keep track for debounced flush
-		pendingHP = character.current_hp;
-
-		// 3) schedule flush
+		// Clear any existing timer
 		if (updateTimer) clearTimeout(updateTimer);
+
+		// Start new timer
 		updateTimer = setTimeout(flushPending, DEBOUNCE_MS);
+
+		// Update local UI immediately
+		sliderValue = boundedHP;
 	}
 
 	/**
@@ -87,10 +91,7 @@
 
 		try {
 			updateStatus = 'syncing';
-
-			// Actually do DB update
 			await onUpdateDB({ current_hp: pendingHP });
-
 			updateStatus = 'idle';
 		} catch (err) {
 			console.error('Failed HP update:', err);
@@ -103,12 +104,19 @@
 	}
 
 	/**
-	 * When user drags the slider or hits quick actions:
+	 * Handle slider changes directly
 	 */
-	async function handleUpdate(newValue: number) {
-		if (!character || newValue === currentHp) return;
-
+	function handleSliderChange(e: Event) {
+		isSliding = false;
+		const newValue = +(e.target as HTMLInputElement).value;
 		queueHPUpdate(newValue);
+	}
+
+	/**
+	 * Quick actions handler (for buttons)
+	 */
+	function handleQuickAction(amount: number) {
+		queueHPUpdate(sliderValue + amount);
 	}
 
 	/**
@@ -140,15 +148,11 @@
 				max={maxHp}
 				min={0}
 				value={sliderValue}
-				disabled={updateStatus === 'syncing'}
 				oninput={(e) => {
 					sliderValue = +(e.target as HTMLInputElement).value;
 					isSliding = true;
 				}}
-				onchange={(e) => {
-					isSliding = false;
-					handleUpdate(+(e.target as HTMLInputElement).value);
-				}}
+				onchange={handleSliderChange}
 			/>
 		</div>
 
@@ -158,11 +162,8 @@
 				<Button
 					{variant}
 					size="sm"
-					disabled={
-						updateStatus === 'syncing' ||
-						(amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp)
-					}
-					onclick={() => handleUpdate(currentHp + amount)}
+					disabled={amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp}
+					onclick={() => handleQuickAction(amount)}
 				>
 					{label}
 				</Button>

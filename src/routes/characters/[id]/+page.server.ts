@@ -1,7 +1,6 @@
 // FILE: src/routes/characters/[id]/+page.ts
 import { error } from '@sveltejs/kit';
 import { getCompleteCharacter } from '$lib/db/getCompleteCharacter';
-import { enrichCharacterData } from '$lib/domain/characterCalculations';
 
 export async function load({ params }) {
 	try {

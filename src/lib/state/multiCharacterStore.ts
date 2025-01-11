@@ -47,9 +47,36 @@ export function cleanupMultiCharWatchers() {
 	watchersInitialized = false;
 }
 
-/** Called by watchers on insert/update. Re-fetch entire list. */
-async function handleCharactersChange(_type: 'insert' | 'update' | 'delete', _row: any) {
-	await loadAllCharacters();
+/** Called by watchers on insert/update. Do partial update if possible. */
+async function handleCharactersChange(type: 'insert' | 'update' | 'delete', row: any) {
+	if (type === 'delete') {
+		characterList.update(list => list.filter(c => c.id !== row.id));
+		return;
+	}
+
+	if (type === 'update') {
+		characterList.update(list => {
+			const idx = list.findIndex(c => c.id === row.id);
+			if (idx >= 0) {
+				// Patch just the main fields that can change
+				list[idx] = {
+					...list[idx],
+					name: row.name,
+					label: row.label,
+					current_hp: row.current_hp,
+					max_hp: row.max_hp
+				};
+			}
+			return list;
+		});
+		return;
+	}
+
+	// For inserts or if update failed, fetch the whole character
+	const newChar = await getCompleteCharacter(row.id);
+	if (newChar) {
+		characterList.update(list => [...list, newChar]);
+	}
 }
 
 /**
