@@ -246,16 +246,6 @@ export const gameCharacterSkillRankApi = createDbApi<
 //   GameCharacterTraitUpdate
 // >('game_character_trait');
 
-export type GameCharacterAbpBonusRow = RowOf<'game_character_abp_bonus'>;
-export type GameCharacterAbpBonusInsert = InsertOf<'game_character_abp_bonus'>;
-export type GameCharacterAbpBonusUpdate = UpdateOf<'game_character_abp_bonus'>;
-
-export const gameCharacterAbpBonusApi = createDbApi<
-	GameCharacterAbpBonusRow,
-	GameCharacterAbpBonusInsert,
-	GameCharacterAbpBonusUpdate
->('game_character_abp_bonus');
-
 export type GameCharacterWildTalentRow = RowOf<'game_character_wild_talent'>;
 export type GameCharacterWildTalentInsert = InsertOf<'game_character_wild_talent'>;
 export type GameCharacterWildTalentUpdate = UpdateOf<'game_character_wild_talent'>;
@@ -547,7 +537,85 @@ export const wildTalentApi = createDbApi<WildTalentRow, WildTalentInsert, WildTa
 	'wild_talent'
 );
 
-// Update the dbApis object to include the new APIs
+// Add new table references for game_character_extract
+export type GameCharacterExtractRow = RowOf<'game_character_extract'>;
+export type GameCharacterExtractInsert = InsertOf<'game_character_extract'>;
+export type GameCharacterExtractUpdate = UpdateOf<'game_character_extract'>;
+
+export const gameCharacterExtractApi = createDbApi<
+	GameCharacterExtractRow,
+	GameCharacterExtractInsert,
+	GameCharacterExtractUpdate
+>('game_character_extract');
+
+// Add new table references for game_character_favored_class_bonus
+export type GameCharacterFavoredClassBonusRow = RowOf<'game_character_favored_class_bonus'>;
+export type GameCharacterFavoredClassBonusInsert = InsertOf<'game_character_favored_class_bonus'>;
+export type GameCharacterFavoredClassBonusUpdate = UpdateOf<'game_character_favored_class_bonus'>;
+
+export const gameCharacterFavoredClassBonusApi = createDbApi<
+	GameCharacterFavoredClassBonusRow,
+	GameCharacterFavoredClassBonusInsert,
+	GameCharacterFavoredClassBonusUpdate
+>('game_character_favored_class_bonus');
+
+// Add new table references for game_character_consumable
+export type GameCharacterConsumableRow = RowOf<'game_character_consumable'>;
+export type GameCharacterConsumableInsert = InsertOf<'game_character_consumable'>;
+export type GameCharacterConsumableUpdate = UpdateOf<'game_character_consumable'>;
+
+export const gameCharacterConsumableApi = createDbApi<
+	GameCharacterConsumableRow,
+	GameCharacterConsumableInsert,
+	GameCharacterConsumableUpdate
+>('game_character_consumable');
+
+// Add new table references for game_character_abp_choice
+export type GameCharacterAbpChoiceRow = RowOf<'game_character_abp_choice'>;
+export type GameCharacterAbpChoiceInsert = InsertOf<'game_character_abp_choice'>;
+export type GameCharacterAbpChoiceUpdate = UpdateOf<'game_character_abp_choice'>;
+
+export const gameCharacterAbpChoiceApi = createDbApi<
+	GameCharacterAbpChoiceRow,
+	GameCharacterAbpChoiceInsert,
+	GameCharacterAbpChoiceUpdate
+>('game_character_abp_choice');
+
+// Also need to add references for ref_abp_node and ref_abp_node_group
+export type RefAbpNodeRow = RowOf<'ref_abp_node'>;
+export type RefAbpNodeInsert = InsertOf<'ref_abp_node'>;
+export type RefAbpNodeUpdate = UpdateOf<'ref_abp_node'>;
+
+export const refAbpNodeApi = createDbApi<
+	RefAbpNodeRow,
+	RefAbpNodeInsert,
+	RefAbpNodeUpdate
+>('ref_abp_node');
+
+export type RefAbpNodeGroupRow = RowOf<'ref_abp_node_group'>;
+export type RefAbpNodeGroupInsert = InsertOf<'ref_abp_node_group'>;
+export type RefAbpNodeGroupUpdate = UpdateOf<'ref_abp_node_group'>;
+
+export const refAbpNodeGroupApi = createDbApi<
+	RefAbpNodeGroupRow,
+	RefAbpNodeGroupInsert,
+	RefAbpNodeGroupUpdate
+>('ref_abp_node_group');
+
+
+// e.g. "ref_abp_node_bonus" has columns: id, node_id, bonus_type_id, value, target_specifier
+export type RefAbpNodeBonusRow = RowOf<'ref_abp_node_bonus'>;
+export type RefAbpNodeBonusInsert = InsertOf<'ref_abp_node_bonus'>;
+export type RefAbpNodeBonusUpdate = UpdateOf<'ref_abp_node_bonus'>;
+
+export const refAbpNodeBonusApi = createDbApi<
+  RefAbpNodeBonusRow,
+  RefAbpNodeBonusInsert,
+  RefAbpNodeBonusUpdate
+>('ref_abp_node_bonus');
+
+
+// Update dbApis to include these new APIs
 export const dbApis = {
 	// Core game elements
 	ancestralTraitApi,
@@ -573,7 +641,6 @@ export const dbApis = {
 	gameCharacterClassApi,
 	gameCharacterFeatApi,
 	gameCharacterSkillRankApi,
-	gameCharacterAbpBonusApi,
 	gameCharacterWildTalentApi,
 	gameCharacterEquipmentApi,
 	gameCharacterCorruptionApi,
@@ -597,7 +664,14 @@ export const dbApis = {
 	refBonusTypeApi,
 	refBuffTypeApi,
 	refFavoredClassChoiceApi,
-	refSkillRankSourceApi
+	refSkillRankSourceApi,
+	gameCharacterExtractApi,
+	gameCharacterFavoredClassBonusApi,
+	gameCharacterConsumableApi,
+	gameCharacterAbpChoiceApi,
+	refAbpNodeApi,
+	refAbpNodeGroupApi,
+	refAbpNodeBonusApi
 };
 
 // -----------------------------------------------------------------------------

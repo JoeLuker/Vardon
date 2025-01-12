@@ -17,27 +17,28 @@
 	import Skills from '$lib/ui/Skills.svelte';
 	import Saves from '$lib/ui/Saves.svelte';
 	import CombatStats from '$lib/ui/CombatStats.svelte';
+	import ACStats from '$lib/ui/ACStats.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
 
 	// DB references
 	import {
-		gameCharacterApi,
-		gameCharacterAttributeApi,
-		gameCharacterClassApi,
-		gameCharacterFeatApi,
-		gameCharacterSkillRankApi,
-		gameCharacterArchetypeApi,
-		gameCharacterAncestryApi,
-		gameCharacterClassFeatureApi,
-		gameCharacterCorruptionApi,
-		gameCharacterCorruptionManifestationApi,
-		gameCharacterWildTalentApi,
-		gameCharacterAbpBonusApi,
-		gameCharacterEquipmentApi,
-		gameCharacterArmorApi,
-		classApi,
-		featApi
+			gameCharacterApi,
+			gameCharacterAttributeApi,
+			gameCharacterClassApi,
+			gameCharacterFeatApi,
+			gameCharacterSkillRankApi,
+			gameCharacterArchetypeApi,
+			gameCharacterAncestryApi,
+			gameCharacterClassFeatureApi,
+			gameCharacterCorruptionApi,
+			gameCharacterCorruptionManifestationApi,
+			gameCharacterWildTalentApi,
+			gameCharacterEquipmentApi,
+			gameCharacterArmorApi,
+			classApi,
+			featApi,
+			gameCharacterAbpChoiceApi
 	} from '$lib/db/references';
 
 	import { getCompleteCharacter } from '$lib/db/getCompleteCharacter';
@@ -95,6 +96,7 @@
 				rawCharacter = data.rawCharacter ?? null;
 				if (rawCharacter) {
 					character = enrichCharacterData(rawCharacter);
+					console.log('Character:', JSON.stringify(character, null, 2));
 				}
 
 				// 3) Initialize watchers
@@ -182,14 +184,14 @@
 		gameCharacterWildTalentApi.startWatch((type, row) =>
 			handleBridgingChange(type, row, 'game_character_wild_talent')
 		);
-		gameCharacterAbpBonusApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_abp_bonus')
-		);
 		gameCharacterEquipmentApi.startWatch((type, row) =>
 			handleBridgingChange(type, row, 'game_character_equipment')
 		);
 		gameCharacterArmorApi.startWatch((type, row) =>
 			handleBridgingChange(type, row, 'game_character_armor')
+		);
+		gameCharacterAbpChoiceApi.startWatch((type, row) =>
+			handleBridgingChange(type, row, 'game_character_abp_choice')
 		);
 	}
 
@@ -210,9 +212,9 @@
 		gameCharacterCorruptionApi.stopWatch();
 		gameCharacterCorruptionManifestationApi.stopWatch();
 		gameCharacterWildTalentApi.stopWatch();
-		gameCharacterAbpBonusApi.stopWatch();
 		gameCharacterEquipmentApi.stopWatch();
 		gameCharacterArmorApi.stopWatch();
+		gameCharacterAbpChoiceApi.stopWatch();
 
 		watchersInitialized = false;
 	}
@@ -274,6 +276,47 @@
 				} else if (type === 'delete') {
 					rawCharacter.classes = rawCharacter.classes.filter(
 						(c: any) => c.base.id !== row.class_id
+					);
+				}
+				break;
+
+			case 'game_character_abp_choice':
+				if (type === 'insert') {
+					rawCharacter.abpChoices ||= [];
+					rawCharacter.abpChoices.push({
+						group: {
+							id: row.group_id,
+							// Add other required group properties with placeholder values
+							created_at: null,
+							label: null,
+							level: 0,
+							name: '',
+							requires_choice: true,
+							updated_at: null
+						},
+						node: {
+							id: row.node_id,
+							// Add other required node properties with placeholder values
+							created_at: null,
+							name: '',
+							bonuses: [],
+							updated_at: null,
+							description: null,
+							group_id: 0,
+							label: null,
+							requires_choice: false
+						}
+					});
+				} else if (type === 'update') {
+					const idx = rawCharacter.abpChoices?.findIndex(
+						(c: any) => c.group.id === row.group_id
+					);
+					if (idx >= 0) {
+						rawCharacter.abpChoices[idx].node.id = row.node_id;
+					}
+				} else if (type === 'delete') {
+					rawCharacter.abpChoices = rawCharacter.abpChoices?.filter(
+						(c: any) => !(c.group.id === row.group_id)
 					);
 				}
 				break;
@@ -358,6 +401,10 @@
 						}}
 					/>
 					<Saves
+						character={character}
+						onSelectValue={handleSelectValue}
+					/>
+					<ACStats
 						character={character}
 						onSelectValue={handleSelectValue}
 					/>

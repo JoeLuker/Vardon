@@ -86,6 +86,15 @@ create table
     updated_at TIMESTAMPTZ default now()
   );
 
+create table
+  ref_legendary_gift_type (
+    id BIGSERIAL primary key,
+    name text not null unique,
+    label text,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
 -- ===========================================================================
 -- 2) game_character
 -- ===========================================================================
@@ -568,12 +577,50 @@ create table
     updated_at TIMESTAMPTZ default now()
   );
 
+-- Add these new tables after ref_abp_bonus_type definition
+------------------------------------------------------------------------------
+-- ABP REFERENCE TABLES
+------------------------------------------------------------------------------
 create table
-  game_character_abp_bonus (
+  ref_abp_node_group (
+    id BIGSERIAL primary key,
+    name text not null unique,
+    label text,
+    level int not null,
+    requires_choice boolean not null default false,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  ref_abp_node (
+    id BIGSERIAL primary key,
+    group_id bigint not null references ref_abp_node_group(id) on delete cascade,
+    name text not null unique,
+    label text,
+    description text,
+    requires_choice boolean not null default false,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  ref_abp_node_bonus (
+    id BIGSERIAL primary key,
+    node_id bigint not null references ref_abp_node(id) on delete cascade,
+    bonus_type_id bigint not null references ref_abp_bonus_type(id) on delete cascade,
+    value int not null,
+    target_specifier text,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  game_character_abp_choice (
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character(id) on delete cascade,
-    bonus_type_id bigint not null references ref_abp_bonus_type(id) on delete cascade,
-    value int not null default 0,
+    group_id bigint not null references ref_abp_node_group(id) on delete cascade,
+    node_id bigint not null references ref_abp_node(id) on delete cascade,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -582,28 +629,31 @@ create table
   game_character_favored_class_bonus (
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character(id) on delete cascade,
-    level int not null,
+    class_id bigint not null references class(id) on delete cascade,
     choice_id bigint not null references ref_favored_class_choice(id) on delete cascade,
+    level int not null,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
 
+-- Add this before the CREATE PUBLICATION line
 create table
   game_character_equipment (
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character(id) on delete cascade,
     equipment_id bigint not null references equipment(id) on delete cascade,
-    equipped boolean default false,
+    equipped boolean not null default false,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
 
+-- Add this before the CREATE PUBLICATION line
 create table
   game_character_armor (
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character(id) on delete cascade,
     armor_id bigint not null references armor(id) on delete cascade,
-    equipped boolean default false,
+    equipped boolean not null default false,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -654,6 +704,27 @@ BEGIN
             $f$, t, t
         );
     END LOOP;
+
+        ---------------------------------------------------------------------------
+    -- (4) Supabase Realtime publication, open policy, REPLICA IDENTITY
+    ---------------------------------------------------------------------------
+    FOREACH t IN ARRAY all_tables
+    LOOP
+        EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %I', t);
+
+        EXECUTE format($f$
+            CREATE POLICY "Public realtime access"
+            ON %I
+            FOR ALL
+            USING (true)
+            WITH CHECK (true)
+        $f$, t);
+
+        EXECUTE format('ALTER TABLE %I REPLICA IDENTITY FULL', t);
+    END LOOP;
     
 END;
 $$;
+
+
+

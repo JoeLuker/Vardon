@@ -38,7 +38,6 @@ import {
 	skillBonusApi,
 	weaponProficiencyApi,
 	naturalAttackApi,
-	gameCharacterAbpBonusApi,
 	gameCharacterWildTalentApi,
 	gameCharacterEquipmentApi,
 	gameCharacterAttributeApi,
@@ -49,7 +48,11 @@ import {
 	// gameCharacterBuffApi,
 	// gameCharacterAncestralTraitApi,
 	// gameCharacterDiscoveryApi,
-	gameCharacterArchetypeApi
+	gameCharacterArchetypeApi,
+	gameCharacterAbpChoiceApi,
+	refAbpNodeGroupApi,
+	refAbpNodeApi,
+	refAbpNodeBonusApi
 } from '$lib/db';
 
 import type {
@@ -77,7 +80,11 @@ import type {
 	RefBuffTypeRow,
 	RefAbpBonusTypeRow,
 	RefFavoredClassChoiceRow,
-	GameCharacterSkillRankRow
+	GameCharacterSkillRankRow,
+	GameCharacterAbpChoiceRow,
+	RefAbpNodeGroupRow,
+	RefAbpNodeRow,
+	RefAbpNodeBonusRow
 } from '$lib/db';
 
 // -----------------------------------------------------------------------------
@@ -170,15 +177,16 @@ export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' |
 			`${RefFavoredClassChoiceRow['id']}-${RefFavoredClassChoiceRow['id']}`,
 			NonNullable<RefFavoredClassChoiceRow['name']>
 		>;
+		abpNodes: Array<RefAbpNodeRow>;
+		abpNodeGroups: Array<RefAbpNodeGroupRow>;
+		abpNodeBonuses: Array<RefAbpNodeBonusRow>;
 	};
 
-	abpBonuses: Array<{
-		bonus_type_id: number;
-		value: number;
-		choices?: Array<{
-			key: string;
-			value: string;
-		}>;
+	abpChoices: Array<{
+		group: RefAbpNodeGroupRow;
+		node: RefAbpNodeRow & {
+			bonuses: RefAbpNodeBonusRow[];
+		};
 	}>;
 
 }
@@ -220,14 +228,17 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		skillBonuses,
 		weaponProficiencies,
 		naturalAttacks,
-		gameCharAbpBonuses,
+		gameCharAbpChoices,
 		gameCharWildTalents,
 		gameCharEquipment,
 		gameCharAttributes,
 		gameCharClassFeatures,
 		gameCharCorruptions,
 		classSkills,
-		gameCharacterTraits
+		gameCharacterTraits,
+		abpNodeGroups,
+		abpNodes,
+		abpNodeBonuses
 		// gameCharacterBuffs,
 		// gameCharacterAncestralTraits,
 		// gameCharacterDiscoveries,
@@ -260,7 +271,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		skillBonusApi.getAllRows(),
 		weaponProficiencyApi.getAllRows(),
 		naturalAttackApi.getAllRows(),
-		gameCharacterAbpBonusApi.getAllRows(),
+		gameCharacterAbpChoiceApi.getAllRows(),
 		gameCharacterWildTalentApi.getAllRows(),
 		gameCharacterEquipmentApi.getAllRows(),
 		gameCharacterAttributeApi.getAllRows(),
@@ -271,7 +282,10 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		// gameCharacterBuffApi.getAllRows(),
 		// gameCharacterAncestralTraitApi.getAllRows(),
 		// gameCharacterDiscoveryApi.getAllRows(),
-		gameCharacterArchetypeApi.getAllRows()
+		gameCharacterArchetypeApi.getAllRows(),
+		refAbpNodeGroupApi.getAllRows(),
+		refAbpNodeApi.getAllRows(),
+		refAbpNodeBonusApi.getAllRows()
 	]);
 
 	// 3) Filter bridging data for this character
@@ -367,7 +381,10 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		},
 		favoredClassChoices: Object.fromEntries(
 			[...favoredMap.entries()].map(([id, name]) => [`${id}-${id}`, name])
-		)
+		),
+		abpNodes: abpNodes,
+		abpNodeGroups: abpNodeGroups,
+		abpNodeBonuses: abpNodeBonuses
 	};
 
 	// 11) Build arrays for everything else
@@ -412,15 +429,32 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		}));
 
 	// 12) ABP bonuses
-	const abpBonuses = gameCharAbpBonuses
-		.filter((ab) => ab.game_character_id === charRow.id)
-		.map((ab) => ({
-			bonus_type_id: ab.bonus_type_id,
-			value: ab.value
-		}));
+	const abpNodeGroupMap = new Map(abpNodeGroups.map(g => [g.id, g]));
+	const abpNodeMap = new Map(abpNodes.map(n => [n.id, n]));
+
+	const abpChoicesForThisChar = gameCharAbpChoices.filter(ch => 
+		ch.game_character_id === charRow.id
+	);
+
+	const nodeBonusMap = new Map<number, RefAbpNodeBonusRow[]>();
+	for (const bonus of abpNodeBonuses) {
+		if (!nodeBonusMap.has(bonus.node_id)) {
+			nodeBonusMap.set(bonus.node_id, []);
+		}
+		nodeBonusMap.get(bonus.node_id)!.push(bonus);
+	}
+
+	const abpChoices = abpChoicesForThisChar.map(ch => ({
+		group: abpNodeGroupMap.get(ch.group_id)!,
+		node: {
+			...abpNodeMap.get(ch.node_id)!,
+			bonuses: nodeBonusMap.get(ch.node_id) ?? []
+		}
+	}));
 
 	// 13) Final assembly
 	const finalCharacter: CompleteCharacter = {
+		// Base character properties
 		id: charRow.id,
 		name: charRow.name,
 		label: charRow.label,
@@ -429,6 +463,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		max_hp: charRow.max_hp,
 		is_offline: charRow.is_offline,
 
+		// Entity collections
 		ancestry,
 		classes,
 		feats,
@@ -437,23 +472,26 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		equipment,
 		attributes,
 		classFeatures,
+		
+		// Additional arrays
 		skillBonuses,
 		weaponProficiencies,
 		naturalAttacks,
 		archetypeReplacements,
 
+		// Skill data
 		baseSkills: skillRows.map((s) => ({
 			...s,
 			name: s.name ?? '',
 			label: s.label ?? ''
 		})),
 		skillsWithRanks,
+		
+		// References and ABP
 		references,
-		abpBonuses
-
-
+		abpChoices
 	};
 
-	// 14) Cleanup (omits timestamps from nested objects)
+	// 14) Cleanup timestamps
 	return cleanUpObject(finalCharacter);
 }
