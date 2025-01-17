@@ -280,13 +280,6 @@
 		text-align: right;
 	}
 
-	.ability-badge {
-		margin-left: auto;
-		margin-right: 0.5rem;
-		text-transform: uppercase;
-		font-size: 0.75rem;
-	}
-
 	.tabs-header {
 		display: flex;
 		align-items: center;
@@ -301,12 +294,5 @@
 		background-color: hsl(var(--muted-foreground) / 0.2);
 		border-radius: 9999px;
 		margin: auto 0;
-	}
-
-	.toggle-unusable {
-		flex-shrink: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 	}
 </style>

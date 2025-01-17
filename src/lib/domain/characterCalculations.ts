@@ -133,22 +133,20 @@ function addBonus(acc: StackingAccumulator, type: string | undefined, value: num
 
 
 function getMaxDexBonus(char: CompleteCharacter): number {
-	const wornArmor = char.equipment?.find(e => e.slot === 'armor' && e.equipped);
-	// return wornArmor?.base?.max_dex ?? Infinity; // No limit if no armor or no max_dex specified
-	return wornArmor?.max_dex ?? Infinity; // No limit if no armor or no max_dex specified
-
+	const wornArmor = char.armor?.find(a => a.equipped);
+	return wornArmor?.base?.max_dex ?? Infinity; // No limit if no armor or no max_dex specified
 }
 
-function getArmorEnhancement(char: CompleteCharacter): number {
-	// First check for ABP armor enhancement
-	const abpBonus = getAbpBonusFromNodes(char, 'armor_enhancement');
+function getArmorBonus(char: CompleteCharacter): number {
+	const wornArmor = char.armor?.find(a => a.equipped);
+	if (!wornArmor) return 0;
 	
-	// Then check equipped armor's enhancement
-	const wornArmor = char.equipment?.find(e => e.slot === 'armor' && e.equipped);
-	const itemBonus = wornArmor?.enhancement ?? 0;
+	const baseBonus = wornArmor.base?.armor_bonus ?? 0;
 	
-	// Return the higher of the two
-	return Math.max(abpBonus, itemBonus);
+	// Get enhancement from ABP
+	const abpBonus = getAbpBonusFromNodes(char, 'armor_attunement');
+	
+	return baseBonus + abpBonus;
 }
 
 function getNaturalArmor(char: CompleteCharacter): number {
@@ -161,7 +159,7 @@ function getNaturalArmor(char: CompleteCharacter): number {
 
 function getNaturalArmorEnhancement(char: CompleteCharacter): number {
 	// First check for ABP natural armor enhancement
-	const abpBonus = getAbpBonusFromNodes(char, 'natural_armor_enhancement');
+	// const abpBonus = getAbpBonusFromNodes(char, 'natural_armor_enhancement');
 	
 	// // Check for amulet of natural armor or similar items
 	// const amulet = char.equipment?.find(e => 
@@ -173,6 +171,8 @@ function getNaturalArmorEnhancement(char: CompleteCharacter): number {
 	
 	// // Return the higher of the two
 	// return Math.max(abpBonus, itemBonus);
+	const abpBonus = getAbpBonusFromNodes(char, 'toughening');
+
 	return abpBonus;
 }
 
@@ -283,15 +283,6 @@ function getClassSkillIds(char: CompleteCharacter): Set<number> {
 }
 
 //
-// =====================  EQUIPMENT  =====================
-//
-
-function getWornArmorBonus(char: CompleteCharacter): { base: number; type: string } {
-	// Placeholder for real logic
-	return { base: 4, type: 'armor' };
-}
-
-//
 // =====================  FUNCTIONAL COMPUTATION STEPS  =====================
 //
 // Each step is a pure function that returns the "raw" bonuses or final stats.
@@ -373,12 +364,12 @@ function computeACStats(
 ): ACParts {
 	const maxDexBonus = getMaxDexBonus(char);
 	const effectiveDexMod = Math.min(dexMod, maxDexBonus);
+
+	const armorLabel = char.armor?.find(a => a.equipped)?.base?.label;
+	const armorEnhancement = char.armor?.find(a => a.equipped)?.enhancement ?? 0;
 	
-	// Calculate enhanced armor values
-	const wornArmor = char.equipment?.find(e => e.slot === 'armor' && e.equipped);
-	const baseArmorBonus = wornArmor?.base?.bonus ?? 0;
-	const armorEnhancement = getArmorEnhancement(char);
-	const totalArmorBonus = baseArmorBonus + armorEnhancement;
+	// Get armor bonus including enhancements
+	const armorBonus = getArmorBonus(char);
 
 	const baseNaturalArmor = getNaturalArmor(char);
 	const naturalArmorEnhancement = getNaturalArmorEnhancement(char);
@@ -390,8 +381,8 @@ function computeACStats(
 	// Define all possible AC components
 	const acComponents = {
 		base: { source: 'Base', value: 10 , type: 'base'},
-		armor: { source: `Armor (${armorEnhancement > 0 ? `+${armorEnhancement}` : ''})`, 
-				value: totalArmorBonus, 
+		armor: { source: `Armor (${armorLabel} ${armorEnhancement > 0 ? `+${armorEnhancement}` : ''})`, 
+				value: armorBonus, 
 				type: 'armor' },
 		shield: { source: 'Shield', value: getShieldBonus(char), type: 'shield' },
 		dex: { source: 'Dex mod', value: effectiveDexMod, type: 'dex' },
@@ -403,7 +394,7 @@ function computeACStats(
 		dodge: { source: 'Dodge feat', value: hasDodgeFeat ? 1 : 0, type: 'dodge' }
 	};
 
-	const allBonuses = Object.values(acComponents);
+	const allBonuses = Object.values(acComponents).filter(b => b.value !== 0);
 
 	return {
 		ac: buildGenericStat('AC', allBonuses),

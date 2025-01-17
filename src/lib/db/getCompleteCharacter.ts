@@ -52,7 +52,9 @@ import {
 	gameCharacterAbpChoiceApi,
 	refAbpNodeGroupApi,
 	refAbpNodeApi,
-	refAbpNodeBonusApi
+	refAbpNodeBonusApi,
+	gameCharacterArmorApi,
+	armorApi
 } from '$lib/db';
 
 import type {
@@ -84,7 +86,9 @@ import type {
 	GameCharacterAbpChoiceRow,
 	RefAbpNodeGroupRow,
 	RefAbpNodeRow,
-	RefAbpNodeBonusRow
+	RefAbpNodeBonusRow,
+	ArmorRow,
+	GameCharacterArmorRow
 } from '$lib/db';
 
 // -----------------------------------------------------------------------------
@@ -189,6 +193,11 @@ export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' |
 		};
 	}>;
 
+	armor: Array<{
+		base: ArmorRow;
+		equipped: boolean;
+		enhancement?: number;
+	}>;
 }
 
 // -----------------------------------------------------------------------------
@@ -238,7 +247,9 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		gameCharacterTraits,
 		abpNodeGroups,
 		abpNodes,
-		abpNodeBonuses
+		abpNodeBonuses,
+		gameCharacterArmor,
+		armorRows
 		// gameCharacterBuffs,
 		// gameCharacterAncestralTraits,
 		// gameCharacterDiscoveries,
@@ -285,7 +296,9 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		gameCharacterArchetypeApi.getAllRows(),
 		refAbpNodeGroupApi.getAllRows(),
 		refAbpNodeApi.getAllRows(),
-		refAbpNodeBonusApi.getAllRows()
+		refAbpNodeBonusApi.getAllRows(),
+		gameCharacterArmorApi.getAllRows(),
+		armorApi.getAllRows()
 	]);
 
 	// 3) Filter bridging data for this character
@@ -453,6 +466,16 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 	}));
 
 	// 13) Final assembly
+	const armorMap = new Map(armorRows.map((r) => [r.id, r]));
+
+	const armor = gameCharacterArmor
+		.filter((a) => a.game_character_id === charRow.id)
+		.map((a) => ({
+			base: armorMap.get(a.armor_id)!,
+			equipped: a.equipped,
+			// enhancement: a.enhancement
+		}));
+
 	const finalCharacter: CompleteCharacter = {
 		// Base character properties
 		id: charRow.id,
@@ -489,7 +512,8 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		
 		// References and ABP
 		references,
-		abpChoices
+		abpChoices,
+		armor
 	};
 
 	// 14) Cleanup timestamps

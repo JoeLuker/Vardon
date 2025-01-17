@@ -511,6 +511,12 @@ ref_abp_node_bonus:
   value: 2
   target_specifier: null
 
+- id: 12
+  node_id: *level_8_node_id
+  bonus_type_id: *abp_toughening_id
+  value: 1
+  target_specifier: null
+
 # Level 9 Bonuses
 - id: 15
   node_id: *level_9_node_id

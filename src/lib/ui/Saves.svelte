@@ -86,8 +86,4 @@
 	.primary-value {
 		@apply text-2xl font-bold text-foreground;
 	}
-
-	.space-y-6 > * + * {
-		@apply mt-6;
-	}
 </style>
