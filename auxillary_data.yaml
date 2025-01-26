@@ -1,0 +1,745 @@
+
+
+###############################################################################
+# 1.A) ANCESTRY RACIAL TRAITS AND ALTERNATE TRAITS
+###############################################################################
+
+ancestry_trait:
+# =========== TENGU STANDARD TRAITS ===========
+- id: &tengu_ability_scores_id 2000
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_ability_scores'
+  label: 'Ability Score Modifiers'
+  description: '+2 Dexterity, +2 Wisdom, –2 Constitution'
+
+- id: &tengu_type_id 2001
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_type'
+  label: 'Type'
+  description: 'Medium humanoid (tengu)'
+
+- id: &tengu_speed_vision_id 2002
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_speed_vision'
+  label: 'Speed and Vision'
+  description: 'Base speed 30 ft, low-light vision'
+
+- id: &tengu_sneaky_id 2003
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_sneaky'
+  label: 'Sneaky'
+  description: '+2 racial bonus on Perception & Stealth'
+
+- id: &tengu_gifted_linguist_id 2004
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_gifted_linguist'
+  label: 'Gifted Linguist'
+  description: '+4 racial bonus on Linguistics; learn 2 languages per rank'
+
+- id: &tengu_swordtrained_id 2005
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_swordtrained'
+  label: 'Swordtrained'
+  description: 'Proficient with sword-like weapons'
+
+- id: &tengu_natural_weapon_id 2006
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_natural_weapon'
+  label: 'Natural Weapon'
+  description: 'Bite (1d3 points of damage)'
+
+- id: &tengu_languages_id 2007
+  ancestry_id: *ancestry_tengu_id
+  name: 'tengu_languages'
+  label: 'Languages'
+  description: 'Common & Tengu; bonus languages'
+
+# =========== OREAD STANDARD TRAITS ===========
+- id: &oread_ability_scores_id 2100
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_ability_scores'
+  label: 'Ability Score Modifiers'
+  description: '+2 Strength, +2 Wisdom, –2 Charisma'
+
+- id: &oread_type_id 2101
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_type'
+  label: 'Type'
+  description: 'Outsider (native)'
+
+- id: &oread_size_speed_id 2102
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_size_speed'
+  label: 'Size and Speed'
+  description: 'Medium, speed 20 ft (slow & steady)'
+
+- id: &oread_darkvision_id 2103
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_darkvision'
+  label: 'Darkvision'
+  description: 'Darkvision 60 ft'
+
+- id: &oread_spell_like_ability_id 2104
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_spell_like_ability'
+  label: 'Spell-Like Ability'
+  description: '1/day magic stone'
+
+- id: &oread_acid_resistance_id 2105
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_acid_resistance'
+  label: 'Acid Resistance'
+  description: 'Acid Resistance 5'
+
+- id: &oread_earth_affinity_id 2106
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_earth_affinity'
+  label: 'Earth Affinity'
+  description: 'Earth Affinity'
+
+- id: &oread_languages_id 2107
+  ancestry_id: *ancestry_oread_id
+  name: 'oread_languages'
+  label: 'Languages'
+  description: 'Common & Terran; bonus languages'
+
+ancestry_alternate_trait:
+# ================= TENGU ALTERNATES =================
+- id: &tengu_carrion_sense_id 3000
+  ancestry_id: *ancestry_tengu_id
+  name: 'carrion_sense'
+  label: 'Carrion Sense'
+  replaces: *tengu_gifted_linguist_id
+  description: >
+    Gain limited scent for corpses/injured creatures (50% HP). Replaces gifted linguist.
+
+- id: &tengu_glide_id 3001
+  ancestry_id: *ancestry_tengu_id
+  name: 'glide'
+  label: 'Glide'
+  replaces: *tengu_gifted_linguist_id
+  description: >
+    DC 15 Fly check to fall safely from any height (feather fall effect); possibly glide 5 ft lateral for every 20 ft fallen.
+
+- id: &tengu_deft_swords_id 3002
+  ancestry_id: *ancestry_tengu_id
+  name: 'deft_swords'
+  label: 'Deft Swords'
+  replaces: [ *tengu_natural_weapon_id, *tengu_sneaky_id ]
+  description: >
+    +2 dodge bonus to CMD vs combat maneuvers while wielding a swordlike weapon.
+
+- id: &tengu_claw_attack_id 3003
+  ancestry_id: *ancestry_tengu_id
+  name: 'claw_attack'
+  label: 'Claw Attack'
+  replaces: *tengu_swordtrained_id
+  description: >
+    Gain two primary claw attacks (1d3). Treated as having Improved Unarmed Strike. Replaces swordtrained.
+
+- id: &tengu_exotic_weapon_training_id 3004
+  ancestry_id: *ancestry_tengu_id
+  name: 'exotic_weapon_training'
+  label: 'Exotic Weapon Training'
+  replaces: *tengu_swordtrained_id
+  description: >
+    Choose eastern weapons = 3 + Int bonus; gain proficiency with them. Replaces swordtrained.
+
+# ================= OREAD ALTERNATES =================
+- id: &oread_crystalline_form_id 3100
+  ancestry_id: *ancestry_oread_id
+  name: 'crystalline_form'
+  label: 'Crystalline Form'
+  replaces: *oread_earth_affinity_id
+  description: >
+    +2 AC vs rays (reflective skin). 1/day can deflect a ray as per Deflect Arrows feat.
+
+- id: &oread_earth_insight_id 3101
+  ancestry_id: *ancestry_oread_id
+  name: 'earth_insight'
+  label: 'Earth Insight'
+  replaces: *oread_earth_affinity_id
+  description: >
+    Summon monster/nature's ally last 2 rounds longer if summoning earth subtype creatures.
+
+- id: &oread_fertile_soil_id 3102
+  ancestry_id: *ancestry_oread_id
+  name: 'fertile_soil'
+  label: 'Fertile Soil'
+  replaces: *oread_earth_affinity_id
+  description: >
+    Sorcerers w/verdant bloodline +2 Cha for spells/abilities; Clerics w/Plant domain +1 CL.
+
+- id: &oread_gem_magic_id 3103
+  ancestry_id: *ancestry_oread_id
+  name: 'gem_magic'
+  label: 'Oread Gem Magic'
+  replaces: *oread_earth_affinity_id
+  description: >
+    Can consume precious gems as extra material components to augment earth-related spells.
+
+- id: &oread_stone_in_blood_id 3104
+  ancestry_id: *ancestry_oread_id
+  name: 'stone_in_the_blood'
+  label: 'Stone in the Blood'
+  replaces: *oread_earth_affinity_id
+  description: >
+    Gain fast healing 2 for 1 round when you take acid damage, up to 2 HP/level per day.
+
+- id: &oread_granite_skin_id 3105
+  ancestry_id: *ancestry_oread_id
+  name: 'granite_skin'
+  label: 'Granite Skin'
+  replaces: *oread_acid_resistance_id
+  description: >
+    Gain +1 natural armor bonus. Replaces acid resistance 5.
+
+- id: &oread_isolated_id 3106
+  ancestry_id: *ancestry_oread_id
+  name: 'isolated'
+  label: 'Isolated'
+  replaces: *oread_languages_id
+  description: >
+    +2 Perception & Knowledge (dungeoneering), can use it untrained. Only speak Terran at 1st level (no Common).
+
+- id: &oread_mostly_human_id 3107
+  ancestry_id: *ancestry_oread_id
+  name: 'mostly_human'
+  label: 'Mostly Human'
+  replaces: [ *oread_languages_id, *oread_type_id ]
+  description: >
+    Count as humanoid (human) and outsider (native). Don't automatically get Terran.
+
+- id: &oread_ferrous_growth_id 3108
+  ancestry_id: *ancestry_oread_id
+  name: 'ferrous_growth'
+  label: 'Ferrous Growth'
+  replaces: *oread_spell_like_ability_id
+  description: >
+    1/day can cause a nonmagical iron/steel object to grow into something up to 10 lbs.
+
+- id: &oread_mountain_born_id 3109
+  ancestry_id: *ancestry_oread_id
+  name: 'mountain_born'
+  label: 'Mountain-Born'
+  replaces: *oread_spell_like_ability_id
+  description: >
+    +2 racial bonus on Acrobatics vs narrow ledges, +2 on saves vs altitude sickness/fatigue.
+
+- id: &oread_treacherous_earth_id 3110
+  ancestry_id: *ancestry_oread_id
+  name: 'treacherous_earth'
+  label: 'Treacherous Earth'
+  replaces: *oread_spell_like_ability_id
+  description: >
+    1/day transform 10-foot radius patch of earth/stone/sand into difficult terrain for minutes.
+
+- id: &oread_gem_magic_detailed_id 10000
+  ancestry_id: *ancestry_oread_id
+  name: 'gem_magic_detailed'
+  label: 'Oread Gem Magic (Detailed)'
+  replaces: *oread_earth_affinity_id
+  description: >
+    Can augment earth-related spells with gems as additional components: - Binding Earth (+1 damage, DC; 50gp garnet) - Calcific Touch (+1 Dex damage; 250gp aquamarine) - Earthquake (+2 DC, larger area; 500gp jet) - Stone Shape (5% failure for moving parts; 250gp opal)
+
+- id: &oread_mostly_human_detailed_id 10001
+  ancestry_id: *ancestry_oread_id
+  name: 'mostly_human'
+  label: 'Mostly Human'
+  replaces: [ *oread_languages_id, *oread_type_id ]
+  description: >
+    Count as both humanoid (human) and outsider (native). Appear mostly human. Don't automatically know Terran.
+  type_changes:
+  - add_type: 'humanoid'
+  - add_subtype: 'human'
+  - retain_type: 'outsider'
+  - retain_subtype: 'native'
+
+- id: &oread_mountain_born_detailed_id 10002
+  ancestry_id: *ancestry_oread_id
+  name: 'mountain_born'
+  label: 'Mountain-Born'
+  replaces: *oread_spell_like_ability_id
+  description: >
+    +2 racial bonus on Acrobatics vs narrow ledges +2 on saves vs altitude sickness and fatigue
+  bonuses:
+  - type: 'racial'
+    value: 2
+    skill: 'acrobatics'
+    condition: 'narrow_ledges'
+  - type: 'racial'
+    value: 2
+    save_type: [ 'fortitude' ]
+    condition: [ 'altitude_sickness', 'fatigue' ]
+
+###############################################################################
+# 6) (OPTIONAL) VAMPIRISM CORRUPTION TWEAKS FOR HUNGER RULES
+###############################################################################
+# If you want to store the "hunger" system in YAML, you could add references like:
+undead_hunger_stage:
+- id: 600
+  name: 'stage_1_withdrawal'
+  penalty: '-1 channel resist, -2 Will, -1 Str/Cha, etc.'
+
+# Style Strike Reference Table
+style_strike:
+- id: &style_defensive_spin_id 3000
+  name: 'defensive_spin'
+  label: 'Defensive Spin'
+  description: >
+    If hit, monk gains +4 dodge bonus to AC vs target until next turn. Requires: Must attack with fist.
+  weapon_requirement: 'fist'
+
+- id: &style_elbow_smash_id 3001
+  name: 'elbow_smash'
+  label: 'Elbow Smash'
+  description: >
+    Additional attack at -5 penalty that deals nonlethal damage. Requires: Must attack with fist.
+  weapon_requirement: 'fist'
+
+- id: &style_flying_kick_id 3002
+  name: 'flying_kick'
+  label: 'Flying Kick'
+  description: >
+    Move distance equal to fast movement bonus before attack. Requires: Must attack with kick.
+  weapon_requirement: 'kick'
+
+- id: &style_foot_stomp_id 3003
+  name: 'foot_stomp'
+  label: 'Foot Stomp'
+  description: >
+    Target must stay adjacent or break free with combat maneuver. Requires: Must attack with kick, doesn't work on trip-immune.
+  weapon_requirement: 'kick'
+
+- id: &style_hammerblow_id 3004
+  name: 'hammerblow'
+  label: 'Hammerblow'
+  description: >
+    Roll damage twice and add together before modifiers. Requires: Must attack with fist, both hands free.
+  weapon_requirement: 'fist'
+  special_requirement: 'hands_free'
+
+# Ki Power Reference Table
+ki_power:
+- id: &ki_abundant_step_id 4000
+  name: 'abundant_step'
+  label: 'Abundant Step'
+  description: >
+    Dimension door as move action for 2 ki points. Requirements: Level 8+
+  min_level: 8
+  ki_cost: 2
+
+- id: &ki_diamond_soul_id 4001
+  name: 'diamond_soul'
+  label: 'Diamond Soul'
+  description: >
+    Gain SR equal to monk level + 10 for monk level rounds. Requirements: Level 12+
+  min_level: 12
+  ki_cost: 2
+
+- id: &ki_empty_body_id 4002
+  name: 'empty_body'
+  label: 'Empty Body'
+  description: >
+    Become ethereal for 1 minute. Requirements: Level 12+
+  min_level: 12
+  ki_cost: 3
+
+- id: &ki_quivering_palm_id 4003
+  name: 'quivering_palm'
+  label: 'Quivering Palm'
+  description: >
+    Death attack usable within monk level days. Requirements: Level 16+
+  min_level: 16
+  ki_cost: 4
+
+# Perfect Self Details
+perfect_self_ability:
+- id: &perfect_self_base_id 5000
+  name: 'perfect_self_base'
+  label: 'Perfect Self Base Ability'
+  description: >
+    Become outsider type, retain resurrection capability. Gain DR 10/chaotic.
+
+- id: &perfect_self_meditation_id 5001
+  name: 'perfect_self_meditation'
+  label: 'Perfect Calm'
+  description: >
+    Regain 1 ki point per 10 minutes of meditation. Cannot exceed normal ki point maximum.
+
+# Character to Style Strike Bridge Table
+game_character_style_strike:
+# Example for a character with style strikes
+- game_character_id: *killiq_id
+  style_strike_id: *style_flying_kick_id
+  level_obtained: 5
+
+- game_character_id: *killiq_id
+  style_strike_id: *style_foot_stomp_id
+  level_obtained: 9
+
+- id: &style_head_butt_id 3005
+  name: 'style_head_butt'
+  label: 'Head-Butt'
+  description: >
+    If hit and target is same size/smaller, make free combat maneuver check to stagger for 1 round. Non-matching creature types take -8 penalty. Requires head-butt attack.
+  weapon_requirement: 'head'
+  special_requirement: 'size_restriction'
+
+- id: &style_knockback_kick_id 3006
+  name: 'style_knockback_kick'
+  label: 'Knockback Kick'
+  description: >
+    On hit, free combat maneuver to knock target back 10ft (+10ft per 5 over CMD). Max distance equals monk's movement bonus. Requires kick attack.
+  weapon_requirement: 'kick'
+
+- id: &style_leg_sweep_id 3007
+  name: 'style_leg_sweep'
+  label: 'Leg Sweep'
+  description: >
+    On hit, make free trip attempt that doesn't provoke. Requires kick attack.
+  weapon_requirement: 'kick'
+
+- id: &style_shattering_punch_id 3008
+  name: 'style_shattering_punch'
+  label: 'Shattering Punch'
+  description: >
+    Attack bypasses any damage reduction or hardness. Requires fist attack.
+  weapon_requirement: 'fist'
+
+- id: &style_spin_kick_id 3009
+  name: 'style_spin_kick'
+  label: 'Spin Kick'
+  description: >
+    Attack targets flat-footed AC (unless target has uncanny dodge). Requires kick attack.
+  weapon_requirement: 'kick'
+
+# Character to Ki Power Bridge Table  
+game_character_ki_power:
+# Example for a character with ki powers
+- game_character_id: *killiq_id
+  ki_power_id: *ki_abundant_step_id
+  level_obtained: 8
+
+- game_character_id: *killiq_id
+  ki_power_id: *ki_diamond_soul_id
+  level_obtained: 12
+
+# Discovery Reference Table
+alchemist_discovery:
+- id: &discovery_preserve_organs_id 6000
+  name: 'preserve_organs'
+  label: 'Preserve Organs'
+  description: >
+    Internal fortification grants 25% chance to negate critical hits and precision damage.
+  prerequisites: []
+  min_level: 4
+
+- id: &discovery_feral_mutagen_id 6001
+  name: 'feral_mutagen'
+  label: 'Feral Mutagen'
+  description: >
+    Mutagen grants bite (1d6) and 2 claw (1d4) attacks.
+  prerequisites: []
+  min_level: 2
+
+- id: &discovery_grand_mutagen_id 6002
+  name: 'grand_mutagen'
+  label: 'Grand Mutagen'
+  description: >
+    Mutagen bonus increases to +6/+4/-2
+  prerequisites: [ 'greater_mutagen' ]
+  min_level: 16
+
+# Grand Discovery Reference Table
+grand_discovery:
+- id: &grand_discovery_true_mutagen_id 7000
+  name: 'true_mutagen'
+  label: 'True Mutagen'
+  description: >
+    Mutagen bonus increases to +8/+6/-2
+  prerequisites: [ 'grand_mutagen' ]
+
+- id: &grand_discovery_eternal_potion_id 7001
+  name: 'eternal_potion'
+  label: 'Eternal Potion'
+  description: >
+    Create a potion that never runs out.
+  prerequisites: []
+
+# Extract Preparation Rules
+extract_rules:
+- id: &extract_rule_preparation_id 8000
+  name: 'preparation_rules'
+  preparation_time: '1 minute'
+  duration: '1 day'
+  restrictions: >
+    Becomes inert if it leaves alchemist's possession. Cannot be shared unless has Infusion discovery.
+
+- id: &discovery_infusion_id 13200
+  name: 'infusion'
+  label: 'Infusion'
+  description: >
+    Extracts can be used by other creatures, as if they were potions.
+  prerequisites: []
+  min_level: 1
+
+- id: &discovery_concentrate_poison_id 13201
+  name: 'concentrate_poison'
+  label: 'Concentrated Poison'
+  description: >
+    Poison DCs increase by 2, duration doubles.
+  prerequisites: []
+  min_level: 2
+
+- id: &discovery_extend_potion_id 13202
+  name: 'extend_potion'
+  label: 'Extend Potion'
+  description: >
+    Can make potions with doubled duration using Extend Spell.
+  prerequisites: []
+  min_level: 1
+
+# Mutagen Effect Details
+mutagen_effect:
+- id: &mutagen_effect_strength_id 9000
+  name: 'strength_mutagen'
+  physical_bonus:
+    ability: 'strength'
+    value: 4
+  mental_penalty:
+    ability: 'intelligence'
+    value: -2
+  natural_armor_bonus: 2
+  duration_minutes_per_level: 10
+
+- id: &mutagen_effect_dexterity_id 9001
+  name: 'dexterity_mutagen'
+  physical_bonus:
+    ability: 'dexterity'
+    value: 4
+  mental_penalty:
+    ability: 'wisdom'
+    value: -2
+  natural_armor_bonus: 2
+  duration_minutes_per_level: 10
+
+# Bridge Tables for Character Discoveries
+game_character_discovery:
+- game_character_id: *vardon_id
+  discovery_id: *discovery_preserve_organs_id
+  level_obtained: 4
+
+game_character_grand_discovery:
+- game_character_id: *vardon_id
+  grand_discovery_id: *grand_discovery_true_mutagen_id
+  level_obtained: 20
+
+# Bridge table for character alternate traits
+game_character_alternate_trait:
+- game_character_id: *killiq_id
+  alternate_trait_id: *oread_mountain_born_detailed_id
+
+# Oread Subrace Details
+oread_subrace:
+- id: &oread_gemsoul_id 11000
+  name: 'gemsoul'
+  label: 'Gemsoul (Crystal Oread)'
+  ability_modifiers:
+  - ability_id: *ability_str_id
+    value: 2
+  - ability_id: *ability_cha_id
+    value: 2
+  - ability_id: *ability_wis_id
+    value: -2
+  spell_like_ability: 'color_spray'
+  description: >
+    Scintillating personalities with crystalline appearances. Favors artistic pursuits and performative roles.
+
+- id: &oread_ironsoul_id 11001
+  name: 'ironsoul'
+  label: 'Ironsoul (Metal Oread)'
+  ability_modifiers:
+  - ability_id: *ability_con_id
+    value: 2
+  - ability_id: *ability_wis_id
+    value: 2
+  - ability_id: *ability_dex_id
+    value: -2
+  spell_like_ability: 'unerring_weapon'
+  description: >
+    Stolid and indomitable with metallic skin tones. Focused on self-improvement and structured growth.
+
+# Unarmed Strike Damage Progression
+monk_unarmed_damage:
+- id: &monk_damage_progression_id 12000
+  size: 'medium'
+  levels:
+    1:
+      dice_count: 1
+      dice_size: 6
+    4:
+      dice_count: 1
+      dice_size: 8
+    8:
+      dice_count: 1
+      dice_size: 10
+    12:
+      dice_count: 2
+      dice_size: 6
+    16:
+      dice_count: 2
+      dice_size: 8
+    20:
+      dice_count: 2
+      dice_size: 10
+  size_adjustments:
+    small:
+      1:
+        dice_count: 1
+        dice_size: 4
+      4-7:
+        dice_count: 1
+        dice_size: 6
+      8-11:
+        dice_count: 1
+        dice_size: 8
+      12-15:
+        dice_count: 1
+        dice_size: 10
+      16-19:
+        dice_count: 2
+        dice_size: 6
+      20:
+        dice_count: 2
+        dice_size: 8
+    large:
+      1:
+        dice_count: 1
+        dice_size: 8
+      4:
+        dice_count: 2
+        dice_size: 6
+      8:
+        dice_count: 2
+        dice_size: 8
+      12:
+        dice_count: 3
+        dice_size: 6
+      16:
+        dice_count: 3
+        dice_size: 8
+      20:
+        dice_count: 4
+        dice_size: 8
+
+# Ki Pool Calculations
+monk_ki_pool:
+- id: &ki_pool_base_id 12001
+  name: 'ki_pool_base'
+  formula: 'floor(monk_level / 2) + wisdom_modifier'
+  minimum: 1
+  replenish: 'after_rest'
+  replenish_meditation_rate: '1_per_10_minutes'
+
+# Monk Bonus Feat Progression
+monk_bonus_feat_levels:
+- id: &monk_bonus_feat_progression_id 12002
+  levels: [ 1, 2, 6, 10, 14, 18 ]
+  feat_lists:
+    1:
+    - 'catch_off_guard'
+    - 'combat_reflexes'
+    - 'deflect_arrows'
+    - 'dodge'
+    - 'improved_grapple'
+    - 'scorpion_style'
+    - 'throw_anything'
+    6:
+    - 'gorgons_fist'
+    - 'improved_bull_rush'
+    - 'improved_disarm'
+    - 'improved_feint'
+    - 'improved_trip'
+    - 'mobility'
+    10:
+    - 'improved_critical'
+    - 'medusas_wrath'
+    - 'snatch_arrows'
+    - 'spring_attack'
+
+# Bomb Calculations
+alchemist_bomb:
+- id: &bomb_calculation_id 13000
+  base_damage: '1d6'
+  bonus_damage: 'intelligence_modifier'
+  progression:
+    level_multiplier: 1
+    level_interval: 2 # Every odd level
+  damage_type: 'fire'
+  range: 20
+  splash_damage: 'minimum_damage'
+  dc_calculation:
+    base: 10
+    level_modifier: 'floor(level / 2)'
+    ability_modifier: 'intelligence_modifier'
+
+# Extract Formulae List (Sample - would need to be expanded)
+alchemist_formula:
+- id: &formula_category_1_id 13100
+  level: 1
+  spells:
+  - 'cure light wounds'
+  - 'enlarge person'
+  - 'expeditious retreat'
+  - 'shield'
+  - 'true strike'
+- id: &formula_category_2_id 13101
+  level: 2
+  spells:
+  - 'barkskin'
+  - "bull's strength"
+  - 'invisibility'
+  - "fox's cunning"
+  - 'resist energy'
+
+# Formula Book Rules
+formula_book:
+- id: &formula_book_rules_id 13300
+  pages_per_spell_level: 1
+  cost_per_page: '10gp'
+  learning_rules:
+    time_per_level: '1_hour'
+    cost_per_level: '50gp'
+    can_learn_from:
+    - 'wizard_spellbook'
+    - 'other_formula_book'
+    restrictions:
+    - 'must_be_extract_capable'
+    - 'must_be_3rd_or_lower'
+
+# Infusion Reference Table  
+kineticist_infusion:
+- id: &kineticist_infusion_extended_range_id 2500
+  name: 'extended_range'
+  type: 'form'
+  description: >
+    Doubles range of blast
+  burn_cost: 1
+
+# Elemental Overflow Benefits Table
+overflow_benefits:
+- id: &overflow_benefit_attack_id 2600
+  level_range: '3-5'
+  attack_bonus: 1
+  damage_bonus: 2
+  ability_score_bonus: null
+
+- id: &overflow_benefit_ability_score_id 2601
+  level_range: '6-10'
+  attack_bonus: 2
+  damage_bonus: 4
+  ability_score_bonus:
+    type: 'size'
+    value: 2
+    choices: 2

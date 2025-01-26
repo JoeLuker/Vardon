@@ -1,23 +1,35 @@
 <script lang="ts">
-	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
+	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
 	import { StretchHorizontal } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 
-	// Props
+	// Define interface for our processed ability score data
+	interface AbilityScore {
+		name: string;
+		value: number;
+		mod: number;
+		scoreKey: keyof Pick<
+			EnrichedCharacter,
+			'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma'
+		>;
+	}
+
+	// Props with proper typing
 	let { character, onSelectValue = () => {} } = $props<{
-		character?: any; // or a specific type
+		character?: EnrichedCharacter | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 	}>();
 
-	// Local UI toggle
+	// Local UI state
 	let showModifierFirst = $state(false);
+
+	// Derive ability scores data
 	let abilityMods = $derived.by(() => {
 		if (!character) {
-			return [];
+			return [] as AbilityScore[];
 		}
 
-		// Example: for each attribute, compute { name, value, mod, scoreKey }
-		return [
+		const abilities: AbilityScore[] = [
 			{
 				name: 'Strength',
 				value: character.strength?.total ?? 10,
@@ -39,7 +51,7 @@
 			{
 				name: 'Intelligence',
 				value: character.intelligence?.total ?? 10,
-				mod: character.intMod ?? -1,
+				mod: character.intMod ?? 0,
 				scoreKey: 'intelligence'
 			},
 			{
@@ -55,10 +67,11 @@
 				scoreKey: 'charisma'
 			}
 		];
+
+		return abilities;
 	});
 </script>
 
-<!-- If characterStore is present, show our attribute cards -->
 {#if character}
 	<div class="card">
 		<div class="flex flex-col gap-4">
@@ -83,8 +96,10 @@
 						class="attribute-card"
 						type="button"
 						onclick={() => {
-							// On click, pass the "score object" to onSelectValue
-							onSelectValue(character?.[ability.scoreKey]);
+							const score = character[ability.scoreKey];
+							if (score) {
+								onSelectValue(score);
+							}
 						}}
 					>
 						<div class="card-inner">
@@ -111,8 +126,6 @@
 			</div>
 		</div>
 	</div>
-
-<!-- Otherwise, loading fallback -->
 {:else}
 	<div class="card">
 		<div class="flex items-center justify-center space-x-2 text-primary/70">

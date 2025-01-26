@@ -13,7 +13,7 @@
 	// Child components
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
 	import HPTracker from '$lib/ui/HPTracker.svelte';
-	import Attributes from '$lib/ui/Attributes.svelte';
+	import AbilityScores from '$lib/ui/AbilityScores.svelte';
 	import Skills from '$lib/ui/Skills.svelte';
 	import Saves from '$lib/ui/Saves.svelte';
 	import CombatStats from '$lib/ui/CombatStats.svelte';
@@ -24,7 +24,7 @@
 	// DB references
 	import {
 			gameCharacterApi,
-			gameCharacterAttributeApi,
+			gameCharacterAbilityApi,
 			gameCharacterClassApi,
 			gameCharacterFeatApi,
 			gameCharacterSkillRankApi,
@@ -202,7 +202,7 @@
 		if (!watchersInitialized) return;
 
 		gameCharacterApi.stopWatch();
-		gameCharacterAttributeApi.stopWatch();
+		gameCharacterAbilityApi.stopWatch();
 		gameCharacterClassApi.stopWatch();
 		gameCharacterFeatApi.stopWatch();
 		gameCharacterSkillRankApi.stopWatch();
@@ -360,17 +360,17 @@
 		<CharacterHeader character={character} />
 
 		<!-- Tabs -->
-		<Tabs.Root value="attributes" class="w-full">
+		<Tabs.Root value="abilityScores" class="w-full">
 			<Tabs.List class="grid w-full grid-cols-3">
-				<Tabs.Trigger value="attributes">Attributes</Tabs.Trigger>
+				<Tabs.Trigger value="abilityScores">Ability Scores</Tabs.Trigger>
 				<Tabs.Trigger value="skills">Skills</Tabs.Trigger>
 				<Tabs.Trigger value="combat">Combat</Tabs.Trigger>
 			</Tabs.List>
 
-			<!-- Attributes -->
-			<Tabs.Content value="attributes">
+			<!-- AbilityScores -->
+			<Tabs.Content value="abilityScores">
 				<div class="rounded-lg bg-secondary p-6">
-					<Attributes
+					<AbilityScores
 						character={character}
 						onSelectValue={handleSelectValue}
 					/>

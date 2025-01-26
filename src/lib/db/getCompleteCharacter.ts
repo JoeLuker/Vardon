@@ -23,24 +23,24 @@ import {
 	corruptionApi,
 	wildTalentApi,
 	equipmentApi,
-	attributeApi,
+	abilityApi,
 	ancestralTraitApi,
 	skillApi,
 	classFeatureApi,
 	discoveryApi,
 	archetypeApi,
-	refBonusTypeApi,
-	refSkillRankSourceApi,
-	refBuffTypeApi,
-	refAbpBonusTypeApi,
-	refFavoredClassChoiceApi,
+	bonusTypeApi,
+	skillRankSourceApi,
+	buffTypeApi,
+	abpBonusTypeApi,
+	favoredClassChoiceApi,
 	archetypeFeatureReplacementApi,
 	skillBonusApi,
 	weaponProficiencyApi,
 	naturalAttackApi,
 	gameCharacterWildTalentApi,
 	gameCharacterEquipmentApi,
-	gameCharacterAttributeApi,
+	gameCharacterAbilityApi,
 	gameCharacterClassFeatureApi,
 	gameCharacterCorruptionApi,
 	classSkillApi,
@@ -50,9 +50,9 @@ import {
 	// gameCharacterDiscoveryApi,
 	gameCharacterArchetypeApi,
 	gameCharacterAbpChoiceApi,
-	refAbpNodeGroupApi,
-	refAbpNodeApi,
-	refAbpNodeBonusApi,
+	abpNodeGroupApi,
+	abpNodeApi,
+	abpNodeBonusApi,
 	gameCharacterArmorApi,
 	armorApi
 } from '$lib/db';
@@ -69,7 +69,7 @@ import type {
 	DiscoveryRow,
 	WildTalentRow,
 	EquipmentRow,
-	AttributeRow,
+	AbilityRow,
 	AncestralTraitRow,
 	ClassFeatureRow,
 	SkillRow,
@@ -77,16 +77,16 @@ import type {
 	WeaponProficiencyRow,
 	NaturalAttackRow,
 	ArchetypeFeatureReplacementRow,
-	RefBonusTypeRow,
-	RefSkillRankSourceRow,
-	RefBuffTypeRow,
-	RefAbpBonusTypeRow,
-	RefFavoredClassChoiceRow,
+	BonusTypeRow,
+	SkillRankSourceRow,	
+	BuffTypeRow,
+	AbpBonusTypeRow,
+	FavoredClassChoiceRow,
 	GameCharacterSkillRankRow,
 	GameCharacterAbpChoiceRow,
-	RefAbpNodeGroupRow,
-	RefAbpNodeRow,
-	RefAbpNodeBonusRow,
+	AbpNodeGroupRow,
+	AbpNodeRow,
+	AbpNodeBonusRow,
 	ArmorRow,
 	GameCharacterArmorRow
 } from '$lib/db';
@@ -139,7 +139,7 @@ export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' |
 	wildTalents: Array<{ base: WildTalentRow; [key: string]: any }>;
 	equipment: Array<{ base: EquipmentRow; [key: string]: any }>;
 	// ancestralTraits: Array<{ base: AncestralTraitRow; [key: string]: any }>;
-	attributes: Array<{ base: AttributeRow; [key: string]: any }>;
+	abilities: Array<{ base: AbilityRow; [key: string]: any }>;
 	classFeatures: Array<{ base: ClassFeatureRow; [key: string]: any }>;
 	// discoveries: Array<{ base: DiscoveryRow; [key: string]: any }>;
 	// archetypes: Array<{ base: ArchetypeRow; [key: string]: any }>;
@@ -156,10 +156,10 @@ export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' |
 		}
 	>;
 	skillsWithRanks: Array<{
-		skillId: number;
+		skillId: number;	
 		name: string;
 		label: string;
-		ability: string;
+		ability_label: string;
 		totalRanks: number;
 		rankSources: Array<
 			{
@@ -170,26 +170,26 @@ export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' |
 	}>;
 
 	references: {
-		bonusTypes: Record<RefBonusTypeRow['id'], RefBonusTypeRow['name']>;
-		skillRankSources: Record<RefSkillRankSourceRow['id'], RefSkillRankSourceRow['name']>;
-		buffTypes: Record<RefBuffTypeRow['id'], RefBuffTypeRow['name']>;
+		bonusTypes: Record<BonusTypeRow['id'], BonusTypeRow['name']>;
+		skillRankSources: Record<SkillRankSourceRow['id'], SkillRankSourceRow['name']>;
+		buffTypes: Record<BuffTypeRow['id'], BuffTypeRow['name']>;
 		abpBonusTypes: {
-			byId: Record<RefAbpBonusTypeRow['id'], RefAbpBonusTypeRow['name']>;
+			byId: Record<AbpBonusTypeRow['id'], AbpBonusTypeRow['name']>;
 			byName: Record<string, number>;
 		};
 		favoredClassChoices: Record<
-			`${RefFavoredClassChoiceRow['id']}-${RefFavoredClassChoiceRow['id']}`,
-			NonNullable<RefFavoredClassChoiceRow['name']>
+			`${FavoredClassChoiceRow['id']}-${FavoredClassChoiceRow['id']}`,
+			NonNullable<FavoredClassChoiceRow['name']>
 		>;
-		abpNodes: Array<RefAbpNodeRow>;
-		abpNodeGroups: Array<RefAbpNodeGroupRow>;
-		abpNodeBonuses: Array<RefAbpNodeBonusRow>;
+		abpNodes: Array<AbpNodeRow>;
+		abpNodeGroups: Array<AbpNodeGroupRow>;
+		abpNodeBonuses: Array<AbpNodeBonusRow>;
 	};
 
 	abpChoices: Array<{
-		group: RefAbpNodeGroupRow;
-		node: RefAbpNodeRow & {
-			bonuses: RefAbpNodeBonusRow[];
+		group: AbpNodeGroupRow;
+		node: AbpNodeRow & {
+			bonuses: AbpNodeBonusRow[];
 		};
 	}>;
 
@@ -222,7 +222,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		corruptionRows,
 		wildTalentRows,
 		equipmentRows,
-		attributeRows,
+		abilityRows,
 		ancestralTraitRows,
 		skillRows,
 		discoveryRows,
@@ -240,7 +240,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		gameCharAbpChoices,
 		gameCharWildTalents,
 		gameCharEquipment,
-		gameCharAttributes,
+		gameCharAbilities,
 		gameCharClassFeatures,
 		gameCharCorruptions,
 		classSkills,
@@ -267,16 +267,16 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		corruptionApi.getAllRows(),
 		wildTalentApi.getAllRows(),
 		equipmentApi.getAllRows(),
-		attributeApi.getAllRows(),
+		abilityApi.getAllRows(),
 		ancestralTraitApi.getAllRows(),
 		skillApi.getAllRows(),
 		discoveryApi.getAllRows(),
 		archetypeApi.getAllRows(),
-		refBonusTypeApi.getAllRows(),
-		refSkillRankSourceApi.getAllRows(),
-		refBuffTypeApi.getAllRows(),
-		refAbpBonusTypeApi.getAllRows(),
-		refFavoredClassChoiceApi.getAllRows(),
+		bonusTypeApi.getAllRows(),
+		skillRankSourceApi.getAllRows(),
+		buffTypeApi.getAllRows(),
+		abpBonusTypeApi.getAllRows(),
+		favoredClassChoiceApi.getAllRows(),
 		archetypeFeatureReplacementApi.getAllRows(),
 		// Additional bridging data
 		skillBonusApi.getAllRows(),
@@ -285,7 +285,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		gameCharacterAbpChoiceApi.getAllRows(),
 		gameCharacterWildTalentApi.getAllRows(),
 		gameCharacterEquipmentApi.getAllRows(),
-		gameCharacterAttributeApi.getAllRows(),
+		gameCharacterAbilityApi.getAllRows(),
 		gameCharacterClassFeatureApi.getAllRows(),
 		gameCharacterCorruptionApi.getAllRows(),
 		classSkillApi.getAllRows(),
@@ -294,9 +294,9 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		// gameCharacterAncestralTraitApi.getAllRows(),
 		// gameCharacterDiscoveryApi.getAllRows(),
 		gameCharacterArchetypeApi.getAllRows(),
-		refAbpNodeGroupApi.getAllRows(),
-		refAbpNodeApi.getAllRows(),
-		refAbpNodeBonusApi.getAllRows(),
+		abpNodeGroupApi.getAllRows(),
+		abpNodeApi.getAllRows(),
+		abpNodeBonusApi.getAllRows(),
 		gameCharacterArmorApi.getAllRows(),
 		armorApi.getAllRows()
 	]);
@@ -318,7 +318,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 	const corruptionMap = new Map(corruptionRows.map((r) => [r.id, r]));
 	const wildTalentMap = new Map(wildTalentRows.map((r) => [r.id, r]));
 	const equipmentMap = new Map(equipmentRows.map((r) => [r.id, r]));
-	const attributeMap = new Map(attributeRows.map((r) => [r.id, r]));
+	const abilityMap = new Map(abilityRows.map((r) => [r.id, r]));
 	const ancestralTraitMap = new Map(ancestralTraitRows.map((r) => [r.id, r]));
 	const skillMap = new Map(skillRows.map((r) => [r.id, r]));
 	const discoveryMap = new Map(discoveryRows.map((r) => [r.id, r]));
@@ -364,11 +364,12 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 	// 9) Build skill data
 	const skillsWithRanks = skillRows.map((skillDef) => {
 		const relevantRanks = skillRanksForThisChar.filter((sr) => sr.skill_id === skillDef.id);
+		const ability = abilityMap.get(skillDef.ability_id);
 		return {
 			skillId: skillDef.id,
 			name: skillDef.name,
 			label: skillDef.label ?? skillDef.name,
-			ability: skillDef.ability,
+			ability_label: ability?.label ?? ability?.name ?? 'Unknown',
 			totalRanks: relevantRanks.length,
 			rankSources: relevantRanks.map((sr) => ({
 				...sr,
@@ -423,10 +424,10 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 			equipped: eq.equipped
 		}));
 
-	const attributes = gameCharAttributes
+	const abilities = gameCharAbilities
 		.filter((a) => a.game_character_id === charRow.id)
 		.map((a) => ({
-			base: attributeMap.get(a.attribute_id)!,
+			base: abilityMap.get(a.ability_id)!,
 			value: a.value
 		}));
 
@@ -449,7 +450,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		ch.game_character_id === charRow.id
 	);
 
-	const nodeBonusMap = new Map<number, RefAbpNodeBonusRow[]>();
+	const nodeBonusMap = new Map<number, AbpNodeBonusRow[]>();
 	for (const bonus of abpNodeBonuses) {
 		if (!nodeBonusMap.has(bonus.node_id)) {
 			nodeBonusMap.set(bonus.node_id, []);
@@ -493,7 +494,7 @@ export async function getCompleteCharacter(characterId: number): Promise<Complet
 		corruption,
 		wildTalents,
 		equipment,
-		attributes,
+		abilities,
 		classFeatures,
 		
 		// Additional arrays

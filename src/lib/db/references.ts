@@ -61,13 +61,11 @@ export const archetypeApi = createDbApi<ArchetypeRow, ArchetypeInsert, Archetype
 // -----------------------------------------------------------------------------
 // 5) Attribute
 // -----------------------------------------------------------------------------
-export type AttributeRow = RowOf<'attribute'>;
-export type AttributeInsert = InsertOf<'attribute'>;
-export type AttributeUpdate = UpdateOf<'attribute'>;
+export type AbilityRow = RowOf<'ability'>;
+export type AbilityInsert = InsertOf<'ability'>;
+export type AbilityUpdate = UpdateOf<'ability'>;
 
-export const attributeApi = createDbApi<AttributeRow, AttributeInsert, AttributeUpdate>(
-	'attribute'
-);
+export const abilityApi = createDbApi<AbilityRow, AbilityInsert, AbilityUpdate>('ability');
 
 // -----------------------------------------------------------------------------
 // 6) Buff
@@ -329,15 +327,15 @@ export const gameCharacterCorruptionManifestationApi = createDbApi<
 //   GameCharacterEquipmentBonusUpdate
 // >('game_character_equipment_bonus');
 
-export type GameCharacterAttributeRow = RowOf<'game_character_attribute'>;
-export type GameCharacterAttributeInsert = InsertOf<'game_character_attribute'>;
-export type GameCharacterAttributeUpdate = UpdateOf<'game_character_attribute'>;
+export type GameCharacterAbilityRow = RowOf<'game_character_ability'>;
+export type GameCharacterAbilityInsert = InsertOf<'game_character_ability'>;
+export type GameCharacterAbilityUpdate = UpdateOf<'game_character_ability'>;
 
-export const gameCharacterAttributeApi = createDbApi<
-	GameCharacterAttributeRow,
-	GameCharacterAttributeInsert,
-	GameCharacterAttributeUpdate
->('game_character_attribute');
+export const gameCharacterAbilityApi = createDbApi<
+	GameCharacterAbilityRow,
+	GameCharacterAbilityInsert,
+	GameCharacterAbilityUpdate
+>('game_character_ability');
 
 export type GameCharacterClassFeatureRow = RowOf<'game_character_class_feature'>;
 export type GameCharacterClassFeatureInsert = InsertOf<'game_character_class_feature'>;
@@ -376,67 +374,64 @@ export const skillBonusApi = createDbApi<SkillBonusRow, SkillBonusInsert, SkillB
 	'skill_bonus'
 );
 
-// ...and so forth for the rest of your tables...
 
 // -----------------------------------------------------------------------------
-// 16) "Reference" Tables: ref_abp_bonus_type, ref_buff_type, etc.
+// 16) "Reference" Tables: abp_bonus_type, buff_type, etc.
 // -----------------------------------------------------------------------------
-export type RefAbpBonusTypeRow = RowOf<'ref_abp_bonus_type'>;
-export type RefAbpBonusTypeInsert = InsertOf<'ref_abp_bonus_type'>;
-export type RefAbpBonusTypeUpdate = UpdateOf<'ref_abp_bonus_type'>;
+export type BonusTypeRow = RowOf<'bonus_type'>;
+export type BonusTypeInsert = InsertOf<'bonus_type'>;
+export type BonusTypeUpdate = UpdateOf<'bonus_type'>;
 
-export const refAbpBonusTypeApi = createDbApi<
-	RefAbpBonusTypeRow,
-	RefAbpBonusTypeInsert,
-	RefAbpBonusTypeUpdate
->('ref_abp_bonus_type');
+export const bonusTypeApi = createDbApi<BonusTypeRow, BonusTypeInsert, BonusTypeUpdate>('bonus_type');
 
-export type RefBonusTypeRow = RowOf<'ref_bonus_type'>;
-export type RefBonusTypeInsert = InsertOf<'ref_bonus_type'>;
-export type RefBonusTypeUpdate = UpdateOf<'ref_bonus_type'>;
+export type AbpBonusTypeRow = RowOf<'abp_bonus_type'>;
+export type AbpBonusTypeInsert = InsertOf<'abp_bonus_type'>;
+export type AbpBonusTypeUpdate = UpdateOf<'abp_bonus_type'>;
 
-export const refBonusTypeApi = createDbApi<RefBonusTypeRow, RefBonusTypeInsert, RefBonusTypeUpdate>(
-	'ref_bonus_type'
+export const abpBonusTypeApi = createDbApi<
+	AbpBonusTypeRow,
+	AbpBonusTypeInsert,
+	AbpBonusTypeUpdate
+>('abp_bonus_type');
+
+export type BuffTypeRow = RowOf<'buff_type'>;
+export type BuffTypeInsert = InsertOf<'buff_type'>;
+export type BuffTypeUpdate = UpdateOf<'buff_type'>;
+
+export const buffTypeApi = createDbApi<BuffTypeRow, BuffTypeInsert, BuffTypeUpdate>(
+	'buff_type'
 );
 
-export type RefBuffTypeRow = RowOf<'ref_buff_type'>;
-export type RefBuffTypeInsert = InsertOf<'ref_buff_type'>;
-export type RefBuffTypeUpdate = UpdateOf<'ref_buff_type'>;
+export type FavoredClassChoiceRow = RowOf<'favored_class_choice'>;
+export type FavoredClassChoiceInsert = InsertOf<'favored_class_choice'>;
+export type FavoredClassChoiceUpdate = UpdateOf<'favored_class_choice'>;
 
-export const refBuffTypeApi = createDbApi<RefBuffTypeRow, RefBuffTypeInsert, RefBuffTypeUpdate>(
-	'ref_buff_type'
-);
+export const favoredClassChoiceApi = createDbApi<
+	FavoredClassChoiceRow,
+	FavoredClassChoiceInsert,
+	FavoredClassChoiceUpdate
+>('favored_class_choice');
 
-export type RefFavoredClassChoiceRow = RowOf<'ref_favored_class_choice'>;
-export type RefFavoredClassChoiceInsert = InsertOf<'ref_favored_class_choice'>;
-export type RefFavoredClassChoiceUpdate = UpdateOf<'ref_favored_class_choice'>;
+export type SkillRankSourceRow = RowOf<'skill_rank_source'>;
+export type SkillRankSourceInsert = InsertOf<'skill_rank_source'>;
+export type SkillRankSourceUpdate = UpdateOf<'skill_rank_source'>;
 
-export const refFavoredClassChoiceApi = createDbApi<
-	RefFavoredClassChoiceRow,
-	RefFavoredClassChoiceInsert,
-	RefFavoredClassChoiceUpdate
->('ref_favored_class_choice');
+export const skillRankSourceApi = createDbApi<
+	SkillRankSourceRow,
+	SkillRankSourceInsert,
+	SkillRankSourceUpdate
+>('skill_rank_source');
 
-export type RefSkillRankSourceRow = RowOf<'ref_skill_rank_source'>;
-export type RefSkillRankSourceInsert = InsertOf<'ref_skill_rank_source'>;
-export type RefSkillRankSourceUpdate = UpdateOf<'ref_skill_rank_source'>;
+// Ancestry Ability
+export type AncestryAbilityRow = RowOf<'ancestry_ability'>;
+export type AncestryAbilityInsert = InsertOf<'ancestry_ability'>;
+export type AncestryAbilityUpdate = UpdateOf<'ancestry_ability'>;
 
-export const refSkillRankSourceApi = createDbApi<
-	RefSkillRankSourceRow,
-	RefSkillRankSourceInsert,
-	RefSkillRankSourceUpdate
->('ref_skill_rank_source');
-
-// Ancestry Attribute
-export type AncestryAttributeRow = RowOf<'ancestry_attribute'>;
-export type AncestryAttributeInsert = InsertOf<'ancestry_attribute'>;
-export type AncestryAttributeUpdate = UpdateOf<'ancestry_attribute'>;
-
-export const ancestryAttributeApi = createDbApi<
-	AncestryAttributeRow,
-	AncestryAttributeInsert,
-	AncestryAttributeUpdate
->('ancestry_attribute');
+export const ancestryAbilityApi = createDbApi<
+	AncestryAbilityRow,
+	AncestryAbilityInsert,
+	AncestryAbilityUpdate
+>('ancestry_ability');
 
 // Archetype Class Feature
 export type ArchetypeClassFeatureRow = RowOf<'archetype_class_feature'>;
@@ -466,15 +461,6 @@ export type ArmorInsert = InsertOf<'armor'>;
 export type ArmorUpdate = UpdateOf<'armor'>;
 
 export const armorApi = createDbApi<ArmorRow, ArmorInsert, ArmorUpdate>('armor');
-
-// Reference Attribute
-export type RefAttributeRow = RowOf<'ref_attribute'>;
-export type RefAttributeInsert = InsertOf<'ref_attribute'>;
-export type RefAttributeUpdate = UpdateOf<'ref_attribute'>;
-
-export const refAttributeApi = createDbApi<RefAttributeRow, RefAttributeInsert, RefAttributeUpdate>(
-	'ref_attribute'
-);
 
 // Spell
 export type SpellRow = RowOf<'spell'>;
@@ -581,38 +567,38 @@ export const gameCharacterAbpChoiceApi = createDbApi<
 	GameCharacterAbpChoiceUpdate
 >('game_character_abp_choice');
 
-// Also need to add references for ref_abp_node and ref_abp_node_group
-export type RefAbpNodeRow = RowOf<'ref_abp_node'>;
-export type RefAbpNodeInsert = InsertOf<'ref_abp_node'>;
-export type RefAbpNodeUpdate = UpdateOf<'ref_abp_node'>;
+// Also need to add references for abp_node and abp_node_group
+export type AbpNodeRow = RowOf<'abp_node'>;
+export type AbpNodeInsert = InsertOf<'abp_node'>;
+export type AbpNodeUpdate = UpdateOf<'abp_node'>;
 
-export const refAbpNodeApi = createDbApi<
-	RefAbpNodeRow,
-	RefAbpNodeInsert,
-	RefAbpNodeUpdate
->('ref_abp_node');
+export const abpNodeApi = createDbApi<
+	AbpNodeRow,
+	AbpNodeInsert,
+	AbpNodeUpdate
+>('abp_node');
 
-export type RefAbpNodeGroupRow = RowOf<'ref_abp_node_group'>;
-export type RefAbpNodeGroupInsert = InsertOf<'ref_abp_node_group'>;
-export type RefAbpNodeGroupUpdate = UpdateOf<'ref_abp_node_group'>;
+export type AbpNodeGroupRow = RowOf<'abp_node_group'>;
+export type AbpNodeGroupInsert = InsertOf<'abp_node_group'>;
+export type AbpNodeGroupUpdate = UpdateOf<'abp_node_group'>;
 
-export const refAbpNodeGroupApi = createDbApi<
-	RefAbpNodeGroupRow,
-	RefAbpNodeGroupInsert,
-	RefAbpNodeGroupUpdate
->('ref_abp_node_group');
+export const abpNodeGroupApi = createDbApi<
+	AbpNodeGroupRow,
+	AbpNodeGroupInsert,
+	AbpNodeGroupUpdate
+>('abp_node_group');
 
 
-// e.g. "ref_abp_node_bonus" has columns: id, node_id, bonus_type_id, value, target_specifier
-export type RefAbpNodeBonusRow = RowOf<'ref_abp_node_bonus'>;
-export type RefAbpNodeBonusInsert = InsertOf<'ref_abp_node_bonus'>;
-export type RefAbpNodeBonusUpdate = UpdateOf<'ref_abp_node_bonus'>;
+// e.g. "abp_node_bonus" has columns: id, node_id, bonus_type_id, value, target_specifier
+export type AbpNodeBonusRow = RowOf<'abp_node_bonus'>;
+export type AbpNodeBonusInsert = InsertOf<'abp_node_bonus'>;
+export type AbpNodeBonusUpdate = UpdateOf<'abp_node_bonus'>;
 
-export const refAbpNodeBonusApi = createDbApi<
-  RefAbpNodeBonusRow,
-  RefAbpNodeBonusInsert,
-  RefAbpNodeBonusUpdate
->('ref_abp_node_bonus');
+export const abpNodeBonusApi = createDbApi<
+  AbpNodeBonusRow,
+  AbpNodeBonusInsert,
+  AbpNodeBonusUpdate
+>('abp_node_bonus');
 
 
 // Update dbApis to include these new APIs
@@ -620,12 +606,12 @@ export const dbApis = {
 	// Core game elements
 	ancestralTraitApi,
 	ancestryApi,
-	ancestryAttributeApi,
+	ancestryAbilityApi,
 	archetypeApi,
 	archetypeClassFeatureApi,
 	archetypeFeatureReplacementApi,
 	armorApi,
-	attributeApi,
+	abilityApi,
 	buffApi,
 	classApi,
 	classFeatureApi,
@@ -645,7 +631,7 @@ export const dbApis = {
 	gameCharacterEquipmentApi,
 	gameCharacterCorruptionApi,
 	gameCharacterCorruptionManifestationApi,
-	gameCharacterAttributeApi,
+	gameCharacterAbilityApi,
 	gameCharacterClassFeatureApi,
 	naturalAttackApi,
 	skillApi,
@@ -659,19 +645,18 @@ export const dbApis = {
 	wildTalentApi,
 
 	// Reference tables
-	refAbpBonusTypeApi,
-	refAttributeApi,
-	refBonusTypeApi,
-	refBuffTypeApi,
-	refFavoredClassChoiceApi,
-	refSkillRankSourceApi,
+	abpBonusTypeApi,
+	bonusTypeApi,
+	buffTypeApi,
+	favoredClassChoiceApi,
+	skillRankSourceApi,
 	gameCharacterExtractApi,
 	gameCharacterFavoredClassBonusApi,
 	gameCharacterConsumableApi,
 	gameCharacterAbpChoiceApi,
-	refAbpNodeApi,
-	refAbpNodeGroupApi,
-	refAbpNodeBonusApi
+	abpNodeApi,
+	abpNodeGroupApi,
+	abpNodeBonusApi
 };
 
 // -----------------------------------------------------------------------------

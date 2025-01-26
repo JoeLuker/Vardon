@@ -2,7 +2,7 @@
  * FILE: src/lib/state/characterCalculations.ts
  *****************************************************************************/
 import type { CompleteCharacter } from '$lib/db/getCompleteCharacter';
-import type { RefAbpNodeBonusRow, RefAbpNodeRow } from '$lib/db/references';
+import type { AbpNodeBonusRow, AbpNodeRow } from '$lib/db/references';
 
 //
 // =====================  INTERFACES & TYPES  =====================
@@ -144,7 +144,7 @@ function getArmorBonus(char: CompleteCharacter): number {
 	const baseBonus = wornArmor.base?.armor_bonus ?? 0;
 	
 	// Get enhancement from ABP
-	const abpBonus = getAbpBonusFromNodes(char, 'armor_attunement');
+	const abpBonus = getAbpBonusFromNodes(char, 'abp_armor_attunement');
 	
 	return baseBonus + abpBonus;
 }
@@ -171,7 +171,7 @@ function getNaturalArmorEnhancement(char: CompleteCharacter): number {
 	
 	// // Return the higher of the two
 	// return Math.max(abpBonus, itemBonus);
-	const abpBonus = getAbpBonusFromNodes(char, 'toughening');
+	const abpBonus = getAbpBonusFromNodes(char, 'abp_toughening');
 
 	return abpBonus;
 }
@@ -211,11 +211,11 @@ function getSizeModifier(char: CompleteCharacter): number {
 function getAllAutoNodes(
 	char: CompleteCharacter,
 	effectiveABPLevel: number
-): Array<RefAbpNodeRow & { bonuses: RefAbpNodeBonusRow[] }> {
+): Array<AbpNodeRow & { bonuses: AbpNodeBonusRow[] }> {
 	const { abpNodes, abpNodeGroups, abpNodeBonuses } = char.references;
 
 	// Build a map: nodeId -> all its BonusRows
-	const nodeBonusMap = new Map<number, RefAbpNodeBonusRow[]>();
+	const nodeBonusMap = new Map<number, AbpNodeBonusRow[]>();
 	for (const b of abpNodeBonuses) {
 		if (!nodeBonusMap.has(b.node_id)) {
 			nodeBonusMap.set(b.node_id, []);
@@ -292,27 +292,32 @@ function getClassSkillIds(char: CompleteCharacter): Set<number> {
 // 1) ABILITIES
 // -------------------------------------------------------------------------
 
-function computeAbilityBonuses(char: CompleteCharacter, attrName: string): BonusEntry[] {
-	const row = char.attributes?.find((a) => a.base?.name?.toLowerCase() === attrName);
+function computeAbilityBonuses(char: CompleteCharacter, abilityName: string): BonusEntry[] {
+	// Add 'ability_' prefix when searching
+	const row = char.abilities?.find((a) => a.base?.name?.toLowerCase() === `ability_${abilityName}`);
 	const baseScore = row?.value ?? 10;
 
 	const abpMap: Record<string, string> = {
-		strength: 'physical_prowess_str',
-		dexterity: 'physical_prowess_dex',
-		constitution: 'physical_prowess_con',
-		intelligence: 'mental_prowess_int',
-		wisdom: 'mental_prowess_wis',
-		charisma: 'mental_prowess_cha'
+		strength: 'abp_physical_prowess_str',
+		dexterity: 'abp_physical_prowess_dex',
+		constitution: 'abp_physical_prowess_con',
+		intelligence: 'abp_mental_prowess_int',
+		wisdom: 'abp_mental_prowess_wis',
+		charisma: 'abp_mental_prowess_cha'
 	};
 
-	const abpName = abpMap[attrName];
+	const abpName = abpMap[abilityName];
 	const abpValue = abpName ? getAbpBonusFromNodes(char, abpName) : 0;
 
 	const bonuses: BonusEntry[] = [
-		{ source: 'Base Score', value: baseScore }
+		{ source: 'Base Score', value: baseScore, type: 'base' }
 	];
 	if (abpValue !== 0) {
-		bonuses.push({ source: 'ABP Node', value: abpValue });
+		bonuses.push({ 
+			source: 'ABP Node', 
+			value: abpValue, 
+			type: 'enhancement'  // ABP bonuses are enhancement type
+		});
 	}
 
 	return bonuses;
@@ -320,12 +325,12 @@ function computeAbilityBonuses(char: CompleteCharacter, attrName: string): Bonus
 
 function buildAbilityScore(
 	char: CompleteCharacter,
-	attrName: string
+	abilityName: string
 ): ValueWithBreakdown {
 	const label =
-		char.attributes?.find((a) => a.base?.name?.toLowerCase() === attrName)?.base?.label ??
-		attrName[0].toUpperCase() + attrName.slice(1);
-	const bonuses = computeAbilityBonuses(char, attrName);
+		char.abilities?.find((a) => a.base?.name?.toLowerCase() === abilityName)?.base?.label ??
+		abilityName[0].toUpperCase() + abilityName.slice(1);
+	const bonuses = computeAbilityBonuses(char, abilityName);
 	return buildGenericStat(label, bonuses);
 }
 
@@ -375,7 +380,7 @@ function computeACStats(
 	const naturalArmorEnhancement = getNaturalArmorEnhancement(char);
 	const totalNaturalBonus = baseNaturalArmor + naturalArmorEnhancement;
 
-	const deflection = getAbpBonusFromNodes(char, 'deflection');
+	const deflection = getAbpBonusFromNodes(char, 'abp_deflection');
 	const hasDodgeFeat = char.feats?.some(f => f.name === 'dodge');
 
 	// Define all possible AC components
@@ -465,24 +470,27 @@ function computeSkills(
 		const ranks = skillDetail?.totalRanks ?? 0;
 
 		let abilityScoreMod = 0;
-		switch (skill.ability) {
-			case 'str': abilityScoreMod = strMod; break;
-			case 'dex': abilityScoreMod = dexMod; break;
-			case 'con': abilityScoreMod = conMod; break;
-			case 'int': abilityScoreMod = intMod; break;
-			case 'wis': abilityScoreMod = wisMod; break;
-			case 'cha': abilityScoreMod = chaMod; break;
+		const abilityName = char.abilities.find(a => a.base.id === skill.ability_id)?.base.name?.toLowerCase() ?? '';
+		switch (abilityName) {
+			case 'ability_strength': abilityScoreMod = strMod; break;
+			case 'ability_dexterity': abilityScoreMod = dexMod; break;
+			case 'ability_constitution': abilityScoreMod = conMod; break;
+			case 'ability_intelligence': abilityScoreMod = intMod; break;
+			case 'ability_wisdom': abilityScoreMod = wisMod; break;
+			case 'ability_charisma': abilityScoreMod = chaMod; break;
 		}
 
+		const abilityLabel = char.abilities.find(a => a.base.id === skill.ability_id)?.base.label ?? 'Unknown';
+
 		const bonuses: BonusEntry[] = [
-			{ source: `${skill.ability.toUpperCase()} mod`, value: abilityScoreMod },
+			{ source: `${abilityLabel} mod`, value: abilityScoreMod },
 			{ source: 'Ranks', value: ranks }
 		];
 		if (classSkillIds.has(skill.id) && ranks > 0) {
 			bonuses.push({ source: 'Class skill', value: 3 });
 		}
 
-		skills[skill.id] = buildGenericStat(skill.label, bonuses);
+		skills[skill.id] = buildGenericStat(skill.label ?? 'Unknown', bonuses);
 	}
 
 	return skills;
@@ -508,7 +516,7 @@ function computeAttacks(
 	dexMod: number,
 	intMod: number
 ): AttackParts {
-	const weaponAttune = getAbpBonusFromNodes(char, 'weapon_attunement');
+	const weaponAttune = getAbpBonusFromNodes(char, 'abp_weapon_attunement');
 
 	function buildAttack(label: string, abilityModifier: number): ValueWithBreakdown {
 		return buildGenericStat(label, [
@@ -561,7 +569,7 @@ export function enrichCharacterData(raw: CompleteCharacter): EnrichedCharacter {
 	const baseFort = calculateBaseSave(raw, 'fortitude');
 	const baseRef = calculateBaseSave(raw, 'reflex');
 	const baseWill = calculateBaseSave(raw, 'will');
-	const resistance = getAbpBonusFromNodes(raw, 'resistance'); // Reused in each save
+	const resistance = getAbpBonusFromNodes(raw, 'abp_resistance'); // Reused in each save
 
 	const fortitude = buildSave('Fortitude', baseFort, conMod, resistance);
 	const reflex = buildSave('Reflex', baseRef, dexMod, resistance);

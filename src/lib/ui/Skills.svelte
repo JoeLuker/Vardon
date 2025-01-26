@@ -1,4 +1,3 @@
-<!-- FILE: src/lib/ui/Skills.svelte -->
 <script lang="ts">
 	import { Eye, EyeOff } from 'lucide-svelte';
 	import { Badge } from '$lib/components/ui/badge';
@@ -8,15 +7,33 @@
 
 	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
 
-	// The local type that we'll use internally
-	interface Skill {
+	// Local interfaces that match our data structure
+	interface BaseSkill {
+		id: number;
+		name: string;
+		label: string;
+		ability_id: number;
+		trained_only: boolean;
+		armor_check_penalty?: boolean;
+	}
+
+	interface ProcessedSkill {
 		id: number;
 		name: string;
 		label: string;
 		ability: string;
+		abilityMod: number;
 		ranks: number;
 		trained_only: boolean;
 		armor_check_penalty?: boolean;
+		total: number;
+		isClassSkill: boolean;
+	}
+
+	interface AbilityDetails {
+		abilityName: string;
+		abilityLabel: string;
+		abilityMod: number;
 	}
 
 	// Props
@@ -25,75 +42,115 @@
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 	}>();
 
-	/**
-	 * Local runes state:
-	 * - showUnusableSkills: toggles whether we show trained-only skills with 0 ranks
-	 * - viewMode: 'ability' or 'alphabetical'
-	 */
 	let showUnusableSkills = $state(false);
 	let viewMode = $state<'ability' | 'alphabetical'>('ability');
 
-	/**
-	 * Derive `classSkills` from the first class in `character.classes` if available.
-	 */
+	// Helper function to get ability modifier from a given skill
+	function getAbilityDetailsFromSkill(skill: BaseSkill): AbilityDetails {
+		if (!character?.abilities) {
+			return { abilityName: '', abilityLabel: '', abilityMod: 0 };
+		}
+
+		const ability = character.abilities.find((ability: { base: { id: number; }; }) => ability.base.id === skill.ability_id);
+		if (!ability) {
+			return { abilityName: '', abilityLabel: '', abilityMod: 0 };
+		}
+
+		// Get the modifier based on the ability name
+		const abilityName = ability.base.name.replace('ability_', '').toLowerCase();
+		const modifierMap: Record<string, keyof EnrichedCharacter> = {
+			'strength': 'strMod',
+			'dexterity': 'dexMod',
+			'constitution': 'conMod',
+			'intelligence': 'intMod',
+			'wisdom': 'wisMod',
+			'charisma': 'chaMod'
+		};
+
+		const modKey = modifierMap[abilityName];
+		const abilityMod = modKey ? (character[modKey] as number) : 0;
+
+		return {
+			abilityName: abilityName.toUpperCase(),
+			abilityLabel: ability.base.label,
+			abilityMod
+		};
+	}
+
+	// Store class skills as a Set of skill names
 	let classSkills = $derived.by(() => {
-		if (!character?.classes?.length) return [];
-		return character.classes[0].class_skills ?? [];
+		if (!character?.classes?.length || !character.baseSkills) {
+			return new Set<string>();
+		}
+		
+		const classSkillIds = character.classes[0].class_skills ?? [];
+		return new Set(
+			character.baseSkills
+				.filter((skill: BaseSkill) => classSkillIds.includes(skill.id))
+				.map((skill: BaseSkill) => skill.name)
+		);
 	});
 
-	/**
-	 * Build a map from ability -> array of Skills,
-	 * reading from `character.baseSkills` and `character.skillsWithRanks`.
-	 */
+	// Process skills and group by ability
 	let skillsByAbility = $derived.by(() => {
-		if (!character?.baseSkills) return {};
+		if (!character?.baseSkills) {
+			return {} as Record<string, ProcessedSkill[]>;
+		}
 
-		// We'll reduce them into a map like { str: Skill[], dex: Skill[], ... }
-		const result: Record<string, Skill[]> = {};
+		const result: Record<string, ProcessedSkill[]> = {};
 
-		for (const base of character.baseSkills) {
-			const ability = base.ability.toLowerCase();
+		for (const baseSkill of character.baseSkills) {
+			// Get ability details
+			const { abilityName, abilityMod } = getAbilityDetailsFromSkill(baseSkill);
+			const abilityAbbreviation = abilityName.slice(0, 3);
+			const ability = abilityName.toLowerCase();
 
+			// Initialize ability group if needed
 			if (!result[ability]) {
 				result[ability] = [];
 			}
 
-			// find ranks
-			const rankInfo = character.skillsWithRanks?.find((s: { skillId: number }) => s.skillId === base.id);
-			const totalRanks = rankInfo?.totalRanks ?? 0;
+			// Find skill ranks from the enriched character data
+			const skillInfo = character.skillsWithRanks?.find((s: { name: string }) => s.name === baseSkill.name);
+			const totalRanks = skillInfo?.totalRanks ?? 0;
+			
+			// Determine class skill status
+			const isClassSkill = classSkills.has(baseSkill.name);
+			
+			// Calculate total skill bonus
+			const classSkillBonus = (isClassSkill && totalRanks > 0) ? 3 : 0;
+			const total = totalRanks + abilityMod + classSkillBonus;
 
 			result[ability].push({
-				id: base.id,
-				name: base.name,
-				label: base.label,
-				ability: base.ability,
+				id: baseSkill.id,
+				name: baseSkill.name,
+				label: baseSkill.label,
+				ability: abilityAbbreviation,
+				abilityMod,
 				ranks: totalRanks,
-				trained_only: base.trained_only ?? false,
-				armor_check_penalty: base.armor_check_penalty ?? false
+				trained_only: baseSkill.trained_only,
+				armor_check_penalty: baseSkill.armor_check_penalty,
+				total,
+				isClassSkill
 			});
 		}
+
 		return result;
 	});
 
-	/**
-	 * Also create an alphabetical list for 'alphabetical' view mode.
-	 */
 	let alphabeticalSkills = $derived.by(() => {
-		const allAbilities = Object.values(skillsByAbility);
-		const allSkills: Skill[] = allAbilities.flat();
-		return allSkills.sort((a, b) => a.name.localeCompare(b.name));
+		return Object.values(skillsByAbility)
+			.flat()
+			.sort((a: ProcessedSkill, b: ProcessedSkill) => a.label.localeCompare(b.label));
 	});
 
-	/**
-	 * formatModifier: add a plus sign if >= 0
-	 */
 	function formatModifier(mod: number): string {
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
 </script>
 
+<!-- Rest of the template remains the same -->
 <div class="skills-container">
-	<!-- Switch between 'ability' or 'alphabetical' in a Tab -->
 	<Tabs.Root
 		value={viewMode}
 		onValueChange={(value) => {
@@ -103,7 +160,6 @@
 		}}
 		class="w-full"
 	>
-		<!-- Tabs header row -->
 		<div class="tabs-header">
 			<Tabs.List class="grid h-12 w-full grid-cols-[1fr_1fr_2px_auto]">
 				<Tabs.Trigger value="ability" class="h-full">By Ability</Tabs.Trigger>
@@ -125,9 +181,7 @@
 			</Tabs.List>
 		</div>
 
-		<!-- By Ability View -->
 		<Tabs.Content value="ability">
-			<!-- If no character, show fallback -->
 			{#if !character}
 				<div class="rounded-md border border-muted p-4">
 					<p class="text-muted-foreground">Loading skills...</p>
@@ -142,25 +196,21 @@
 							<Card.Content>
 								<div class="skills-grid">
 									{#each skills as skill}
-										<!-- Hide if trained_only && no ranks -->
 										{#if showUnusableSkills || !(skill.trained_only && skill.ranks === 0)}
-											{@const isClassSkill = classSkills.includes(skill.id)}
-											{@const isUnusable = skill.trained_only && skill.ranks === 0}
-
 											<button
 												class="skill"
-												class:is-class-skill={isClassSkill}
-												class:unusable={isUnusable}
+												class:is-class-skill={skill.isClassSkill}
+												class:unusable={skill.trained_only && skill.ranks === 0}
 												onclick={() => {
 													const breakdown = character.skills?.[skill.id];
 													onSelectValue?.(breakdown);
 												}}
 												type="button"
 											>
-												<span class="skill-name">{skill.label}</span>
-												<span class="modifier">
-													{formatModifier(character.skills?.[skill.id]?.total ?? 0)}
+												<span class="skill-name">
+													{skill.label}
 												</span>
+												<span class="modifier">{formatModifier(skill.total)}</span>
 											</button>
 										{/if}
 									{/each}
@@ -172,7 +222,6 @@
 			{/if}
 		</Tabs.Content>
 
-		<!-- Alphabetical View -->
 		<Tabs.Content value="alphabetical">
 			{#if !character}
 				<div class="rounded-md border border-muted p-4">
@@ -183,28 +232,24 @@
 					<Card.Content>
 						<div class="skills-grid">
 							{#each alphabeticalSkills as skill}
-								<!-- Hide if trained_only && no ranks -->
 								{#if showUnusableSkills || !(skill.trained_only && skill.ranks === 0)}
-									{@const isClassSkill = classSkills.includes(skill.id)}
-									{@const isUnusable = skill.trained_only && skill.ranks === 0}
-
 									<button
 										class="skill"
-										class:is-class-skill={isClassSkill}
-										class:unusable={isUnusable}
+										class:is-class-skill={skill.isClassSkill}
+										class:unusable={skill.trained_only && skill.ranks === 0}
 										onclick={() => {
 											const breakdown = character.skills?.[skill.id];
 											onSelectValue?.(breakdown);
 										}}
 										type="button"
 									>
-										<span class="skill-name">{skill.label}</span>
-										<span class="modifier">
-											{formatModifier(character.skills?.[skill.id]?.total ?? 0)}
+										<span class="skill-name">
+											{skill.label}
 										</span>
 										<Badge variant="secondary" class="ability-badge">
-											{skill.ability.toUpperCase()}
+											{skill.ability}
 										</Badge>
+										<span class="modifier">{formatModifier(skill.total)}</span>
 									</button>
 								{/if}
 							{/each}
@@ -217,8 +262,6 @@
 </div>
 
 <style lang="postcss">
-	/* (same styles as your snippet, minus the store references) */
-
 	.skills-container {
 		display: flex;
 		flex-direction: column;

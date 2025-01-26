@@ -1,0 +1,738 @@
+# schema.yaml
+---
+##################################################################
+# Root-level Keys
+##################################################################
+metadata:
+  # Validate a map with three string fields
+  version: str()
+  game_system: str()
+  schema_version: str()
+
+user_id:
+  str(required: False)
+
+ability:
+  list(
+    map(
+      id: int(),
+      name: str(),
+      label: str(),
+      ability_type: str()
+    )
+  )
+
+bonus_type:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+skill_rank_source:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+legendary_gift_type:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+abp_bonus_type:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+##################################################################
+# ABP Node Groups & Nodes
+##################################################################
+abp_node_group:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    level: int(),
+    requires_choice: bool()
+  ))
+
+abp_node:
+  list(map(
+    id: int(),
+    group_id: int(),
+    name: str(),
+    label: str(),
+    description: str(),
+    requires_choice: bool()
+  ))
+
+abp_node_bonus:
+  list(map(
+    id: int(),
+    node_id: int(),
+    bonus_type_id: int(),
+    value: int(),
+    target_specifier: str(required: False)
+  ))
+
+favored_class_choice:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+##################################################################
+# Base Tables
+##################################################################
+spell:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    level: int(),
+    school: str(required: False),
+    casting_time: str(required: False),
+    spell_range: str(required: False),
+    target: str(required: False),
+    duration: str(required: False)
+  ))
+
+spell_consumable:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    spell_id: int(),
+    caster_level: int(),
+    cost: num(),
+    weight: num()
+  ))
+
+equipment:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    equippable: bool(),
+    slot: str(required: False),
+    bonus: int(required: False),
+    bonus_type_id: int(required: False)
+  ))
+
+ancestry:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+##################################################################
+# Skills
+##################################################################
+skill:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    ability_id: int(),
+    trained_only: bool(),
+    armor_check_penalty: bool()
+  ))
+
+##################################################################
+# Class Properties, Classes, & Values
+##################################################################
+class_property:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+class:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    hit_die: int()
+  ))
+
+class_property_value:
+  list(map(
+    id: int(),
+    class_id: int(),
+    property_id: int(),
+    base_value: str()
+  ))
+
+class_skill:
+  list(map(
+    class_id: int(),
+    skill_id: int()
+  ))
+
+class_feature:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    class_id: int(),
+    feature_level: int(),
+    # optional fields
+    type: str(required: False),
+    description: str(required: False)
+  ))
+
+##################################################################
+# Archetypes
+##################################################################
+archetype:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+archetype_class_feature:
+  list(map(
+    archetype_id: int(),
+    class_id: int(),
+    feature_id: int(),
+    level_obtained: int(required: False)
+  ))
+
+##################################################################
+# Weapons & Feats
+##################################################################
+weapon:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    damage_die_count: int(),
+    damage_die_size: int(),
+    crit_range: int(),
+    crit_mult: int()
+  ))
+
+feat:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    feat_type: str()
+  ))
+
+##################################################################
+# Corruption
+##################################################################
+corruption:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str()
+  ))
+
+corruption_manifestation:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    corruption_id: int(),
+    min_manifestation_level: int(),
+    prerequisite_manifestation: str(required: False),
+    active: bool(required: False),
+    description: str(required: False)
+  ))
+
+##################################################################
+# Elements, Discoveries, Wild Talents
+##################################################################
+element:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    energy_type: str(),
+    base_skill: str()
+  ))
+
+discovery:
+  list(map(
+    id: int(),
+    label: str(),
+    name: str()
+  ))
+
+wild_talent:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    element_id: int(required: False),
+    type: str(required: False),
+    spell_level: int(required: False)
+  ))
+
+##################################################################
+# Spell Extracts & Armor
+##################################################################
+spell_extract:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    extract_level: int(required: False)
+  ))
+
+armor:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    armor_type: str(),
+    armor_bonus: int(),
+    max_dex: int(required: False),
+    arcane_spell_failure_chance: int(required: False),
+    armor_check_penalty: int(required: False),
+    weight: num(required: False),
+    price: num(required: False)
+  ))
+
+consumable:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    cost: num(required: False),
+    weight: num(required: False)
+  ))
+
+##################################################################
+# Characters & Bridging Tables
+##################################################################
+game_character:
+  list(map(
+    id: int(),
+    name: str(),
+    user_id: str(),
+    current_hp: int(),
+    max_hp: int(),
+    is_offline: bool()
+  ))
+
+game_character_ability:
+  list(map(
+    game_character_id: int(),
+    ability_id: int(),
+    value: int()
+  ))
+
+game_character_class:
+  list(map(
+    game_character_id: int(),
+    class_id: int(),
+    level: int()
+  ))
+
+game_character_archetype:
+  list(map(
+    game_character_id: int(),
+    archetype_id: int()
+  ))
+
+game_character_ancestry:
+  list(map(
+    game_character_id: int(),
+    ancestry_id: int()
+  ))
+
+game_character_class_feature:
+  list(map(
+    game_character_id: int(),
+    class_feature_id: int(),
+    level_obtained: int()
+  ))
+
+game_character_feat:
+  list(map(
+    game_character_id: int(),
+    feat_id: int(),
+    level_obtained: int()
+  ))
+
+game_character_abp_choice:
+  list(map(
+    id: int(required: False),
+    game_character_id: int(),
+    group_id: int(),
+    node_id: int()
+  ))
+
+game_character_favored_class_bonus:
+  list(map(
+    game_character_id: int(),
+    class_id: int(),
+    level: int(),
+    choice_id: int()
+  ))
+
+game_character_corruption:
+  list(map(
+    game_character_id: int(),
+    corruption_id: int(),
+    corruption_stage: int(),
+    manifestation_level: int(),
+    blood_required: int(),
+    blood_consumed: int()
+  ))
+
+game_character_corruption_manifestation:
+  list(map(
+    game_character_id: int(),
+    manifestation_id: int(),
+    active: bool()
+  ))
+
+game_character_equipment:
+  list(map(
+    game_character_id: int(),
+    equipment_id: int(),
+    equipped: bool()
+  ))
+
+game_character_consumable:
+  list(map(
+    game_character_id: int(),
+    consumable_id: int(),
+    quantity: int()
+  ))
+
+game_character_extract:
+  list(map(
+    game_character_id: int(),
+    spell_extract_id: int(),
+    level: int(),
+    prepared: int(),
+    used: int()
+  ))
+
+game_character_wild_talent:
+  list(map(
+    game_character_id: int(),
+    wild_talent_id: int(),
+    level_obtained: int()
+  ))
+
+game_character_skill_rank:
+  list(map(
+    game_character_id: int(),
+    skill_id: int(),
+    source_id: int(required: False),
+    applied_at_level: int()
+  ))
+
+game_character_armor:
+  list(map(
+    game_character_id: int(),
+    armor_id: int(),
+    equipped: bool()
+  ))
+
+##################################################################
+# Ancestry Traits and Alternate Traits
+##################################################################
+ancestry_trait:
+  list(map(
+    id: int(),
+    ancestry_id: int(),
+    name: str(),
+    label: str(),
+    description: str()
+  ))
+
+ancestry_alternate_trait:
+  list(map(
+    id: int(),
+    ancestry_id: int(),
+    name: str(),
+    label: str(),
+    replaces: any(str(), list(str())),  # Tengu can replace a single trait or list
+    description: str()
+  ))
+
+##################################################################
+# Undead Hunger Stage
+##################################################################
+undead_hunger_stage:
+  list(map(
+    id: int(),
+    name: str(),
+    penalty: str()
+  ))
+
+##################################################################
+# Style Strike
+##################################################################
+style_strike:
+  list(any(
+    map(
+      id: int(),
+      name: str(),
+      label: str(),
+      description: str(),
+      weapon_requirement: str(required: False),
+      special_requirement: str(required: False)
+    )
+  ))
+
+##################################################################
+# Ki Power
+##################################################################
+ki_power:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    description: str(),
+    min_level: int(required: False),
+    ki_cost: int(required: False)
+  ))
+
+##################################################################
+# Perfect Self
+##################################################################
+perfect_self_ability:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    description: str()
+  ))
+
+##################################################################
+# Character-to-Style-Strike & Character-to-Ki-Power
+##################################################################
+game_character_style_strike:
+  list(map(
+    game_character_id: int(),
+    style_strike_id: int(required: False), # Some lines define an 'id' instead
+    level_obtained: int(required: False),
+    name: str(required: False),
+    label: str(required: False),
+    description: str(required: False),
+    weapon_requirement: str(required: False),
+    special_requirement: str(required: False)
+  ))
+
+game_character_ki_power:
+  list(map(
+    game_character_id: int(),
+    ki_power_id: int(),
+    level_obtained: int()
+  ))
+
+##################################################################
+# Alchemist Discovery & Grand Discovery
+##################################################################
+alchemist_discovery:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    description: str(required: False),
+    prerequisites: list(str(), required: False),
+    min_level: int(required: False)
+  ))
+
+grand_discovery:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    description: str(required: False),
+    prerequisites: list(str(), required: False)
+  ))
+
+##################################################################
+# Extract Rules
+##################################################################
+extract_rules:
+  list(map(
+    id: int(),
+    name: str(),
+    preparation_time: str(),
+    duration: str(),
+    restrictions: str()
+  ))
+
+##################################################################
+# Mutagen Effect
+##################################################################
+mutagen_effect:
+  list(map(
+    id: int(),
+    name: str(),
+    physical_bonus: map(
+      ability: str(),
+      value: int()
+    ),
+    mental_penalty: map(
+      ability: str(),
+      value: int()
+    ),
+    natural_armor_bonus: int(),
+    duration_minutes_per_level: int()
+  ))
+
+##################################################################
+# Character Discovery & Grand Discovery
+##################################################################
+game_character_discovery:
+  list(map(
+    game_character_id: int(),
+    discovery_id: int(),
+    level_obtained: int()
+  ))
+
+game_character_grand_discovery:
+  list(map(
+    game_character_id: int(),
+    grand_discovery_id: int(),
+    level_obtained: int()
+  ))
+
+##################################################################
+# Character Alternate Trait
+##################################################################
+game_character_alternate_trait:
+  list(map(
+    game_character_id: int(),
+    alternate_trait_id: int()
+  ))
+
+##################################################################
+# Oread Subrace
+##################################################################
+oread_subrace:
+  list(map(
+    id: int(),
+    name: str(),
+    label: str(),
+    ability_modifiers: list(
+      map(
+        ability_id: int(),
+        value: int()
+      )
+    ),
+    spell_like_ability: str(required: False),
+    description: str()
+  ))
+
+##################################################################
+# Monk Unarmed Damage
+##################################################################
+monk_unarmed_damage:
+  list(map(
+    id: int(),
+    size: str(),
+    levels: map(),           # We won't fully validate each sub-level; minimal
+    size_adjustments: map()  # Same here
+  ))
+
+##################################################################
+# Monk Ki Pool
+##################################################################
+monk_ki_pool:
+  list(map(
+    id: int(),
+    name: str(),
+    formula: str(),
+    minimum: int(),
+    replenish: str(),
+    replenish_meditation_rate: str()
+  ))
+
+##################################################################
+# Monk Bonus Feat Levels
+##################################################################
+monk_bonus_feat_levels:
+  list(map(
+    id: int(),
+    levels: list(int()),
+    feat_lists: map()
+  ))
+
+##################################################################
+# Alchemist Bomb
+##################################################################
+alchemist_bomb:
+  list(map(
+    id: int(),
+    base_damage: str(),
+    bonus_damage: str(),
+    progression: map(),
+    damage_type: str(),
+    range: int(),
+    splash_damage: str(),
+    dc_calculation: map()
+  ))
+
+##################################################################
+# Alchemist Formula
+##################################################################
+alchemist_formula:
+  list(map(
+    id: int(),
+    level: int(),
+    spells: list(str())
+  ))
+
+##################################################################
+# Formula Book
+##################################################################
+formula_book:
+  list(map(
+    id: int(),
+    pages_per_spell_level: int(),
+    cost_per_page: str(),
+    learning_rules: map()
+  ))
+
+##################################################################
+# Kineticist Infusion
+##################################################################
+kineticist_infusion:
+  list(map(
+    id: int(),
+    name: str(),
+    type: str(),
+    description: str(),
+    burn_cost: int()
+  ))
+
+##################################################################
+# Overflow Benefits
+##################################################################
+overflow_benefits:
+  list(map(
+    id: int(),
+    level_range: str(),
+    attack_bonus: int(),
+    damage_bonus: int(),
+    ability_score_bonus: any(
+      null(),
+      map(
+        type: str(),
+        value: int(),
+        choices: int(required: False)
+      )
+    )
+  ))

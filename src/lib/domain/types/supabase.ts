@@ -9,6 +9,173 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ability: {
+        Row: {
+          ability_type: string | null
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          ability_type?: string | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          ability_type?: string | null
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      abp_bonus_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      abp_node: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          group_id: number
+          id: number
+          label: string | null
+          name: string
+          requires_choice: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          group_id: number
+          id?: number
+          label?: string | null
+          name: string
+          requires_choice?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          group_id?: number
+          id?: number
+          label?: string | null
+          name?: string
+          requires_choice?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abp_node_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "abp_node_group"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      abp_node_bonus: {
+        Row: {
+          bonus_type_id: number
+          created_at: string | null
+          id: number
+          node_id: number
+          target_specifier: string | null
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          bonus_type_id: number
+          created_at?: string | null
+          id?: number
+          node_id: number
+          target_specifier?: string | null
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          bonus_type_id?: number
+          created_at?: string | null
+          id?: number
+          node_id?: number
+          target_specifier?: string | null
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abp_node_bonus_bonus_type_id_fkey"
+            columns: ["bonus_type_id"]
+            isOneToOne: false
+            referencedRelation: "abp_bonus_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abp_node_bonus_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "abp_node"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      abp_node_group: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          level: number
+          name: string
+          requires_choice: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          level: number
+          name: string
+          requires_choice?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          level?: number
+          name?: string
+          requires_choice?: boolean
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ancestral_trait: {
         Row: {
           ancestry_id: number | null
@@ -77,10 +244,10 @@ export type Database = {
         }
         Relationships: []
       }
-      ancestry_attribute: {
+      ancestry_ability: {
         Row: {
+          ability_id: number
           ancestry_id: number
-          attribute_id: number
           created_at: string | null
           id: number
           label: string | null
@@ -89,8 +256,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          ability_id: number
           ancestry_id: number
-          attribute_id: number
           created_at?: string | null
           id?: number
           label?: string | null
@@ -99,8 +266,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          ability_id?: number
           ancestry_id?: number
-          attribute_id?: number
           created_at?: string | null
           id?: number
           label?: string | null
@@ -110,17 +277,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "ancestry_attribute_ancestry_id_fkey"
-            columns: ["ancestry_id"]
+            foreignKeyName: "ancestry_ability_ability_id_fkey"
+            columns: ["ability_id"]
             isOneToOne: false
-            referencedRelation: "ancestry"
+            referencedRelation: "ability"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ancestry_attribute_attribute_id_fkey"
-            columns: ["attribute_id"]
+            foreignKeyName: "ancestry_ability_ancestry_id_fkey"
+            columns: ["ancestry_id"]
             isOneToOne: false
-            referencedRelation: "ref_attribute"
+            referencedRelation: "ancestry"
             referencedColumns: ["id"]
           },
         ]
@@ -167,6 +334,7 @@ export type Database = {
           created_at: string | null
           feature_id: number
           id: number
+          level_obtained: number | null
           updated_at: string | null
         }
         Insert: {
@@ -175,6 +343,7 @@ export type Database = {
           created_at?: string | null
           feature_id: number
           id?: number
+          level_obtained?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -183,6 +352,7 @@ export type Database = {
           created_at?: string | null
           feature_id?: number
           id?: number
+          level_obtained?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -306,33 +476,24 @@ export type Database = {
         }
         Relationships: []
       }
-      attribute: {
+      bonus_type: {
         Row: {
-          attribute_type: string | null
           created_at: string | null
-          default_value: number | null
           id: number
-          is_core_attribute: boolean | null
           label: string | null
           name: string
           updated_at: string | null
         }
         Insert: {
-          attribute_type?: string | null
           created_at?: string | null
-          default_value?: number | null
           id?: number
-          is_core_attribute?: boolean | null
           label?: string | null
           name: string
           updated_at?: string | null
         }
         Update: {
-          attribute_type?: string | null
           created_at?: string | null
-          default_value?: number | null
           id?: number
-          is_core_attribute?: boolean | null
           label?: string | null
           name?: string
           updated_at?: string | null
@@ -369,10 +530,34 @@ export type Database = {
             foreignKeyName: "buff_buff_type_id_fkey"
             columns: ["buff_type_id"]
             isOneToOne: false
-            referencedRelation: "ref_buff_type"
+            referencedRelation: "buff_type"
             referencedColumns: ["id"]
           },
         ]
+      }
+      buff_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       class: {
         Row: {
@@ -420,28 +605,34 @@ export type Database = {
         Row: {
           class_id: number
           created_at: string | null
+          description: string | null
           feature_level: number
           id: number
           label: string | null
           name: string
+          type: string | null
           updated_at: string | null
         }
         Insert: {
           class_id: number
           created_at?: string | null
+          description?: string | null
           feature_level: number
           id?: number
           label?: string | null
           name: string
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
           class_id?: number
           created_at?: string | null
+          description?: string | null
           feature_level?: number
           id?: number
           label?: string | null
           name?: string
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -560,6 +751,7 @@ export type Database = {
         Row: {
           corruption_id: number
           created_at: string | null
+          description: string | null
           id: number
           label: string | null
           min_manifestation_level: number
@@ -570,6 +762,7 @@ export type Database = {
         Insert: {
           corruption_id: number
           created_at?: string | null
+          description?: string | null
           id?: number
           label?: string | null
           min_manifestation_level?: number
@@ -580,6 +773,7 @@ export type Database = {
         Update: {
           corruption_id?: number
           created_at?: string | null
+          description?: string | null
           id?: number
           label?: string | null
           min_manifestation_level?: number
@@ -617,6 +811,36 @@ export type Database = {
         Update: {
           created_at?: string | null
           discovery_level?: number | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      element: {
+        Row: {
+          base_skill: string | null
+          created_at: string | null
+          energy_type: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_skill?: string | null
+          created_at?: string | null
+          energy_type?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_skill?: string | null
+          created_at?: string | null
+          energy_type?: string | null
           id?: number
           label?: string | null
           name?: string
@@ -672,10 +896,34 @@ export type Database = {
             foreignKeyName: "equipment_bonus_type_id_fkey"
             columns: ["bonus_type_id"]
             isOneToOne: false
-            referencedRelation: "ref_bonus_type"
+            referencedRelation: "bonus_type"
             referencedColumns: ["id"]
           },
         ]
+      }
+      favored_class_choice: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       feat: {
         Row: {
@@ -743,6 +991,48 @@ export type Database = {
         }
         Relationships: []
       }
+      game_character_ability: {
+        Row: {
+          ability_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          ability_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          ability_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_ability_ability_id_fkey"
+            columns: ["ability_id"]
+            isOneToOne: false
+            referencedRelation: "ability"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_ability_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_character_abp_choice: {
         Row: {
           created_at: string | null
@@ -780,14 +1070,14 @@ export type Database = {
             foreignKeyName: "game_character_abp_choice_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "ref_abp_node_group"
+            referencedRelation: "abp_node_group"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "game_character_abp_choice_node_id_fkey"
             columns: ["node_id"]
             isOneToOne: false
-            referencedRelation: "ref_abp_node"
+            referencedRelation: "abp_node"
             referencedColumns: ["id"]
           },
         ]
@@ -905,48 +1195,6 @@ export type Database = {
           },
           {
             foreignKeyName: "game_character_armor_game_character_id_fkey"
-            columns: ["game_character_id"]
-            isOneToOne: false
-            referencedRelation: "game_character"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_character_attribute: {
-        Row: {
-          attribute_id: number
-          created_at: string | null
-          game_character_id: number
-          id: number
-          updated_at: string | null
-          value: number
-        }
-        Insert: {
-          attribute_id: number
-          created_at?: string | null
-          game_character_id: number
-          id?: number
-          updated_at?: string | null
-          value: number
-        }
-        Update: {
-          attribute_id?: number
-          created_at?: string | null
-          game_character_id?: number
-          id?: number
-          updated_at?: string | null
-          value?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_character_attribute_attribute_id_fkey"
-            columns: ["attribute_id"]
-            isOneToOne: false
-            referencedRelation: "attribute"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_character_attribute_game_character_id_fkey"
             columns: ["game_character_id"]
             isOneToOne: false
             referencedRelation: "game_character"
@@ -1296,7 +1544,7 @@ export type Database = {
             foreignKeyName: "game_character_favored_class_bonus_choice_id_fkey"
             columns: ["choice_id"]
             isOneToOne: false
-            referencedRelation: "ref_favored_class_choice"
+            referencedRelation: "favored_class_choice"
             referencedColumns: ["id"]
           },
           {
@@ -1404,7 +1652,7 @@ export type Database = {
             foreignKeyName: "game_character_skill_rank_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
-            referencedRelation: "ref_skill_rank_source"
+            referencedRelation: "skill_rank_source"
             referencedColumns: ["id"]
           },
         ]
@@ -1451,6 +1699,30 @@ export type Database = {
           },
         ]
       }
+      legendary_gift_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       natural_attack: {
         Row: {
           attack_count: number | null
@@ -1484,296 +1756,9 @@ export type Database = {
         }
         Relationships: []
       }
-      ref_abp_bonus_type: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_abp_node: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          group_id: number
-          id: number
-          label: string | null
-          name: string
-          requires_choice: boolean
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          group_id: number
-          id?: number
-          label?: string | null
-          name: string
-          requires_choice?: boolean
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          group_id?: number
-          id?: number
-          label?: string | null
-          name?: string
-          requires_choice?: boolean
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ref_abp_node_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "ref_abp_node_group"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ref_abp_node_bonus: {
-        Row: {
-          bonus_type_id: number
-          created_at: string | null
-          id: number
-          node_id: number
-          target_specifier: string | null
-          updated_at: string | null
-          value: number
-        }
-        Insert: {
-          bonus_type_id: number
-          created_at?: string | null
-          id?: number
-          node_id: number
-          target_specifier?: string | null
-          updated_at?: string | null
-          value: number
-        }
-        Update: {
-          bonus_type_id?: number
-          created_at?: string | null
-          id?: number
-          node_id?: number
-          target_specifier?: string | null
-          updated_at?: string | null
-          value?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ref_abp_node_bonus_bonus_type_id_fkey"
-            columns: ["bonus_type_id"]
-            isOneToOne: false
-            referencedRelation: "ref_abp_bonus_type"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ref_abp_node_bonus_node_id_fkey"
-            columns: ["node_id"]
-            isOneToOne: false
-            referencedRelation: "ref_abp_node"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ref_abp_node_group: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          level: number
-          name: string
-          requires_choice: boolean
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          level: number
-          name: string
-          requires_choice?: boolean
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          level?: number
-          name?: string
-          requires_choice?: boolean
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_attribute: {
-        Row: {
-          attribute_type: string | null
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          attribute_type?: string | null
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          attribute_type?: string | null
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_bonus_type: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_buff_type: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_favored_class_choice: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_legendary_gift_type: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ref_skill_rank_source: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       skill: {
         Row: {
-          ability: string
+          ability_id: number
           armor_check_penalty: boolean | null
           created_at: string | null
           id: number
@@ -1783,7 +1768,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          ability: string
+          ability_id: number
           armor_check_penalty?: boolean | null
           created_at?: string | null
           id?: number
@@ -1793,7 +1778,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          ability?: string
+          ability_id?: number
           armor_check_penalty?: boolean | null
           created_at?: string | null
           id?: number
@@ -1802,7 +1787,15 @@ export type Database = {
           trained_only?: boolean | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "skill_ability_id_fkey"
+            columns: ["ability_id"]
+            isOneToOne: false
+            referencedRelation: "ability"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skill_bonus: {
         Row: {
@@ -1834,6 +1827,30 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_rank_source: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       spell: {
         Row: {
           casting_time: string | null
@@ -1841,6 +1858,7 @@ export type Database = {
           description: string | null
           duration: string | null
           id: number
+          label: string | null
           level: number
           name: string
           school: string | null
@@ -1854,6 +1872,7 @@ export type Database = {
           description?: string | null
           duration?: string | null
           id?: number
+          label?: string | null
           level: number
           name: string
           school?: string | null
@@ -1867,6 +1886,7 @@ export type Database = {
           description?: string | null
           duration?: string | null
           id?: number
+          label?: string | null
           level?: number
           name?: string
           school?: string | null
@@ -1883,6 +1903,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: number
+          label: string | null
           name: string
           spell_id: number | null
           updated_at: string | null
@@ -1894,6 +1915,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: number
+          label?: string | null
           name: string
           spell_id?: number | null
           updated_at?: string | null
@@ -1905,6 +1927,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: number
+          label?: string | null
           name?: string
           spell_id?: number | null
           updated_at?: string | null
@@ -2043,29 +2066,43 @@ export type Database = {
       wild_talent: {
         Row: {
           created_at: string | null
+          element_id: number | null
           id: number
           label: string | null
           name: string
-          talent_level: number | null
+          spell_level: number | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          element_id?: number | null
           id?: number
           label?: string | null
           name: string
-          talent_level?: number | null
+          spell_level?: number | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          element_id?: number | null
           id?: number
           label?: string | null
           name?: string
-          talent_level?: number | null
+          spell_level?: number | null
+          type?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wild_talent_element_id_fkey"
+            columns: ["element_id"]
+            isOneToOne: false
+            referencedRelation: "element"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
