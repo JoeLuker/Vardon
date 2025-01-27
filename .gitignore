@@ -42,4 +42,3 @@ supabase-loader.py
 
 supabase/migrations/2024-12-29_init.sql
 
-src/lib/components/*
