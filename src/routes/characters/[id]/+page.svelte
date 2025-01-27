@@ -9,6 +9,8 @@
 	import type { PageData } from './$types';
 	import type { ValueWithBreakdown, EnrichedCharacter } from '$lib/domain/characterCalculations';
 	import type { CompleteCharacter } from '$lib/db/getCompleteCharacter';
+	import type { GameRulesData } from '$lib/db/getGameRulesData';
+	import { getGameRulesData } from '$lib/db/getGameRulesData';
 
 	// Child components
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
@@ -18,6 +20,8 @@
 	import Saves from '$lib/ui/Saves.svelte';
 	import CombatStats from '$lib/ui/CombatStats.svelte';
 	import ACStats from '$lib/ui/ACStats.svelte';
+	import SkillRankGrid from '$lib/ui/SkillRankGrid.svelte';
+
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
 
@@ -52,6 +56,7 @@
 	let character = $state<EnrichedCharacter | null>(null);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
+	let gameRules = $state<GameRulesData | null>(null);
 
 	// Optional: reference maps if we want to fetch class/feat details
 	let classMap = new Map<number, any>();
@@ -64,6 +69,9 @@
 	// Breakdown sheet
 	let selectedStatBreakdown = $state<ValueWithBreakdown | null>(null);
 	let breakdownSheetOpen = $state(false);
+
+	let isUnmounting = $state(false);
+
 
 	/**
 	 * initReferenceData: optional function to fetch classes/feats, store them in classMap/featMap
@@ -87,25 +95,33 @@
 		if (data.id !== null) {
 			currentCharId = data.id;
 
-			// Do async work in an IIFE
 			(async () => {
-				// 1) (Optional) Load reference data
-				await initReferenceData();
+				if (isUnmounting) return;
+				
+				// Load gameRules first, then use it
+				try {
+					gameRules = await getGameRulesData();
+					await initReferenceData();
+					
+					rawCharacter = data.rawCharacter ?? null;
+					if (gameRules && rawCharacter) {
+						character = enrichCharacterData(rawCharacter, gameRules);
+					} else {
+						console.error('Game rules not loaded');
+					}
 
-				// 2) Use the server-provided rawCharacter
-				rawCharacter = data.rawCharacter ?? null;
-				if (rawCharacter) {
-					character = enrichCharacterData(rawCharacter);
-					console.log('Character:', JSON.stringify(character, null, 2));
+					if (!isUnmounting) {
+						initWatchers();
+					}
+				} catch (err) {
+					console.error('Failed to load game rules:', err);
+					error = 'Failed to load game rules';
 				}
-
-				// 3) Initialize watchers
-				initWatchers();
 			})();
 		}
 
-		// Return a synchronous cleanup function
 		return () => {
+			isUnmounting = true;
 			cleanupWatchers();
 		};
 	});
@@ -113,28 +129,36 @@
 	// If the user navigates to a different ID without a full refresh
 	afterNavigate(async () => {
 		const newId = Number($page.params.id);
-		if (newId !== currentCharId) {
-			// Clean up watchers from the old char
+		if (newId !== currentCharId && !isUnmounting) {
 			cleanupWatchers();
-
-			// Load the new char
 			currentCharId = newId;
-			await loadCharacter(newId);
+			
+			if (!gameRules) {
+				gameRules = await getGameRulesData();
+			}
+			
+			await loadCharacter(newId, gameRules);
 
-			// Re-init watchers
-			initWatchers();
+			if (!isUnmounting) {
+				initWatchers();
+			}
 		}
 	});
 
 	/**
 	 * loadCharacter: fetch from DB and re-enrich
 	 */
-	async function loadCharacter(charId: number) {
+	async function loadCharacter(charId: number, rules: GameRulesData | null) {
+		if (!rules) {
+			error = 'Game rules not loaded';
+			return;
+		}
+		
 		try {
 			isLoading = true;
 			const fetched = await getCompleteCharacter(charId);
 			rawCharacter = fetched;
-			character = fetched ? enrichCharacterData(fetched) : null;
+			character = fetched ? enrichCharacterData(fetched, rules) : null;
 			isLoading = false;
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
@@ -150,49 +174,77 @@
 		if (watchersInitialized) return;
 		watchersInitialized = true;
 
-		// Main table
-		gameCharacterApi.startWatch(handleCharacterTableChange);
+		// Main character table watcher
+		gameCharacterApi.startWatch(async (type, row) => {
+			if (row?.id !== currentCharId) return;
+			
+			if (type === 'delete') {
+				rawCharacter = null;
+				character = null;
+				return;
+			}
 
-		// Bridging
-		gameCharacterClassApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_class')
-		);
-		gameCharacterFeatApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_feat')
-		);
-		gameCharacterSkillRankApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_skill_rank')
-		);
+			// For simple updates, patch the existing character
+			if (type === 'update' && rawCharacter) {
+				rawCharacter = {
+					...rawCharacter,
+					current_hp: row.current_hp,
+					max_hp: row.max_hp,
+					name: row.name,
+					label: row.label
+				};
+				if (gameRules) {
+					character = enrichCharacterData(rawCharacter, gameRules);
+				}
+				return;
+			}
+		});
 
-		gameCharacterArchetypeApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_archetype')
-		);
-		gameCharacterAncestryApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_ancestry')
-		);
-		gameCharacterClassFeatureApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_class_feature')
-		);
+		// For skill ranks and other bridging tables
+		gameCharacterSkillRankApi.startWatch(async (_type, row) => {
+			if (row?.game_character_id === currentCharId && currentCharId && rawCharacter) {
+				// Only update the skills portion
+				const updatedChar = await getCompleteCharacter(currentCharId);
+				if (updatedChar) {
+					rawCharacter = {
+						...rawCharacter,
+						skillRanks: updatedChar.skillRanks,
+					};
+					if (gameRules && rawCharacter) {
+						character = enrichCharacterData(rawCharacter, gameRules);
+					}
+				}
+			}
+		});
 
-		gameCharacterCorruptionApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_corruption')
-		);
-		gameCharacterCorruptionManifestationApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_corruption_manifestation')
-		);
+		// For other bridging tables, use selective updates when possible
+		const tables = [
+			gameCharacterAbilityApi,
+			gameCharacterClassApi,
+			gameCharacterFeatApi,
+			gameCharacterArchetypeApi,
+			gameCharacterAncestryApi,
+			gameCharacterClassFeatureApi,
+			gameCharacterCorruptionApi,
+			gameCharacterCorruptionManifestationApi,
+			gameCharacterWildTalentApi,
+			gameCharacterEquipmentApi,
+			gameCharacterArmorApi,
+			gameCharacterAbpChoiceApi
+		];
 
-		gameCharacterWildTalentApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_wild_talent')
-		);
-		gameCharacterEquipmentApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_equipment')
-		);
-		gameCharacterArmorApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_armor')
-		);
-		gameCharacterAbpChoiceApi.startWatch((type, row) =>
-			handleBridgingChange(type, row, 'game_character_abp_choice')
-		);
+		for (const table of tables) {
+			table.startWatch(async (_type, row) => {
+				if (row?.game_character_id === currentCharId && currentCharId) {
+					// For these tables, we need to do a full refresh but without loading state
+					const fetched = await getCompleteCharacter(currentCharId);
+					if (fetched) {
+						rawCharacter = fetched;
+						character = enrichCharacterData(fetched, gameRules!);
+					}
+				}
+			});
+		}
 	}
 
 	/**
@@ -201,131 +253,26 @@
 	function cleanupWatchers() {
 		if (!watchersInitialized) return;
 
-		gameCharacterApi.stopWatch();
-		gameCharacterAbilityApi.stopWatch();
-		gameCharacterClassApi.stopWatch();
-		gameCharacterFeatApi.stopWatch();
-		gameCharacterSkillRankApi.stopWatch();
-		gameCharacterArchetypeApi.stopWatch();
-		gameCharacterAncestryApi.stopWatch();
-		gameCharacterClassFeatureApi.stopWatch();
-		gameCharacterCorruptionApi.stopWatch();
-		gameCharacterCorruptionManifestationApi.stopWatch();
-		gameCharacterWildTalentApi.stopWatch();
-		gameCharacterEquipmentApi.stopWatch();
-		gameCharacterArmorApi.stopWatch();
-		gameCharacterAbpChoiceApi.stopWatch();
-
-		watchersInitialized = false;
-	}
-
-	/**
-	 * handleCharacterTableChange: partial updates for main table
-	 */
-	async function handleCharacterTableChange(
-		type: 'insert' | 'update' | 'delete',
-		row: any
-	) {
-		if (row?.id !== currentCharId) return;
-
-		if (type === 'delete') {
-			rawCharacter = null;
-			character = null;
-			return;
+		try {
+			gameCharacterApi.stopWatch();
+			gameCharacterAbilityApi.stopWatch();
+			gameCharacterClassApi.stopWatch();
+			gameCharacterFeatApi.stopWatch();
+			gameCharacterSkillRankApi.stopWatch();
+			gameCharacterArchetypeApi.stopWatch();
+			gameCharacterAncestryApi.stopWatch();
+			gameCharacterClassFeatureApi.stopWatch();
+			gameCharacterCorruptionApi.stopWatch();
+			gameCharacterCorruptionManifestationApi.stopWatch();
+			gameCharacterWildTalentApi.stopWatch();
+			gameCharacterEquipmentApi.stopWatch();
+			gameCharacterArmorApi.stopWatch();
+			gameCharacterAbpChoiceApi.stopWatch();
+		} catch (err) {
+			console.error('Error cleaning up watchers:', err);
+		} finally {
+			watchersInitialized = false;
 		}
-		if (!rawCharacter) return;
-
-		rawCharacter = {
-			...rawCharacter,
-			current_hp: row.current_hp,
-			max_hp: row.max_hp,
-			name: row.name,
-			label: row.label
-		};
-		character = enrichCharacterData(rawCharacter);
-	}
-
-	/**
-	 * handleBridgingChange: partial update bridging tables
-	 */
-	async function handleBridgingChange(
-		type: 'insert' | 'update' | 'delete',
-		row: any,
-		tableName: string
-	) {
-		if (!rawCharacter || row?.game_character_id !== currentCharId) return;
-
-		switch (tableName) {
-			case 'game_character_class':
-				if (type === 'insert') {
-					const classData = classMap.get(row.class_id);
-					if (classData) {
-						rawCharacter.classes.push({
-							base: classData,
-							level: row.level,
-							class_skills: [] // required by your type
-						});
-					}
-				} else if (type === 'update') {
-					const idx = rawCharacter.classes.findIndex(
-						(c: any) => c.base.id === row.class_id
-					);
-					if (idx >= 0) {
-						rawCharacter.classes[idx].level = row.level;
-					}
-				} else if (type === 'delete') {
-					rawCharacter.classes = rawCharacter.classes.filter(
-						(c: any) => c.base.id !== row.class_id
-					);
-				}
-				break;
-
-			case 'game_character_abp_choice':
-				if (type === 'insert') {
-					rawCharacter.abpChoices ||= [];
-					rawCharacter.abpChoices.push({
-						group: {
-							id: row.group_id,
-							// Add other required group properties with placeholder values
-							created_at: null,
-							label: null,
-							level: 0,
-							name: '',
-							requires_choice: true,
-							updated_at: null
-						},
-						node: {
-							id: row.node_id,
-							// Add other required node properties with placeholder values
-							created_at: null,
-							name: '',
-							bonuses: [],
-							updated_at: null,
-							description: null,
-							group_id: 0,
-							label: null,
-							requires_choice: false
-						}
-					});
-				} else if (type === 'update') {
-					const idx = rawCharacter.abpChoices?.findIndex(
-						(c: any) => c.group.id === row.group_id
-					);
-					if (idx >= 0) {
-						rawCharacter.abpChoices[idx].node.id = row.node_id;
-					}
-				} else if (type === 'delete') {
-					rawCharacter.abpChoices = rawCharacter.abpChoices?.filter(
-						(c: any) => !(c.group.id === row.group_id)
-					);
-				}
-				break;
-
-			// add similar bridging logic for other tables
-		}
-
-		// Re-enrich after bridging update
-		character = enrichCharacterData(rawCharacter);
 	}
 
 	/**
@@ -335,6 +282,7 @@
 		selectedStatBreakdown = breakdown;
 		breakdownSheetOpen = true;
 	}
+
 </script>
 
 <!-- Template -->
@@ -380,6 +328,28 @@
 			<!-- Skills -->
 			<Tabs.Content value="skills">
 				<div class="rounded-lg bg-secondary p-6">
+					<SkillRankGrid
+						character={character}
+						onUpdateDB={async (changes) => {
+							if (!character?.id) return;
+							if (changes.type === 'add') {
+								await gameCharacterSkillRankApi.createRow({
+									game_character_id: character.id,
+									skill_id: changes.skillId,
+									applied_at_level: changes.level,
+								});
+							} else {
+								const existingRanks = await gameCharacterSkillRankApi.getRowsByFilter({
+									game_character_id: character.id,
+									skill_id: changes.skillId,
+									applied_at_level: changes.level,
+								});
+								if (existingRanks?.length) {
+									await gameCharacterSkillRankApi.deleteRow(existingRanks[0].id);
+								}
+							}
+						}}
+					/>
 					<Skills
 						character={character}
 						onSelectValue={handleSelectValue}

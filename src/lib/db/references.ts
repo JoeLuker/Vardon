@@ -68,15 +68,6 @@ export type AbilityUpdate = UpdateOf<'ability'>;
 export const abilityApi = createDbApi<AbilityRow, AbilityInsert, AbilityUpdate>('ability');
 
 // -----------------------------------------------------------------------------
-// 6) Buff
-// -----------------------------------------------------------------------------
-export type BuffRow = RowOf<'buff'>;
-export type BuffInsert = InsertOf<'buff'>;
-export type BuffUpdate = UpdateOf<'buff'>;
-
-export const buffApi = createDbApi<BuffRow, BuffInsert, BuffUpdate>('buff');
-
-// -----------------------------------------------------------------------------
 // 7) Class
 // -----------------------------------------------------------------------------
 export type ClassRow = RowOf<'class'>;
@@ -234,15 +225,15 @@ export const gameCharacterSkillRankApi = createDbApi<
 	GameCharacterSkillRankUpdate
 >('game_character_skill_rank');
 
-// export type GameCharacterTraitRow    = RowOf<'game_character_trait'>;
-// export type GameCharacterTraitInsert = InsertOf<'game_character_trait'>;
-// export type GameCharacterTraitUpdate = UpdateOf<'game_character_trait'>;
+export type GameCharacterTraitRow = RowOf<'game_character_trait'>;
+export type GameCharacterTraitInsert = InsertOf<'game_character_trait'>;
+export type GameCharacterTraitUpdate = UpdateOf<'game_character_trait'>;
 
-// export const gameCharacterTraitApi = createDbApi<
-//   GameCharacterTraitRow,
-//   GameCharacterTraitInsert,
-//   GameCharacterTraitUpdate
-// >('game_character_trait');
+export const gameCharacterTraitApi = createDbApi<
+	GameCharacterTraitRow,
+	GameCharacterTraitInsert,
+	GameCharacterTraitUpdate
+>('game_character_trait');
 
 export type GameCharacterWildTalentRow = RowOf<'game_character_wild_talent'>;
 export type GameCharacterWildTalentInsert = InsertOf<'game_character_wild_talent'>;
@@ -284,16 +275,6 @@ export const gameCharacterCorruptionApi = createDbApi<
 	GameCharacterCorruptionUpdate
 >('game_character_corruption');
 
-// export type GameCharacterBuffRow    = RowOf<'game_character_buff'>;
-// export type GameCharacterBuffInsert = InsertOf<'game_character_buff'>;
-// export type GameCharacterBuffUpdate = UpdateOf<'game_character_buff'>;
-
-// export const gameCharacterBuffApi = createDbApi<
-//   GameCharacterBuffRow,
-//   GameCharacterBuffInsert,
-//   GameCharacterBuffUpdate
-// >('game_character_buff');
-
 export type GameCharacterCorruptionManifestationRow =
 	RowOf<'game_character_corruption_manifestation'>;
 export type GameCharacterCorruptionManifestationInsert =
@@ -306,26 +287,6 @@ export const gameCharacterCorruptionManifestationApi = createDbApi<
 	GameCharacterCorruptionManifestationInsert,
 	GameCharacterCorruptionManifestationUpdate
 >('game_character_corruption_manifestation');
-
-// export type GameCharacterDiscoveryRow    = RowOf<'game_character_discovery'>;
-// export type GameCharacterDiscoveryInsert = InsertOf<'game_character_discovery'>;
-// export type GameCharacterDiscoveryUpdate = UpdateOf<'game_character_discovery'>;
-
-// export const gameCharacterDiscoveryApi = createDbApi<
-//   GameCharacterDiscoveryRow,
-//   GameCharacterDiscoveryInsert,
-//   GameCharacterDiscoveryUpdate
-// >('game_character_discovery');
-
-// export type GameCharacterEquipmentBonusRow    = RowOf<'game_character_equipment_bonus'>;
-// export type GameCharacterEquipmentBonusInsert = InsertOf<'game_character_equipment_bonus'>;
-// export type GameCharacterEquipmentBonusUpdate = UpdateOf<'game_character_equipment_bonus'>;
-
-// export const gameCharacterEquipmentBonusApi = createDbApi<
-//   GameCharacterEquipmentBonusRow,
-//   GameCharacterEquipmentBonusInsert,
-//   GameCharacterEquipmentBonusUpdate
-// >('game_character_equipment_bonus');
 
 export type GameCharacterAbilityRow = RowOf<'game_character_ability'>;
 export type GameCharacterAbilityInsert = InsertOf<'game_character_ability'>;
@@ -394,14 +355,6 @@ export const abpBonusTypeApi = createDbApi<
 	AbpBonusTypeUpdate
 >('abp_bonus_type');
 
-export type BuffTypeRow = RowOf<'buff_type'>;
-export type BuffTypeInsert = InsertOf<'buff_type'>;
-export type BuffTypeUpdate = UpdateOf<'buff_type'>;
-
-export const buffTypeApi = createDbApi<BuffTypeRow, BuffTypeInsert, BuffTypeUpdate>(
-	'buff_type'
-);
-
 export type FavoredClassChoiceRow = RowOf<'favored_class_choice'>;
 export type FavoredClassChoiceInsert = InsertOf<'favored_class_choice'>;
 export type FavoredClassChoiceUpdate = UpdateOf<'favored_class_choice'>;
@@ -411,16 +364,6 @@ export const favoredClassChoiceApi = createDbApi<
 	FavoredClassChoiceInsert,
 	FavoredClassChoiceUpdate
 >('favored_class_choice');
-
-export type SkillRankSourceRow = RowOf<'skill_rank_source'>;
-export type SkillRankSourceInsert = InsertOf<'skill_rank_source'>;
-export type SkillRankSourceUpdate = UpdateOf<'skill_rank_source'>;
-
-export const skillRankSourceApi = createDbApi<
-	SkillRankSourceRow,
-	SkillRankSourceInsert,
-	SkillRankSourceUpdate
->('skill_rank_source');
 
 // Ancestry Ability
 export type AncestryAbilityRow = RowOf<'ancestry_ability'>;
@@ -480,15 +423,6 @@ export const spellConsumableApi = createDbApi<
 	SpellConsumableUpdate
 >('spell_consumable');
 
-// Spell Extract
-export type SpellExtractRow = RowOf<'spell_extract'>;
-export type SpellExtractInsert = InsertOf<'spell_extract'>;
-export type SpellExtractUpdate = UpdateOf<'spell_extract'>;
-
-export const spellExtractApi = createDbApi<SpellExtractRow, SpellExtractInsert, SpellExtractUpdate>(
-	'spell_extract'
-);
-
 // Trait
 export type TraitRow = RowOf<'trait'>;
 export type TraitInsert = InsertOf<'trait'>;
@@ -522,17 +456,6 @@ export type WildTalentUpdate = UpdateOf<'wild_talent'>;
 export const wildTalentApi = createDbApi<WildTalentRow, WildTalentInsert, WildTalentUpdate>(
 	'wild_talent'
 );
-
-// Add new table references for game_character_extract
-export type GameCharacterExtractRow = RowOf<'game_character_extract'>;
-export type GameCharacterExtractInsert = InsertOf<'game_character_extract'>;
-export type GameCharacterExtractUpdate = UpdateOf<'game_character_extract'>;
-
-export const gameCharacterExtractApi = createDbApi<
-	GameCharacterExtractRow,
-	GameCharacterExtractInsert,
-	GameCharacterExtractUpdate
->('game_character_extract');
 
 // Add new table references for game_character_favored_class_bonus
 export type GameCharacterFavoredClassBonusRow = RowOf<'game_character_favored_class_bonus'>;
@@ -600,10 +523,61 @@ export const abpNodeBonusApi = createDbApi<
   AbpNodeBonusUpdate
 >('abp_node_bonus');
 
+// Element
+export type ElementRow = RowOf<'element'>;
+export type ElementInsert = InsertOf<'element'>;
+export type ElementUpdate = UpdateOf<'element'>;
+
+export const elementApi = createDbApi<ElementRow, ElementInsert, ElementUpdate>('element');
+
+// Legendary Gift Type
+export type LegendaryGiftTypeRow = RowOf<'legendary_gift_type'>;
+export type LegendaryGiftTypeInsert = InsertOf<'legendary_gift_type'>;
+export type LegendaryGiftTypeUpdate = UpdateOf<'legendary_gift_type'>;
+
+export const legendaryGiftTypeApi = createDbApi<
+  LegendaryGiftTypeRow,
+  LegendaryGiftTypeInsert,
+  LegendaryGiftTypeUpdate
+>('legendary_gift_type');
+
+// Game Character Spell
+export type GameCharacterSpellRow = RowOf<'game_character_spell'>;
+export type GameCharacterSpellInsert = InsertOf<'game_character_spell'>;
+export type GameCharacterSpellUpdate = UpdateOf<'game_character_spell'>;
+
+export const gameCharacterSpellApi = createDbApi<
+  GameCharacterSpellRow,
+  GameCharacterSpellInsert,
+  GameCharacterSpellUpdate
+>('game_character_spell');
+
+// Game Character Discovery
+export type GameCharacterDiscoveryRow = RowOf<'game_character_discovery'>;
+export type GameCharacterDiscoveryInsert = InsertOf<'game_character_discovery'>;
+export type GameCharacterDiscoveryUpdate = UpdateOf<'game_character_discovery'>;
+
+export const gameCharacterDiscoveryApi = createDbApi<
+  GameCharacterDiscoveryRow,
+  GameCharacterDiscoveryInsert,
+  GameCharacterDiscoveryUpdate
+>('game_character_discovery');
+
+// Game Character Weapon
+export type GameCharacterWeaponRow = RowOf<'game_character_weapon'>;
+export type GameCharacterWeaponInsert = InsertOf<'game_character_weapon'>;
+export type GameCharacterWeaponUpdate = UpdateOf<'game_character_weapon'>;
+
+export const gameCharacterWeaponApi = createDbApi<
+  GameCharacterWeaponRow,
+  GameCharacterWeaponInsert,
+  GameCharacterWeaponUpdate
+>('game_character_weapon');
 
 // Update dbApis to include these new APIs
 export const dbApis = {
-	// Core game elements
+	// Core Rules
+	abilityApi,
 	ancestralTraitApi,
 	ancestryApi,
 	ancestryAbilityApi,
@@ -611,8 +585,6 @@ export const dbApis = {
 	archetypeClassFeatureApi,
 	archetypeFeatureReplacementApi,
 	armorApi,
-	abilityApi,
-	buffApi,
 	classApi,
 	classFeatureApi,
 	classSkillApi,
@@ -620,43 +592,47 @@ export const dbApis = {
 	corruptionApi,
 	corruptionManifestationApi,
 	discoveryApi,
+	elementApi,
 	equipmentApi,
 	featApi,
-	gameCharacterApi,
-	gameCharacterAncestryApi,
-	gameCharacterClassApi,
-	gameCharacterFeatApi,
-	gameCharacterSkillRankApi,
-	gameCharacterWildTalentApi,
-	gameCharacterEquipmentApi,
-	gameCharacterCorruptionApi,
-	gameCharacterCorruptionManifestationApi,
-	gameCharacterAbilityApi,
-	gameCharacterClassFeatureApi,
 	naturalAttackApi,
 	skillApi,
 	skillBonusApi,
 	spellApi,
 	spellConsumableApi,
-	spellExtractApi,
 	traitApi,
 	weaponApi,
 	weaponProficiencyApi,
 	wildTalentApi,
-
-	// Reference tables
 	abpBonusTypeApi,
-	bonusTypeApi,
-	buffTypeApi,
-	favoredClassChoiceApi,
-	skillRankSourceApi,
-	gameCharacterExtractApi,
-	gameCharacterFavoredClassBonusApi,
-	gameCharacterConsumableApi,
-	gameCharacterAbpChoiceApi,
 	abpNodeApi,
+	abpNodeBonusApi,
 	abpNodeGroupApi,
-	abpNodeBonusApi
+	bonusTypeApi,
+	favoredClassChoiceApi,
+	legendaryGiftTypeApi,
+
+	// Character-Specific
+	gameCharacterAbilityApi,
+	gameCharacterAbpChoiceApi,
+	gameCharacterAncestryApi,
+	gameCharacterArchetypeApi,
+	gameCharacterArmorApi,
+	gameCharacterClassApi,
+	gameCharacterClassFeatureApi,
+	gameCharacterConsumableApi,
+	gameCharacterCorruptionApi,
+	gameCharacterCorruptionManifestationApi,
+	gameCharacterEquipmentApi,
+	gameCharacterFavoredClassBonusApi,
+	gameCharacterFeatApi,
+	gameCharacterSkillRankApi,
+	gameCharacterTraitApi,
+	gameCharacterWildTalentApi,
+	gameCharacterApi,
+	gameCharacterSpellApi,
+	gameCharacterDiscoveryApi,
+	gameCharacterWeaponApi,
 };
 
 // -----------------------------------------------------------------------------

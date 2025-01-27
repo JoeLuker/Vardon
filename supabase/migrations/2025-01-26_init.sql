@@ -36,15 +36,7 @@ create table
     id BIGSERIAL primary key,
     name text not null unique,
     label text,
-    created_at TIMESTAMPTZ default now(),
-    updated_at TIMESTAMPTZ default now()
-  );
-
-create table
-  skill_rank_source (
-    id BIGSERIAL primary key,
-    name text not null unique,
-    label text,
+    stacking boolean default false,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -157,6 +149,7 @@ create table
     ability_id bigint not null references ability (id) on delete cascade,
     trained_only boolean default false,
     armor_check_penalty boolean default false,
+    knowledge_skill boolean default false,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -166,8 +159,8 @@ create table
     id BIGSERIAL primary key,
     name text not null,
     label text,
-    feat_label text,
     feat_type text,
+    description text,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -233,6 +226,7 @@ create table
     name text not null,
     label text,
     trait_type text,
+    description text,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -432,7 +426,6 @@ create table
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character (id) on delete cascade,
     skill_id bigint not null references skill (id) on delete cascade,
-    source_id bigint references skill_rank_source (id),
     applied_at_level int not null default 1,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
@@ -471,17 +464,6 @@ create table
     updated_at TIMESTAMPTZ default now()
   );
 
-create table
-  game_character_extract (
-    id BIGSERIAL primary key,
-    game_character_id bigint not null references game_character (id) on delete cascade,
-    spell_extract_id bigint not null references spell_extract (id) on delete cascade,
-    level int not null,
-    prepared int not null default 0,
-    used int not null default 0,
-    created_at TIMESTAMPTZ default now(),
-    updated_at TIMESTAMPTZ default now()
-  );
 
 -- Add this before the CREATE PUBLICATION line
 create table
@@ -649,7 +631,6 @@ create table
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character (id) on delete cascade,
     equipment_id bigint not null references equipment (id) on delete cascade,
-    equipped boolean not null default false,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -660,10 +641,52 @@ create table
     id BIGSERIAL primary key,
     game_character_id bigint not null references game_character (id) on delete cascade,
     armor_id bigint not null references armor (id) on delete cascade,
-    equipped boolean not null default false,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
+
+create table
+  game_character_trait (
+    id BIGSERIAL primary key,
+    game_character_id bigint not null references game_character (id) on delete cascade,
+    trait_id bigint not null references trait (id) on delete cascade,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  game_character_spell (
+    id BIGSERIAL primary key,
+    game_character_id bigint not null references game_character (id) on delete cascade,
+    spell_id bigint not null references spell (id) on delete cascade,
+    level int not null,
+    prepared int not null default 0,
+    used int not null default 0,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  game_character_discovery (
+    id BIGSERIAL primary key,
+    game_character_id bigint not null references game_character (id) on delete cascade,
+    discovery_id bigint not null references discovery (id) on delete cascade,
+    level_obtained int not null,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  game_character_weapon (
+    id BIGSERIAL primary key,
+    game_character_id bigint not null references game_character (id) on delete cascade,
+    weapon_id bigint not null references weapon (id) on delete cascade,
+    enhancement int not null default 0,
+    masterwork boolean not null default false,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
 
 create publication suparealtime for all tables;
 

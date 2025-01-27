@@ -8,12 +8,17 @@
 		loadAllCharacters
 	} from '$lib/state/multiCharacterStore';
 
-	onMount(() => {
+	onMount(async () => {
 		// Optionally start watchers for realtime changes
 		initMultiCharWatchers();
 
 		// Then load/reload the entire list
-		loadAllCharacters();
+		await loadAllCharacters().then(() => {
+			if ($multiCharStore.length > 0) {
+				// console.log(JSON.stringify($multiCharStore, null, 2));
+				console.log($multiCharStore);
+			}
+		});
 	});
 </script>
 
@@ -43,7 +48,7 @@
 						</h2>
 						<!-- Use text-muted-foreground from config -->
 						<div class="text-sm text-muted-foreground">
-							<span>{character.ancestry?.base?.label ?? ''}</span>
+							<span>{character.ancestries[0]?.base?.label ?? ''}</span>
 							<span class="mx-2">•</span>
 							<span>
 								{character.classes

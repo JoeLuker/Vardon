@@ -3,93 +3,103 @@
  *
  * Fetch and assemble a "CompleteCharacter" object with:
  *   - The main Character row
- *   - Sub-entities (ancestry, classes, feats, buffs, etc.)
+ *   - Sub-entities (ancestry, classes, feats, etc.)
  *   - Bridging properties (level, selected sub-features, etc.)
- *   - References (bonusTypes, buffTypes, etc.) if desired
+ *   - References (bonusTypes, etc.) if desired
  *****************************************************************************/
 
 import {
-	// DB APIs
+
+	// Character-Specific
+
 	gameCharacterApi,
+
+	gameCharacterAbilityApi,
+	gameCharacterAbpChoiceApi,
 	gameCharacterAncestryApi,
+	gameCharacterArchetypeApi,
+	gameCharacterArmorApi,
 	gameCharacterClassApi,
+	gameCharacterClassFeatureApi,
+	gameCharacterConsumableApi,
+	gameCharacterCorruptionApi,
+	gameCharacterCorruptionManifestationApi,
+	gameCharacterEquipmentApi,
+	gameCharacterFavoredClassBonusApi,
 	gameCharacterFeatApi,
 	gameCharacterSkillRankApi,
-	ancestryApi,
-	classApi,
-	featApi,
-	traitApi,
-	buffApi,
-	corruptionApi,
-	wildTalentApi,
-	equipmentApi,
-	abilityApi,
-	ancestralTraitApi,
-	skillApi,
-	classFeatureApi,
-	discoveryApi,
-	archetypeApi,
-	bonusTypeApi,
-	skillRankSourceApi,
-	buffTypeApi,
-	abpBonusTypeApi,
-	favoredClassChoiceApi,
-	archetypeFeatureReplacementApi,
-	skillBonusApi,
-	weaponProficiencyApi,
-	naturalAttackApi,
+	gameCharacterTraitApi,
 	gameCharacterWildTalentApi,
-	gameCharacterEquipmentApi,
-	gameCharacterAbilityApi,
-	gameCharacterClassFeatureApi,
-	gameCharacterCorruptionApi,
-	classSkillApi,
-	// gameCharacterTraitApi,
-	// gameCharacterBuffApi,
-	// gameCharacterAncestralTraitApi,
-	// gameCharacterDiscoveryApi,
-	gameCharacterArchetypeApi,
-	gameCharacterAbpChoiceApi,
-	abpNodeGroupApi,
-	abpNodeApi,
-	abpNodeBonusApi,
-	gameCharacterArmorApi,
-	armorApi
+
+	gameCharacterSpellApi,
+	gameCharacterDiscoveryApi,
+	gameCharacterWeaponApi,
+
 } from '$lib/db';
 
 import type {
-	GameCharacterRow,
-	AncestryRow,
-	ClassRow,
-	ArchetypeRow,
-	FeatRow,
-	TraitRow,
-	BuffRow,
-	CorruptionRow,
-	DiscoveryRow,
-	WildTalentRow,
-	EquipmentRow,
+
+	// Core Rules
 	AbilityRow,
 	AncestralTraitRow,
+	AncestryRow,
+	AncestryAbilityRow,
+	ArchetypeRow,
+	ArchetypeClassFeatureRow,
+	ArchetypeFeatureReplacementRow,
+	ArmorRow,
+	ClassRow,
 	ClassFeatureRow,
+	ClassSkillRow,
+	ConsumableRow,
+	CorruptionRow,
+	CorruptionManifestationRow,
+	DiscoveryRow,
+	ElementRow,
+	EquipmentRow,
+	FeatRow,
+	NaturalAttackRow,
 	SkillRow,
 	SkillBonusRow,
+	SpellRow,
+	SpellConsumableRow,
+	TraitRow,
+	WeaponRow,
 	WeaponProficiencyRow,
-	NaturalAttackRow,
-	ArchetypeFeatureReplacementRow,
-	BonusTypeRow,
-	SkillRankSourceRow,	
-	BuffTypeRow,
+	WildTalentRow,
 	AbpBonusTypeRow,
-	FavoredClassChoiceRow,
-	GameCharacterSkillRankRow,
-	GameCharacterAbpChoiceRow,
-	AbpNodeGroupRow,
 	AbpNodeRow,
 	AbpNodeBonusRow,
-	ArmorRow,
-	GameCharacterArmorRow
+	AbpNodeGroupRow,
+	BonusTypeRow,   
+	FavoredClassChoiceRow,
+	LegendaryGiftTypeRow,
+
+	// Character-Specific
+	GameCharacterAbilityRow,
+	GameCharacterAbpChoiceRow,
+	GameCharacterAncestryRow,
+	GameCharacterArchetypeRow,
+	GameCharacterArmorRow,
+	GameCharacterClassRow,
+	GameCharacterClassFeatureRow,
+	GameCharacterConsumableRow,
+	GameCharacterCorruptionRow,
+	GameCharacterCorruptionManifestationRow,
+	GameCharacterEquipmentRow,
+	GameCharacterFavoredClassBonusRow,
+	GameCharacterFeatRow,
+	GameCharacterSkillRankRow,
+	GameCharacterTraitRow,
+	GameCharacterWildTalentRow,
+	GameCharacterSpellRow,
+	GameCharacterDiscoveryRow,
+	GameCharacterWeaponRow,
+
+	GameCharacterRow,
+	
 } from '$lib/db';
+import { getGameRulesData } from './getGameRulesData';
 
 // -----------------------------------------------------------------------------
 // 1) Cleanup Helpers
@@ -117,406 +127,280 @@ function cleanUpObject<T extends Record<string, any>>(obj: T): T {
 	return omitKeysDeep(obj, ['created_at', 'updated_at']);
 }
 
+function buildCharacterCollection<
+	BaseRow extends { id: number },
+	CharacterRow extends { game_character_id: number }
+>(
+	characterRows: CharacterRow[],
+	baseRows: BaseRow[],
+	getBaseId: (charRow: CharacterRow) => number,
+): Array<{
+	base: BaseRow;
+} & CharacterRow> {
+	return characterRows.map(charRow => ({
+		base: baseRows.find(baseRow => baseRow.id === getBaseId(charRow))!,
+		...charRow
+	}));
+}
+
+
 // -----------------------------------------------------------------------------
 // 2) Data Shape
 // -----------------------------------------------------------------------------
 export interface CompleteCharacter extends Omit<GameCharacterRow, 'created_at' | 'updated_at'> {
-	ancestry: {
-		base: AncestryRow;
-		[key: string]: any;
-	} | null;
+    ancestries: Array<{
+        base: AncestryRow;
+    } & GameCharacterAncestryRow>;
 
-	classes: Array<{
-		base: ClassRow;
-		class_skills: number[];
-		[key: string]: any;
-	}>;
+    abilities: Array<{
+        base: AbilityRow;
+    } & GameCharacterAbilityRow>;
 
-	feats: Array<{ base: FeatRow; [key: string]: any }>;
-	// traits: Array<{ base: TraitRow; [key: string]: any }>;
-	// buffs: Array<{ base: BuffRow; [key: string]: any }>;
-	corruption: Array<{ base: CorruptionRow; [key: string]: any }>;
-	wildTalents: Array<{ base: WildTalentRow; [key: string]: any }>;
-	equipment: Array<{ base: EquipmentRow; [key: string]: any }>;
-	// ancestralTraits: Array<{ base: AncestralTraitRow; [key: string]: any }>;
-	abilities: Array<{ base: AbilityRow; [key: string]: any }>;
-	classFeatures: Array<{ base: ClassFeatureRow; [key: string]: any }>;
-	// discoveries: Array<{ base: DiscoveryRow; [key: string]: any }>;
-	// archetypes: Array<{ base: ArchetypeRow; [key: string]: any }>;
+    abpChoices: Array<{
+        base: AbpNodeRow;
+    } & GameCharacterAbpChoiceRow>;
 
-	skillBonuses: Array<SkillBonusRow>;
-	weaponProficiencies: Array<WeaponProficiencyRow>;
-	naturalAttacks: Array<NaturalAttackRow>;
-	archetypeReplacements: Array<ArchetypeFeatureReplacementRow>;
+    archetypes: Array<{
+        base: ArchetypeRow;
+    } & GameCharacterArchetypeRow>;
 
-	baseSkills: Array<
-		SkillRow & {
-			name: string;
-			label: string;
-		}
-	>;
-	skillsWithRanks: Array<{
-		skillId: number;	
-		name: string;
-		label: string;
-		ability_label: string;
-		totalRanks: number;
-		rankSources: Array<
-			{
-				sourceName: string;
-				sourceLabel: string;
-			} & GameCharacterSkillRankRow
-		>;
-	}>;
+    armor: Array<{
+        base: ArmorRow;
+    } & GameCharacterArmorRow>;
 
-	references: {
-		bonusTypes: Record<BonusTypeRow['id'], BonusTypeRow['name']>;
-		skillRankSources: Record<SkillRankSourceRow['id'], SkillRankSourceRow['name']>;
-		buffTypes: Record<BuffTypeRow['id'], BuffTypeRow['name']>;
-		abpBonusTypes: {
-			byId: Record<AbpBonusTypeRow['id'], AbpBonusTypeRow['name']>;
-			byName: Record<string, number>;
-		};
-		favoredClassChoices: Record<
-			`${FavoredClassChoiceRow['id']}-${FavoredClassChoiceRow['id']}`,
-			NonNullable<FavoredClassChoiceRow['name']>
-		>;
-		abpNodes: Array<AbpNodeRow>;
-		abpNodeGroups: Array<AbpNodeGroupRow>;
-		abpNodeBonuses: Array<AbpNodeBonusRow>;
-	};
+    classes: Array<{
+        base: ClassRow;
+    } & GameCharacterClassRow>;
 
-	abpChoices: Array<{
-		group: AbpNodeGroupRow;
-		node: AbpNodeRow & {
-			bonuses: AbpNodeBonusRow[];
-		};
-	}>;
+    classFeatures: Array<{
+        base: ClassFeatureRow;
+    } & GameCharacterClassFeatureRow>;
 
-	armor: Array<{
-		base: ArmorRow;
-		equipped: boolean;
-		enhancement?: number;
-	}>;
+    consumables: Array<{
+        base: ConsumableRow;
+    } & GameCharacterConsumableRow>;
+
+    corruption: Array<{
+        base: CorruptionRow;
+    } & GameCharacterCorruptionRow>;
+
+    corruptionManifestations: Array<{
+        base: CorruptionManifestationRow;
+    } & GameCharacterCorruptionManifestationRow>;
+
+    discoveries: Array<{
+        base: DiscoveryRow;
+    } & GameCharacterDiscoveryRow>;
+
+    equipment: Array<{
+        base: EquipmentRow;
+    } & GameCharacterEquipmentRow>;
+
+    favoredClassBonuses: Array<{
+        base: FavoredClassChoiceRow;
+    } & GameCharacterFavoredClassBonusRow>;
+
+    feats: Array<{
+        base: FeatRow;
+    } & GameCharacterFeatRow>;
+
+    skillRanks: Array<{
+        base: SkillRow;
+    } & GameCharacterSkillRankRow>;
+
+    spells: Array<{
+        base: SpellRow;
+    } & GameCharacterSpellRow>;
+
+    traits: Array<{
+        base: TraitRow;
+    } & GameCharacterTraitRow>;
+
+    weapons: Array<{
+        base: WeaponRow;
+    } & GameCharacterWeaponRow>;
+
+    wildTalents: Array<{
+        base: WildTalentRow;
+    } & GameCharacterWildTalentRow>;
 }
+
 
 // -----------------------------------------------------------------------------
 // 3) getCompleteCharacter
 // -----------------------------------------------------------------------------
 export async function getCompleteCharacter(characterId: number): Promise<CompleteCharacter | null> {
-	// 1) Main character
-	const charRow = await gameCharacterApi.getRowById(characterId);
+	// 1) Get base character and game rules data in parallel
+	const [charRow, gameRules] = await Promise.all([
+		gameCharacterApi.getRowById(characterId),
+		getGameRulesData()
+	]);
+	
 	if (!charRow) return null;
 
-	// 2) Fetch bridging data & references in parallel
+	// 2) Fetch all character-specific data in parallel
 	const [
-		charAncestries,
-		charClasses,
-		charFeats,
-		charSkillRanks,
-		ancestryRows,
-		classRows,
-		featRows,
-		traitRows,
-		buffRows,
-		corruptionRows,
-		wildTalentRows,
-		equipmentRows,
-		abilityRows,
-		ancestralTraitRows,
-		skillRows,
-		discoveryRows,
-		archetypeRows,
-		bonusTypes,
-		skillRankSources,
-		buffTypes,
-		abpBonusTypes,
-		favoredClassChoices,
-		archetypeReplacements,
-		// Additional bridging data:
-		skillBonuses,
-		weaponProficiencies,
-		naturalAttacks,
-		gameCharAbpChoices,
-		gameCharWildTalents,
-		gameCharEquipment,
-		gameCharAbilities,
-		gameCharClassFeatures,
-		gameCharCorruptions,
-		classSkills,
+		gameCharacterAbilities,
+		gameCharacterAbpChoices,
+		gameCharacterAncestries,
+		gameCharacterArchetypes,
+		gameCharacterArmors,
+		gameCharacterClasses,
+		gameCharacterClassFeatures,
+		gameCharacterConsumables,
+		gameCharacterCorruptions,
+		gameCharacterCorruptionManifestations,
+		gameCharacterEquipment,
+		gameCharacterFavoredClassBonuses,
+		gameCharacterFeats,
+		gameCharacterSkillRanks,
 		gameCharacterTraits,
-		abpNodeGroups,
-		abpNodes,
-		abpNodeBonuses,
-		gameCharacterArmor,
-		armorRows
-		// gameCharacterBuffs,
-		// gameCharacterAncestralTraits,
-		// gameCharacterDiscoveries,
-		// gameCharacterArchetypes
+		gameCharacterWildTalents,
+		gameCharacterSpells,
+		gameCharacterDiscoveries,
+		gameCharacterWeapons,
 	] = await Promise.all([
-		gameCharacterAncestryApi.getAllRows(),
-		gameCharacterClassApi.getAllRows(),
-		gameCharacterFeatApi.getAllRows(),
-		gameCharacterSkillRankApi.getAllRows(),
-		ancestryApi.getAllRows(),
-		classApi.getAllRows(),
-		featApi.getAllRows(),
-		traitApi.getAllRows(),
-		buffApi.getAllRows(),
-		corruptionApi.getAllRows(),
-		wildTalentApi.getAllRows(),
-		equipmentApi.getAllRows(),
-		abilityApi.getAllRows(),
-		ancestralTraitApi.getAllRows(),
-		skillApi.getAllRows(),
-		discoveryApi.getAllRows(),
-		archetypeApi.getAllRows(),
-		bonusTypeApi.getAllRows(),
-		skillRankSourceApi.getAllRows(),
-		buffTypeApi.getAllRows(),
-		abpBonusTypeApi.getAllRows(),
-		favoredClassChoiceApi.getAllRows(),
-		archetypeFeatureReplacementApi.getAllRows(),
-		// Additional bridging data
-		skillBonusApi.getAllRows(),
-		weaponProficiencyApi.getAllRows(),
-		naturalAttackApi.getAllRows(),
-		gameCharacterAbpChoiceApi.getAllRows(),
-		gameCharacterWildTalentApi.getAllRows(),
-		gameCharacterEquipmentApi.getAllRows(),
-		gameCharacterAbilityApi.getAllRows(),
-		gameCharacterClassFeatureApi.getAllRows(),
-		gameCharacterCorruptionApi.getAllRows(),
-		classSkillApi.getAllRows(),
-		// gameCharacterTraitApi.getAllRows(),
-		// gameCharacterBuffApi.getAllRows(),
-		// gameCharacterAncestralTraitApi.getAllRows(),
-		// gameCharacterDiscoveryApi.getAllRows(),
-		gameCharacterArchetypeApi.getAllRows(),
-		abpNodeGroupApi.getAllRows(),
-		abpNodeApi.getAllRows(),
-		abpNodeBonusApi.getAllRows(),
-		gameCharacterArmorApi.getAllRows(),
-		armorApi.getAllRows()
+		gameCharacterAbilityApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterAbpChoiceApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterAncestryApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterArchetypeApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterArmorApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterClassApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterClassFeatureApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterConsumableApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterCorruptionApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterCorruptionManifestationApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterEquipmentApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterFavoredClassBonusApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterFeatApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterSkillRankApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterTraitApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterWildTalentApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterSpellApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterDiscoveryApi.getRowsByFilter({ game_character_id: charRow.id }),
+		gameCharacterWeaponApi.getRowsByFilter({ game_character_id: charRow.id }),
 	]);
 
-	// 3) Filter bridging data for this character
-	const charAncestriesForThisChar = charAncestries.filter(
-		(a) => a.game_character_id === charRow.id
-	);
-	const charClassesForThisChar = charClasses.filter((c) => c.game_character_id === charRow.id);
-	const charFeatsForThisChar = charFeats.filter((f) => f.game_character_id === charRow.id);
-	const skillRanksForThisChar = charSkillRanks.filter((sr) => sr.game_character_id === charRow.id);
-
-	// 4) Create lookup maps
-	const ancestryMap = new Map(ancestryRows.map((r) => [r.id, r]));
-	const classMap = new Map(classRows.map((r) => [r.id, r]));
-	const featMap = new Map(featRows.map((r) => [r.id, r]));
-	const traitMap = new Map(traitRows.map((r) => [r.id, r]));
-	const buffMap = new Map(buffRows.map((r) => [r.id, r]));
-	const corruptionMap = new Map(corruptionRows.map((r) => [r.id, r]));
-	const wildTalentMap = new Map(wildTalentRows.map((r) => [r.id, r]));
-	const equipmentMap = new Map(equipmentRows.map((r) => [r.id, r]));
-	const abilityMap = new Map(abilityRows.map((r) => [r.id, r]));
-	const ancestralTraitMap = new Map(ancestralTraitRows.map((r) => [r.id, r]));
-	const skillMap = new Map(skillRows.map((r) => [r.id, r]));
-	const discoveryMap = new Map(discoveryRows.map((r) => [r.id, r]));
-	const archetypeMap = new Map(archetypeRows.map((r) => [r.id, r]));
-
-	const bonusTypeMap = new Map(bonusTypes.map((bt) => [bt.id, bt.name]));
-	const skillSourceMap = new Map(skillRankSources.map((s) => [s.id, s.name]));
-	const buffTypeMap = new Map(buffTypes.map((bt) => [bt.id, bt.name]));
-	const abpMap = new Map(abpBonusTypes.map((bt) => [bt.id, bt.name]));
-	const favoredMap = new Map(favoredClassChoices.map((fcc) => [fcc.id, fcc.name ?? '']));
-
-	// 5) Build "class -> class_skills" map
-	const classSkillsMap = new Map<number, number[]>();
-	for (const cs of classSkills) {
-		if (!classSkillsMap.has(cs.class_id)) {
-			classSkillsMap.set(cs.class_id, []);
-		}
-		classSkillsMap.get(cs.class_id)!.push(cs.skill_id);
-	}
-
-	// 6) Build ancestry
-	const ancestry =
-		charAncestriesForThisChar.length > 0
-			? {
-					base: ancestryMap.get(charAncestriesForThisChar[0].ancestry_id)!
-					// bridging props if needed
-				}
-			: null;
-
-	// 7) Build classes
-	const classes = charClassesForThisChar.map((cc) => ({
-		base: classMap.get(cc.class_id)!,
-		class_skills: classSkillsMap.get(cc.class_id) || [],
-		level: cc.level
-	}));
-
-	// 8) Build feats
-	const feats = charFeatsForThisChar.map((cf) => ({
-		base: featMap.get(cf.feat_id)!,
-		level_obtained: cf.level_obtained
-	}));
-
-	// 9) Build skill data
-	const skillsWithRanks = skillRows.map((skillDef) => {
-		const relevantRanks = skillRanksForThisChar.filter((sr) => sr.skill_id === skillDef.id);
-		const ability = abilityMap.get(skillDef.ability_id);
-		return {
-			skillId: skillDef.id,
-			name: skillDef.name,
-			label: skillDef.label ?? skillDef.name,
-			ability_label: ability?.label ?? ability?.name ?? 'Unknown',
-			totalRanks: relevantRanks.length,
-			rankSources: relevantRanks.map((sr) => ({
-				...sr,
-				sourceName: skillSourceMap.get(sr.source_id || 0) || '',
-				sourceLabel: skillSourceMap.get(sr.source_id || 0) || ''
-			}))
-		};
-	});
-
-	// 10) Build references
-	const abpBonusTypesByName = abpBonusTypes.reduce<Record<string, number>>((acc, row) => {
-		acc[row.name] = row.id;
-		return acc;
-	}, {});
-
-	const references = {
-		bonusTypes: Object.fromEntries(bonusTypeMap),
-		skillRankSources: Object.fromEntries(skillSourceMap),
-		buffTypes: Object.fromEntries(buffTypeMap),
-		abpBonusTypes: {
-			byId: Object.fromEntries(abpMap),
-			byName: abpBonusTypesByName
-		},
-		favoredClassChoices: Object.fromEntries(
-			[...favoredMap.entries()].map(([id, name]) => [`${id}-${id}`, name])
-		),
-		abpNodes: abpNodes,
-		abpNodeGroups: abpNodeGroups,
-		abpNodeBonuses: abpNodeBonuses
-	};
-
-	// 11) Build arrays for everything else
-	const corruption = gameCharCorruptions
-		.filter((c) => c.game_character_id === charRow.id)
-		.map((c) => ({
-			base: corruptionMap.get(c.corruption_id)!,
-			manifestation_level: c.manifestation_level
-			// stain: c.stain
-		}));
-
-	const wildTalents = gameCharWildTalents
-		.filter((wt) => wt.game_character_id === charRow.id)
-		.map((wt) => ({
-			base: wildTalentMap.get(wt.wild_talent_id)!,
-			level_obtained: wt.level_obtained
-		}));
-
-	const equipment = gameCharEquipment
-		.filter((eq) => eq.game_character_id === charRow.id)
-		.map((eq) => ({
-			base: equipmentMap.get(eq.equipment_id)!,
-			equipped: eq.equipped
-		}));
-
-	const abilities = gameCharAbilities
-		.filter((a) => a.game_character_id === charRow.id)
-		.map((a) => ({
-			base: abilityMap.get(a.ability_id)!,
-			value: a.value
-		}));
-
-	// Example: classFeatures built from both bridging data + an inline getAllRows:
-	//   (If you want, you can unify the "classFeatureApi.getAllRows()" outside.)
-	const allClassFeatures = await classFeatureApi.getAllRows();
-	const classFeatureMap = new Map(allClassFeatures.map((cf) => [cf.id, cf]));
-	const classFeatures = gameCharClassFeatures
-		.filter((cf) => cf.game_character_id === charRow.id)
-		.map((cf) => ({
-			base: classFeatureMap.get(cf.class_feature_id)!,
-			level_gained: cf.level_obtained
-		}));
-
-	// 12) ABP bonuses
-	const abpNodeGroupMap = new Map(abpNodeGroups.map(g => [g.id, g]));
-	const abpNodeMap = new Map(abpNodes.map(n => [n.id, n]));
-
-	const abpChoicesForThisChar = gameCharAbpChoices.filter(ch => 
-		ch.game_character_id === charRow.id
-	);
-
-	const nodeBonusMap = new Map<number, AbpNodeBonusRow[]>();
-	for (const bonus of abpNodeBonuses) {
-		if (!nodeBonusMap.has(bonus.node_id)) {
-			nodeBonusMap.set(bonus.node_id, []);
-		}
-		nodeBonusMap.get(bonus.node_id)!.push(bonus);
-	}
-
-	const abpChoices = abpChoicesForThisChar.map(ch => ({
-		group: abpNodeGroupMap.get(ch.group_id)!,
-		node: {
-			...abpNodeMap.get(ch.node_id)!,
-			bonuses: nodeBonusMap.get(ch.node_id) ?? []
-		}
-	}));
-
-	// 13) Final assembly
-	const armorMap = new Map(armorRows.map((r) => [r.id, r]));
-
-	const armor = gameCharacterArmor
-		.filter((a) => a.game_character_id === charRow.id)
-		.map((a) => ({
-			base: armorMap.get(a.armor_id)!,
-			equipped: a.equipped,
-			// enhancement: a.enhancement
-		}));
-
+	// 4) Build the complete character object
 	const finalCharacter: CompleteCharacter = {
 		// Base character properties
-		id: charRow.id,
-		name: charRow.name,
-		label: charRow.label,
-		user_id: charRow.user_id,
-		current_hp: charRow.current_hp,
-		max_hp: charRow.max_hp,
-		is_offline: charRow.is_offline,
+		...charRow,
 
-		// Entity collections
-		ancestry,
-		classes,
-		feats,
-		corruption,
-		wildTalents,
-		equipment,
-		abilities,
-		classFeatures,
-		
-		// Additional arrays
-		skillBonuses,
-		weaponProficiencies,
-		naturalAttacks,
-		archetypeReplacements,
+		// Handle ancestry separately since it's nullable and singular
+		ancestries: buildCharacterCollection(
+			gameCharacterAncestries,
+			gameRules.rules.ancestryRows,
+			row => row.ancestry_id
+		),
 
-		// Skill data
-		baseSkills: skillRows.map((s) => ({
-			...s,
-			name: s.name ?? '',
-			label: s.label ?? ''
-		})),
-		skillsWithRanks,
-		
-		// References and ABP
-		references,
-		abpChoices,
-		armor
+		abilities: buildCharacterCollection(
+			gameCharacterAbilities,
+			gameRules.rules.abilityRows,
+			row => row.ability_id
+		),
+
+		abpChoices: buildCharacterCollection(
+			gameCharacterAbpChoices,
+			gameRules.references.abpNodes,
+			row => row.node_id
+		),
+
+		archetypes: buildCharacterCollection(
+			gameCharacterArchetypes,
+			gameRules.rules.archetypeRows,
+			row => row.archetype_id
+		),
+
+		armor: buildCharacterCollection(
+			gameCharacterArmors,
+			gameRules.rules.armorRows,
+			row => row.armor_id
+		),
+
+		classes: buildCharacterCollection(
+			gameCharacterClasses,
+			gameRules.rules.classRows,
+			row => row.class_id
+		),
+
+		classFeatures: buildCharacterCollection(
+			gameCharacterClassFeatures,
+			gameRules.rules.classFeatureRows,
+			row => row.class_feature_id
+		),
+
+		consumables: buildCharacterCollection(
+			gameCharacterConsumables,
+			gameRules.rules.consumableRows,
+			row => row.consumable_id
+		),
+
+		corruption: buildCharacterCollection(
+			gameCharacterCorruptions,
+			gameRules.rules.corruptionRows,
+			row => row.corruption_id
+		),
+
+		corruptionManifestations: buildCharacterCollection(
+			gameCharacterCorruptionManifestations,
+			gameRules.rules.corruptionManifestationRows,
+			row => row.manifestation_id
+		),
+
+		discoveries: buildCharacterCollection(
+			gameCharacterDiscoveries,
+			gameRules.rules.discoveryRows,
+			row => row.discovery_id
+		),
+
+		equipment: buildCharacterCollection(
+			gameCharacterEquipment,
+			gameRules.rules.equipmentRows,
+			row => row.equipment_id
+		),
+
+		favoredClassBonuses: buildCharacterCollection(
+			gameCharacterFavoredClassBonuses,
+			gameRules.references.favoredClassChoices,
+			row => row.choice_id
+		),
+
+		feats: buildCharacterCollection(
+			gameCharacterFeats,
+			gameRules.rules.featRows,
+			row => row.feat_id
+		),
+
+		skillRanks: buildCharacterCollection(
+			gameCharacterSkillRanks,
+			gameRules.rules.skillRows,
+			row => row.skill_id
+		),
+
+		spells: buildCharacterCollection(
+			gameCharacterSpells,
+			gameRules.rules.spellRows,
+			row => row.spell_id
+		),
+
+		traits: buildCharacterCollection(
+			gameCharacterTraits,
+			gameRules.rules.traitRows,
+			row => row.trait_id
+		),
+
+		weapons: buildCharacterCollection(
+			gameCharacterWeapons,
+			gameRules.rules.weaponRows,
+			row => row.weapon_id
+		),
+
+		wildTalents: buildCharacterCollection(
+			gameCharacterWildTalents,
+			gameRules.rules.wildTalentRows,
+			row => row.wild_talent_id
+		),
 	};
 
-	// 14) Cleanup timestamps
 	return cleanUpObject(finalCharacter);
 }

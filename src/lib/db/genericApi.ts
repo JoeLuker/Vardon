@@ -122,8 +122,13 @@ export function createDbApi<TRow, TInsert, TUpdate extends { id?: number }>(tabl
 		 */
 		stopWatch(): void {
 			if (channel) {
-				supabase.removeChannel(channel);
-				channel = null;
+				try {
+					supabase.removeChannel(channel);
+				} catch (err) {
+					console.error(`Error removing channel for ${tableName}:`, err);
+				} finally {
+					channel = null;
+				}
 			}
 		}
 	};

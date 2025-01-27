@@ -17,9 +17,10 @@
 		"@sveltejs/vite-plugin-svelte": "^4.0.0",
 		"@tailwindcss/typography": "^0.5.15",
 		"@types/eslint": "^9.6.0",
+		"@types/lodash": "^4.17.14",
 		"@types/node": "^22.8.6",
 		"autoprefixer": "^10.4.20",
-		"bits-ui": "^1.0.0-next.77",
+		"bits-ui": "^1.0.0-next.78",
 		"clsx": "^2.1.1",
 		"embla-carousel-svelte": "^8.5.1",
 		"eslint": "^8.57.1",
@@ -54,6 +55,7 @@
 		"@radix-ui/react-avatar": "^1.1.2",
 		"@radix-ui/react-slot": "^1.1.1",
 		"@supabase/supabase-js": "^2.46.1",
+		"lodash": "^4.17.21",
 		"shadcn-ui": "^0.9.4"
 	}
 }
