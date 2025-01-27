@@ -1033,6 +1033,8 @@ class_feature:
 - id: &class_feature_perfect_recall_id 73
   name: 'perfect_recall'
   label: 'Perfect Recall'
+  description: >
+    At 2nd level, a mindchemist has honed his memory. When making a Knowledge check, he may add his Intelligence bonus on the check a second time. Thus, a mindchemist with 5 ranks in Knowledge (history) and a +2 Intelligence bonus has a total skill bonus of +9 (5 + 2 + 2) using this ability. The mindchemist can also use this ability when making an Intelligence check to remember something. This ability replaces poison use.
   class_id: *class_alchemist_id
   feature_level: 2
 - id: &class_feature_elemental_focus_earth_id 74
@@ -1590,11 +1592,11 @@ trait:
   label: 'Pragmatic Activator'
   trait_type: 'Magic'
   description: 'Use INT instead of CHA for Use Magic Device.'
-- id: &trait_clever_wordplay_id 3001
-  name: 'trait_clever_wordplay'
+- id: &trait_clever_wordplay_diplomacy_id 3001
+  name: 'trait_clever_wordplay_diplomacy'
   label: 'Clever Wordplay (Diplomacy)'
   trait_type: 'Social'
-  description: 'Use INT instead of CHA for one chosen Cha-based skill.'
+  description: 'Use INT instead of CHA for one chosen Cha-based skill. (Diplomacy)'
 
 game_character:
 - id: &vardon_id 1
@@ -2043,7 +2045,7 @@ game_character_trait:
 - game_character_id: *vardon_id
   trait_id: *trait_pragmatic_activator_id
 - game_character_id: *vardon_id
-  trait_id: *trait_clever_wordplay_id
+  trait_id: *trait_clever_wordplay_diplomacy_id
 
 # ================= CHARACTER SPELL TABLE =================
 game_character_spell:

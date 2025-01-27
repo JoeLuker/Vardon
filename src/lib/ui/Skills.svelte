@@ -19,6 +19,14 @@
 		trainedOnly: boolean;
 		isClassSkill: boolean;
 		ranksByLevel: Array<number>;
+		overrides?: {
+			trained_only?: boolean;
+			ability?: {
+				original: string;
+				override: string;
+				source: string;
+			};
+		};
 	}
 
 	interface UpdateOperation {
@@ -64,27 +72,28 @@
 		if (!baseSkill) return null;
 
 		const ability = rules.rules.abilityRows.find((a: AbilityRow) => a.id === baseSkill.ability_id);
-		const abilityName = ability?.label ?? 'Unknown';
+		const abilityName = skillData.overrides?.ability?.override ?? ability?.label ?? 'Unknown';
 
 		const ranks = character?.skillRanks?.filter((sr: { base: { id: number } }) => sr.base.id === parseInt(skillId)).length ?? 0;
-		const isTrainedOnly = 'trained_only' in skillData 
-			? skillData.trained_only 
-			: baseSkill.trained_only ?? false;
-
-		// Get the rank data from character.skillsWithRanks
+		
 		const skillWithRanks = character?.skillsWithRanks?.find((s: SkillRankData) => s.skillId === parseInt(skillId));
 
-		return {
+		const overrides = skillData.overrides;
+
+		const processed = {
 			id: parseInt(skillId),
 			name: baseSkill.name,
 			label: baseSkill.label ?? baseSkill.name,
 			ability: abilityName,
 			total: skillData.total,
 			ranks,
-			trainedOnly: isTrainedOnly,
+			trainedOnly: baseSkill.trained_only ?? false,
 			isClassSkill: skillWithRanks?.isClassSkill ?? false,
-			ranksByLevel: skillWithRanks?.ranksByLevel ?? []
+			ranksByLevel: skillWithRanks?.ranksByLevel ?? [],
+			overrides
 		};
+
+		return processed;
 	}
 
 	let skillsByAbility = $derived.by(() => {
@@ -115,9 +124,14 @@
 			.sort((a, b) => a.name.localeCompare(b.name));
 	});
 
+	function isSkillUnusable(skill: ProcessedSkill): boolean {
+		const effectiveTrainedOnly = skill.overrides?.trained_only ?? skill.trainedOnly;
+		return effectiveTrainedOnly && skill.ranks === 0;
+	}
+
 	function shouldShowSkill(skill: ProcessedSkill): boolean {
 		if (showRankAllocation) return true;
-		return showUnusableSkills || !skill.trainedOnly || skill.ranks > 0;
+		return !isSkillUnusable(skill) || showUnusableSkills;
 	}
 
 	function formatModifier(mod: number): string {
@@ -269,12 +283,19 @@
 										<button
 											class="skill"
 											class:is-class-skill={skill.isClassSkill}
-											class:unusable={skill.trainedOnly && skill.ranks === 0}
+											class:unusable={isSkillUnusable(skill)}
 											onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
 											type="button"
 										>
 											<div class="skill-info">
 												<span class="skill-name">{skill.label}</span>
+												{#if viewMode === 'alphabetical' || skill.overrides?.ability}
+													<Badge variant="secondary" class="ability-badge">
+														{#if skill.overrides?.ability}
+															<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
+														{/if}
+													</Badge>
+												{/if}
 												<span class="modifier">{formatModifier(skill.total)}</span>
 											</div>
 											
@@ -322,19 +343,25 @@
 					<Card.Content>
 						<div class="skills-grid">
 							{#each alphabeticalSkills.filter(shouldShowSkill) as skill}
-								{@const ability_abbreviation = skill.ability.slice(0, 3).toUpperCase()}
 								<button
 									class="skill"
 									class:is-class-skill={skill.isClassSkill}
-									class:unusable={skill.trainedOnly && skill.ranks === 0}
+									class:unusable={isSkillUnusable(skill)}
 									onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
 									type="button"
 								>
 									<div class="skill-info">
 										<span class="skill-name">{skill.label}</span>
-										<Badge variant="secondary" class="ability-badge">
-											{ability_abbreviation}
-										</Badge>
+										{#if viewMode === 'alphabetical' || skill.overrides?.ability}
+											<Badge variant="secondary" class="ability-badge">
+												{#if skill.overrides?.ability}
+													{skill.overrides.ability.override.slice(0, 3).toUpperCase()}
+													<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
+												{:else}
+													{skill.ability.slice(0, 3).toUpperCase()}
+												{/if}
+											</Badge>
+										{/if}
 										<span class="modifier">{formatModifier(skill.total)}</span>
 									</div>
 									
@@ -505,5 +532,12 @@
 		grid-auto-flow: dense;
 		/* Ensures consistent width across columns */
 		grid-auto-columns: 1fr;
+	}
+
+	.ability-badge {
+		display: flex;
+		gap: 0.25rem;
+		align-items: center;
+		font-size: 0.75rem;
 	}
 </style>

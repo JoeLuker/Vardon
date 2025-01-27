@@ -13,7 +13,19 @@ export interface ValueWithBreakdown {
 	label: string;
 	modifiers: Array<{ source: string; value: number }>;
 	total: number;
-	trained_only?: boolean;
+	overrides?: {
+		trained_only?: boolean;
+		ability?: {
+			original: string;
+			override: string;
+			source: string;
+		};
+		// We can add more override types here in the future!
+		// For example:
+		// proficiency?: { ... }
+		// size?: { ... }
+		// etc.
+	};
 }
 
 export interface SkillWithRanks {
@@ -503,48 +515,95 @@ function computeSkills(
 	// Check for Generally Educated feat
 	const hasGenerallyEducated = char.feats?.some(f => f.base?.name === 'generally_educated') ?? false;
 
-	// Get all base skills from game rules
+	// Check for INT-based skill traits
+	const hasPragmaticActivator = char.traits?.some(t => t.base?.name === 'trait_pragmatic_activator') ?? false;
+	const hasCleverWordplayDiplomacy = char.traits?.some(t => t.base?.name === 'trait_clever_wordplay_diplomacy') ?? false;
+
+	// Check for Perfect Recall (Mindchemist)
+	const hasPerfectRecall = char.classFeatures?.some(f => 
+		f.base?.name === 'perfect_recall' && 
+		f.level_obtained <= calculateTotalLevel(char)
+	) ?? false;
+
 	for (const skill of gameRules.rules.skillRows) {
-		// Find the character's ranks for this skill
 		const ranks = char.skillRanks?.filter(sr => sr.base.id === skill.id).length ?? 0;
 
+		// Determine which ability modifier to use
 		let abilityScoreMod = 0;
-		const abilityName = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.name?.toLowerCase() ?? '';
-		switch (abilityName) {
-			case 'strength': abilityScoreMod = strMod; break;
-			case 'dexterity': abilityScoreMod = dexMod; break;
-			case 'constitution': abilityScoreMod = conMod; break;
-			case 'intelligence': abilityScoreMod = intMod; break;
-			case 'wisdom': abilityScoreMod = wisMod; break;
-			case 'charisma': abilityScoreMod = chaMod; break;
+		const baseAbilityName = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.name?.toLowerCase() ?? '';
+		const baseAbilityLabel = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.label ?? 'Unknown';
+
+		// Check if we should use INT instead of CHA for this skill
+		const isUMD = skill.name?.toLowerCase() === 'use_magic_device';
+		const isDiplomacy = skill.name?.toLowerCase() === 'diplomacy';
+		
+		let overrides = undefined;
+		
+		if (baseAbilityName === 'charisma') {
+			if (isUMD && hasPragmaticActivator) {
+				abilityScoreMod = intMod;
+				overrides = {
+					ability: {
+						original: baseAbilityLabel,
+						override: 'Intelligence',
+						source: 'Pragmatic Activator'
+					}
+				};
+			} else if (isDiplomacy && hasCleverWordplayDiplomacy) {
+				abilityScoreMod = intMod;
+				overrides = {
+					ability: {
+						original: baseAbilityLabel,
+						override: 'Intelligence',
+						source: 'Clever Wordplay'
+					}
+				};
+			} else {
+				abilityScoreMod = chaMod;
+			}
+		} else {
+			switch (baseAbilityName) {
+				case 'strength': abilityScoreMod = strMod; break;
+				case 'dexterity': abilityScoreMod = dexMod; break;
+				case 'constitution': abilityScoreMod = conMod; break;
+				case 'intelligence': abilityScoreMod = intMod; break;
+				case 'wisdom': abilityScoreMod = wisMod; break;
+			}
 		}
 
-		const abilityLabel = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.label ?? 'Unknown';
+		// Determine the ability modifier source label based on overrides
+		let abilityModSource = baseAbilityLabel;
+		if (overrides?.ability) {
+			abilityModSource = overrides.ability.override;
+		}
 
 		const bonuses: BonusEntry[] = [
-			{ source: `${abilityLabel} mod`, value: abilityScoreMod },
+			{ source: `${abilityModSource} Mod`, value: abilityScoreMod },
 			{ source: 'Ranks', value: ranks }
 		];
+		
+		// Add second INT bonus for Knowledge skills with Perfect Recall
+		if (hasPerfectRecall && skill.knowledge_skill) {
+			bonuses.push({ source: 'Perfect Recall (Int)', value: intMod });
+		}
 		
 		if (classSkillIds.has(skill.id) && ranks > 0) {
 			bonuses.push({ source: 'Class skill', value: 3 });
 		}
 
-		// Add Generally Educated bonus for Knowledge skills
-		const isKnowledgeSkill = skill.name?.toLowerCase().startsWith('knowledge');
-		if (hasGenerallyEducated && isKnowledgeSkill) {
+		if (hasGenerallyEducated && skill.knowledge_skill) {
 			bonuses.push({ source: 'Generally Educated', value: 2 });
 		}
 
-		// Create the skill with a special property for trained_only override
 		const skillStat = buildGenericStat(skill.label ?? 'Unknown', bonuses);
-		
-		// Add metadata about whether this skill should be treated as trained only
-		const effectiveTrainedOnly = skill.trained_only && !(hasGenerallyEducated && isKnowledgeSkill);
+		const effectiveTrainedOnly = skill.trained_only && !(hasGenerallyEducated && skill.knowledge_skill);
 		
 		skills[skill.id] = {
 			...skillStat,
-			trained_only: effectiveTrainedOnly || undefined
+			overrides: {
+				...overrides,
+				trained_only: effectiveTrainedOnly ?? undefined
+			}
 		};
 	}
 
