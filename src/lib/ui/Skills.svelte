@@ -1,138 +1,109 @@
 <script lang="ts">
-	import { Eye, EyeOff } from 'lucide-svelte';
+	import { Eye, EyeOff, Grid, Circle } from 'lucide-svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import * as Tabs from '$lib/components/ui/tabs';
-
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
-
-	// Local interfaces that match our data structure
-	interface BaseSkill {
-		id: number;
-		name: string;
-		label: string;
-		ability_id: number;
-		trained_only: boolean;
-		armor_check_penalty?: boolean;
-	}
+	import type { GameRulesData, SkillRow, AbilityRow } from '$lib/db';
+	import _ from 'lodash';
 
 	interface ProcessedSkill {
 		id: number;
 		name: string;
 		label: string;
 		ability: string;
-		abilityMod: number;
-		ranks: number;
-		trained_only: boolean;
-		armor_check_penalty?: boolean;
 		total: number;
+		ranks: number;
+		trainedOnly: boolean;
 		isClassSkill: boolean;
+		ranksByLevel: Array<number>;
 	}
 
-	interface AbilityDetails {
-		abilityName: string;
-		abilityLabel: string;
-		abilityMod: number;
+	interface UpdateOperation {
+		skillId: number;
+		level: number;
+		type: 'add' | 'remove';
+		previousState?: Array<number>;
 	}
 
-	// Props
-	let { character, onSelectValue = () => {} } = $props<{
+	// Define the type for skillsWithRanks
+	interface SkillRankData {
+		skillId: number;
+		ranksByLevel: number[];
+	}
+
+	let { 
+		character, 
+		rules, 
+		onSelectValue = () => {},
+		onUpdateDB = async (_changes: any) => {} 
+	} = $props<{
 		character?: EnrichedCharacter | null;
+		rules?: GameRulesData | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
+		onUpdateDB?: (changes: any) => Promise<void>;
 	}>();
 
 	let showUnusableSkills = $state(false);
+	let showRankAllocation = $state(false);
+	let previousShowUnusableSkills = $state(false);
 	let viewMode = $state<'ability' | 'alphabetical'>('ability');
+	let error = $state<string | null>(null);
+	let operationInProgress = $state<UpdateOperation | null>(null);
 
-	// Helper function to get ability modifier from a given skill
-	function getAbilityDetailsFromSkill(skill: BaseSkill): AbilityDetails {
-		if (!character?.abilities) {
-			return { abilityName: '', abilityLabel: '', abilityMod: 0 };
-		}
+	let levelNumbers = $derived(
+		Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1)
+	);
 
-		const ability = character.abilities.find((ability: { base: { id: number; }; }) => ability.base.id === skill.ability_id);
-		if (!ability) {
-			return { abilityName: '', abilityLabel: '', abilityMod: 0 };
-		}
+	function processSkill(skillId: string, skillData: ValueWithBreakdown): ProcessedSkill | null {
+		if (!rules || !('modifiers' in skillData)) return null;
 
-		// Get the modifier based on the ability name
-		const abilityName = ability.base.name.replace('ability_', '').toLowerCase();
-		const modifierMap: Record<string, keyof EnrichedCharacter> = {
-			'strength': 'strMod',
-			'dexterity': 'dexMod',
-			'constitution': 'conMod',
-			'intelligence': 'intMod',
-			'wisdom': 'wisMod',
-			'charisma': 'chaMod'
-		};
+		const baseSkill = rules.rules.skillRows.find((s: SkillRow) => s.id === parseInt(skillId));
+		if (!baseSkill) return null;
 
-		const modKey = modifierMap[abilityName];
-		const abilityMod = modKey ? (character[modKey] as number) : 0;
+		const ability = rules.rules.abilityRows.find((a: AbilityRow) => a.id === baseSkill.ability_id);
+		const abilityName = ability?.label ?? 'Unknown';
+
+		const ranks = character?.skillRanks?.filter((sr: { base: { id: number } }) => sr.base.id === parseInt(skillId)).length ?? 0;
+		const isTrainedOnly = 'trained_only' in skillData 
+			? skillData.trained_only 
+			: baseSkill.trained_only ?? false;
+
+		// Get the rank data from character.skillsWithRanks
+		const skillWithRanks = character?.skillsWithRanks?.find((s: SkillRankData) => s.skillId === parseInt(skillId));
 
 		return {
-			abilityName: abilityName.toUpperCase(),
-			abilityLabel: ability.base.label,
-			abilityMod
+			id: parseInt(skillId),
+			name: baseSkill.name,
+			label: baseSkill.label ?? baseSkill.name,
+			ability: abilityName,
+			total: skillData.total,
+			ranks,
+			trainedOnly: isTrainedOnly,
+			isClassSkill: skillWithRanks?.isClassSkill ?? false,
+			ranksByLevel: skillWithRanks?.ranksByLevel ?? []
 		};
 	}
 
-	// Store class skills as a Set of skill names
-	let classSkills = $derived.by(() => {
-		if (!character?.classes?.length || !character.baseSkills) {
-			return new Set<string>();
-		}
-		
-		const classSkillIds = character.classes[0].class_skills ?? [];
-		return new Set(
-			character.baseSkills
-				.filter((skill: BaseSkill) => classSkillIds.includes(skill.id))
-				.map((skill: BaseSkill) => skill.name)
-		);
-	});
-
-	// Process skills and group by ability
 	let skillsByAbility = $derived.by(() => {
-		if (!character?.baseSkills) {
-			return {} as Record<string, ProcessedSkill[]>;
-		}
+		if (!character?.skills) return {};
 
 		const result: Record<string, ProcessedSkill[]> = {};
 
-		for (const baseSkill of character.baseSkills) {
-			// Get ability details
-			const { abilityName, abilityMod } = getAbilityDetailsFromSkill(baseSkill);
-			const abilityAbbreviation = abilityName.slice(0, 3);
-			const ability = abilityName.toLowerCase();
+		for (const [skillId, skillData] of Object.entries(character.skills)) {
+			const processed = processSkill(skillId, skillData as ValueWithBreakdown);
+			if (!processed) continue;
 
-			// Initialize ability group if needed
-			if (!result[ability]) {
-				result[ability] = [];
-			}
+			const { ability } = processed;
+			if (!result[ability]) result[ability] = [];
+			result[ability].push(processed);
+		}
 
-			// Find skill ranks from the enriched character data
-			const skillInfo = character.skillsWithRanks?.find((s: { name: string }) => s.name === baseSkill.name);
-			const totalRanks = skillInfo?.totalRanks ?? 0;
-			
-			// Determine class skill status
-			const isClassSkill = classSkills.has(baseSkill.name);
-			
-			// Calculate total skill bonus
-			const classSkillBonus = (isClassSkill && totalRanks > 0) ? 3 : 0;
-			const total = totalRanks + abilityMod + classSkillBonus;
-
-			result[ability].push({
-				id: baseSkill.id,
-				name: baseSkill.name,
-				label: baseSkill.label,
-				ability: abilityAbbreviation,
-				abilityMod,
-				ranks: totalRanks,
-				trained_only: baseSkill.trained_only,
-				armor_check_penalty: baseSkill.armor_check_penalty,
-				total,
-				isClassSkill
-			});
+		// Sort skills within each ability
+		for (const skills of Object.values(result)) {
+			skills.sort((a, b) => a.name.localeCompare(b.name));
 		}
 
 		return result;
@@ -141,36 +112,120 @@
 	let alphabeticalSkills = $derived.by(() => {
 		return Object.values(skillsByAbility)
 			.flat()
-			.sort((a: ProcessedSkill, b: ProcessedSkill) => a.label.localeCompare(b.label));
+			.sort((a, b) => a.name.localeCompare(b.name));
 	});
+
+	function shouldShowSkill(skill: ProcessedSkill): boolean {
+		if (showRankAllocation) return true;
+		return showUnusableSkills || !skill.trainedOnly || skill.ranks > 0;
+	}
 
 	function formatModifier(mod: number): string {
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
+
+	async function handleCellClick(skillId: number, level: number) {
+		if (operationInProgress) return;
+		if (!character) return;
+		
+		const skillData = character.skillsWithRanks?.find((s: SkillRankData) => s.skillId === skillId);
+		const hasRank = skillData?.ranksByLevel.includes(level) ?? false;
+		
+		// Validate the operation
+		if (!hasRank) {
+			const remaining = character.skillPoints?.remaining[level] ?? 0;
+			if (remaining <= 0) {
+				error = "No skill points remaining for this level";
+				setTimeout(() => error = null, 3000);
+				return;
+			}
+		}
+
+		// Create operation
+		const operation: UpdateOperation = {
+			skillId,
+			level,
+			type: hasRank ? 'remove' : 'add',
+			previousState: skillData ? skillData.ranksByLevel : []
+		};
+
+		try {
+			operationInProgress = operation;
+			applySkillUpdate(operation);
+			await onUpdateDB(operation);
+			operationInProgress = null;
+			error = null;
+		} catch (err) {
+			if (skillData && operation.previousState) {
+				skillData.ranksByLevel = operation.previousState;
+			}
+			console.error('Failed skill update:', err);
+			error = 'Failed to update skill rank. Please try again.';
+			setTimeout(() => error = null, 3000);
+		} finally {
+			operationInProgress = null;
+		}
+	}
+
+	function applySkillUpdate(operation: UpdateOperation) {
+		if (!character) return;
+
+		const skillData = character.skillsWithRanks?.find((s: SkillRankData) => s.skillId === operation.skillId);
+		if (!skillData) return;
+
+		// Update the skill ranks optimistically
+		if (operation.type === 'add') {
+			skillData.ranksByLevel.push(operation.level);
+			
+			// Update remaining skill points
+			if (character.skillPoints?.remaining) {
+				character.skillPoints.remaining[operation.level]--;
+			}
+		} else {
+			skillData.ranksByLevel = skillData.ranksByLevel.filter((l: number) => l !== operation.level);
+			
+			// Update remaining skill points
+			if (character.skillPoints?.remaining) {
+				character.skillPoints.remaining[operation.level]++;
+			}
+		}
+	}
 </script>
 
-<!-- Rest of the template remains the same -->
 <div class="skills-container">
-	<Tabs.Root
-		value={viewMode}
-		onValueChange={(value) => {
-			if (value === 'ability' || value === 'alphabetical') {
-				viewMode = value;
-			}
-		}}
-		class="w-full"
-	>
-		<div class="tabs-header">
-			<Tabs.List class="grid h-12 w-full grid-cols-[1fr_1fr_2px_auto]">
-				<Tabs.Trigger value="ability" class="h-full">By Ability</Tabs.Trigger>
-				<Tabs.Trigger value="alphabetical" class="h-full">Alphabetical</Tabs.Trigger>
-				<div class="pill-divider"></div>
+	{#if error}
+		<Alert variant="destructive" class="mb-4">
+			<AlertDescription>{error}</AlertDescription>
+		</Alert>
+	{/if}
 
+	<Tabs.Root value={viewMode} onValueChange={(v) => viewMode = v as typeof viewMode} class="w-full">
+		<div class="tabs-header">
+			<Tabs.List class="grid h-12 w-full grid-cols-[1fr_1fr_2px_auto_auto]">
+				<Tabs.Trigger value="ability">By Ability</Tabs.Trigger>
+				<Tabs.Trigger value="alphabetical">Alphabetical</Tabs.Trigger>
+				<div class="pill-divider"></div>	
+				<Button
+					variant="secondary"
+					size="icon"
+					class="h-full"
+					onclick={() => {
+						if (!showRankAllocation) {
+							previousShowUnusableSkills = showUnusableSkills;
+							showUnusableSkills = true;
+						} else {
+							showUnusableSkills = previousShowUnusableSkills;
+						}
+						showRankAllocation = !showRankAllocation;
+					}}
+				>
+					<Grid size={20} />
+				</Button>
 				<Button
 					variant="secondary"
 					size="icon"
 					class="toggle-unusable h-full"
-					onclick={() => (showUnusableSkills = !showUnusableSkills)}
+					onclick={() => showUnusableSkills = !showUnusableSkills}
 				>
 					{#if showUnusableSkills}
 						<Eye size={20} />
@@ -180,6 +235,21 @@
 				</Button>
 			</Tabs.List>
 		</div>
+
+		{#if showRankAllocation && character?.skillPoints}
+			<Card.Root class="mb-4">
+				<Card.Content class="py-3">
+					<div class="skill-points-grid">
+						{#each levelNumbers as level}
+							<div class="flex flex-col items-center px-2 py-1 rounded-md bg-muted/30">
+								<span class="text-xs text-muted-foreground">Level {level}</span>
+								<span class="font-medium text-primary">{character.skillPoints.remaining[level] ?? 0}/{character.skillPoints.total[level] ?? 0}</span>
+							</div>
+						{/each}
+					</div>
+				</Card.Content>
+			</Card.Root>
+		{/if}
 
 		<Tabs.Content value="ability">
 			{#if !character}
@@ -195,24 +265,44 @@
 							</Card.Header>
 							<Card.Content>
 								<div class="skills-grid">
-									{#each skills as skill}
-										{#if showUnusableSkills || !(skill.trained_only && skill.ranks === 0)}
-											<button
-												class="skill"
-												class:is-class-skill={skill.isClassSkill}
-												class:unusable={skill.trained_only && skill.ranks === 0}
-												onclick={() => {
-													const breakdown = character.skills?.[skill.id];
-													onSelectValue?.(breakdown);
-												}}
-												type="button"
-											>
-												<span class="skill-name">
-													{skill.label}
-												</span>
+									{#each skills.filter(shouldShowSkill) as skill}
+										<button
+											class="skill"
+											class:is-class-skill={skill.isClassSkill}
+											class:unusable={skill.trainedOnly && skill.ranks === 0}
+											onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
+											type="button"
+										>
+											<div class="skill-info">
+												<span class="skill-name">{skill.label}</span>
 												<span class="modifier">{formatModifier(skill.total)}</span>
-											</button>
-										{/if}
+											</div>
+											
+											{#if showRankAllocation}
+												<div class="rank-grid">
+													{#each levelNumbers as level}
+														{@const hasRank = skill.ranksByLevel.includes(level)}
+														{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
+														<Button
+															variant="outline"
+															size="sm"
+															class="h-8 w-8"
+															disabled={!!operationInProgress || (!hasRank && !canAdd)}
+															onclick={(e) => {
+																e.stopPropagation();
+																handleCellClick(skill.id, level);
+															}}
+														>
+															{#if hasRank}
+																<Circle class="fill-primary stroke-primary" size={16} />
+															{:else}
+																<Circle size={16} />
+															{/if}
+														</Button>
+													{/each}
+												</div>
+											{/if}
+										</button>
 									{/each}
 								</div>
 							</Card.Content>
@@ -231,27 +321,48 @@
 				<Card.Root>
 					<Card.Content>
 						<div class="skills-grid">
-							{#each alphabeticalSkills as skill}
-								{#if showUnusableSkills || !(skill.trained_only && skill.ranks === 0)}
-									<button
-										class="skill"
-										class:is-class-skill={skill.isClassSkill}
-										class:unusable={skill.trained_only && skill.ranks === 0}
-										onclick={() => {
-											const breakdown = character.skills?.[skill.id];
-											onSelectValue?.(breakdown);
-										}}
-										type="button"
-									>
-										<span class="skill-name">
-											{skill.label}
-										</span>
+							{#each alphabeticalSkills.filter(shouldShowSkill) as skill}
+								{@const ability_abbreviation = skill.ability.slice(0, 3).toUpperCase()}
+								<button
+									class="skill"
+									class:is-class-skill={skill.isClassSkill}
+									class:unusable={skill.trainedOnly && skill.ranks === 0}
+									onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
+									type="button"
+								>
+									<div class="skill-info">
+										<span class="skill-name">{skill.label}</span>
 										<Badge variant="secondary" class="ability-badge">
-											{skill.ability}
+											{ability_abbreviation}
 										</Badge>
 										<span class="modifier">{formatModifier(skill.total)}</span>
-									</button>
-								{/if}
+									</div>
+									
+									{#if showRankAllocation}
+										<div class="rank-grid">
+											{#each levelNumbers as level}
+												{@const hasRank = skill.ranksByLevel.includes(level)}
+												{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
+												<Button
+													variant="outline"
+													size="sm"
+													class="h-8 w-8"
+													disabled={!!operationInProgress || (!hasRank && !canAdd)}
+													onclick={(e) => {
+														e.stopPropagation();
+														handleCellClick(skill.id, level);
+													}}
+												>
+													{#if hasRank}
+														<Circle class="fill-primary stroke-primary" size={16} />
+													{:else}
+														<Circle size={16} />
+													{/if}
+												</Button>
+											{/each}
+										</div>
+									{/if}
+								</button>
 							{/each}
 						</div>
 					</Card.Content>
@@ -266,7 +377,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		padding: 1rem;
 	}
 
 	.ability-cards {
@@ -285,9 +395,7 @@
 	}
 
 	.skill {
-		@apply flex items-center justify-between w-full min-h-[48px]
-			px-4 py-2 cursor-pointer rounded border border-transparent transition-all;
-
+		@apply w-full cursor-pointer rounded border border-transparent transition-all;
 		background-color: hsl(var(--background));
 		border-color: hsl(var(--border) / 0.2);
 
@@ -300,19 +408,35 @@
 		&.is-class-skill {
 			background-color: hsl(var(--primary) / 0.1);
 			border-color: hsl(var(--primary) / 0.2);
+
+			&.unusable {
+				background-color: hsl(var(--muted) / 0.7);
+				border-color: hsl(var(--muted-foreground) / 0.2);
+			}
 		}
 
 		&.unusable {
-			opacity: 0.6;
+			opacity: 0.8;
 			cursor: not-allowed;
-			background-color: hsl(var(--muted));
+			background-color: hsl(var(--muted) / 0.5);
+			border-color: hsl(var(--border) / 0.1);
 			transform: none;
+
+			&:hover {
+				background-color: hsl(var(--muted) / 0.5);
+				transform: none;
+			}
 		}
+	}
+
+	.skill-info {
+		@apply flex items-center justify-between w-full p-4;
 	}
 
 	.skill-name {
 		margin-right: 0.5rem;
 		flex: 1;
+		text-align: left;
 	}
 
 	.modifier {
@@ -337,5 +461,49 @@
 		background-color: hsl(var(--muted-foreground) / 0.2);
 		border-radius: 9999px;
 		margin: auto 0;
+	}
+
+	.rank-grid {
+		@apply grid gap-1 px-4 pb-4;
+		grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
+	}
+
+	.rank-distribution-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+		gap: 1rem;
+		width: 100%;
+	}
+
+	.level-points {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.5rem;
+		background-color: hsl(var(--muted));
+		border-radius: 0.5rem;
+	}
+
+	.level-label {
+		font-size: 0.875rem;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.points-remaining {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: hsl(var(--primary));
+	}
+
+	.skill-points-grid {
+		display: grid;
+		gap: 0.5rem;
+		/* This will create 4-5 columns depending on container width */
+		grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+		/* Forces items to fill rows from left to right */
+		grid-auto-flow: dense;
+		/* Ensures consistent width across columns */
+		grid-auto-columns: 1fr;
 	}
 </style>

@@ -13,6 +13,17 @@ export interface ValueWithBreakdown {
 	label: string;
 	modifiers: Array<{ source: string; value: number }>;
 	total: number;
+	trained_only?: boolean;
+}
+
+export interface SkillWithRanks {
+	skillId: number;
+	name: string;
+	label: string;
+	ability_label: string;
+	totalRanks: number;
+	ranksByLevel: Array<number>;
+	isClassSkill: boolean;
 }
 
 export interface EnrichedCharacter extends CompleteCharacter {
@@ -60,6 +71,7 @@ export interface EnrichedCharacter extends CompleteCharacter {
         remaining: Record<number, number>;   // level -> remaining points
     };
     totalLevel: number;
+    skillsWithRanks: SkillWithRanks[];
 }
 
 interface BonusEntry {
@@ -488,11 +500,13 @@ function computeSkills(
 	const skills: Record<number, ValueWithBreakdown> = {};
 	const classSkillIds = getClassSkillIds(char, gameRules);
 
+	// Check for Generally Educated feat
+	const hasGenerallyEducated = char.feats?.some(f => f.base?.name === 'generally_educated') ?? false;
+
 	// Get all base skills from game rules
 	for (const skill of gameRules.rules.skillRows) {
 		// Find the character's ranks for this skill
-		const skillRank = char.skillRanks?.find(sr => sr.base.id === skill.id);
-		const ranks = skillRank ? 1 : 0; // TODO: Get actual ranks from the proper field
+		const ranks = char.skillRanks?.filter(sr => sr.base.id === skill.id).length ?? 0;
 
 		let abilityScoreMod = 0;
 		const abilityName = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.name?.toLowerCase() ?? '';
@@ -511,11 +525,27 @@ function computeSkills(
 			{ source: `${abilityLabel} mod`, value: abilityScoreMod },
 			{ source: 'Ranks', value: ranks }
 		];
+		
 		if (classSkillIds.has(skill.id) && ranks > 0) {
 			bonuses.push({ source: 'Class skill', value: 3 });
 		}
 
-		skills[skill.id] = buildGenericStat(skill.label ?? 'Unknown', bonuses);
+		// Add Generally Educated bonus for Knowledge skills
+		const isKnowledgeSkill = skill.name?.toLowerCase().startsWith('knowledge');
+		if (hasGenerallyEducated && isKnowledgeSkill) {
+			bonuses.push({ source: 'Generally Educated', value: 2 });
+		}
+
+		// Create the skill with a special property for trained_only override
+		const skillStat = buildGenericStat(skill.label ?? 'Unknown', bonuses);
+		
+		// Add metadata about whether this skill should be treated as trained only
+		const effectiveTrainedOnly = skill.trained_only && !(hasGenerallyEducated && isKnowledgeSkill);
+		
+		skills[skill.id] = {
+			...skillStat,
+			trained_only: effectiveTrainedOnly || undefined
+		};
 	}
 
 	return skills;
@@ -576,7 +606,7 @@ function computeAttacks(
 
 export interface SkillRanksByLevel {
 	skillId: number;
-	ranksByLevel: Record<number, boolean>;
+	ranksByLevel: Array<number>
 }
 
 export function calculateTotalLevel(char: CompleteCharacter): number {
@@ -606,46 +636,50 @@ export function calculateSkillPointsByLevel(char: CompleteCharacter): Map<number
 	return points;
 }
 
-export function calculateSkillRanksByLevel(char: CompleteCharacter): Map<number, SkillRanksByLevel> {
-	const rankMap = new Map<number, SkillRanksByLevel>();
+
+function computeSkillsWithRanks(
+	char: CompleteCharacter,
+	gameRules: GameRulesData
+): SkillWithRanks[] {
+	const result: SkillWithRanks[] = [];
 	
-	for (const skill of char.skillRanks || []) {
-		rankMap.set(skill.base.id, {
-			skillId: skill.base.id,
-			ranksByLevel: {} // TODO: Implement actual ranks by level mapping when data structure is known
+	// Get class skill IDs for all character classes
+	const classSkillIds = new Set<number>();
+	for (const charClass of char.classes) {
+		const classSkills = gameRules.relationships.classes.skills[charClass.base?.id ?? 0] ?? [];
+		classSkills.forEach(skillId => classSkillIds.add(skillId));
+	}
+	
+	// Process each skill from rules
+	for (const skill of gameRules.rules.skillRows) {
+		// Get ability label
+		const ability = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id);
+		const ability_label = ability?.label ?? 'Unknown';
+
+		// Build ranks by level map and calculate total ranks
+		const ranksByLevel: Array<number> = [];
+		let totalRanks = 0;
+		
+		// Process each skill rank entry for this skill
+		char.skillRanks?.forEach(rank => {
+			if (rank.base.id === skill.id) {
+				ranksByLevel.push(rank.applied_at_level);
+				totalRanks++;
+			}
+		});
+
+		result.push({
+			skillId: skill.id,
+			name: skill.name ?? 'Unknown',
+			label: skill.label ?? 'Unknown Skill',
+			ability_label,
+			totalRanks,
+			ranksByLevel,
+			isClassSkill: classSkillIds.has(skill.id)
 		});
 	}
-	
-	return rankMap;
-}
 
-export function calculateFavoredClassBonusPoints(char: CompleteCharacter): number {
-	// If character has no favored class bonuses, return 0
-	if (!char.favoredClassBonuses?.length) return 0;
-
-	// Count how many of the character's chosen favored class bonuses are skill points
-	return char.favoredClassBonuses.filter(bonus => 
-		// Check if this bonus choice is for skill points
-		bonus.base?.name === 'skill'
-	).length;
-}
-
-export function calculateRemainingSkillPoints(
-	level: number,	
-	pointsByLevel: Map<number, number>,
-	skillRanksByLevel: Map<number, SkillRanksByLevel>
-): number {
-	const totalPoints = pointsByLevel.get(level) || 0;
-	
-	// Count ranks taken at this level across all skills
-	let usedPoints = 0;
-	for (const skillData of skillRanksByLevel.values()) {
-		if (skillData.ranksByLevel[level]) {
-			usedPoints++;
-		}
-	}
-		
-	return totalPoints - usedPoints;
+	return result;
 }
 
 //
@@ -695,7 +729,8 @@ export function enrichCharacterData(
 	const bab = Math.floor((totalLevel * 3) / 4); // e.g. 3/4 progression
 	const { cmb, cmd } = computeCombatManeuvers(bab, strMod, dexMod);
 
-	// 7) Skills
+	// 7) Skills and skill ranks
+	const skillsWithRanks = computeSkillsWithRanks(raw, gameRules);
 	const skills = computeSkills(
 		raw, 
 		gameRules,
@@ -737,7 +772,7 @@ export function enrichCharacterData(
 	// 11) Collate final result
 	const enriched: EnrichedCharacter = {
 		...raw,
-
+		
 		// Abilities
 		strength,
 		dexterity,
@@ -782,6 +817,7 @@ export function enrichCharacterData(
 			remaining: skillPointsRemaining
 		},
 		totalLevel,
+		skillsWithRanks
 	};
 
 	// Single debug call at the end (optional)
@@ -789,3 +825,5 @@ export function enrichCharacterData(
 
 	return enriched;
 }
+
+

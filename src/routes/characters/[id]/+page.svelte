@@ -20,7 +20,6 @@
 	import Saves from '$lib/ui/Saves.svelte';
 	import CombatStats from '$lib/ui/CombatStats.svelte';
 	import ACStats from '$lib/ui/ACStats.svelte';
-	import SkillRankGrid from '$lib/ui/SkillRankGrid.svelte';
 
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
@@ -106,6 +105,7 @@
 					rawCharacter = data.rawCharacter ?? null;
 					if (gameRules && rawCharacter) {
 						character = enrichCharacterData(rawCharacter, gameRules);
+						console.log('Loaded character data:', JSON.stringify(character, null, 2));
 					} else {
 						console.error('Game rules not loaded');
 					}
@@ -328,8 +328,10 @@
 			<!-- Skills -->
 			<Tabs.Content value="skills">
 				<div class="rounded-lg bg-secondary p-6">
-					<SkillRankGrid
+					<Skills
 						character={character}
+						rules={gameRules}
+						onSelectValue={handleSelectValue}
 						onUpdateDB={async (changes) => {
 							if (!character?.id) return;
 							if (changes.type === 'add') {
@@ -349,10 +351,6 @@
 								}
 							}
 						}}
-					/>
-					<Skills
-						character={character}
-						onSelectValue={handleSelectValue}
 					/>
 				</div>
 			</Tabs.Content>

@@ -1598,13 +1598,15 @@ trait:
 
 game_character:
 - id: &vardon_id 1
-  name: 'Vardon Salvador'
+  name: 'vardon_salvador'
+  label: 'Vardón Salvador'
   user_id: *user_id
   current_hp: 37
   max_hp: 37
   is_offline: false
 - id: &killiq_id 2
-  name: 'Killiq Said'
+  name: 'killiq_said'
+  label: "Killiq Sa'id"
   user_id: *user_id
   current_hp: 67
   max_hp: 67

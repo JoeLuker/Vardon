@@ -44,7 +44,7 @@
 				>
 					<div class="space-y-2">
 						<h2 class="text-xl font-bold">
-							{character.name}
+							{character.label}
 						</h2>
 						<!-- Use text-muted-foreground from config -->
 						<div class="text-sm text-muted-foreground">
@@ -52,7 +52,7 @@
 							<span class="mx-2">•</span>
 							<span>
 								{character.classes
-									.map((rpgClass) => `${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`)
+									.map((rpgClass) => `${character.archetypes?.[0]?.base?.label ?? ''} ${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`)
 									.join(', ')}
 							</span>
 						</div>

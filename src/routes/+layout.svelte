@@ -4,6 +4,7 @@
 	import { Menu, X } from 'lucide-svelte';
 	import ThemeToggle from '$lib/components/ui/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 	import {
 		characterList as multiCharStore,
 		initMultiCharWatchers,
@@ -103,14 +104,14 @@
 						onclick={() => handleCharacterClick(character.id)}
 					>
 						{character.label}
-						<div class="text-xs text-muted-foreground">
+						<Badge variant="secondary" class="ml-2 text-xs">
 							{character.classes
 								.map(
 									(rpgClass) =>
-										`${rpgClass?.archetype ?? ''} ${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`
+										`${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`
 								)
 								.join(', ')}
-						</div>
+						</Badge>
 					</button>
 				{/each}
 			{:else}

@@ -3,18 +3,10 @@
     import { Button } from '$lib/components/ui/button';
     import { Alert, AlertDescription } from '$lib/components/ui/alert';
     import { Badge } from '$lib/components/ui/badge';
-    import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+    import type { GameRulesData } from '$lib/db';
+    import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
     import _ from 'lodash';
     import { fade } from 'svelte/transition';
-
-    interface BaseSkill {
-        id: number;
-        name: string;
-        label: string;
-        ability_id: number;
-        trained_only: boolean;
-        armor_check_penalty?: boolean;
-    }
 
     interface SkillWithRanks {
         skillId: number;
@@ -22,21 +14,24 @@
         label: string;
         ability_label: string;
         totalRanks: number;
-        ranksByLevel: Record<number, boolean>;
+        ranksByLevel: Array<number>;
+        isClassSkill: boolean;
     }
 
     interface UpdateOperation {
         skillId: number;
         level: number;
         type: 'add' | 'remove';
-        previousState?: Record<number, boolean>;
+        previousState?: Array<number>;
     }
 
     let { 
         character,
+        rules,
         onUpdateDB = async (_changes: any) => {},
     } = $props<{
         character?: EnrichedCharacter | null;
+        rules?: GameRulesData | null;
         onUpdateDB?: (changes: any) => Promise<void>;
     }>();
 
@@ -44,20 +39,14 @@
     let error = $state<string | null>(null);
 
     let skills = $derived(() => {
-        const baseSkills = character?.baseSkills || [];
+        const baseSkills = rules?.rules.skillRows || [];
         if (!baseSkills.length) return [];
-        return _.memoize(() => _.sortBy(baseSkills, 'label'))() as BaseSkill[];
+        return _.memoize(() => _.sortBy(baseSkills, 'label'))();
     });
 
     let levelNumbers = $derived(() => {
-        const length = character?.totalLevel ?? 0;
-        return Array.from({ length }, (_, i) => i + 1);
+        return Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1);
     });
-
-    // Helper to check if a skill is a class skill
-    function isClassSkill(skillId: number): boolean {
-        return character?.classes[0]?.class_skills?.includes(skillId) || false;
-    }
 
     // Handle clicking a skill rank cell
     async function handleCellClick(skillId: number, level: number) {
@@ -65,14 +54,14 @@
         if (!character) return;
         
         const skillData = character.skillsWithRanks?.find((s: SkillWithRanks) => s.skillId === skillId);
-        const hasRank = skillData?.ranksByLevel[level] ?? false;
+        const hasRank = skillData?.ranksByLevel.includes(level) ?? false;
         
         // Validate the operation
         if (!hasRank) {
             const remaining = character.skillPoints?.remaining[level] ?? 0;
             if (remaining <= 0) {
                 error = "No skill points remaining for this level";
-                setTimeout(() => error = null, 3000); // Auto-clear error after 3s
+                setTimeout(() => error = null, 3000);
                 return;
             }
         }
@@ -82,32 +71,23 @@
             skillId,
             level,
             type: hasRank ? 'remove' : 'add',
-            previousState: skillData ? {...skillData.ranksByLevel} : {}
+            previousState: skillData ? skillData.ranksByLevel : []
         };
 
         try {
-            // Apply optimistic update
             operationInProgress = operation;
             applySkillUpdate(operation);
-
-            // Attempt server update
             await onUpdateDB(operation);
-
-            // Success - clear operation
             operationInProgress = null;
             error = null;
-
         } catch (err) {
-            // Rollback on failure
             if (skillData && operation.previousState) {
                 skillData.ranksByLevel = operation.previousState;
                 skillData.totalRanks = Object.keys(operation.previousState).length;
             }
-            
             console.error('Failed skill update:', err);
             error = 'Failed to update skill rank. Please try again.';
             setTimeout(() => error = null, 3000);
-            
         } finally {
             operationInProgress = null;
         }
@@ -123,7 +103,7 @@
         // Update the skill ranks optimistically
         if (operation.type === 'add') {
             skillData.totalRanks++;
-            skillData.ranksByLevel[operation.level] = true;
+            skillData.ranksByLevel.push(operation.level);
             
             // Update remaining skill points
             if (character.skillPoints?.remaining) {
@@ -131,7 +111,7 @@
             }
         } else {
             skillData.totalRanks--;
-            delete skillData.ranksByLevel[operation.level];
+            skillData.ranksByLevel = skillData.ranksByLevel.filter((l: number) => l !== operation.level);
             
             // Update remaining skill points
             if (character.skillPoints?.remaining) {
@@ -169,21 +149,22 @@
         </thead>
         <tbody>
             {#each skills() as skill (skill.id)}
+                {@const skillData = character?.skillsWithRanks?.find((s: SkillWithRanks) => s.skillId === skill.id)}
+                {@const skillBreakdown = character?.skills?.[skill.id] as ValueWithBreakdown | undefined}
                 <tr>
                     <td class="sticky left-0 bg-background p-2 font-medium">
                         <div>
                             {skill.label}
-                            {#if isClassSkill(skill.id)}
-                                <Badge variant="default" class="ml-1 text-xs text-secondary">Class Skill</Badge>
-                            {/if}
-                            {#if skill.trained_only}
+                            {#if skillBreakdown?.trained_only}
                                 <Badge variant="secondary" class="ml-1 text-xs text-muted-foreground">Trained Only</Badge>
+                            {/if}
+                            {#if skillData?.isClassSkill}
+                                <Badge variant="default" class="ml-1 text-xs">Class Skill</Badge>
                             {/if}
                         </div>
                     </td>
                     {#each levelNumbers() as level}
-                        {@const skillData = character?.skillsWithRanks?.find((s: SkillWithRanks) => s.skillId === skill.id)}
-                        {@const hasRank = skillData?.ranksByLevel[level] ?? false}
+                        {@const hasRank = skillData?.ranksByLevel.includes(level) ?? false}
                         <td class="p-1 text-center">
                             <Button
                                 variant={hasRank ? "default" : "outline"}

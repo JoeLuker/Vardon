@@ -31,7 +31,7 @@
 					{/if}
 
 					<span class="text-muted-foreground">
-						{character.ancestry?.base?.label ?? '???'}
+						{character.ancestries?.[0]?.base?.label ?? '???'}
 						{#if character.classes?.length}
 							{': '}
 							{character.classes
