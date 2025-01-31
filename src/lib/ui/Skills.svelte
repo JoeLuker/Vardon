@@ -255,10 +255,14 @@
 				<Card.Content class="py-3">
 					<div class="skill-points-grid">
 						{#each levelNumbers as level}
-							<div class="flex flex-col items-center px-2 py-1 rounded-md bg-muted/30">
+							<button 
+								class="flex flex-col items-center px-2 py-1 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+								onclick={() => onSelectValue?.(character.skillPoints.total[level])}
+								type="button"
+							>
 								<span class="text-xs text-muted-foreground">Level {level}</span>
-								<span class="font-medium text-primary">{character.skillPoints.remaining[level] ?? 0}/{character.skillPoints.total[level] ?? 0}</span>
-							</div>
+								<span class="font-medium text-primary">{character.skillPoints.remaining[level] ?? 0}/{character.skillPoints.total[level].total ?? 0}</span>
+							</button>
 						{/each}
 					</div>
 				</Card.Content>

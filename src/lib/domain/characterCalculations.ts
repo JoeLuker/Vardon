@@ -79,11 +79,11 @@ export interface EnrichedCharacter extends CompleteCharacter {
 	};
 
 	skillPoints: {
-        total: Record<number, number>;      // level -> total points
-        remaining: Record<number, number>;   // level -> remaining points
-    };
-    totalLevel: number;
-    skillsWithRanks: SkillWithRanks[];
+		total: Record<number, ValueWithBreakdown>;      // Changed from number to ValueWithBreakdown
+		remaining: Record<number, number>;
+	};
+	totalLevel: number;
+	skillsWithRanks: SkillWithRanks[];
 }
 
 interface BonusEntry {
@@ -119,16 +119,25 @@ function calculateStackedBonuses(bonuses: BonusEntry[]): {
 	modifiers: Array<{ source: string; value: number }>;
 } {
 	const acc = createStackingAccumulator();
+	const penalties: BonusEntry[] = [];
 
 	for (const bonus of bonuses) {
-		addBonus(acc, bonus.type, bonus.value);
+		if (bonus.value < 0) {
+			// Collect penalties separately - they always stack
+			penalties.push(bonus);
+		} else {
+			// Handle positive bonuses normally
+			addBonus(acc, bonus.type, bonus.value);
+		}
 	}
 
 	const total =
 		Object.values(acc.typedBonuses).reduce((sum, v) => sum + v, 0) +
 		acc.sumOfDodges +
 		acc.sumOfCircumstance +
-		acc.sumOfUntyped;
+		acc.sumOfUntyped +
+		// Add all penalties
+		penalties.reduce((sum, p) => sum + p.value, 0);
 
 	const modifiers = bonuses
 		.filter((b) => b.value !== 0)
@@ -178,13 +187,13 @@ function getArmorBonus(char: CompleteCharacter, gameRules: GameRulesData): numbe
 }
 
 function getNaturalArmor(char: CompleteCharacter): number {
-	// Check racial natural armor from first ancestry
+	// Check ancestral natural armor from first ancestry
 	// const ancestry = char.ancestries[0]?.base;
 	// Since natural_armor isn't in the type, we'll need to check for a bonus
 	// that represents natural armor from the ancestry bonuses
-	const racialNA = 0; // TODO: Implement actual natural armor lookup from bonuses
+	const AncestralNaturalArmor = 0; // TODO: Implement actual natural armor lookup from bonuses
 	
-	return racialNA;
+	return AncestralNaturalArmor;
 }
 
 function getNaturalArmorEnhancement(char: CompleteCharacter, gameRules: GameRulesData): number {
@@ -525,6 +534,22 @@ function computeSkills(
 		f.level_obtained <= calculateTotalLevel(char)
 	) ?? false;
 
+	// Add Vampiric Grace Stealth bonus
+	const hasVampiricGrace = char.corruptionManifestations?.some(m => 
+		m.base?.name === 'vampiric_grace' && m.active
+	);
+	const hasAllure = char.corruptionManifestations?.some(m => 
+		m.base?.name === 'allure' && m.active
+	);
+	const hasChildrenOfNight = char.corruptionManifestations?.some(m => 
+		m.base?.name === 'children_of_the_night' && m.active
+	);
+	
+	// Get manifestation level for Allure bonus
+	const vampirism = char.corruption?.find(c => c.base?.name === 'vampirism');
+	const manifestationLevel = vampirism?.manifestation_level ?? 0;
+	const allureBonus = manifestationLevel >= 3 ? 4 : 2;
+
 	for (const skill of gameRules.rules.skillRows) {
 		const ranks = char.skillRanks?.filter(sr => sr.base.id === skill.id).length ?? 0;
 
@@ -593,6 +618,40 @@ function computeSkills(
 
 		if (hasGenerallyEducated && skill.knowledge_skill) {
 			bonuses.push({ source: 'Generally Educated', value: 2 });
+		}
+
+		// Add Vampiric Grace Stealth bonus
+		if (hasVampiricGrace && skill.name?.toLowerCase() === 'stealth') {
+			bonuses.push({
+				source: 'Vampiric Grace',
+				value: 2,
+				type: 'ancestral'
+			});
+		}
+
+		// Add Allure social skill bonuses
+		if (hasAllure) {
+			const skillName = skill.name?.toLowerCase();
+			if (skillName === 'bluff' || skillName === 'diplomacy' || skillName === 'intimidate') {
+				bonuses.push({
+					source: 'Allure',
+					value: allureBonus,
+					type: 'ancestral'
+				});
+			}
+		}
+
+
+		// Add Children of the Night penalty
+		if (hasChildrenOfNight) {
+			const skillName = skill.name?.toLowerCase();
+			if (skillName === 'handle_animal' || skillName === 'ride') {
+				bonuses.push({
+					source: 'Children of the Night (vs normal animals)',
+					value: -3,
+					type: 'penalty'
+				});
+			}
 		}
 
 		const skillStat = buildGenericStat(skill.label ?? 'Unknown', bonuses);
@@ -672,8 +731,8 @@ export function calculateTotalLevel(char: CompleteCharacter): number {
 	return char.classes.reduce((acc, cls) => acc + (cls.level || 1), 0);
 }
 
-export function calculateSkillPointsByLevel(char: CompleteCharacter): Map<number, number> {
-	const points = new Map<number, number>();
+export function calculateSkillPointsByLevel(char: CompleteCharacter): Record<number, ValueWithBreakdown> {
+	const points: Record<number, ValueWithBreakdown> = {};
 	let currentLevel = 0;
 	
 	// Get intelligence modifier from the ability scores
@@ -682,19 +741,37 @@ export function calculateSkillPointsByLevel(char: CompleteCharacter): Map<number
 	)?.value ?? 10;
 	const intMod = abilityMod(intScore);
 	
+	// Create a map of level -> favored class skill bonus
+	const favoredClassSkillBonuses = new Map<number, number>();
+	char.favoredClassBonuses?.forEach(bonus => {
+		if (bonus.base?.name === 'skill') {
+			favoredClassSkillBonuses.set(bonus.level, 1);
+		}
+	});
+	
 	for (const cls of char.classes) {
 		const basePoints = cls.base?.skill_ranks_per_level || 0;
-		const pointsPerLevel = Math.max(1, basePoints + intMod);
 		
 		for (let i = 0; i < (cls.level || 0); i++) {
 			currentLevel++;
-			points.set(currentLevel, pointsPerLevel);
+			
+			const bonuses: BonusEntry[] = [
+				{ source: `${cls.base?.label || 'Class'} Base`, value: basePoints },
+				{ source: 'Intelligence Modifier', value: intMod }
+			];
+
+			// Add favored class bonus if it exists for this level
+			const favoredBonus = favoredClassSkillBonuses.get(currentLevel) ?? 0;
+			if (favoredBonus > 0) {
+				bonuses.push({ source: 'Favored Class Bonus', value: favoredBonus });
+			}
+
+			points[currentLevel] = buildGenericStat(`Level ${currentLevel} Skill Points`, bonuses);
 		}
 	}
 	
 	return points;
 }
-
 
 function computeSkillsWithRanks(
 	char: CompleteCharacter,
@@ -749,7 +826,7 @@ export function enrichCharacterData(
 	raw: CompleteCharacter, 
 	gameRules: GameRulesData
 ): EnrichedCharacter {
-	// 1) Compute each ability score
+	// 1) Compute each ability score first
 	const strength = buildAbilityScore(raw, gameRules, 'strength');
 	const dexterity = buildAbilityScore(raw, gameRules, 'dexterity');
 	const constitution = buildAbilityScore(raw, gameRules, 'constitution');
@@ -764,6 +841,36 @@ export function enrichCharacterData(
 	const intMod = abilityMod(intelligence.total);
 	const wisMod = abilityMod(wisdom.total);
 	const chaMod = abilityMod(charisma.total);
+
+	// Create a modified character with the final ability scores for skill point calculation
+	const charWithFinalScores = {
+		...raw,
+		abilities: raw.abilities?.map(ability => {
+			if (ability.base?.name?.toLowerCase() === 'intelligence') {
+				return {
+					...ability,
+					value: intelligence.total
+				};
+			}
+			return ability;
+		})
+	};
+
+	// Calculate skill points using the final Intelligence score
+	const skillPointsTotal = calculateSkillPointsByLevel(charWithFinalScores);
+
+	// Rest of the calculations...
+	const totalLevel = raw.classes.reduce((acc, c) => acc + (c.level || 1), 0);
+
+	// Calculate remaining points per level
+	const skillPointsRemaining: Record<number, number> = {};
+	for (let level = 1; level <= totalLevel; level++) {
+		const totalPoints = skillPointsTotal[level]?.total || 0;
+		const usedPoints = raw.skillRanks
+			?.filter(skill => skill.applied_at_level === level)
+			.length ?? 0;
+		skillPointsRemaining[level] = totalPoints - usedPoints;
+	}
 
 	// 3) Derive base saves, then build final saves
 	const baseFort = calculateBaseSave(raw, 'fortitude');
@@ -784,7 +891,6 @@ export function enrichCharacterData(
 	]);
 
 	// 6) Compute BAB & Maneuvers
-	const totalLevel = raw.classes.reduce((acc, c) => acc + (c.level || 1), 0);
 	const bab = Math.floor((totalLevel * 3) / 4); // e.g. 3/4 progression
 	const { cmb, cmd } = computeCombatManeuvers(bab, strMod, dexMod);
 
@@ -804,31 +910,7 @@ export function enrichCharacterData(
 	// 8) Attacks
 	const attacks = computeAttacks(raw, gameRules, bab, strMod, dexMod, intMod);
 
-	// 9) Calculate skill points per level
-	const skillPointsTotal: Record<number, number> = {};
-	let currentLevel = 0;
-	
-	for (const cls of raw.classes) {
-		const basePoints = cls.base?.skill_ranks_per_level || 0;
-		const pointsPerLevel = Math.max(1, basePoints + intMod);
-		
-		for (let i = 0; i < (cls.level || 0); i++) {
-			currentLevel++;
-			skillPointsTotal[currentLevel] = pointsPerLevel;
-		}
-	}
-
-	// 10) Calculate remaining points per level
-	const skillPointsRemaining: Record<number, number> = {};
-	for (let level = 1; level <= totalLevel; level++) {
-		const totalPoints = skillPointsTotal[level] || 0;
-		const usedPoints = raw.skillRanks
-			?.filter(skill => skill.applied_at_level === level)
-			.length ?? 0;
-		skillPointsRemaining[level] = totalPoints - usedPoints;
-	}
-
-	// 11) Collate final result
+	// 9) Collate final result
 	const enriched: EnrichedCharacter = {
 		...raw,
 		
