@@ -105,12 +105,17 @@
 					>
 						{character.label}
 						<Badge variant="secondary" class="ml-2 text-xs">
-							{character.classes
-								.map(
-									(rpgClass) =>
-										`${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`
-								)
-								.join(', ')}
+							{#if character.game_character_ancestry?.[0]?.ancestry?.label}
+								{character.game_character_ancestry[0].ancestry.label}
+								{#if character.game_character_class?.[0]}
+									{' • '}
+									{character.game_character_archetype?.[0]?.archetype?.label}
+									{' '}
+									{character.game_character_class[0].class?.label}
+									{' '}
+									{character.game_character_class[0].level}
+								{/if}
+							{/if}
 						</Badge>
 					</button>
 				{/each}

@@ -1,9 +1,11 @@
 /******************************************************************************
  * FILE: src/lib/state/characterCalculations.ts
  *****************************************************************************/
-import type { CompleteCharacter } from '$lib/db/getCompleteCharacter';
-import type { AbpNodeBonusRow, AbpNodeRow } from '$lib/db/references';
-import type { GameRulesData } from '$lib/db/getGameRulesData';
+import type { CompleteCharacter, GameRulesAPI } from '$lib/db/gameRules.api';
+import type { 
+	AbpNode,
+	AbpNodeBonus
+} from '$lib/db/gameRules.api';
 
 //
 // =====================  INTERFACES & TYPES  =====================
@@ -31,11 +33,8 @@ export interface ValueWithBreakdown {
 export interface SkillWithRanks {
 	skillId: number;
 	name: string;
-	label: string;
-	ability_label: string;
-	totalRanks: number;
-	ranksByLevel: Array<number>;
 	isClassSkill: boolean;
+	skillRanks: Array<{ level: number; rank: number }>;
 }
 
 export interface EnrichedCharacter extends CompleteCharacter {
@@ -170,25 +169,23 @@ function addBonus(acc: StackingAccumulator, type: string | undefined, value: num
 }
 
 function getMaxDexBonus(char: CompleteCharacter): number {
-	const armor = char.armor?.[0];  // Take first armor if it exists
-	return armor?.base?.max_dex ?? Infinity;
+	const armor = char.game_character_armor?.[0]?.armor;
+	return armor?.max_dex ?? Infinity;
 }
 
-function getArmorBonus(char: CompleteCharacter, gameRules: GameRulesData): number {
-	const armor = char.armor?.[0];  // Take first armor if it exists
+async function getArmorBonus(char: CompleteCharacter, gameRules: GameRulesAPI): Promise<number> {
+	const armor = char.game_character_armor?.[0]?.armor;
 	if (!armor) return 0;
 	
-	const baseBonus = armor.base?.armor_bonus ?? 0;
-	
-	// Get enhancement from ABP
-	const abpBonus = getAbpBonusFromNodes(char, gameRules, 'armor_attunement');
+	const baseBonus = armor.armor_bonus ?? 0;
+	const abpBonus = await getAbpBonusFromNodes(char, gameRules, 'armor_attunement');
 	
 	return baseBonus + abpBonus;
 }
 
 function getNaturalArmor(char: CompleteCharacter): number {
 	// Check ancestral natural armor from first ancestry
-	// const ancestry = char.ancestries[0]?.base;
+	const ancestry = char.game_character_ancestry?.[0]?.ancestry;
 	// Since natural_armor isn't in the type, we'll need to check for a bonus
 	// that represents natural armor from the ancestry bonuses
 	const AncestralNaturalArmor = 0; // TODO: Implement actual natural armor lookup from bonuses
@@ -196,37 +193,21 @@ function getNaturalArmor(char: CompleteCharacter): number {
 	return AncestralNaturalArmor;
 }
 
-function getNaturalArmorEnhancement(char: CompleteCharacter, gameRules: GameRulesData): number {
-	// First check for ABP natural armor enhancement
-	// const abpBonus = getAbpBonusFromNodes(char, 'natural_armor_enhancement');
-
-	// // Check for amulet of natural armor or similar items
-	// const amulet = char.equipment?.find(e => 
-	// 	e.slot === 'neck' && 
-	// 	e.equipped && 
-	// 	e.base?.enhances === 'natural_armor'
-	// );
-	// const itemBonus = amulet?.enhancement ?? 0;
-	
-	// // Return the higher of the two
-	// return Math.max(abpBonus, itemBonus);
-	const abpBonus = getAbpBonusFromNodes(char, gameRules, 'toughening');
-
+async function getNaturalArmorEnhancement(char: CompleteCharacter, gameRules: GameRulesAPI): Promise<number> {
+	const abpBonus = await getAbpBonusFromNodes(char, gameRules, 'toughening');
 	return abpBonus;
 }
 
 function getShieldBonus(char: CompleteCharacter): number {
-	const shield = char.equipment?.find(e => 
-		e.base?.equipment_category === 'shield' && 
-		e.base?.equippable === true
+	const shield = char.game_character_equipment?.find(e => 
+		e.equipment?.equipment_category === 'shield' && 
+		e.equipment?.equippable === true
 	);
 	if (!shield) return 0;
 	
-	const baseBonus = shield.base?.bonus ?? 0;
-	// Since enhancement isn't in the type, we'll need to get it from another source
-	const enhancement = 0; // TODO: Implement enhancement bonus lookup
-	
-	return baseBonus + enhancement;
+	const baseBonus = shield.equipment?.bonus ?? 0;
+	// Enhancement bonuses will come from a different source
+	return baseBonus;
 }
 
 function getSizeModifier(char: CompleteCharacter): number {
@@ -242,21 +223,26 @@ function getSizeModifier(char: CompleteCharacter): number {
 		'colossal': -8
 	};
 	
-	return sizeModifiers[char.ancestries[0]?.base?.size?.toLowerCase() ?? 'medium'] ?? 0;
+	const size = char.game_character_ancestry?.[0]?.ancestry?.size?.toLowerCase() ?? 'medium';
+	return sizeModifiers[size] ?? 0;
 }
 
 //
 // =====================  ABP-RELATED HELPERS  =====================
 //
 
-function getAllAutoNodes(
-	gameRules: GameRulesData,
+async function getAllAutoNodes(
+	gameRules: GameRulesAPI,
 	effectiveABPLevel: number
-): Array<AbpNodeRow & { bonuses: AbpNodeBonusRow[] }> {
-	const { abpNodes, abpNodeGroups, abpNodeBonuses } = gameRules.references;
+): Promise<Array<AbpNode & { bonuses: AbpNodeBonus[] }>> {
+	const [abpNodes, abpNodeGroups, abpNodeBonuses] = await Promise.all([
+		gameRules.getAllAbpNode(),
+		gameRules.getAllAbpNodeGroup(),
+		gameRules.getAllAbpNodeBonus()
+	]);
 
 	// Build a map: nodeId -> all its BonusRows
-	const nodeBonusMap = new Map<number, AbpNodeBonusRow[]>();
+	const nodeBonusMap = new Map<number, AbpNodeBonus[]>();
 	for (const b of abpNodeBonuses) {
 		if (!nodeBonusMap.has(b.node_id)) {
 			nodeBonusMap.set(b.node_id, []);
@@ -276,31 +262,38 @@ function getAllAutoNodes(
 }
 
 /** Sum up all ABP bonuses of `abpName` from auto-granted + chosen nodes. */
-function getAbpBonusFromNodes(
+async function getAbpBonusFromNodes(
 	char: CompleteCharacter,
-	gameRules: GameRulesData, 
+	gameRules: GameRulesAPI, 
 	abpName: string
-): number {
-	const totalLevel = char.classes.reduce((acc, c) => acc + (c.level || 1), 0);
+): Promise<number> {
+	const totalLevel = (char.game_character_class ?? []).reduce((acc, c) => acc + (c.level || 1), 0);
 	const effectiveLevel = totalLevel + 2;
 
-	const explicitNodes = char.abpChoices?.map((c) => c.base) || [];
-	const autoNodes = getAllAutoNodes(gameRules, effectiveLevel);
-	const allNodes = [...explicitNodes, ...autoNodes];
+	// Get auto-granted nodes
+	const autoNodes = await getAllAutoNodes(gameRules, effectiveLevel);
+
+	// Get chosen nodes
+	const chosenNodeIds = char.game_character_abp_choice?.map(c => c.node_id) || [];
+	const chosenNodes = await Promise.all(
+		chosenNodeIds.map(id => gameRules.getAbpNodeById(id))
+	);
+	const validChosenNodes = chosenNodes.filter((node): node is NonNullable<typeof node> => node != null);
+
+	// Combine auto and chosen nodes
+	const allNodes = [...autoNodes, ...validChosenNodes];
 
 	const bonuses: BonusEntry[] = [];
 	for (const node of allNodes) {
-		// Get bonuses from gameRules instead of node
-		const nodeBonuses = gameRules.references.abpNodeBonuses.filter(b => b.node_id === node.id);
-		for (const bonus of nodeBonuses) {
-			const bonusTypeName = gameRules.references.abpBonusTypes.find(
-				bt => bt.id === bonus.bonus_type_id
-			)?.name;
-			if (bonusTypeName === abpName) {
+		const nodeBonuses = await gameRules.getAllAbpNodeBonus();
+		const bonusesForNode = nodeBonuses.filter(b => b.node_id === node.id);
+		for (const bonus of bonusesForNode) {
+			const bonusType = await gameRules.getAbpBonusTypeById(bonus.bonus_type_id);
+			if (bonusType?.name === abpName) {
 				bonuses.push({
 					source: `ABP Node ${node.id}`,
 					value: bonus.value,
-					type: bonusTypeName
+					type: bonusType.name
 				});
 			}
 		}
@@ -313,21 +306,25 @@ function getAbpBonusFromNodes(
 // =====================  SAVES & CLASS HELPERS  =====================
 //
 
-function calculateBaseSave(char: CompleteCharacter, type: 'fortitude' | 'reflex' | 'will'): number {
-	return char.classes.reduce((acc, cls) => {
-		const level = cls.level || 1;
-		const isGood = cls.base?.[type] === 'good';
-		return acc + (isGood ? 2 + level / 2 : level / 3);
-	}, 0) | 0; // floor
+function calculateBaseSave(
+	char: CompleteCharacter, 
+	type: 'fortitude' | 'reflex' | 'will'
+): number {
+	return (char.game_character_class ?? []).reduce((acc, charClass) => {
+		const level = charClass.level ?? 1;
+		const isGood = charClass.class[type] === 'good';
+		return acc + (isGood ? 2 + Math.floor(level / 2) : Math.floor(level / 3));
+	}, 0);
 }
 
-function getClassSkillIds(char: CompleteCharacter, gameRules: GameRulesData): Set<number> {
+async function getClassSkillIds(char: CompleteCharacter, gameRules: GameRulesAPI): Promise<Set<number>> {
 	const classSkillIds = new Set<number>();
 	
-	// Get class skills from relationships
-	for (const cls of char.classes) {
-		const classSkills = gameRules.relationships.classes.skills[cls.base.id] || [];
-		classSkills.forEach(skillId => classSkillIds.add(skillId));
+	// Get class skills from each character class
+	for (const charClass of (char.game_character_class ?? [])) {
+		const classSkills = await gameRules.getAllClassSkill();
+		const skillsForClass = classSkills.filter(cs => cs.class_id === charClass.class.id);
+		skillsForClass.forEach(skill => classSkillIds.add(skill.skill_id));
 	}
 	
 	return classSkillIds;
@@ -345,47 +342,60 @@ function getClassSkillIds(char: CompleteCharacter, gameRules: GameRulesData): Se
 
 function computeAbilityBonuses(
 	char: CompleteCharacter,
-	gameRules: GameRulesData,
 	abilityName: string
 ): BonusEntry[] {
-	const row = char.abilities?.find((a) => a.base?.name?.toLowerCase() === `${abilityName}`);
-	const baseScore = row?.value ?? 10;
+	const ability = char.game_character_ability?.find(
+		a => a.ability?.name?.toLowerCase() === abilityName.toLowerCase()
+	);
+	const baseScore = ability?.value ?? 10;
 
-	const abpMap: Record<string, string> = {
-		strength: 'physical_prowess_str',
-		dexterity: 'physical_prowess_dex',
-		constitution: 'physical_prowess_con',
-		intelligence: 'mental_prowess_int',
-		wisdom: 'mental_prowess_wis',
-		charisma: 'mental_prowess_cha'
-	};
-
-	const abpName = abpMap[abilityName];
-	const abpValue = abpName ? getAbpBonusFromNodes(char, gameRules, abpName) : 0;
-
-	const bonuses: BonusEntry[] = [
+	// Remove the ABP calculation from here since it's async
+	return [
 		{ source: 'Base Score', value: baseScore, type: 'base' }
 	];
-	if (abpValue !== 0) {
+}
+
+// Make this function async
+async function buildAbilityScore(
+	char: CompleteCharacter,
+	gameRules: GameRulesAPI,
+	abilityName: string
+): Promise<ValueWithBreakdown> {
+	const label = char.game_character_ability?.find(
+		(a) => a.ability?.name?.toLowerCase() === abilityName.toLowerCase()
+	)?.ability?.label ?? abilityName[0].toUpperCase() + abilityName.slice(1);
+	
+	const bonuses = computeAbilityBonuses(char, abilityName);
+	
+	// Map ability names to their ABP bonus types
+	const abpMap: Record<string, string[]> = {
+		strength: ['physical_prowess_str', 'physical_prowess_all'],
+		dexterity: ['physical_prowess_dex', 'physical_prowess_all'],
+		constitution: ['physical_prowess_con', 'physical_prowess_all'],
+		intelligence: ['mental_prowess_int', 'mental_prowess_all'],
+		wisdom: ['mental_prowess_wis', 'mental_prowess_all'],
+		charisma: ['mental_prowess_cha', 'mental_prowess_all']
+	};
+
+	// Get all applicable ABP bonus types for this ability
+	const abpTypes = abpMap[abilityName.toLowerCase()] ?? [];
+	
+	// Get the highest enhancement bonus from all applicable ABP types
+	let maxAbpBonus = 0;
+	for (const abpType of abpTypes) {
+		const bonus = await getAbpBonusFromNodes(char, gameRules, abpType);
+		maxAbpBonus = Math.max(maxAbpBonus, bonus);
+	}
+
+	// Only add the ABP bonus if it's greater than 0
+	if (maxAbpBonus > 0) {
 		bonuses.push({ 
-			source: 'ABP Node', 
-			value: abpValue, 
-			type: 'enhancement'  // ABP bonuses are enhancement type
+			source: 'ABP Enhancement', 
+			value: maxAbpBonus, 
+			type: 'enhancement' 
 		});
 	}
 
-	return bonuses;
-}
-
-function buildAbilityScore(
-	char: CompleteCharacter,
-	gameRules: GameRulesData,
-	abilityName: string
-): ValueWithBreakdown {
-	const label =
-		char.abilities?.find((a) => a.base?.name?.toLowerCase() === abilityName)?.base?.label ??
-		abilityName[0].toUpperCase() + abilityName.slice(1);
-	const bonuses = computeAbilityBonuses(char, gameRules, abilityName);
 	return buildGenericStat(label, bonuses);
 }
 
@@ -418,25 +428,25 @@ interface ACParts {
 	flat_footed_ac: ValueWithBreakdown;
 }
 
-function computeACStats(
+async function computeACStats(
 	char: CompleteCharacter,
-	gameRules: GameRulesData,
+	gameRules: GameRulesAPI,
 	dexMod: number
-): ACParts {
+): Promise<ACParts> {
 	const maxDexBonus = getMaxDexBonus(char);
 	const effectiveDexMod = Math.min(dexMod, maxDexBonus);
 
-	const armorLabel = char.armor?.[0]?.base?.label;
+	const armorLabel = char.game_character_armor?.[0]?.armor?.label;
 	
 	// Get armor bonus including enhancements
-	const armorBonus = getArmorBonus(char, gameRules);
+	const armorBonus = await getArmorBonus(char, gameRules);
 
 	const baseNaturalArmor = getNaturalArmor(char);
-	const naturalArmorEnhancement = getNaturalArmorEnhancement(char, gameRules);
+	const naturalArmorEnhancement = await getNaturalArmorEnhancement(char, gameRules);
 	const totalNaturalBonus = baseNaturalArmor + naturalArmorEnhancement;
 
-	const deflection = getAbpBonusFromNodes(char, gameRules, 'deflection');
-	const hasDodgeFeat = char.feats?.some(f => f.base?.name === 'dodge') ?? false;
+	const deflection = await getAbpBonusFromNodes(char, gameRules, 'deflection');
+	const hasDodgeFeat = char.game_character_feat?.some(f => f.feat?.name === 'dodge') ?? false;
 
 	// Define all possible AC components
 	const acComponents = {
@@ -508,55 +518,67 @@ function computeCombatManeuvers(
 // 5) Skills
 // -------------------------------------------------------------------------
 
-function computeSkills(
+async function computeSkills(
 	char: CompleteCharacter,
-	gameRules: GameRulesData,
+	gameRules: GameRulesAPI,
 	strMod: number,
 	dexMod: number,
 	conMod: number,
 	intMod: number,
 	wisMod: number,
 	chaMod: number
-): Record<number, ValueWithBreakdown> {
+): Promise<Record<number, ValueWithBreakdown>> {
 	const skills: Record<number, ValueWithBreakdown> = {};
-	const classSkillIds = getClassSkillIds(char, gameRules);
+	const classSkillIds = await getClassSkillIds(char, gameRules);
 
-	// Check for Generally Educated feat
-	const hasGenerallyEducated = char.feats?.some(f => f.base?.name === 'generally_educated') ?? false;
+	// Check for feats
+	const hasGenerallyEducated = char.game_character_feat?.some(f => 
+		f.feat?.name === 'generally_educated'
+	) ?? false;
 
-	// Check for INT-based skill traits
-	const hasPragmaticActivator = char.traits?.some(t => t.base?.name === 'trait_pragmatic_activator') ?? false;
-	const hasCleverWordplayDiplomacy = char.traits?.some(t => t.base?.name === 'trait_clever_wordplay_diplomacy') ?? false;
+	// Check for traits
+	const hasPragmaticActivator = char.game_character_trait?.some(t => 
+		t.trait?.name === 'trait_pragmatic_activator'
+	) ?? false;
 
 	// Check for Perfect Recall (Mindchemist)
-	const hasPerfectRecall = char.classFeatures?.some(f => 
-		f.base?.name === 'perfect_recall' && 
+	const hasPerfectRecall = char.game_character_class_feature?.some(f => 
+		f.class_feature?.name === 'perfect_recall' && 
 		f.level_obtained <= calculateTotalLevel(char)
 	) ?? false;
 
 	// Add Vampiric Grace Stealth bonus
-	const hasVampiricGrace = char.corruptionManifestations?.some(m => 
-		m.base?.name === 'vampiric_grace' && m.active
+	const manifestations = char.game_character_corruption_manifestation ?? [];
+	const corruptions = char.game_character_corruption ?? [];
+	const hasVampiricGrace = manifestations.some(m => 
+		m.corruption_manifestation?.name === 'vampiric_grace' && m.active
 	);
-	const hasAllure = char.corruptionManifestations?.some(m => 
-		m.base?.name === 'allure' && m.active
+	const hasAllure = manifestations.some(m => 
+		m.corruption_manifestation?.name === 'allure' && m.active
 	);
-	const hasChildrenOfNight = char.corruptionManifestations?.some(m => 
-		m.base?.name === 'children_of_the_night' && m.active
+	const hasChildrenOfNight = manifestations.some(m => 
+		m.corruption_manifestation?.name === 'children_of_the_night' && m.active
 	);
 	
 	// Get manifestation level for Allure bonus
-	const vampirism = char.corruption?.find(c => c.base?.name === 'vampirism');
+	const vampirism = corruptions.find(c => c.corruption?.name === 'vampirism');
 	const manifestationLevel = vampirism?.manifestation_level ?? 0;
 	const allureBonus = manifestationLevel >= 3 ? 4 : 2;
 
-	for (const skill of gameRules.rules.skillRows) {
-		const ranks = char.skillRanks?.filter(sr => sr.base.id === skill.id).length ?? 0;
+	// Get all skills from gameRules
+	const allSkills = await gameRules.getAllSkill();
+	
+	for (const skill of allSkills) {
+		// Count ranks for this skill
+		const ranks = (char.game_character_skill_rank ?? [])
+			.filter(sr => sr.skill_id === skill.id)
+			.length;
 
 		// Determine which ability modifier to use
 		let abilityScoreMod = 0;
-		const baseAbilityName = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.name?.toLowerCase() ?? '';
-		const baseAbilityLabel = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id)?.label ?? 'Unknown';
+		const baseAbility = await gameRules.getAbilityById(skill.ability_id);
+		const baseAbilityName = baseAbility?.name?.toLowerCase() ?? '';
+		const baseAbilityLabel = baseAbility?.label ?? 'Unknown';
 
 		// Check if we should use INT instead of CHA for this skill
 		const isUMD = skill.name?.toLowerCase() === 'use_magic_device';
@@ -574,7 +596,9 @@ function computeSkills(
 						source: 'Pragmatic Activator'
 					}
 				};
-			} else if (isDiplomacy && hasCleverWordplayDiplomacy) {
+			} else if (isDiplomacy && char.game_character_trait?.some(t => 
+				t.trait?.name === 'trait_clever_wordplay_diplomacy'
+			)) {
 				abilityScoreMod = intMod;
 				overrides = {
 					ability: {
@@ -641,7 +665,6 @@ function computeSkills(
 			}
 		}
 
-
 		// Add Children of the Night penalty
 		if (hasChildrenOfNight) {
 			const skillName = skill.name?.toLowerCase();
@@ -682,15 +705,15 @@ interface AttackParts {
 	};
 }
 
-function computeAttacks(
+async function computeAttacks(
 	char: CompleteCharacter,
-	gameRules: GameRulesData,
+	gameRules: GameRulesAPI,
 	bab: number,
 	strMod: number,
 	dexMod: number,
 	intMod: number
-): AttackParts {
-	const weaponAttune = getAbpBonusFromNodes(char, gameRules, 'weapon_attunement');
+): Promise<AttackParts> {
+	const weaponAttune = await getAbpBonusFromNodes(char, gameRules, 'weapon_attunement');
 
 	function buildAttack(label: string, abilityModifier: number): ValueWithBreakdown {
 		return buildGenericStat(label, [
@@ -728,113 +751,127 @@ export interface SkillRanksByLevel {
 }
 
 export function calculateTotalLevel(char: CompleteCharacter): number {
-	return char.classes.reduce((acc, cls) => acc + (cls.level || 1), 0);
+	return (char.game_character_class ?? []).reduce((acc: number, cls) => acc + (cls.level || 1), 0);
 }
 
-export function calculateSkillPointsByLevel(char: CompleteCharacter): Record<number, ValueWithBreakdown> {
-	const points: Record<number, ValueWithBreakdown> = {};
-	let currentLevel = 0;
-	
-	// Get intelligence modifier from the ability scores
-	const intScore = char.abilities?.find(a => 
-		a.base?.name?.toLowerCase() === 'intelligence'
-	)?.value ?? 10;
-	const intMod = abilityMod(intScore);
-	
-	// Create a map of level -> favored class skill bonus
-	const favoredClassSkillBonuses = new Map<number, number>();
-	char.favoredClassBonuses?.forEach(bonus => {
-		if (bonus.base?.name === 'skill') {
-			favoredClassSkillBonuses.set(bonus.level, 1);
-		}
-	});
-	
-	for (const cls of char.classes) {
-		const basePoints = cls.base?.skill_ranks_per_level || 0;
-		
-		for (let i = 0; i < (cls.level || 0); i++) {
-			currentLevel++;
-			
-			const bonuses: BonusEntry[] = [
-				{ source: `${cls.base?.label || 'Class'} Base`, value: basePoints },
-				{ source: 'Intelligence Modifier', value: intMod }
-			];
-
-			// Add favored class bonus if it exists for this level
-			const favoredBonus = favoredClassSkillBonuses.get(currentLevel) ?? 0;
-			if (favoredBonus > 0) {
-				bonuses.push({ source: 'Favored Class Bonus', value: favoredBonus });
-			}
-
-			points[currentLevel] = buildGenericStat(`Level ${currentLevel} Skill Points`, bonuses);
-		}
-	}
-	
-	return points;
-}
-
-function computeSkillsWithRanks(
+export function calculateSkillPointsTotal(
 	char: CompleteCharacter,
-	gameRules: GameRulesData
-): SkillWithRanks[] {
-	const result: SkillWithRanks[] = [];
+	gameRules: GameRulesAPI
+): Record<number, ValueWithBreakdown> {
+	const skillPointsTotal: Record<number, ValueWithBreakdown> = {};
 	
-	// Get class skill IDs for all character classes
-	const classSkillIds = new Set<number>();
-	for (const charClass of char.classes) {
-		const classSkills = gameRules.relationships.classes.skills[charClass.base?.id ?? 0] ?? [];
-		classSkills.forEach(skillId => classSkillIds.add(skillId));
-	}
-	
-	// Process each skill from rules
-	for (const skill of gameRules.rules.skillRows) {
-		// Get ability label
-		const ability = gameRules.rules.abilityRows.find(a => a.id === skill.ability_id);
-		const ability_label = ability?.label ?? 'Unknown';
-
-		// Build ranks by level map and calculate total ranks
-		const ranksByLevel: Array<number> = [];
-		let totalRanks = 0;
+	// Get base skill points from class
+	for (const charClass of (char.game_character_class ?? [])) {
+		const classSkillPoints = charClass.class.skill_ranks_per_level ?? 0;
+		const maxLevel = charClass.level ?? 1;
 		
-		// Process each skill rank entry for this skill
-		char.skillRanks?.forEach(rank => {
-			if (rank.base.id === skill.id) {
-				ranksByLevel.push(rank.applied_at_level);
-				totalRanks++;
-			}
-		});
+		// Calculate for each level up to current
+		for (let level = 1; level <= maxLevel; level++) {
+			const intBonus = getAbilityModifier(char, 'intelligence', level);
+			const ancestralBonus = 0;
+			const total = Math.max(1, classSkillPoints + intBonus + ancestralBonus);
+			
+			skillPointsTotal[level] = buildGenericStat(`Level ${level} Skill Points`, [
+				{ source: `${charClass.class.label ?? 'Unknown'} Base`, value: classSkillPoints },
+				{ source: 'Intelligence Modifier', value: intBonus },
+				{ source: 'Ancestral Bonus', value: ancestralBonus }
+			]);
+		}
+	}
+	
+	return skillPointsTotal;
+}
 
-		result.push({
-			skillId: skill.id,
-			name: skill.name ?? 'Unknown',
-			label: skill.label ?? 'Unknown Skill',
-			ability_label,
-			totalRanks,
-			ranksByLevel,
-			isClassSkill: classSkillIds.has(skill.id)
+function getAbilityModifier(
+	char: CompleteCharacter,
+	abilityName: string,
+	atLevel: number
+): number {
+	const ability = char.game_character_ability.find(
+		a => a.ability.name.toLowerCase() === abilityName.toLowerCase()
+	);
+	return ability ? abilityMod(ability.value) : 0;
+}
+
+function calculateSkillPointsRemaining(
+	char: CompleteCharacter,
+	totalPoints: Record<number, ValueWithBreakdown>
+): Record<number, number> {
+	const remaining: Record<number, number> = {};
+	
+	// Calculate spent points per level
+	const spentByLevel = new Map<number, number>();
+	for (const rank of (char.game_character_skill_rank ?? [])) {
+		const level = rank.applied_at_level;
+		spentByLevel.set(level, (spentByLevel.get(level) ?? 0) + 1);
+	}
+	
+	// Calculate remaining points
+	for (const [level, points] of Object.entries(totalPoints)) {
+		remaining[Number(level)] = points.total - (spentByLevel.get(Number(level)) ?? 0);
+	}
+	
+	return remaining;
+}
+
+async function getSkillsWithRanks(
+	char: CompleteCharacter,
+	gameRules: GameRulesAPI
+): Promise<SkillWithRanks[]> {
+	const skillsWithRanks: SkillWithRanks[] = [];
+	const classSkillIds = await getClassSkillIds(char, gameRules);
+
+	// Group ranks by skill
+	const ranksBySkill = new Map<number, Array<{ level: number; rank: number }>>();
+	for (const rank of (char.game_character_skill_rank ?? [])) {
+		if (!ranksBySkill.has(rank.skill_id)) {
+			ranksBySkill.set(rank.skill_id, []);
+		}
+		ranksBySkill.get(rank.skill_id)!.push({
+			level: rank.applied_at_level,
+			rank: 1 // Assuming 1 rank per entry
 		});
 	}
 
-	return result;
+	// Convert to SkillWithRanks array
+	for (const [skillId, ranks] of ranksBySkill) {
+		const skill = await gameRules.getSkillById(skillId);
+		if (skill) {
+			skillsWithRanks.push({
+				skillId,
+				name: skill.name ?? '',
+				isClassSkill: classSkillIds.has(skillId),
+				skillRanks: ranks.sort((a, b) => a.level - b.level)
+			});
+		}
+	}
+
+	return skillsWithRanks;
 }
 
 //
 // =====================  MAIN ENRICHING FUNCTION  =====================
 //
 
-export function enrichCharacterData(
-	raw: CompleteCharacter, 
-	gameRules: GameRulesData
-): EnrichedCharacter {
-	// 1) Compute each ability score first
-	const strength = buildAbilityScore(raw, gameRules, 'strength');
-	const dexterity = buildAbilityScore(raw, gameRules, 'dexterity');
-	const constitution = buildAbilityScore(raw, gameRules, 'constitution');
-	const intelligence = buildAbilityScore(raw, gameRules, 'intelligence');
-	const wisdom = buildAbilityScore(raw, gameRules, 'wisdom');
-	const charisma = buildAbilityScore(raw, gameRules, 'charisma');
+export async function enrichCharacterData(
+	char: CompleteCharacter,
+	gameRules: GameRulesAPI
+): Promise<EnrichedCharacter> {
+	if ('loadRelationships' in gameRules && typeof gameRules.loadRelationships === 'function') {
+		await gameRules.loadRelationships(char);
+	}
 
-	// 2) Get numeric modifiers
+	// Compute ability scores
+	const [strength, dexterity, constitution, intelligence, wisdom, charisma] = await Promise.all([
+		buildAbilityScore(char, gameRules, 'strength'),
+		buildAbilityScore(char, gameRules, 'dexterity'),
+		buildAbilityScore(char, gameRules, 'constitution'),
+		buildAbilityScore(char, gameRules, 'intelligence'),
+		buildAbilityScore(char, gameRules, 'wisdom'),
+		buildAbilityScore(char, gameRules, 'charisma')
+	]);
+
+	// Calculate ability modifiers correctly using abilityMod function
 	const strMod = abilityMod(strength.total);
 	const dexMod = abilityMod(dexterity.total);
 	const conMod = abilityMod(constitution.total);
@@ -842,62 +879,33 @@ export function enrichCharacterData(
 	const wisMod = abilityMod(wisdom.total);
 	const chaMod = abilityMod(charisma.total);
 
-	// Create a modified character with the final ability scores for skill point calculation
-	const charWithFinalScores = {
-		...raw,
-		abilities: raw.abilities?.map(ability => {
-			if (ability.base?.name?.toLowerCase() === 'intelligence') {
-				return {
-					...ability,
-					value: intelligence.total
-				};
-			}
-			return ability;
-		})
-	};
+	// Get resistance bonus
+	const resistance = await getAbpBonusFromNodes(char, gameRules, 'resistance');
 
-	// Calculate skill points using the final Intelligence score
-	const skillPointsTotal = calculateSkillPointsByLevel(charWithFinalScores);
+	// Build saves with awaited resistance value and corrected ability mods
+	const baseFort = calculateBaseSave(char, 'fortitude');
+	const baseRef = calculateBaseSave(char, 'reflex');
+	const baseWill = calculateBaseSave(char, 'will');
+	const fortitude = buildSave('Fortitude', baseFort, conMod, await resistance);
+	const reflex = buildSave('Reflex', baseRef, dexMod, await resistance);
+	const will = buildSave('Will', baseWill, wisMod, await resistance);
 
-	// Rest of the calculations...
-	const totalLevel = raw.classes.reduce((acc, c) => acc + (c.level || 1), 0);
-
-	// Calculate remaining points per level
-	const skillPointsRemaining: Record<number, number> = {};
-	for (let level = 1; level <= totalLevel; level++) {
-		const totalPoints = skillPointsTotal[level]?.total || 0;
-		const usedPoints = raw.skillRanks
-			?.filter(skill => skill.applied_at_level === level)
-			.length ?? 0;
-		skillPointsRemaining[level] = totalPoints - usedPoints;
-	}
-
-	// 3) Derive base saves, then build final saves
-	const baseFort = calculateBaseSave(raw, 'fortitude');
-	const baseRef = calculateBaseSave(raw, 'reflex');
-	const baseWill = calculateBaseSave(raw, 'will');
-	const resistance = getAbpBonusFromNodes(raw, gameRules, 'resistance');
-
-	const fortitude = buildSave('Fortitude', baseFort, conMod, resistance);
-	const reflex = buildSave('Reflex', baseRef, dexMod, resistance);
-	const will = buildSave('Will', baseWill, wisMod, resistance);
-
-	// 4) Compute AC stats
-	const { ac, touch_ac, flat_footed_ac } = computeACStats(raw, gameRules, dexMod);
+	// 4) Compute AC stats with corrected dexMod
+	const { ac, touch_ac, flat_footed_ac } = await computeACStats(char, gameRules, dexMod);
 
 	// 5) Initiative (single stat)
 	const initiative = buildGenericStat('Initiative', [
 		{ source: 'Dex mod', value: dexMod }
 	]);
 
-	// 6) Compute BAB & Maneuvers
-	const bab = Math.floor((totalLevel * 3) / 4); // e.g. 3/4 progression
+	// 6) Compute BAB & Maneuvers with corrected ability mods
+	const bab = Math.floor((calculateTotalLevel(char) * 3) / 4); // e.g. 3/4 progression
 	const { cmb, cmd } = computeCombatManeuvers(bab, strMod, dexMod);
 
-	// 7) Skills and skill ranks
-	const skillsWithRanks = computeSkillsWithRanks(raw, gameRules);
-	const skills = computeSkills(
-		raw, 
+	// 7) Skills and skill ranks with corrected ability mods
+	const skillsWithRanks = await getSkillsWithRanks(char, gameRules);
+	const skills = await computeSkills(
+		char, 
 		gameRules,
 		strMod, 
 		dexMod, 
@@ -907,14 +915,14 @@ export function enrichCharacterData(
 		chaMod
 	);
 
-	// 8) Attacks
-	const attacks = computeAttacks(raw, gameRules, bab, strMod, dexMod, intMod);
+	// 8) Attacks with corrected ability mods
+	const attacks = await computeAttacks(char, gameRules, bab, strMod, dexMod, intMod);
 
-	// 9) Collate final result
+	// 9) Collate final result with corrected ability mods
 	const enriched: EnrichedCharacter = {
-		...raw,
+		...char,
 		
-		// Abilities
+		// Abilities and their modifiers
 		strength,
 		dexterity,
 		constitution,
@@ -922,6 +930,7 @@ export function enrichCharacterData(
 		wisdom,
 		charisma,
 
+		// Store the correctly calculated ability modifiers
 		strMod,
 		dexMod,
 		conMod,
@@ -936,7 +945,7 @@ export function enrichCharacterData(
 			will
 		},
 
-		// AC
+		// AC values
 		ac,
 		touch_ac,
 		flat_footed_ac,
@@ -954,17 +963,16 @@ export function enrichCharacterData(
 
 		// Skill points
 		skillPoints: {
-			total: skillPointsTotal,
-			remaining: skillPointsRemaining
+			total: calculateSkillPointsTotal(char, gameRules),
+			remaining: calculateSkillPointsRemaining(char, calculateSkillPointsTotal(char, gameRules))
 		},
-		totalLevel,
+		totalLevel: calculateTotalLevel(char),
 		skillsWithRanks
 	};
 
-	// Single debug call at the end (optional)
-	// debug('Final enriched character', enriched);
-
 	return enriched;
 }
+
+
 
 

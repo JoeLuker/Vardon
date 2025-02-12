@@ -15,11 +15,20 @@
 		// Then load/reload the entire list
 		await loadAllCharacters().then(() => {
 			if ($multiCharStore.length > 0) {
-				// console.log(JSON.stringify($multiCharStore, null, 2));
-				console.log($multiCharStore);
+				console.log(JSON.stringify($multiCharStore, null, 2));
+				// console.log($multiCharStore);
 			}
 		});
 	});
+
+	function formatCharacterClass(character: any) {
+		const archetype = character.game_character_archetype?.[0]?.archetype?.label || '';
+		return character.game_character_class?.map((classEntry: any) => {
+			const className = classEntry?.class?.label || '';
+			const level = classEntry?.level || '';
+			return `${archetype} ${className} ${level}`.trim();
+		}).join(', ') || '';
+	}
 </script>
 
 <!-- Page container with spacing -->
@@ -48,13 +57,9 @@
 						</h2>
 						<!-- Use text-muted-foreground from config -->
 						<div class="text-sm text-muted-foreground">
-							<span>{character.ancestries[0]?.base?.label ?? ''}</span>
+							<span>{character.game_character_ancestry?.[0]?.ancestry?.label || ''}</span>
 							<span class="mx-2">•</span>
-							<span>
-								{character.classes
-									.map((rpgClass) => `${character.archetypes?.[0]?.base?.label ?? ''} ${rpgClass?.base?.label ?? ''} ${rpgClass?.level ?? ''}`)
-									.join(', ')}
-							</span>
+							<span>{formatCharacterClass(character)}</span>
 						</div>
 					</div>
 				</a>

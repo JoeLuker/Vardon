@@ -176,47 +176,10 @@ export type Database = {
         }
         Relationships: []
       }
-      ancestral_trait: {
-        Row: {
-          ancestry_id: number | null
-          created_at: string | null
-          id: number
-          is_optional: boolean | null
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          ancestry_id?: number | null
-          created_at?: string | null
-          id?: number
-          is_optional?: boolean | null
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          ancestry_id?: number | null
-          created_at?: string | null
-          id?: number
-          is_optional?: boolean | null
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ancestral_trait_ancestry_id_fkey"
-            columns: ["ancestry_id"]
-            isOneToOne: false
-            referencedRelation: "ancestry"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ancestry: {
         Row: {
           created_at: string | null
+          description: string | null
           id: number
           label: string | null
           name: string
@@ -226,6 +189,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: number
           label?: string | null
           name: string
@@ -235,6 +199,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: number
           label?: string | null
           name?: string
@@ -243,54 +208,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      ancestry_ability: {
-        Row: {
-          ability_id: number
-          ancestry_id: number
-          created_at: string | null
-          id: number
-          label: string | null
-          modifier: number
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          ability_id: number
-          ancestry_id: number
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          modifier: number
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          ability_id?: number
-          ancestry_id?: number
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          modifier?: number
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ancestry_ability_ability_id_fkey"
-            columns: ["ability_id"]
-            isOneToOne: false
-            referencedRelation: "ability"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ancestry_ability_ancestry_id_fkey"
-            columns: ["ancestry_id"]
-            isOneToOne: false
-            referencedRelation: "ancestry"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       archetype: {
         Row: {
@@ -379,58 +296,6 @@ export type Database = {
           },
         ]
       }
-      archetype_feature_replacement: {
-        Row: {
-          archetype_id: number
-          created_at: string | null
-          id: number
-          new_feature_id: number | null
-          replaced_feature_id: number
-          replacement_level: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          archetype_id: number
-          created_at?: string | null
-          id?: number
-          new_feature_id?: number | null
-          replaced_feature_id: number
-          replacement_level?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          archetype_id?: number
-          created_at?: string | null
-          id?: number
-          new_feature_id?: number | null
-          replaced_feature_id?: number
-          replacement_level?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "archetype_feature_replacement_archetype_id_fkey"
-            columns: ["archetype_id"]
-            isOneToOne: false
-            referencedRelation: "archetype"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "archetype_feature_replacement_new_feature_id_fkey"
-            columns: ["new_feature_id"]
-            isOneToOne: false
-            referencedRelation: "class_feature"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "archetype_feature_replacement_replaced_feature_id_fkey"
-            columns: ["replaced_feature_id"]
-            isOneToOne: false
-            referencedRelation: "class_feature"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       armor: {
         Row: {
           arcane_spell_failure_chance: number | null
@@ -476,6 +341,30 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_attack_progression: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bonus_type: {
         Row: {
           created_at: string | null
@@ -505,6 +394,7 @@ export type Database = {
       }
       class: {
         Row: {
+          base_attack_bonus_progression: number | null
           created_at: string | null
           description: string | null
           fortitude: string | null
@@ -518,6 +408,7 @@ export type Database = {
           will: string | null
         }
         Insert: {
+          base_attack_bonus_progression?: number | null
           created_at?: string | null
           description?: string | null
           fortitude?: string | null
@@ -531,6 +422,7 @@ export type Database = {
           will?: string | null
         }
         Update: {
+          base_attack_bonus_progression?: number | null
           created_at?: string | null
           description?: string | null
           fortitude?: string | null
@@ -543,37 +435,51 @@ export type Database = {
           updated_at?: string | null
           will?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "class_base_attack_bonus_progression_fkey"
+            columns: ["base_attack_bonus_progression"]
+            isOneToOne: false
+            referencedRelation: "bonus_attack_progression"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       class_feature: {
         Row: {
-          class_id: number
+          class_id: number | null
           created_at: string | null
           description: string | null
-          feature_level: number
+          feature_level: number | null
           id: number
+          is_limited: boolean | null
+          is_toggleable: boolean | null
           label: string | null
           name: string
           type: string | null
           updated_at: string | null
         }
         Insert: {
-          class_id: number
+          class_id?: number | null
           created_at?: string | null
           description?: string | null
-          feature_level: number
+          feature_level?: number | null
           id?: number
+          is_limited?: boolean | null
+          is_toggleable?: boolean | null
           label?: string | null
           name: string
           type?: string | null
           updated_at?: string | null
         }
         Update: {
-          class_id?: number
+          class_id?: number | null
           created_at?: string | null
           description?: string | null
-          feature_level?: number
+          feature_level?: number | null
           id?: number
+          is_limited?: boolean | null
+          is_toggleable?: boolean | null
           label?: string | null
           name?: string
           type?: string | null
@@ -585,6 +491,44 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_feature_benefit: {
+        Row: {
+          class_feature_id: number
+          created_at: string | null
+          id: number
+          label: string | null
+          level: number | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          class_feature_id: number
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          level?: number | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          class_feature_id?: number
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          level?: number | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_feature_benefit_class_feature_id_fkey"
+            columns: ["class_feature_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature"
             referencedColumns: ["id"]
           },
         ]
@@ -665,6 +609,7 @@ export type Database = {
         Row: {
           corruption_stage: number | null
           created_at: string | null
+          description: string | null
           id: number
           label: string | null
           manifestation_level: number | null
@@ -674,6 +619,7 @@ export type Database = {
         Insert: {
           corruption_stage?: number | null
           created_at?: string | null
+          description?: string | null
           id?: number
           label?: string | null
           manifestation_level?: number | null
@@ -683,6 +629,7 @@ export type Database = {
         Update: {
           corruption_stage?: number | null
           created_at?: string | null
+          description?: string | null
           id?: number
           label?: string | null
           manifestation_level?: number | null
@@ -875,6 +822,7 @@ export type Database = {
           description: string | null
           feat_type: string | null
           id: number
+          is_toggleable: boolean | null
           label: string | null
           name: string
           updated_at: string | null
@@ -884,6 +832,7 @@ export type Database = {
           description?: string | null
           feat_type?: string | null
           id?: number
+          is_toggleable?: boolean | null
           label?: string | null
           name: string
           updated_at?: string | null
@@ -893,11 +842,102 @@ export type Database = {
           description?: string | null
           feat_type?: string | null
           id?: number
+          is_toggleable?: boolean | null
           label?: string | null
           name?: string
           updated_at?: string | null
         }
         Relationships: []
+      }
+      feat_benefit: {
+        Row: {
+          benefit: string | null
+          created_at: string | null
+          feat_id: number
+          id: number
+          label: string | null
+          name: string
+          school_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          benefit?: string | null
+          created_at?: string | null
+          feat_id: number
+          id?: number
+          label?: string | null
+          name: string
+          school_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          benefit?: string | null
+          created_at?: string | null
+          feat_id?: number
+          id?: number
+          label?: string | null
+          name?: string
+          school_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feat_benefit_feat_id_fkey"
+            columns: ["feat_id"]
+            isOneToOne: false
+            referencedRelation: "feat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feat_benefit_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "spell_school"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fulfillment_qualification_mapping: {
+        Row: {
+          created_at: string | null
+          fulfillment_id: number
+          id: number
+          qualification_id: number
+          qualification_type_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fulfillment_id: number
+          id?: number
+          qualification_id: number
+          qualification_type_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fulfillment_id?: number
+          id?: number
+          qualification_id?: number
+          qualification_type_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fulfillment_qualification_mapping_fulfillment_id_fkey"
+            columns: ["fulfillment_id"]
+            isOneToOne: false
+            referencedRelation: "prerequisite_fulfillment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fulfillment_qualification_mapping_qualification_type_id_fkey"
+            columns: ["qualification_type_id"]
+            isOneToOne: false
+            referencedRelation: "qualification_type"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       game_character: {
         Row: {
@@ -1501,6 +1541,7 @@ export type Database = {
           feat_id: number
           game_character_id: number
           id: number
+          is_active: boolean
           level_obtained: number | null
           updated_at: string | null
         }
@@ -1509,6 +1550,7 @@ export type Database = {
           feat_id: number
           game_character_id: number
           id?: number
+          is_active?: boolean
           level_obtained?: number | null
           updated_at?: string | null
         }
@@ -1517,6 +1559,7 @@ export type Database = {
           feat_id?: number
           game_character_id?: number
           id?: number
+          is_active?: boolean
           level_obtained?: number | null
           updated_at?: string | null
         }
@@ -1777,35 +1820,288 @@ export type Database = {
         }
         Relationships: []
       }
-      natural_attack: {
+      monk_unchained_ki_power: {
         Row: {
-          attack_count: number | null
-          attack_type: string
+          class_id: number | null
           created_at: string | null
-          damage: string
+          description: string | null
+          id: number
+          label: string | null
+          min_level: number | null
+          name: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_id?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          min_level?: number | null
+          name: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          min_level?: number | null
+          name?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monk_unchained_ki_power_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prerequisite_fulfillment: {
+        Row: {
+          created_at: string | null
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      prerequisite_requirement: {
+        Row: {
+          created_at: string | null
+          id: number
+          requirement_id: number
+          requirement_type_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          requirement_id: number
+          requirement_type_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          requirement_id?: number
+          requirement_type_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prerequisite_requirement_requirement_type_id_fkey"
+            columns: ["requirement_type_id"]
+            isOneToOne: false
+            referencedRelation: "prerequisite_requirement_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prerequisite_requirement_fulfillment_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          prerequisite_fulfillment_id: number
+          prerequisite_requirement_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          prerequisite_fulfillment_id: number
+          prerequisite_requirement_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          prerequisite_fulfillment_id?: number
+          prerequisite_requirement_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prerequisite_requirement_fulfi_prerequisite_fulfillment_id_fkey"
+            columns: ["prerequisite_fulfillment_id"]
+            isOneToOne: false
+            referencedRelation: "prerequisite_fulfillment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prerequisite_requirement_fulfi_prerequisite_requirement_id_fkey"
+            columns: ["prerequisite_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "prerequisite_requirement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prerequisite_requirement_type: {
+        Row: {
+          created_at: string | null
           id: number
           label: string | null
           name: string
           updated_at: string | null
         }
         Insert: {
-          attack_count?: number | null
-          attack_type: string
           created_at?: string | null
-          damage: string
           id?: number
           label?: string | null
           name: string
           updated_at?: string | null
         }
         Update: {
-          attack_count?: number | null
-          attack_type?: string
           created_at?: string | null
-          damage?: string
           id?: number
           label?: string | null
           name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      qinggong_monk_ki_power: {
+        Row: {
+          class_id: number
+          created_at: string | null
+          id: number
+          ki_cost: number
+          min_level: number
+          power_id: number
+          power_type_id: number
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_id: number
+          created_at?: string | null
+          id?: number
+          ki_cost: number
+          min_level: number
+          power_id: number
+          power_type_id: number
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: number
+          created_at?: string | null
+          id?: number
+          ki_cost?: number
+          min_level?: number
+          power_id?: number
+          power_type_id?: number
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qinggong_monk_ki_power_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qinggong_monk_ki_power_power_type_id_fkey"
+            columns: ["power_type_id"]
+            isOneToOne: false
+            referencedRelation: "qinggong_monk_ki_power_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qinggong_monk_ki_power_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      qualification_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rule: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          label: string | null
+          name: string
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          source?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1854,77 +2150,223 @@ export type Database = {
           },
         ]
       }
-      skill_bonus: {
+      sorcerer_bloodline: {
         Row: {
-          bonus: number
           created_at: string | null
           id: number
           label: string | null
           name: string
-          skill_name: string
           updated_at: string | null
         }
         Insert: {
-          bonus: number
           created_at?: string | null
           id?: number
           label?: string | null
           name: string
-          skill_name: string
           updated_at?: string | null
         }
         Update: {
-          bonus?: number
           created_at?: string | null
           id?: number
           label?: string | null
           name?: string
-          skill_name?: string
           updated_at?: string | null
         }
         Relationships: []
       }
       spell: {
         Row: {
-          casting_time: string | null
           created_at: string | null
           description: string | null
-          duration: string | null
           id: number
           label: string | null
-          level: number | null
           name: string
-          school: string | null
-          spell_range: string | null
-          target: string | null
+          source: string | null
           updated_at: string | null
         }
         Insert: {
-          casting_time?: string | null
           created_at?: string | null
           description?: string | null
-          duration?: string | null
           id?: number
           label?: string | null
-          level?: number | null
           name: string
-          school?: string | null
-          spell_range?: string | null
-          target?: string | null
+          source?: string | null
           updated_at?: string | null
         }
         Update: {
-          casting_time?: string | null
           created_at?: string | null
           description?: string | null
-          duration?: string | null
           id?: number
           label?: string | null
-          level?: number | null
           name?: string
-          school?: string | null
-          spell_range?: string | null
-          target?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_casting_time: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_casting_time_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          spell_casting_time_id: number
+          spell_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          spell_casting_time_id: number
+          spell_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          spell_casting_time_id?: number
+          spell_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_casting_time_mapping_spell_casting_time_id_fkey"
+            columns: ["spell_casting_time_id"]
+            isOneToOne: false
+            referencedRelation: "spell_casting_time"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_casting_time_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_component: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          description: string | null
+          id: number
+          type_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          type_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          type_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_component_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "spell_component_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_component_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          spell_component_id: number
+          spell_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          spell_component_id: number
+          spell_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          spell_component_id?: number
+          spell_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_component_mapping_spell_component_id_fkey"
+            columns: ["spell_component_id"]
+            isOneToOne: false
+            referencedRelation: "spell_component"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_component_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_component_type: {
+        Row: {
+          abbreviation: string | null
+          created_at: string | null
+          description: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          abbreviation?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          abbreviation?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          label?: string | null
+          name?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -1975,6 +2417,620 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      spell_duration: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_duration_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          spell_duration_id: number
+          spell_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          spell_duration_id: number
+          spell_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          spell_duration_id?: number
+          spell_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_duration_mapping_spell_duration_id_fkey"
+            columns: ["spell_duration_id"]
+            isOneToOne: false
+            referencedRelation: "spell_duration"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_duration_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_list: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_list_class_feature_benefit_mapping: {
+        Row: {
+          class_feature_benefit_id: number
+          created_at: string | null
+          id: number
+          spell_list_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          class_feature_benefit_id: number
+          created_at?: string | null
+          id?: number
+          spell_list_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          class_feature_benefit_id?: number
+          created_at?: string | null
+          id?: number
+          spell_list_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_list_class_feature_benefit__class_feature_benefit_id_fkey"
+            columns: ["class_feature_benefit_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature_benefit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_list_class_feature_benefit_mapping_spell_list_id_fkey"
+            columns: ["spell_list_id"]
+            isOneToOne: false
+            referencedRelation: "spell_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_list_feat_mapping: {
+        Row: {
+          created_at: string | null
+          feat_id: number
+          id: number
+          spell_list_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feat_id: number
+          id?: number
+          spell_list_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feat_id?: number
+          id?: number
+          spell_list_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_list_feat_mapping_feat_id_fkey"
+            columns: ["feat_id"]
+            isOneToOne: false
+            referencedRelation: "feat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_list_feat_mapping_spell_list_id_fkey"
+            columns: ["spell_list_id"]
+            isOneToOne: false
+            referencedRelation: "spell_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_list_spell_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          level: number
+          spell_id: number
+          spell_list_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          level: number
+          spell_id: number
+          spell_list_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          level?: number
+          spell_id?: number
+          spell_list_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_list_spell_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_list_spell_mapping_spell_list_id_fkey"
+            columns: ["spell_list_id"]
+            isOneToOne: false
+            referencedRelation: "spell_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_range: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_range_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          spell_id: number
+          spell_range_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          spell_id: number
+          spell_range_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          spell_id?: number
+          spell_range_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_range_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_range_mapping_spell_range_id_fkey"
+            columns: ["spell_range_id"]
+            isOneToOne: false
+            referencedRelation: "spell_range"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_school: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_school_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          spell_id: number
+          spell_school_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          spell_id: number
+          spell_school_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          spell_id?: number
+          spell_school_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_school_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_school_mapping_spell_school_id_fkey"
+            columns: ["spell_school_id"]
+            isOneToOne: false
+            referencedRelation: "spell_school"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_sorcerer_bloodline_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          level: number
+          sorcerer_bloodline_id: number
+          spell_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          level: number
+          sorcerer_bloodline_id: number
+          spell_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          level?: number
+          sorcerer_bloodline_id?: number
+          spell_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_sorcerer_bloodline_mapping_sorcerer_bloodline_id_fkey"
+            columns: ["sorcerer_bloodline_id"]
+            isOneToOne: false
+            referencedRelation: "sorcerer_bloodline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_sorcerer_bloodline_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_subdomain_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          level: number
+          spell_id: number
+          subdomain_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          level: number
+          spell_id: number
+          subdomain_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          level?: number
+          spell_id?: number
+          subdomain_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_subdomain_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_subdomain_mapping_subdomain_id_fkey"
+            columns: ["subdomain_id"]
+            isOneToOne: false
+            referencedRelation: "subdomain"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_target: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spell_target_mapping: {
+        Row: {
+          created_at: string | null
+          id: number
+          spell_id: number
+          spell_target_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          spell_id: number
+          spell_target_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          spell_id?: number
+          spell_target_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_target_mapping_spell_id_fkey"
+            columns: ["spell_id"]
+            isOneToOne: false
+            referencedRelation: "spell"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spell_target_mapping_spell_target_id_fkey"
+            columns: ["spell_target_id"]
+            isOneToOne: false
+            referencedRelation: "spell_target"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spellcasting_class_feature: {
+        Row: {
+          ability_id: number
+          class_feature_id: number
+          created_at: string | null
+          id: number
+          max_spell_level: number
+          preparation_type: number
+          spellcasting_type: number
+          updated_at: string | null
+        }
+        Insert: {
+          ability_id: number
+          class_feature_id: number
+          created_at?: string | null
+          id?: number
+          max_spell_level: number
+          preparation_type: number
+          spellcasting_type: number
+          updated_at?: string | null
+        }
+        Update: {
+          ability_id?: number
+          class_feature_id?: number
+          created_at?: string | null
+          id?: number
+          max_spell_level?: number
+          preparation_type?: number
+          spellcasting_type?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spellcasting_class_feature_ability_id_fkey"
+            columns: ["ability_id"]
+            isOneToOne: false
+            referencedRelation: "ability"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spellcasting_class_feature_class_feature_id_fkey"
+            columns: ["class_feature_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spellcasting_class_feature_preparation_type_fkey"
+            columns: ["preparation_type"]
+            isOneToOne: false
+            referencedRelation: "spellcasting_preparation_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spellcasting_class_feature_spellcasting_type_fkey"
+            columns: ["spellcasting_type"]
+            isOneToOne: false
+            referencedRelation: "spellcasting_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spellcasting_preparation_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      spellcasting_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subdomain: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       trait: {
         Row: {
@@ -2042,73 +3098,89 @@ export type Database = {
         }
         Relationships: []
       }
-      weapon_proficiency: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-          weapon_name: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-          weapon_name: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-          weapon_name?: string
-        }
-        Relationships: []
-      }
       wild_talent: {
         Row: {
+          associated_blasts: string | null
+          burn: number | null
+          class_id: number | null
           created_at: string | null
-          element_id: number | null
+          description: string | null
           id: number
           label: string | null
+          level: number | null
           name: string
-          spell_level: number | null
-          type: string | null
+          saving_throw: string | null
           updated_at: string | null
+          wild_talent_type_id: number | null
         }
         Insert: {
+          associated_blasts?: string | null
+          burn?: number | null
+          class_id?: number | null
           created_at?: string | null
-          element_id?: number | null
+          description?: string | null
           id?: number
           label?: string | null
+          level?: number | null
           name: string
-          spell_level?: number | null
-          type?: string | null
+          saving_throw?: string | null
           updated_at?: string | null
+          wild_talent_type_id?: number | null
         }
         Update: {
+          associated_blasts?: string | null
+          burn?: number | null
+          class_id?: number | null
           created_at?: string | null
-          element_id?: number | null
+          description?: string | null
           id?: number
           label?: string | null
+          level?: number | null
           name?: string
-          spell_level?: number | null
-          type?: string | null
+          saving_throw?: string | null
           updated_at?: string | null
+          wild_talent_type_id?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "wild_talent_element_id_fkey"
-            columns: ["element_id"]
+            foreignKeyName: "wild_talent_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: "element"
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wild_talent_wild_talent_type_id_fkey"
+            columns: ["wild_talent_type_id"]
+            isOneToOne: false
+            referencedRelation: "wild_talent_type"
             referencedColumns: ["id"]
           },
         ]
+      }
+      wild_talent_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

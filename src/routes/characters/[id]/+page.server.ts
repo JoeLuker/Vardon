@@ -1,6 +1,9 @@
 // FILE: src/routes/characters/[id]/+page.ts
 import { error } from '@sveltejs/kit';
-import { getCompleteCharacter } from '$lib/db/getCompleteCharacter';
+import { GameRulesAPI } from '$lib/db';
+import { supabase } from '$lib/db/supabaseClient';
+
+const gameRules = new GameRulesAPI(supabase);
 
 export async function load({ params }) {
 	try {
@@ -10,18 +13,16 @@ export async function load({ params }) {
 			throw error(400, 'Invalid character ID');
 		}
 
-		// Get initial character data
-		const character = await getCompleteCharacter(numericId);
+		// Get complete character data using the GameRulesAPI
+		const character = await gameRules.getCompleteCharacterData(numericId);
 		
 		if (!character) {
 			throw error(404, 'Character not found');
 		}
 
-		// Instead of returning the enriched character directly,
-		// we'll return just the raw data and do the enrichment on the client
 		return {
 			id: numericId,
-			rawCharacter: character  // Just the plain data, no methods
+			rawCharacter: character  // Complete character data
 		};
 	} catch (err) {
 		// If it's already a SvelteKit error, rethrow it

@@ -7,10 +7,10 @@
  *****************************************************************************/
 
 import { writable } from 'svelte/store';
-import { gameCharacterApi } from '$lib/db';
-import { getCompleteCharacter, type CompleteCharacter } from '$lib/db/getCompleteCharacter';
+import { GameRulesAPI, type CompleteCharacter } from '$lib/db';
+import { supabase } from '$lib/db/supabaseClient';
 
-/** Holds an array of loaded characters. */
+const rules = new GameRulesAPI(supabase);
 const characterList = writable<CompleteCharacter[]>([]);
 export { characterList };
 
@@ -20,13 +20,12 @@ let watchersInitialized = false;
  * Load ALL characters from DB, storing them in `characterList`.
  */
 export async function loadAllCharacters() {
-	const rawRows = await gameCharacterApi.getAllRows(); // raw from DB
-	const tasks = rawRows.map((row) => getCompleteCharacter(row.id));
-	const fetched = await Promise.all(tasks);
+	const characters = await rules.getAllGameCharacter();
+	if (!characters) return;
 
-	// filter out null
-	const results = fetched.filter(Boolean) as CompleteCharacter[];
-	characterList.set(results);
+	const characterIds = characters.map(char => char.id);
+	const completeChars = await rules.getMultipleCompleteCharacterData(characterIds);
+	characterList.set(completeChars.map(removeTimestamps));
 }
 
 /**
@@ -35,16 +34,37 @@ export async function loadAllCharacters() {
  */
 export function initMultiCharWatchers() {
 	if (watchersInitialized) return;
-
-	// Watch `characters` table
-	gameCharacterApi.startWatch(handleCharactersChange);
+	rules.watchGameCharacter(handleCharactersChange);
 	watchersInitialized = true;
 }
 
 export function cleanupMultiCharWatchers() {
 	if (!watchersInitialized) return;
-	gameCharacterApi.stopWatch();
+	rules.stopWatchGameCharacter();
 	watchersInitialized = false;
+}
+
+/** Recursively removes created_at and updated_at fields from an object */
+function removeTimestamps<T>(obj: T): T {
+	if (!obj || typeof obj !== 'object') {
+		return obj;
+	}
+
+	if (Array.isArray(obj)) {
+		return obj.map(removeTimestamps) as T;
+	}
+
+	const cleaned = { ...obj };
+	delete (cleaned as any)['created_at'];
+	delete (cleaned as any)['updated_at'];
+
+	for (const key in cleaned) {
+		if (cleaned[key] && typeof cleaned[key] === 'object') {
+			cleaned[key] = removeTimestamps(cleaned[key]);
+		}
+	}
+
+	return cleaned;
 }
 
 /** Called by watchers on insert/update. Do partial update if possible. */
@@ -54,29 +74,20 @@ async function handleCharactersChange(type: 'insert' | 'update' | 'delete', row:
 		return;
 	}
 
-	if (type === 'update') {
-		characterList.update(list => {
-			const idx = list.findIndex(c => c.id === row.id);
-			if (idx >= 0) {
-				// Patch just the main fields that can change
-				list[idx] = {
-					...list[idx],
-					name: row.name,
-					label: row.label,
-					current_hp: row.current_hp,
-					max_hp: row.max_hp
-				};
-			}
-			return list;
-		});
-		return;
-	}
+	const newChar = await rules.getCompleteCharacterData(row.id);
+	if (!newChar) return;
 
-	// For inserts or if update failed, fetch the whole character
-	const newChar = await getCompleteCharacter(row.id);
-	if (newChar) {
-		characterList.update(list => [...list, newChar]);
-	}
+	const cleanedChar = removeTimestamps(newChar);
+
+	characterList.update(list => {
+		const idx = list.findIndex(c => c.id === row.id);
+		if (idx >= 0) {
+			list[idx] = cleanedChar;
+			return list;
+		} else {
+			return [...list, cleanedChar];
+		}
+	});
 }
 
 /**

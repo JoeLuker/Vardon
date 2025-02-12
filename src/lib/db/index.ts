@@ -1,6 +1,3 @@
-export * from './references';
-export * from './utils';
-export * from './getCompleteCharacter';
-export * from './getGameRulesData';
-
+export * from './gameRules.api';
+export * from './supabaseClient';
 export type { RealtimeChannel } from '@supabase/supabase-js';

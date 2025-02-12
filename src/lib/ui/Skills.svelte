@@ -6,10 +6,11 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
-	import type { GameRulesData, SkillRow, AbilityRow } from '$lib/db';
+	import type { GameRulesAPI } from '$lib/db/gameRules.api';
+	import type { GameCharacterSkillRank } from '$lib/db/gameRules.api';
 	import _ from 'lodash';
 
-	interface ProcessedSkill {
+	interface ProcessedSkill {	
 		id: number;
 		name: string;
 		label: string;
@@ -36,11 +37,6 @@
 		previousState?: Array<number>;
 	}
 
-	// Define the type for skillsWithRanks
-	interface SkillRankData {
-		skillId: number;
-		ranksByLevel: number[];
-	}
 
 	let { 
 		character, 
@@ -49,7 +45,7 @@
 		onUpdateDB = async (_changes: any) => {} 
 	} = $props<{
 		character?: EnrichedCharacter | null;
-		rules?: GameRulesData | null;
+		rules?: GameRulesAPI | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 		onUpdateDB?: (changes: any) => Promise<void>;
 	}>();
@@ -65,49 +61,49 @@
 		Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1)
 	);
 
-	function processSkill(skillId: string, skillData: ValueWithBreakdown): ProcessedSkill | null {
-		if (!rules || !('modifiers' in skillData)) return null;
 
-		const baseSkill = rules.rules.skillRows.find((s: SkillRow) => s.id === parseInt(skillId));
-		if (!baseSkill) return null;
-
-		const ability = rules.rules.abilityRows.find((a: AbilityRow) => a.id === baseSkill.ability_id);
-		const abilityName = skillData.overrides?.ability?.override ?? ability?.label ?? 'Unknown';
-
-		const ranks = character?.skillRanks?.filter((sr: { base: { id: number } }) => sr.base.id === parseInt(skillId)).length ?? 0;
-		
-		const skillWithRanks = character?.skillsWithRanks?.find((s: SkillRankData) => s.skillId === parseInt(skillId));
-
-		const overrides = skillData.overrides;
-
-		const processed = {
-			id: parseInt(skillId),
-			name: baseSkill.name,
-			label: baseSkill.label ?? baseSkill.name,
-			ability: abilityName,
-			total: skillData.total,
-			ranks,
-			trainedOnly: baseSkill.trained_only ?? false,
-			isClassSkill: skillWithRanks?.isClassSkill ?? false,
-			ranksByLevel: skillWithRanks?.ranksByLevel ?? [],
-			overrides
-		};
-
-		return processed;
-	}
-
-	let skillsByAbility = $derived.by(() => {
-		if (!character?.skills) return {};
+	let skillsByAbilityPromise = $derived.by(async () => {
+		if (!rules || !character) return {};
 
 		const result: Record<string, ProcessedSkill[]> = {};
+		const allSkills = await rules.getAllSkill();
+		
+		for (const baseSkill of allSkills) {
+			try {
+				const skillId = baseSkill.id;
+				const skillData = character.skills[skillId];  // Use the pre-calculated skill data
+				
+				if (!skillData) continue;  // Skip if no skill data exists
 
-		for (const [skillId, skillData] of Object.entries(character.skills)) {
-			const processed = processSkill(skillId, skillData as ValueWithBreakdown);
-			if (!processed) continue;
+				const ability = await rules.getAbilityById(baseSkill.ability_id);
+				const abilityName = skillData.overrides?.ability?.override ?? 
+					ability?.label ?? 'Unknown';
 
-			const { ability } = processed;
-			if (!result[ability]) result[ability] = [];
-			result[ability].push(processed);
+				const skillWithRanks = character.skillsWithRanks?.find(
+					(s: { skillId: number; }) => s.skillId === baseSkill.id
+				);
+
+				const processed: ProcessedSkill = {
+					id: baseSkill.id,
+					name: baseSkill.name,
+					label: baseSkill.label,
+					ability: abilityName,
+					total: skillData.total,
+					ranks: character.game_character_skill_rank?.filter(
+						(sr: GameCharacterSkillRank) => sr.skill_id === baseSkill.id
+					).length ?? 0,
+					trainedOnly: skillData.overrides?.trained_only ?? baseSkill.trained_only,
+					isClassSkill: skillWithRanks?.isClassSkill ?? false,
+					ranksByLevel: skillWithRanks?.skillRanks?.map((sr: { rank: any; }) => sr.rank) ?? [],
+					overrides: skillData.overrides
+				};
+
+				if (!result[abilityName]) result[abilityName] = [];
+				result[abilityName].push(processed);
+			} catch (error) {
+				console.error(`Error processing skill ${baseSkill.id}:`, error);
+				continue;
+			}
 		}
 
 		// Sort skills within each ability
@@ -118,11 +114,6 @@
 		return result;
 	});
 
-	let alphabeticalSkills = $derived.by(() => {
-		return Object.values(skillsByAbility)
-			.flat()
-			.sort((a, b) => a.name.localeCompare(b.name));
-	});
 
 	function isSkillUnusable(skill: ProcessedSkill): boolean {
 		const effectiveTrainedOnly = skill.overrides?.trained_only ?? skill.trainedOnly;
@@ -142,8 +133,9 @@
 		if (operationInProgress) return;
 		if (!character) return;
 		
-		const skillData = character.skillsWithRanks?.find((s: SkillRankData) => s.skillId === skillId);
-		const hasRank = skillData?.ranksByLevel.includes(level) ?? false;
+		const hasRank = character.game_character_skill_rank?.some(
+			(rank: GameCharacterSkillRank) => rank.skill_id === skillId && rank.applied_at_level === level
+		) ?? false;
 		
 		// Validate the operation
 		if (!hasRank) {
@@ -160,19 +152,17 @@
 			skillId,
 			level,
 			type: hasRank ? 'remove' : 'add',
-			previousState: skillData ? skillData.ranksByLevel : []
+			previousState: character.game_character_skill_rank
+				?.filter((rank: GameCharacterSkillRank) => rank.skill_id === skillId)
+				?.map((rank: GameCharacterSkillRank) => rank.applied_at_level) ?? []
 		};
 
 		try {
 			operationInProgress = operation;
-			applySkillUpdate(operation);
 			await onUpdateDB(operation);
 			operationInProgress = null;
 			error = null;
 		} catch (err) {
-			if (skillData && operation.previousState) {
-				skillData.ranksByLevel = operation.previousState;
-			}
 			console.error('Failed skill update:', err);
 			error = 'Failed to update skill rank. Please try again.';
 			setTimeout(() => error = null, 3000);
@@ -181,29 +171,19 @@
 		}
 	}
 
-	function applySkillUpdate(operation: UpdateOperation) {
-		if (!character) return;
-
-		const skillData = character.skillsWithRanks?.find((s: SkillRankData) => s.skillId === operation.skillId);
-		if (!skillData) return;
-
-		// Update the skill ranks optimistically
-		if (operation.type === 'add') {
-			skillData.ranksByLevel.push(operation.level);
-			
-			// Update remaining skill points
-			if (character.skillPoints?.remaining) {
-				character.skillPoints.remaining[operation.level]--;
-			}
-		} else {
-			skillData.ranksByLevel = skillData.ranksByLevel.filter((l: number) => l !== operation.level);
-			
-			// Update remaining skill points
-			if (character.skillPoints?.remaining) {
-				character.skillPoints.remaining[operation.level]++;
-			}
-		}
-	}
+	$effect(() => {
+		console.log('Skill Points:', {
+			total: Object.fromEntries(Object.entries(character?.skillPoints?.total ?? {})),
+			remaining: Object.fromEntries(Object.entries(character?.skillPoints?.remaining ?? {})),
+			levelNumbers,
+			ranksByLevel: levelNumbers.map(level => ({
+				level,
+				ranks: character?.game_character_skill_rank?.filter(
+					(rank: GameCharacterSkillRank) => rank.applied_at_level === level
+				)
+			}))
+		});
+	});
 </script>
 
 <div class="skills-container">
@@ -255,13 +235,29 @@
 				<Card.Content class="py-3">
 					<div class="skill-points-grid">
 						{#each levelNumbers as level}
+							{@const totalPoints = character?.skillPoints?.total[level]?.total ?? 0}
+							{@const remainingPoints = character?.skillPoints?.remaining[level] ?? 0}
+							{@const ranksAtLevel = character?.game_character_skill_rank?.filter(
+								(rank: GameCharacterSkillRank) => rank.applied_at_level === level
+							) ?? []}
+							
 							<button 
 								class="flex flex-col items-center px-2 py-1 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
-								onclick={() => onSelectValue?.(character.skillPoints.total[level])}
+								onclick={() => onSelectValue?.({
+									level,
+									total: totalPoints,
+									remaining: remainingPoints,
+									ranks: ranksAtLevel
+								})}
 								type="button"
 							>
 								<span class="text-xs text-muted-foreground">Level {level}</span>
-								<span class="font-medium text-primary">{character.skillPoints.remaining[level] ?? 0}/{character.skillPoints.total[level].total ?? 0}</span>
+								<span class="font-medium text-primary">
+									{remainingPoints}/{totalPoints}
+								</span>
+								<span class="text-xs text-muted-foreground">
+									{ranksAtLevel.length} skills
+								</span>
 							</button>
 						{/each}
 					</div>
@@ -275,65 +271,77 @@
 					<p class="text-muted-foreground">Loading skills...</p>
 				</div>
 			{:else}
-				<div class="ability-cards">
-					{#each Object.entries(skillsByAbility) as [ability, skills]}
-						<Card.Root>
-							<Card.Header>
-								<Card.Title>{ability.toUpperCase()}</Card.Title>
-							</Card.Header>
-							<Card.Content>
-								<div class="skills-grid">
-									{#each skills.filter(shouldShowSkill) as skill}
-										<button
-											class="skill"
-											class:is-class-skill={skill.isClassSkill}
-											class:unusable={isSkillUnusable(skill)}
-											onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
-											type="button"
-										>
-											<div class="skill-info">
-												<span class="skill-name">{skill.label}</span>
-												{#if viewMode === 'alphabetical' || skill.overrides?.ability}
-													<Badge variant="secondary" class="ability-badge">
-														{#if skill.overrides?.ability}
-															<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
-														{/if}
-													</Badge>
-												{/if}
-												<span class="modifier">{formatModifier(skill.total)}</span>
-											</div>
-											
-											{#if showRankAllocation}
-												<div class="rank-grid">
-													{#each levelNumbers as level}
-														{@const hasRank = skill.ranksByLevel.includes(level)}
-														{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
-														<Button
-															variant="outline"
-															size="sm"
-															class="h-8 w-8"
-															disabled={!!operationInProgress || (!hasRank && !canAdd)}
-															onclick={(e) => {
-																e.stopPropagation();
-																handleCellClick(skill.id, level);
-															}}
-														>
-															{#if hasRank}
-																<Circle class="fill-primary stroke-primary" size={16} />
-															{:else}
-																<Circle size={16} />
+				{#await skillsByAbilityPromise}
+					<div class="rounded-md border border-muted p-4">
+						<p class="text-muted-foreground">Loading skills...</p>
+					</div>
+				{:then skills}
+					<div class="ability-cards">
+						{#each Object.entries(skills) as [ability, skillList]}
+							<Card.Root>
+								<Card.Header>
+									<Card.Title>{ability.toUpperCase()}</Card.Title>
+								</Card.Header>
+								<Card.Content>
+									<div class="skills-grid">
+										{#each skillList.filter(shouldShowSkill) as skill}
+											<button
+												class="skill"
+												class:is-class-skill={skill.isClassSkill}
+												class:unusable={isSkillUnusable(skill)}
+												onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
+												type="button"
+											>
+												<div class="skill-info">
+													<span class="skill-name">{skill.label}</span>
+													{#if viewMode === 'alphabetical' || skill.overrides?.ability}
+														<Badge variant="secondary" class="ability-badge">
+															{#if skill.overrides?.ability}
+																<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
 															{/if}
-														</Button>
-													{/each}
+														</Badge>
+													{/if}
+													<span class="modifier">{formatModifier(skill.total)}</span>
 												</div>
-											{/if}
-										</button>
-									{/each}
-								</div>
-							</Card.Content>
-						</Card.Root>
-					{/each}
-				</div>
+												
+												{#if showRankAllocation}
+													<div class="rank-grid">
+														{#each levelNumbers as level}
+															{@const hasRank = character?.game_character_skill_rank?.some(
+																(rank: GameCharacterSkillRank) => rank.skill_id === skill.id && rank.applied_at_level === level
+															) ?? false}
+															{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
+															<Button
+																variant="outline"
+																size="sm"
+																class="h-8 w-8"
+																disabled={!!operationInProgress || (!hasRank && !canAdd)}
+																onclick={(e: MouseEvent) => {
+																	e.stopPropagation();
+																	handleCellClick(skill.id, level);
+																}}
+															>
+																{#if hasRank}
+																	<Circle class="fill-primary stroke-primary" size={16} />
+																{:else}
+																	<Circle size={16} />
+																{/if}
+															</Button>
+														{/each}
+													</div>
+												{/if}
+											</button>
+										{/each}
+									</div>
+								</Card.Content>
+							</Card.Root>
+						{/each}
+					</div>
+				{:catch error}
+					<div class="rounded-md border border-destructive p-4">
+						<p class="text-destructive">Error loading skills: {error.message}</p>
+					</div>
+				{/await}
 			{/if}
 		</Tabs.Content>
 
@@ -343,61 +351,73 @@
 					<p class="text-muted-foreground">Loading skills...</p>
 				</div>
 			{:else}
-				<Card.Root>
-					<Card.Content>
-						<div class="skills-grid">
-							{#each alphabeticalSkills.filter(shouldShowSkill) as skill}
-								<button
-									class="skill"
-									class:is-class-skill={skill.isClassSkill}
-									class:unusable={isSkillUnusable(skill)}
-									onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
-									type="button"
-								>
-									<div class="skill-info">
-										<span class="skill-name">{skill.label}</span>
-										{#if viewMode === 'alphabetical' || skill.overrides?.ability}
-											<Badge variant="secondary" class="ability-badge">
-												{#if skill.overrides?.ability}
-													{skill.overrides.ability.override.slice(0, 3).toUpperCase()}
-													<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
-												{:else}
-													{skill.ability.slice(0, 3).toUpperCase()}
-												{/if}
-											</Badge>
-										{/if}
-										<span class="modifier">{formatModifier(skill.total)}</span>
-									</div>
-									
-									{#if showRankAllocation}
-										<div class="rank-grid">
-											{#each levelNumbers as level}
-												{@const hasRank = skill.ranksByLevel.includes(level)}
-												{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
-												<Button
-													variant="outline"
-													size="sm"
-													class="h-8 w-8"
-													disabled={!!operationInProgress || (!hasRank && !canAdd)}
-													onclick={(e) => {
-														e.stopPropagation();
-														handleCellClick(skill.id, level);
-													}}
-												>
-													{#if hasRank}
-														<Circle class="fill-primary stroke-primary" size={16} />
+				{#await skillsByAbilityPromise}
+					<div class="rounded-md border border-muted p-4">
+						<p class="text-muted-foreground">Loading skills...</p>
+					</div>
+				{:then skills}
+					<Card.Root>
+						<Card.Content>
+							<div class="skills-grid">
+								{#each Object.values(skills).flat().sort((a, b) => a.name.localeCompare(b.name)).filter(shouldShowSkill) as skill}
+									<button
+										class="skill"
+										class:is-class-skill={skill.isClassSkill}
+										class:unusable={isSkillUnusable(skill)}
+										onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
+										type="button"
+									>
+										<div class="skill-info">
+											<span class="skill-name">{skill.label}</span>
+											{#if viewMode === 'alphabetical' || skill.overrides?.ability}
+												<Badge variant="secondary" class="ability-badge">
+													{#if skill.overrides?.ability}
+														{skill.overrides.ability.override.slice(0, 3).toUpperCase()}
+														<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
 													{:else}
-														<Circle size={16} />
+														{skill.ability.slice(0, 3).toUpperCase()}
 													{/if}
-												</Button>
-											{/each}
+												</Badge>
+											{/if}
+											<span class="modifier">{formatModifier(skill.total)}</span>
 										</div>
-									{/if}
-								</button>
-							{/each}
-						</div>
-					</Card.Content>
-				</Card.Root>
+										
+										{#if showRankAllocation}
+											<div class="rank-grid">
+												{#each levelNumbers as level}
+													{@const hasRank = character?.game_character_skill_rank?.some(
+														(rank: GameCharacterSkillRank) => rank.skill_id === skill.id && rank.applied_at_level === level
+													) ?? false}
+													{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
+													<Button
+														variant="outline"
+														size="sm"
+														class="h-8 w-8"
+														disabled={!!operationInProgress || (!hasRank && !canAdd)}
+														onclick={(e: MouseEvent) => {
+															e.stopPropagation();
+															handleCellClick(skill.id, level);
+														}}
+													>
+														{#if hasRank}
+															<Circle class="fill-primary stroke-primary" size={16} />
+														{:else}
+															<Circle size={16} />
+														{/if}
+													</Button>
+												{/each}
+											</div>
+										{/if}
+									</button>
+								{/each}
+							</div>
+						</Card.Content>
+					</Card.Root>
+				{:catch error}
+					<div class="rounded-md border border-destructive p-4">
+						<p class="text-destructive">Error loading skills: {error.message}</p>
+					</div>
+				{/await}
 			{/if}
 		</Tabs.Content>
 	</Tabs.Root>

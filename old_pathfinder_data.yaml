@@ -1,0 +1,2337 @@
+# =============================================================================
+# 1) METADATA
+# =============================================================================
+metadata:
+  version: '3.0.0'
+  game_system: 'pathfinder_1e'
+  schema_version: '3'
+user_id: &user_id '9c4e4bb1-db8d-41df-b796-b9454622eed2'
+# =============================================================================
+# 2) REFERENCE TABLES => tables
+# =============================================================================
+ability:
+- id: &ability_str_id 401
+  name: 'strength'
+  label: 'Strength'
+  ability_type: 'physical'
+- id: &ability_dex_id 402
+  name: 'dexterity'
+  label: 'Dexterity'
+  ability_type: 'physical'
+- id: &ability_con_id 403
+  name: 'con'
+  label: 'Constitution'
+  ability_type: 'physical'
+- id: &ability_int_id 404
+  name: 'intelligence'
+  label: 'Intelligence'
+  ability_type: 'mental'
+- id: &ability_wis_id 405
+  name: 'wisdom'
+  label: 'Wisdom'
+  ability_type: 'mental'
+- id: &ability_cha_id 406
+  name: 'charisma'
+  label: 'Charisma'
+  ability_type: 'mental'
+bonus_type:
+- id: &bonus_untyped_id 1
+  name: 'untyped'
+  label: 'Untyped'
+  stacking: true
+- id: &bonus_circumstance_id 2
+  name: 'circumstance'
+  label: 'Circumstance'
+  stacking: true
+- id: &bonus_inherent_id 3
+  name: 'inherent'
+  label: 'Inherent'
+- id: &bonus_enhancement_id 4
+  name: 'enhancement'
+  label: 'Enhancement'
+- id: &bonus_morale_id 5
+  name: 'morale'
+  label: 'Morale'
+- id: &bonus_dodge_id 6
+  name: 'dodge'
+  label: 'Dodge'
+  stacking: true
+- id: &bonus_ancestral_id 7
+  name: 'ancestral'
+  label: 'Ancestral'
+- id: &bonus_natural_id 8
+  name: 'natural_armor'
+  label: 'Natural Armor'
+- id: &bonus_trait_id 400
+  name: 'trait'
+  label: 'Trait'
+
+# Add new reference table for legendary gifts
+legendary_gift_type:
+- id: &legendary_gift_ability_id 1300
+  name: 'ability'
+  label: 'Ability Score'
+
+- id: &legendary_gift_armor_id 1301
+  name: 'armor'
+  label: 'Armor'
+
+- id: &legendary_gift_body_id 1302
+  name: 'body'
+  label: 'Physical Abilities'
+
+- id: &legendary_gift_mind_id 1303
+  name: 'mind'
+  label: 'Mental Abilities'
+
+- id: &legendary_gift_shield_id 1304
+  name: 'shield'
+  label: 'Shield'
+
+- id: &legendary_gift_weapons_id 1305
+  name: 'weapons'
+  label: 'Weapons'
+
+abp_bonus_type:
+- id: &abp_resistance_id 16
+  name: 'resistance'
+  label: 'Resistance'
+- id: &abp_armor_attunement_id 17
+  name: 'armor_attunement'
+  label: 'Armor Attunement'
+- id: &abp_weapon_attunement_id 18
+  name: 'attunement'
+  label: 'Weapon Attunement'
+- id: &abp_deflection_id 19
+  name: 'deflection'
+  label: 'Deflection'
+- id: &abp_mental_prowess_int_id 20
+  name: 'mental_prowess_int'
+  label: 'Mental Prowess (Int)'
+- id: &abp_mental_prowess_wis_id 21
+  name: 'mental_prowess_wis'
+  label: 'Mental Prowess (Wis)'
+- id: &abp_mental_prowess_cha_id 22
+  name: 'mental_prowess_cha'
+  label: 'Mental Prowess (Cha)'
+- id: &abp_physical_prowess_str_id 23
+  name: 'physical_prowess_str'
+  label: 'Physical Prowess (Str)'
+- id: &abp_physical_prowess_dex_id 24
+  name: 'physical_prowess_dex'
+  label: 'Physical Prowess (Dex)'
+- id: &abp_physical_prowess_con_id 25
+  name: 'physical_prowess_con'
+  label: 'Physical Prowess (Con)'
+- id: &abp_toughening_id 26
+  name: 'toughening'
+  label: 'Toughening'
+
+# Add the legendary gift bonus types here
+- id: &legendary_gift_ability_bonus_id 1300
+  name: 'ability_bonus'
+  label: 'Legendary Gift (Ability)'
+
+- id: &legendary_gift_armor_bonus_id 1301
+  name: 'armor_bonus'
+  label: 'Legendary Gift (Armor)'
+
+- id: &legendary_gift_body_bonus_id 1302
+  name: 'body_bonus'
+  label: 'Legendary Gift (Body)'
+
+- id: &legendary_gift_mind_bonus_id 1303
+  name: 'mind_bonus'
+  label: 'Legendary Gift (Mind)'
+
+- id: &legendary_gift_shield_bonus_id 1304
+  name: 'shield_bonus'
+  label: 'Legendary Gift (Shield)'
+
+- id: &legendary_gift_weapons_bonus_id 1305
+  name: 'weapons_bonus'
+  label: 'Legendary Gift (Weapons)'
+
+# Level-based progression groups
+abp_node_group:
+- id: &group_level_3_id 1100
+  name: 'level_3_progression'
+  label: 'Level 3 Bonuses'
+  level: 3
+  requires_choice: false
+
+- id: &group_level_4_id 1101
+  name: 'level_4_progression'
+  label: 'Level 4 Bonuses'
+  level: 4
+  requires_choice: false
+
+- id: &group_level_6_id 1102
+  name: 'level_6_mental_prowess'
+  label: 'Level 6 Mental Prowess'
+  level: 6
+  requires_choice: true
+
+- id: &group_level_7_id 1103
+  name: 'level_7_physical_prowess'
+  label: 'Level 7 Physical Prowess'
+  level: 7
+  requires_choice: true
+
+- id: &group_level_5_id 1104
+  name: 'level_5_deflection'
+  label: 'Level 5 Deflection'
+  level: 5
+  requires_choice: false
+
+- id: &group_level_8_id 1105
+  name: 'level_8_progression'
+  label: 'Level 8 Bonuses'
+  level: 8
+  requires_choice: false
+
+- id: &group_level_9_id 1106
+  name: 'level_9_progression'
+  label: 'Level 9 Bonuses'
+  level: 9
+  requires_choice: false
+
+- id: &group_level_10_id 1107
+  name: 'level_10_progression'
+  label: 'Level 10 Bonuses'
+  level: 10
+  requires_choice: false
+
+- id: &group_level_11_id 1108
+  name: 'level_11_mental'
+  label: 'Level 11 Mental Increase'
+  level: 11
+  requires_choice: false
+
+- id: &group_level_12_id 1109
+  name: 'level_12_physical'
+  label: 'Level 12 Physical Increase'
+  level: 12
+  requires_choice: false
+
+- id: &group_level_13_id 1110
+  name: 'level_13_progression'
+  label: 'Level 13 Bonuses'
+  level: 13
+  requires_choice: false
+
+- id: &group_level_14_id 1111
+  name: 'level_14_attunement'
+  label: 'Level 14 Attunement Choice'
+  level: 14
+  requires_choice: true
+
+- id: &group_level_15_id 1112
+  name: 'level_15_progression'
+  label: 'Level 15 Bonuses'
+  level: 15
+  requires_choice: false
+
+- id: &group_level_16_id 1113
+  name: 'level_16_progression'
+  label: 'Level 16 Bonuses'
+  level: 16
+  requires_choice: false
+
+- id: &group_level_17_id 1114
+  name: 'level_17_progression'
+  label: 'Level 17 Bonuses'
+  level: 17
+  requires_choice: false
+
+- id: &group_level_18_id 1115
+  name: 'level_18_progression'
+  label: 'Level 18 Bonuses'
+  level: 18
+  requires_choice: false
+
+- id: &group_level_19_id 1116
+  name: 'level_19_legendary'
+  label: 'Level 19 Legendary Gifts'
+  level: 19
+  requires_choice: true
+
+abp_node:
+# Level 3
+- id: &resistance_1_node_id 1200
+  group_id: *group_level_3_id
+  name: 'resistance_1'
+  label: 'Resistance +1'
+  description: 'Gain a +1 resistance bonus on all saving throws'
+  requires_choice: false
+
+# Level 4
+- id: &attunement_1_node_id 1201
+  group_id: *group_level_4_id
+  name: 'basic_attunement'
+  label: 'Basic Attunement'
+  description: '+1 enhancement bonus to armor/weapons'
+  requires_choice: false
+
+# Level 6 Mental Choices
+- id: &mental_prowess_int_node_id 1202
+  group_id: *group_level_6_id
+  name: 'mental_prowess_intelligence'
+  label: 'Mental Prowess (Intelligence)'
+  description: 'First mental ability score increases by 2'
+  requires_choice: true
+
+- id: &mental_prowess_wis_node_id 1203
+  group_id: *group_level_6_id
+  name: 'mental_prowess_wisdom'
+  label: 'Mental Prowess (Wisdom)'
+  description: 'First mental ability score increases by 2'
+  requires_choice: true
+
+- id: &mental_prowess_cha_node_id 1204
+  group_id: *group_level_6_id
+  name: 'mental_prowess_charisma'
+  label: 'Mental Prowess (Charisma)'
+  description: 'First mental ability score increases by 2'
+  requires_choice: true
+
+# Level 7 Physical Choices
+- id: &physical_prowess_str_node_id 1205
+  group_id: *group_level_7_id
+  name: 'physical_prowess_strength'
+  label: 'Physical Prowess (Strength)'
+  description: 'First physical ability score increases by 2'
+  requires_choice: true
+
+- id: &physical_prowess_dex_node_id 1206
+  group_id: *group_level_7_id
+  name: 'physical_prowess_dexterity'
+  label: 'Physical Prowess (Dexterity)'
+  description: 'First physical ability score increases by 2'
+  requires_choice: true
+
+- id: &physical_prowess_con_node_id 1207
+  group_id: *group_level_7_id
+  name: 'physical_prowess_constitution'
+  label: 'Physical Prowess (Constitution)'
+  description: 'First physical ability score increases by 2'
+  requires_choice: true
+
+# Level 5
+- id: &deflection_1_node_id 1208
+  group_id: *group_level_5_id
+  name: 'deflection_1'
+  label: 'Deflection +1'
+  description: 'Gain a +1 deflection bonus to AC'
+  requires_choice: false
+
+# Level 8
+- id: &level_8_node_id 1209
+  group_id: *group_level_8_id
+  name: 'level_8_bonuses'
+  label: 'Level 8 Bonuses'
+  description: 'Resistance +2, Toughening +1, Split Armor/Weapon +1/+1'
+  requires_choice: false
+
+# Level 9
+- id: &level_9_node_id 1210
+  group_id: *group_level_9_id
+  name: 'level_9_attunement'
+  label: 'Enhanced Attunement'
+  description: '+2 enhancement bonus to armor/weapons'
+  requires_choice: false
+
+# Level 10
+- id: &level_10_node_id 1211
+  group_id: *group_level_10_id
+  name: 'level_10_bonuses'
+  label: 'Level 10 Bonuses'
+  description: 'Deflection +2, Resistance +3'
+  requires_choice: false
+
+# Level 11
+- id: &level_11_node_id 1212
+  group_id: *group_level_11_id
+  name: 'level_11_mental'
+  label: 'Enhanced Mental Prowess'
+  description: 'First mental ability score increases to +4'
+  requires_choice: false
+
+# Level 12
+- id: &level_12_node_id 1213
+  group_id: *group_level_12_id
+  name: 'level_12_physical'
+  label: 'Enhanced Physical Prowess'
+  description: 'First physical ability score increases to +4'
+  requires_choice: false
+
+# Level 13
+- id: &level_13_node_id 1214
+  group_id: *group_level_13_id
+  name: 'level_13_bonuses'
+  label: 'Level 13 Bonuses'
+  description: 'Resistance +4, Toughening +2'
+  requires_choice: false
+
+# Level 14 Split/Single Choice
+- id: &level_14_armor_split_node_id 1215
+  group_id: *group_level_14_id
+  name: 'level_14_armor_split'
+  label: 'Split Armor Attunement'
+  description: '+2/+2 enhancement bonus to armor and shield'
+  requires_choice: true
+
+- id: &level_14_armor_single_node_id 1216
+  group_id: *group_level_14_id
+  name: 'level_14_armor_single'
+  label: 'Single Armor Attunement'
+  description: '+3 enhancement bonus to armor or shield'
+  requires_choice: true
+
+- id: &level_14_weapon_split_node_id 1217
+  group_id: *group_level_14_id
+  name: 'level_14_weapon_split'
+  label: 'Split Weapon Attunement'
+  description: '+2/+2 enhancement bonus to two weapons'
+  requires_choice: true
+
+- id: &level_14_weapon_single_node_id 1218
+  group_id: *group_level_14_id
+  name: 'level_14_weapon_single'
+  label: 'Single Weapon Attunement'
+  description: '+3 enhancement bonus to one weapon'
+  requires_choice: true
+
+# Level 19 Legendary Gifts
+- id: &legendary_ability_node_id 1219
+  group_id: *group_level_19_id
+  name: 'legendary_ability'
+  label: 'Legendary Ability'
+  description: '+1 inherent bonus to any ability score'
+  requires_choice: true
+
+- id: &legendary_armor_node_id 1220
+  group_id: *group_level_19_id
+  name: 'legendary_armor'
+  label: 'Legendary Armor'
+  description: '+2 enhancement bonus to armor attunement'
+  requires_choice: true
+
+- id: &legendary_body_node_id 1221
+  group_id: *group_level_19_id
+  name: 'legendary_body'
+  label: 'Legendary Body'
+  description: 'Increase physical prowess to +6/+6/+4'
+  requires_choice: true
+
+- id: &legendary_mind_node_id 1222
+  group_id: *group_level_19_id
+  name: 'legendary_mind'
+  label: 'Legendary Mind'
+  description: 'Increase mental prowess to +6/+6/+4'
+  requires_choice: true
+
+- id: &legendary_shield_node_id 1223
+  group_id: *group_level_19_id
+  name: 'legendary_shield'
+  label: 'Legendary Shieldmaster'
+  description: '+5 enhancement bonus to both armor and shield'
+  requires_choice: true
+
+- id: &legendary_weapons_node_id 1224
+  group_id: *group_level_19_id
+  name: 'legendary_weapons'
+  label: 'Legendary Twin Weapons'
+  description: '+5 enhancement bonus to two weapons'
+  requires_choice: true
+
+# Actual bonus values
+abp_node_bonus:
+# Level 3 Resistance
+- id: 1
+  node_id: *resistance_1_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 1
+  target_specifier: null
+
+# Level 4 Basic Attunement
+- id: 2
+  node_id: *attunement_1_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 1
+  target_specifier: 'armor'
+
+- id: 3
+  node_id: *attunement_1_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 1
+  target_specifier: 'weapon'
+
+# Level 6 Mental Prowess Options
+- id: 4
+  node_id: *mental_prowess_int_node_id
+  bonus_type_id: *abp_mental_prowess_int_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 5
+  node_id: *mental_prowess_wis_node_id
+  bonus_type_id: *abp_mental_prowess_wis_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 6
+  node_id: *mental_prowess_cha_node_id
+  bonus_type_id: *abp_mental_prowess_cha_id
+  value: 2
+  target_specifier: 'first'
+
+# Level 7 Physical Prowess Options
+- id: 7
+  node_id: *physical_prowess_str_node_id
+  bonus_type_id: *abp_physical_prowess_str_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 8
+  node_id: *physical_prowess_dex_node_id
+  bonus_type_id: *abp_physical_prowess_dex_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 9
+  node_id: *physical_prowess_con_node_id
+  bonus_type_id: *abp_physical_prowess_con_id
+  value: 2
+  target_specifier: 'first'
+
+# Level 5 Deflection
+- id: 10
+  node_id: *deflection_1_node_id
+  bonus_type_id: *abp_deflection_id
+  value: 1
+  target_specifier: null
+
+# Level 8 Bonuses
+- id: 11
+  node_id: *level_8_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 2
+  target_specifier: null
+
+- id: 12
+  node_id: *level_8_node_id
+  bonus_type_id: *abp_toughening_id
+  value: 1
+  target_specifier: null
+
+# Level 9 Bonuses
+- id: 15
+  node_id: *level_9_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 2
+  target_specifier: null
+
+- id: 16
+  node_id: *level_9_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 2
+  target_specifier: null
+
+# Level 10 Bonuses
+- id: 17
+  node_id: *level_10_node_id
+  bonus_type_id: *abp_deflection_id
+  value: 2
+  target_specifier: null
+
+- id: 18
+  node_id: *level_10_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 3
+  target_specifier: null
+
+# Level 11 Mental Increase
+- id: 19
+  node_id: *level_11_node_id
+  bonus_type_id: *abp_mental_prowess_int_id
+  value: 4
+  target_specifier: 'first'
+
+# Level 12 Physical Increase
+- id: 20
+  node_id: *level_12_node_id
+  bonus_type_id: *abp_physical_prowess_str_id
+  value: 4
+  target_specifier: 'first'
+
+# Level 13 Bonuses
+- id: 21
+  node_id: *level_13_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 4
+  target_specifier: null
+
+- id: 22
+  node_id: *level_13_node_id
+  bonus_type_id: *abp_toughening_id
+  value: 2
+  target_specifier: null
+
+# Level 14 Split/Single Options
+- id: 23
+  node_id: *level_14_armor_split_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 2
+  target_specifier: 'split'
+
+- id: 24
+  node_id: *level_14_armor_single_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 3
+  target_specifier: 'single'
+
+- id: 25
+  node_id: *level_14_weapon_split_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 2
+  target_specifier: 'split'
+
+- id: 26
+  node_id: *level_14_weapon_single_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 3
+  target_specifier: 'single'
+
+# Level 19 Legendary Gift Bonuses
+- id: 40
+  node_id: *legendary_ability_node_id
+  bonus_type_id: *legendary_gift_ability_id
+  value: 1
+  target_specifier: 'any'
+
+- id: 41
+  node_id: *legendary_armor_node_id
+  bonus_type_id: *legendary_gift_armor_id
+  value: 2
+  target_specifier: null
+
+- id: 42
+  node_id: *legendary_body_node_id
+  bonus_type_id: *legendary_gift_body_id
+  value: 6
+  target_specifier: 'physical'
+
+- id: 43
+  node_id: *legendary_mind_node_id
+  bonus_type_id: *legendary_gift_mind_id
+  value: 6
+  target_specifier: 'mental'
+
+- id: 44
+  node_id: *legendary_shield_node_id
+  bonus_type_id: *legendary_gift_shield_id
+  value: 5
+  target_specifier: 'dual'
+
+- id: 45
+  node_id: *legendary_weapons_node_id
+  bonus_type_id: *legendary_gift_weapons_id
+  value: 5
+  target_specifier: 'dual'
+
+favored_class_choice:
+- id: &favored_hp_id 25
+  name: 'hp'
+  label: 'Hit Points'
+- id: &favored_skill_id 26
+  name: 'skill'
+  label: 'Skill Ranks'
+- id: &favored_other_id 27
+  name: 'other'
+  label: 'Other'
+# =============================================================================
+# 3) BASE TABLES
+# =============================================================================
+spell:
+- id: &spell_cure_light_wounds_id 1000
+  name: 'cure_light_wounds'
+  label: 'Cure Light Wounds'
+  level: 1
+  school: 'healing'
+  casting_time: '1 standard action'
+  spell_range: 'touch'
+  target: 'creature touched'
+  duration: 'instantaneous'
+
+- id: &spell_shield_id 700
+  name: 'shield'
+  label: 'Shield'
+  level: 1
+- id: &spell_enlarge_person_id 702
+  name: 'enlarge_person'
+  label: 'Enlarge Person'
+- id: &spell_invisibility_id 703
+  name: 'invisibility'
+  label: 'Invisibility'
+- id: &spell_bull_s_strength_id 704
+  name: 'bull_s_strength'
+  label: "Bull's Strength"
+
+spell_consumable:
+- id: &spell_consumable_potion_of_healing_id 1001
+  name: 'potion_of_healing'
+  label: 'Potion of Healing'
+  spell_id: *spell_cure_light_wounds_id
+  caster_level: 1
+  cost: 100
+  weight: 1
+
+equipment:
+- id: &equipment_alchemist_kit_id 603
+  name: 'alchemist_kit'
+  label: 'Alchemist Kit'
+  equippable: true
+  slot: 'other'
+  bonus: 2
+  bonus_type_id: *bonus_circumstance_id
+ancestry:
+- id: &ancestry_tengu_id 119
+  name: 'tengu'
+  label: 'Tengu'
+- id: &ancestry_oread_id 120
+  name: 'oread'
+  label: 'Oread'
+
+# =============================================================================
+# 4) SKILLS
+# =============================================================================
+skill:
+- id: &skill_acrobatics_id 28
+  name: 'acrobatics'
+  label: 'Acrobatics'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_appraise_id 29
+  name: 'appraise'
+  label: 'Appraise'
+  ability_id: *ability_int_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_bluff_id 30
+  name: 'bluff'
+  label: 'Bluff'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_climb_id 31
+  name: 'climb'
+  label: 'Climb'
+  ability_id: *ability_str_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_craft_alchemy_id 32
+  name: 'craft_alchemy'
+  label: 'Craft (Alchemy)'
+  ability_id: *ability_int_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_diplomacy_id 35
+  name: 'diplomacy'
+  label: 'Diplomacy'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_disable_device_id 36
+  name: 'disable_device'
+  label: 'Disable Device'
+  ability_id: *ability_dex_id
+  trained_only: true
+  armor_check_penalty: true
+- id: &skill_disguise_id 37
+  name: 'disguise'
+  label: 'Disguise'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_escape_artist_id 38
+  name: 'escape_artist'
+  label: 'Escape Artist'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_fly_id 39
+  name: 'fly'
+  label: 'Fly'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_handle_animal_id 40
+  name: 'handle_animal'
+  label: 'Handle Animal'
+  ability_id: *ability_cha_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_heal_id 41
+  name: 'heal'
+  label: 'Heal'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_intimidate_id 42
+  name: 'intimidate'
+  label: 'Intimidate'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_knowledge_arcana_id 43
+  name: 'knowledge_arcana'
+  label: 'Knowledge (Arcana)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_dungeoneering_id 44
+  name: 'knowledge_dungeoneering'
+  label: 'Knowledge (Dungeoneering)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_engineering_id 45
+  name: 'knowledge_engineering'
+  label: 'Knowledge (Engineering)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_geography_id 46
+  name: 'knowledge_geography'
+  label: 'Knowledge (Geography)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_history_id 47
+  name: 'knowledge_history'
+  label: 'Knowledge (History)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_local_id 48
+  name: 'knowledge_local'
+  label: 'Knowledge (Local)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_nature_id 49
+  name: 'knowledge_nature'
+  label: 'Knowledge (Nature)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_nobility_id 50
+  name: 'knowledge_nobility'
+  label: 'Knowledge (Nobility)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_planes_id 51
+  name: 'knowledge_planes'
+  label: 'Knowledge (Planes)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_religion_id 52
+  name: 'knowledge_religion'
+  label: 'Knowledge (Religion)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_linguistics_id 53
+  name: 'linguistics'
+  label: 'Linguistics'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_perception_id 54
+  name: 'perception'
+  label: 'Perception'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_profession_id 55
+  name: 'profession'
+  label: 'Profession'
+  ability_id: *ability_wis_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_ride_id 56
+  name: 'ride'
+  label: 'Ride'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_sense_motive_id 57
+  name: 'sense_motive'
+  label: 'Sense Motive'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_sleight_of_hand_id 58
+  name: 'sleight_of_hand'
+  label: 'Sleight of Hand'
+  ability_id: *ability_dex_id
+  trained_only: true
+  armor_check_penalty: true
+- id: &skill_spellcraft_id 59
+  name: 'spellcraft'
+  label: 'Spellcraft'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_stealth_id 60
+  name: 'stealth'
+  label: 'Stealth'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_survival_id 61
+  name: 'survival'
+  label: 'Survival'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_swim_id 62
+  name: 'swim'
+  label: 'Swim'
+  ability_id: *ability_str_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_use_magic_device_id 63
+  name: 'use_magic_device'
+  label: 'Use Magic Device'
+  ability_id: *ability_cha_id
+  trained_only: true
+  armor_check_penalty: false
+
+###############################################################################
+# BASE CLASSES
+###############################################################################
+class:
+- id: &class_alchemist_id 64
+  name: 'alchemist'
+  label: 'Alchemist'
+  hit_die: 8
+  skill_ranks_per_level: 6
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+- id: &class_kineticist_id 65
+  name: 'kineticist'
+  label: 'Kineticist'
+  hit_die: 10
+  skill_ranks_per_level: 6
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+- id: &class_monk_unchained_id 200
+  name: 'monk_unchained'
+  label: 'Monk (Unchained)'
+  hit_die: 10
+  skill_ranks_per_level: 6
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+
+class_skill:
+- class_id: *class_alchemist_id
+  skill_id: *skill_appraise_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_craft_alchemy_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_disable_device_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_fly_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_heal_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_knowledge_arcana_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_knowledge_nature_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_perception_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_profession_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_sleight_of_hand_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_spellcraft_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_survival_id
+- class_id: *class_alchemist_id
+  skill_id: *skill_use_magic_device_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_acrobatics_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_craft_alchemy_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_heal_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_intimidate_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_perception_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_profession_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_stealth_id
+- class_id: *class_kineticist_id
+  skill_id: *skill_use_magic_device_id
+class_feature:
+- id: &class_feature_alchemical_bombs_id 66
+  name: 'alchemical_bombs'
+  label: 'Alchemical Bombs'
+  class_id: *class_alchemist_id
+  feature_level: 1
+- id: &class_feature_brew_potion_id 67
+  name: 'brew_potion'
+  label: 'Brew Potion'
+  class_id: *class_alchemist_id
+  feature_level: 1
+- id: &class_feature_throw_anything_id 68
+  name: 'throw_anything'
+  label: 'Throw Anything'
+  class_id: *class_alchemist_id
+  feature_level: 1
+- id: &class_feature_extracts_id 69
+  name: 'extracts'
+  label: 'Extracts'
+  class_id: *class_alchemist_id
+  feature_level: 1
+- id: &class_feature_swift_alchemy_id 70
+  name: 'swift_alchemy'
+  label: 'Swift Alchemy'
+  class_id: *class_alchemist_id
+  feature_level: 3
+- id: &class_feature_swift_poisoning_id 71
+  name: 'swift_poisoning'
+  label: 'Swift Poisoning'
+  class_id: *class_alchemist_id
+  feature_level: 4
+- id: &class_feature_poison_resistance_id 72
+  name: 'poison_resistance'
+  label: 'Poison Resistance'
+  class_id: *class_alchemist_id
+  feature_level: 2
+- id: &class_feature_perfect_recall_id 73
+  name: 'perfect_recall'
+  label: 'Perfect Recall'
+  description: >
+    At 2nd level, a mindchemist has honed his memory. When making a Knowledge check, he may add his Intelligence bonus on the check a second time. Thus, a mindchemist with 5 ranks in Knowledge (history) and a +2 Intelligence bonus has a total skill bonus of +9 (5 + 2 + 2) using this ability. The mindchemist can also use this ability when making an Intelligence check to remember something. This ability replaces poison use.
+  class_id: *class_alchemist_id
+  feature_level: 2
+- id: &class_feature_elemental_focus_earth_id 74
+  name: 'elemental_focus_earth'
+  label: 'Elemental Focus (Earth)'
+  class_id: *class_kineticist_id
+  feature_level: 1
+- id: &class_feature_burn_id 75
+  name: 'burn'
+  label: 'Burn'
+  type: 'Ex'
+  description: >
+    Can accept burn for greater power. Each point deals nonlethal damage equal to character level. Can't be healed except by rest. Maximum burn: 3 + Constitution modifier.
+  class_id: *class_kineticist_id
+  feature_level: 1
+- id: &class_feature_gather_power_id 76
+  name: 'gather_power'
+  label: 'Gather Power'
+  class_id: *class_kineticist_id
+  feature_level: 1
+- id: &class_feature_kinetic_blast_id 77
+  name: 'kinetic_blast'
+  label: 'Kinetic Blast'
+  class_id: *class_kineticist_id
+  feature_level: 1
+- id: &class_feature_elemental_defense_id 78
+  name: 'Elemental Defense'
+  label: 'Elemental Defense'
+  class_id: *class_kineticist_id
+  feature_level: 2
+- id: &class_feature_elemental_overflow_id 79
+  name: 'elemental_overflow'
+  label: 'Elemental Overflow'
+  class_id: *class_kineticist_id
+  feature_level: 3
+- id: &class_feature_infusion_specialization_id 80
+  name: 'infusion_specialization'
+  label: 'Infusion Specialization'
+  class_id: *class_kineticist_id
+  feature_level: 5
+- id: &class_feature_metakinesis_id 81
+  name: 'metakinesis'
+  label: 'Metakinesis'
+  class_id: *class_kineticist_id
+  feature_level: 5
+- id: &class_feature_cognatogen_id 800
+  name: 'cognatogen'
+  label: 'Cognatogen'
+  class_id: *class_alchemist_id
+  feature_level: 1
+
+# ================= ALTERNATE ALCH FEATURE: EXTRA BOMBS (replaces brew_potion) ==============
+- id: &class_feature_extra_bombs_id 201
+  name: 'extra_bombs'
+  label: 'Extra Bombs'
+  class_id: *class_alchemist_id
+  feature_level: 1
+  description: >
+    You do NOT gain Brew Potion at 1st level. Instead, you gain Extra Bombs,  allowing you 2 additional uses of bombs per day.  This effectively "replaces" Brew Potion.
+
+# ================= MINDCHEMIST FEATURES =================
+- id: &class_feature_mindchemist_bonus_feat_id 220
+  name: 'mindchemist_bonus_feat'
+  label: 'Mindchemist Bonus Feat'
+  class_id: *class_alchemist_id
+  feature_level: 2
+  description: >
+    A mindchemist may select Skill Focus (Disable Device, Disguise, Heal, any Knowledge skill,  Sense Motive, or Spellcraft) in place of a discovery.
+
+# ================= MONK (UNCHAINED) FEATURES =================
+- id: &class_feature_flurry_of_blows_unchained_id 202
+  name: 'flurry_of_blows_unchained'
+  label: 'Flurry of Blows (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 1
+  description: >
+    Full-attack action: gain 1 extra attack at highest BAB.  Gains a second extra attack at 11th level.
+
+- id: &class_feature_stunning_fist_unchained_id 203
+  name: 'stunning_fist_unchained'
+  label: 'Stunning Fist (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 1
+  description: >
+    Gain Stunning Fist as bonus feat; can later inflict fatigued, sickened, etc.
+
+- id: &class_feature_unarmed_strike_unchained_id 204
+  name: 'unarmed_strike_unchained'
+  label: 'Unarmed Strike (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 1
+  description: >
+    Monk deals increased damage with unarmed strikes and can make them  with hands full, etc.
+
+- id: &class_feature_evasion_unchained_id 205
+  name: 'evasion_unchained'
+  label: 'Evasion (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 2
+  description: >
+    On successful Reflex save vs half damage, take no damage instead.
+
+- id: &class_feature_fast_movement_unchained_id 206
+  name: 'fast_movement_unchained'
+  label: 'Fast Movement (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 3
+  description: >
+    +10 ft speed at 3rd level, scales every few levels as per Unchained table.
+
+- id: &class_feature_ki_pool_unchained_id 207
+  name: 'ki_pool_unchained'
+  label: 'Ki Pool (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 3
+  description: >
+    Gain pool of ki points = half monk level + WIS mod, powering special abilities.
+
+- id: &class_feature_still_mind_unchained_id 208
+  name: 'still_mind_unchained'
+  label: 'Still Mind (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 4
+  description: >
+    +2 save vs enchantment spells/effects.
+
+- id: &class_feature_style_strike_unchained_id 209
+  name: 'style_strike_unchained'
+  label: 'Style Strike (Unchained)'
+  class_id: *class_monk_unchained_id
+  feature_level: 5
+  description: >
+    During flurry of blows, can designate an unarmed strike as a style strike  for special effects.
+
+# ================= HUNGRY GHOST MONK (ARCHETYPE) FEATURES =================
+- id: &class_feature_punishing_kick_id 210
+  name: 'punishing_kick'
+  label: 'Punishing Kick'
+  class_id: *class_monk_unchained_id
+  feature_level: 1
+  description: >
+    Replaces Stunning Fist. May push or knock prone enemies on critical success.
+
+- id: &class_feature_steal_ki_id 211
+  name: 'steal_ki'
+  label: 'Steal Ki'
+  class_id: *class_monk_unchained_id
+  feature_level: 5
+  description: >
+    On confirmed crit or reducing foe to 0 HP, regain 1 ki (if you have at least 1 in pool). Replaces purity_of_body.
+
+- id: &class_feature_life_funnel_id 212
+  name: 'life_funnel'
+  label: 'Life Funnel'
+  class_id: *class_monk_unchained_id
+  feature_level: 7
+  description: >
+    On confirmed crit or reducing foe to 0 HP, heal monk level in HP.  Cannot steal ki & life in same hit.
+
+- id: &class_feature_life_from_stone_id 213
+  name: 'life_from_stone'
+  label: 'Life from a Stone'
+  class_id: *class_monk_unchained_id
+  feature_level: 11
+  description: >
+    Can steal ki or life from any creature (not just living). Replaces diamond body.
+
+- id: &class_feature_sipping_demon_id 214
+  name: 'sipping_demon'
+  label: 'Sipping Demon'
+  class_id: *class_monk_unchained_id
+  feature_level: 13
+  description: >
+    Gain 1 temp HP each time you hit an enemy.  Gains more on a crit. Tied to having at least 1 ki point.
+
+# ================= ELEMENTAL ASCETIC (Kineticist archetype) FEATURES =================
+- id: &class_feature_elemental_flurry_id 223
+  name: 'elemental_flurry'
+  label: 'Elemental Flurry'
+  class_id: *class_kineticist_id
+  feature_level: 1
+  description: >
+    Gain Kinetic Fist for free. Use flurry-of-blows-like attack with fists only.
+
+- id: &class_feature_elemental_wisdom_id 224
+  name: 'elemental_wisdom'
+  label: 'Elemental Wisdom'
+  class_id: *class_kineticist_id
+  feature_level: 1
+  description: >
+    Use Wisdom instead of Constitution for DCs/durations of Constitution-based wild talents.
+
+- id: &class_feature_ac_bonus_ascetic_id 225
+  name: 'ac_bonus_ascetic'
+  label: 'AC Bonus (Elemental Ascetic)'
+  class_id: *class_kineticist_id
+  feature_level: 2
+  description: >
+    Similar to monk AC bonus, as long as unarmored and unencumbered,  add Wisdom to AC, plus scaling bonus.
+
+- id: &class_feature_powerful_fist_id 226
+  name: 'powerful_fist'
+  label: 'Powerful Fist'
+  class_id: *class_kineticist_id
+  feature_level: 5
+  description: >
+    You can accept extra burn to increase the damage dice of kinetic fist  from d6->d8->d10->d12.
+
+archetype:
+- id: &archetype_mindchemist_id 801
+  name: 'mindchemist'
+  label: 'Mindchemist'
+- id: &archetype_hungry_ghost_monk_id 215
+  name: 'hungry_ghost_monk'
+  label: 'Hungry Ghost Monk (Unchained)'
+- id: &archetype_extra_bombs_id 221
+  name: 'extra_bombs'
+  label: 'Extra Bombs Replaces Brew Potion'
+- id: &archetype_elemental_ascetic_id 222
+  name: 'elemental_ascetic'
+  label: 'Elemental Ascetic'
+
+archetype_class_feature:
+- archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_cognatogen_id
+  level_obtained: 1
+- archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_mindchemist_bonus_feat_id
+  level_obtained: 2
+- archetype_id: *archetype_hungry_ghost_monk_id
+  class_id: *class_monk_unchained_id
+  feature_id: *class_feature_punishing_kick_id
+  level_obtained: 1
+- archetype_id: *archetype_hungry_ghost_monk_id
+  class_id: *class_monk_unchained_id
+  feature_id: *class_feature_steal_ki_id
+  level_obtained: 5
+- archetype_id: *archetype_hungry_ghost_monk_id
+  class_id: *class_monk_unchained_id
+  feature_id: *class_feature_life_funnel_id
+  level_obtained: 7
+- archetype_id: *archetype_hungry_ghost_monk_id
+  class_id: *class_monk_unchained_id
+  feature_id: *class_feature_life_from_stone_id
+  level_obtained: 11
+- archetype_id: *archetype_hungry_ghost_monk_id
+  class_id: *class_monk_unchained_id
+  feature_id: *class_feature_sipping_demon_id
+  level_obtained: 13
+- archetype_id: *archetype_extra_bombs_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_extra_bombs_id
+  level_obtained: 1
+- archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_elemental_flurry_id
+  level_obtained: 1
+- archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_elemental_wisdom_id
+  level_obtained: 1
+- archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_ac_bonus_ascetic_id
+  level_obtained: 2
+- archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_powerful_fist_id
+  level_obtained: 5
+weapon:
+# TODO: NEED TO DOUBLE CHECK THESE
+- id: &weapon_dagger_id 1000
+  name: 'dagger'
+  label: 'Dagger'
+  damage_die_count: 1
+  damage_die_size: 4
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_bastard_sword_id 1001
+  name: 'bastard_sword'
+  label: 'Bastard Sword'
+  damage_die_count: 1
+  damage_die_size: 8
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_elven_curve_blade_id 1002
+  name: 'elven_curve_blade'
+  label: 'Elven Curve Blade'
+  damage_die_count: 1
+  damage_die_size: 6
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_falchion_id 1003
+  name: 'falchion'
+  label: 'Falchion'
+  damage_die_count: 1
+  damage_die_size: 8
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_greatsword_id 1004
+  name: 'greatsword'
+  label: 'Greatsword'
+  damage_die_count: 2
+  damage_die_size: 6
+  crit_range: 20
+  crit_mult: 2
+- id: &weapon_kukri_id 1005
+  name: 'kukri'
+  label: 'Kukri'
+  damage_die_count: 1
+  damage_die_size: 6
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_longsword_id 1006
+  name: 'longsword'
+  label: 'Longsword'
+  damage_die_count: 1
+  damage_die_size: 8
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_punching_dagger_id 1007
+  name: 'punching_dagger'
+  label: 'Punching Dagger'
+  damage_die_count: 1
+  damage_die_size: 4
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_rapier_id 1008
+  name: 'rapier'
+  label: 'Rapier'
+  damage_die_count: 1
+  damage_die_size: 6
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_scimitar_id 1009
+  name: 'scimitar'
+  label: 'Scimitar'
+  damage_die_count: 1
+  damage_die_size: 6
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_short_sword_id 1010
+  name: 'short_sword'
+  label: 'Short Sword'
+  damage_die_count: 1
+  damage_die_size: 6
+  crit_range: 19
+  crit_mult: 2
+- id: &weapon_two_bladed_sword_id 1011
+  name: 'two_bladed_sword'
+  label: 'Two-Bladed Sword'
+  damage_die_count: 1
+  damage_die_size: 6
+  crit_range: 19
+  crit_mult: 2
+# Feats
+feat:
+- id: &feat_tengu_wings_id 94
+  name: 'tengu_wings'
+  label: 'Tengu Wings'
+  feat_type: 'racial'
+- id: &feat_two_weapon_fighting_id 95
+  name: 'two_weapon_fighting'
+  label: 'Two-Weapon Fighting'
+  feat_type: 'combat'
+- id: &feat_rapid_shot_id 96
+  name: 'rapid_shot'
+  label: 'Rapid Shot'
+  feat_type: 'combat'
+- id: &feat_deadly_aim_id 97
+  name: 'deadly_aim'
+  label: 'Deadly Aim'
+  feat_type: 'combat'
+- id: &feat_extra_discovery_id 98
+  name: 'extra_discovery'
+  label: 'Extra Discovery'
+  feat_type: 'general'
+- id: &feat_breadth_of_experience_id 99
+  name: 'breadth_of_experience'
+  label: 'Breadth of Experience'
+  feat_type: 'general'
+- id: &feat_improved_unarmed_strike_id 100
+  name: 'improved_unarmed_strike'
+  label: 'Improved Unarmed Strike'
+  feat_type: 'combat'
+- id: &feat_power_attack_id 101
+  name: 'power_attack'
+  label: 'Power Attack'
+  feat_type: 'combat'
+- id: &feat_weapon_focus_unarmed_strike_id 102
+  name: 'weapon_focus_unarmed_strike'
+  label: 'Weapon Focus (Unarmed Strike)'
+  feat_type: 'combat'
+- id: &feat_dodge_id 103
+  name: 'dodge'
+  label: 'Dodge'
+  feat_type: 'combat'
+- id: &feat_generally_educated_id 3000
+  name: 'generally_educated'
+  label: 'Generally Educated'
+  feat_type: 'general'
+  description: '+2 bonus on all Knowledge skill checks and can make checks with those skills untrained'
+
+corruption:
+- id: &corruption_vampirism_id 113
+  name: 'vampirism'
+  label: 'Vampirism'
+
+corruption_manifestation:
+- id: &manifestation_vampiric_grace_id 114
+  name: 'vampiric_grace'
+  label: 'Vampiric Grace'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 1
+  prerequisite_manifestation: null
+
+- id: &manifestation_fangs_id 115
+  name: 'fangs'
+  label: 'Fangs'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 2
+  prerequisite_manifestation: null
+
+- id: &manifestation_unlife_id 116
+  name: 'unlife'
+  label: 'Unlife'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 3
+  prerequisite_manifestation: null
+
+- id: &manifestation_greater_unlife_id 117
+  name: 'greater_unlife'
+  label: 'Greater Unlife'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 4
+  prerequisite_manifestation: 'Unlife'
+
+- id: &manifestation_true_unlife_id 118
+  name: 'true_unlife'
+  label: 'True Unlife'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 5
+  prerequisite_manifestation: 'Greater Unlife'
+
+# ========== ALLURE ==========
+- id: &manifestation_allure_id 501
+  name: 'allure'
+  label: 'Allure'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 1
+  description: >
+    Gift: +2 (or +4 at ML 3) racial bonus on Bluff, Diplomacy, Intimidate. Stain: No reflection; severe penalty with mirrors, etc.
+
+# ========== CHILDREN OF THE NIGHT ==========
+- id: &manifestation_children_of_night_id 502
+  name: 'children_of_the_night'
+  label: 'Children of the Night'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 1
+  description: >
+    Gift: Summon rat swarm or wolf (like summon nature's ally II) for 10 mins.
+          Gains more uses at higher levels.
+    Stain: -3 on Handle Animal & Ride vs normal animals, eventually unnatural aura.
+
+# ========== DREADFUL CHARM ==========
+- id: &manifestation_dreadful_charm_id 503
+  name: 'dreadful_charm'
+  label: 'Dreadful Charm'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 2
+  prerequisite_manifestation: 'allure'
+  description: >
+    Gift: Once/day if you succeed on a social check vs a creature, you can charm monster. Stain: No shadow, and you become sickened by garlic (Fort DC 20).
+
+# ========== LIFE DRAIN ==========
+- id: &manifestation_life_drain_id 504
+  name: 'life_drain'
+  label: 'Life Drain'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 2
+  description: >
+    Gift: Gain a slam that does 1d6 damage plus 1 temporary negative level on a crit. Stain: You are healed by negative energy and harmed by positive, like undead.
+
+# Element Reference Table
+element:
+- id: &element_aether_id 2300
+  name: 'aether'
+  label: 'Aether'
+  energy_type: 'force'
+  base_skill: 'telekinesis'
+
+- id: &element_air_id 2301
+  name: 'air'
+  label: 'Air'
+  energy_type: 'electricity'
+  base_skill: 'aerokinesis'
+
+discovery:
+- id: &discovery_precise_bombs_id 201
+  label: 'precise_bombs'
+  name: 'Precise Bombs'
+- id: &discovery_mutagen_id 202
+  label: 'mutagen'
+  name: 'Mutagen'
+- id: &discovery_explosive_bomb_id 203
+  label: 'explosive_bomb'
+  name: 'Explosive Bomb'
+wild_talent:
+- id: &wild_talent_basic_geokinesis_id 300
+  name: 'basic_geokinesis'
+  label: 'Basic Geokinesis'
+- id: &wild_talent_kinetic_fist_id 301
+  name: 'kinetic_fist'
+  label: 'Kinetic Fist'
+- id: &wild_talent_earth_walk_id 302
+  name: 'earth_walk'
+  label: 'Earth Walk'
+- id: &wild_talent_tremorsense_id 303
+  name: 'tremorsense'
+  label: 'Tremorsense'
+- id: &wild_talent_basic_telekinesis_id 2400
+  name: 'basic_telekinesis'
+  label: 'Basic Telekinesis'
+  element_id: *element_aether_id
+  type: 'utility'
+  spell_level: 1
+
+armor:
+- id: &armor_mithral_chainshirt_id 800
+  name: 'mithral_chainshirt'
+  label: 'Mithral Chainshirt'
+  armor_type: 'light'
+  armor_bonus: 4
+  max_dex: 6
+  arcane_spell_failure_chance: 10
+  armor_check_penalty: 0
+  weight: 10
+  price: 1000
+consumable:
+- id: &consumable_alchemist_fire_id 900
+  name: 'alchemist_fire'
+  label: "Alchemist's Fire"
+- id: &consumable_acid_id 901
+  name: 'acid'
+  label: 'Acid'
+- id: &consumable_tanglefoot_bag_id 902
+  name: 'tanglefoot_bag'
+  label: 'Tanglefoot Bag'
+
+trait:
+- id: &trait_pragmatic_activator_id 3000
+  name: 'trait_pragmatic_activator'
+  label: 'Pragmatic Activator'
+  trait_type: 'Magic'
+  description: 'Use INT instead of CHA for Use Magic Device.'
+- id: &trait_clever_wordplay_diplomacy_id 3001
+  name: 'trait_clever_wordplay_diplomacy'
+  label: 'Clever Wordplay (Diplomacy)'
+  trait_type: 'Social'
+  description: 'Use INT instead of CHA for one chosen Cha-based skill. (Diplomacy)'
+
+game_character:
+- id: &vardon_id 1
+  name: 'vardon_salvador'
+  label: 'Vardón Salvador'
+  user_id: *user_id
+  current_hp: 37
+  max_hp: 37
+  is_offline: false
+- id: &killiq_id 2
+  name: 'killiq_said'
+  label: "Killiq Sa'id"
+  user_id: *user_id
+  current_hp: 67
+  max_hp: 67
+  is_offline: false
+# Bridging Tables
+game_character_ability:
+# Vardon's abilities
+- game_character_id: *vardon_id
+  ability_id: *ability_str_id
+  value: 10
+- game_character_id: *vardon_id
+  ability_id: *ability_dex_id
+  value: 14
+- game_character_id: *vardon_id
+  ability_id: *ability_con_id
+  value: 12
+- game_character_id: *vardon_id
+  ability_id: *ability_int_id
+  value: 16
+- game_character_id: *vardon_id
+  ability_id: *ability_wis_id
+  value: 12
+- game_character_id: *vardon_id
+  ability_id: *ability_cha_id
+  value: 8
+# killiq's abilities
+- game_character_id: *killiq_id
+  ability_id: *ability_str_id
+  value: 16
+- game_character_id: *killiq_id
+  ability_id: *ability_dex_id
+  value: 12
+- game_character_id: *killiq_id
+  ability_id: *ability_con_id
+  value: 14
+- game_character_id: *killiq_id
+  ability_id: *ability_int_id
+  value: 8
+- game_character_id: *killiq_id
+  ability_id: *ability_wis_id
+  value: 12
+- game_character_id: *killiq_id
+  ability_id: *ability_cha_id
+  value: 10
+game_character_class:
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 6
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 6
+game_character_archetype:
+- game_character_id: *vardon_id
+  archetype_id: *archetype_mindchemist_id
+- game_character_id: *killiq_id
+  archetype_id: *archetype_elemental_ascetic_id
+game_character_ancestry:
+- game_character_id: *vardon_id
+  ancestry_id: *ancestry_tengu_id
+- game_character_id: *killiq_id
+  ancestry_id: *ancestry_oread_id
+game_character_class_feature:
+# Vardon's Class Features
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_alchemical_bombs_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_brew_potion_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_throw_anything_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_extracts_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_swift_alchemy_id
+  level_obtained: 3
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_swift_poisoning_id
+  level_obtained: 4
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_poison_resistance_id
+  level_obtained: 2
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_perfect_recall_id
+  level_obtained: 2
+- game_character_id: *vardon_id
+  class_feature_id: *class_feature_cognatogen_id
+  level_obtained: 1
+# killiq's Class Features
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_elemental_focus_earth_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_burn_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_gather_power_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_kinetic_blast_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_elemental_defense_id
+  level_obtained: 2
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_elemental_overflow_id
+  level_obtained: 3
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_infusion_specialization_id
+  level_obtained: 5
+- game_character_id: *killiq_id
+  class_feature_id: *class_feature_metakinesis_id
+  level_obtained: 5
+game_character_feat:
+# Vardon's Feats
+- game_character_id: *vardon_id
+  feat_id: *feat_rapid_shot_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  feat_id: *feat_deadly_aim_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  feat_id: *feat_power_attack_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  feat_id: *feat_extra_discovery_id
+  level_obtained: 3
+- game_character_id: *vardon_id
+  feat_id: *feat_two_weapon_fighting_id
+  level_obtained: 5
+- game_character_id: *vardon_id
+  feat_id: *feat_generally_educated_id
+  level_obtained: 1
+# killiq's Feats
+- game_character_id: *killiq_id
+  feat_id: *feat_improved_unarmed_strike_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  feat_id: *feat_power_attack_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  feat_id: *feat_weapon_focus_unarmed_strike_id
+  level_obtained: 3
+- game_character_id: *killiq_id
+  feat_id: *feat_dodge_id
+  level_obtained: 5
+game_character_abp_choice:
+# Mental Prowess Choices
+- id: 1400
+  game_character_id: *vardon_id
+  group_id: *group_level_6_id
+  node_id: *mental_prowess_int_node_id
+
+- id: 1401
+  game_character_id: *killiq_id
+  group_id: *group_level_6_id
+  node_id: *mental_prowess_wis_node_id
+
+# Physical Prowess Choices
+- id: 1402
+  game_character_id: *vardon_id
+  group_id: *group_level_7_id
+  node_id: *physical_prowess_dex_node_id
+
+- id: 1403
+  game_character_id: *killiq_id
+  group_id: *group_level_7_id
+  node_id: *physical_prowess_str_node_id
+
+game_character_favored_class_bonus:
+# Vardon's Favored Class Bonuses
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 1
+  choice_id: *favored_skill_id
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 2
+  choice_id: *favored_skill_id
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 3
+  choice_id: *favored_skill_id
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 4
+  choice_id: *favored_skill_id
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 5
+  choice_id: *favored_skill_id
+- game_character_id: *vardon_id
+  class_id: *class_alchemist_id
+  level: 6
+  choice_id: *favored_skill_id
+# killiq's Favored Class Bonuses
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 1
+  choice_id: *favored_hp_id
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 2
+  choice_id: *favored_hp_id
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 3
+  choice_id: *favored_hp_id
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 4
+  choice_id: *favored_hp_id
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 5
+  choice_id: *favored_hp_id
+- game_character_id: *killiq_id
+  class_id: *class_kineticist_id
+  level: 6
+  choice_id: *favored_hp_id
+game_character_corruption:
+- game_character_id: *killiq_id
+  corruption_id: *corruption_vampirism_id
+  corruption_stage: 0
+  manifestation_level: 6
+  blood_required: 6
+  blood_consumed: 0
+- game_character_id: *vardon_id
+  corruption_id: *corruption_vampirism_id
+  corruption_stage: 0
+  manifestation_level: 6
+  blood_required: 6
+  blood_consumed: 0
+game_character_corruption_manifestation:
+# killiq's active manifestations
+- game_character_id: *killiq_id
+  manifestation_id: *manifestation_vampiric_grace_id
+  active: true
+- game_character_id: *killiq_id
+  manifestation_id: *manifestation_fangs_id
+  active: true
+- game_character_id: *killiq_id
+  manifestation_id: *manifestation_unlife_id
+  active: true
+- game_character_id: *killiq_id
+  manifestation_id: *manifestation_greater_unlife_id
+  active: true
+- game_character_id: *killiq_id
+  manifestation_id: *manifestation_true_unlife_id
+  active: true
+# Vardon's active manifestations
+- game_character_id: *vardon_id
+  manifestation_id: *manifestation_vampiric_grace_id
+  active: true
+- game_character_id: *vardon_id
+  manifestation_id: *manifestation_fangs_id
+  active: true
+- game_character_id: *vardon_id
+  manifestation_id: *manifestation_unlife_id
+  active: true
+- game_character_id: *vardon_id
+  manifestation_id: *manifestation_greater_unlife_id
+  active: true
+- game_character_id: *vardon_id
+  manifestation_id: *manifestation_true_unlife_id
+  active: true
+game_character_equipment:
+# Vardon's Equipment
+- game_character_id: *vardon_id
+  equipment_id: *equipment_alchemist_kit_id
+game_character_consumable:
+# Vardon's Consumables
+- game_character_id: *vardon_id
+  consumable_id: *consumable_alchemist_fire_id
+  quantity: 3
+- game_character_id: *vardon_id
+  consumable_id: *consumable_acid_id
+  quantity: 3
+- game_character_id: *vardon_id
+  consumable_id: *consumable_tanglefoot_bag_id
+  quantity: 3
+game_character_wild_talent:
+# killiq's Wild Talents
+- game_character_id: *killiq_id
+  wild_talent_id: *wild_talent_basic_geokinesis_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  wild_talent_id: *wild_talent_kinetic_fist_id
+  level_obtained: 1
+- game_character_id: *killiq_id
+  wild_talent_id: *wild_talent_earth_walk_id
+  level_obtained: 2
+- game_character_id: *killiq_id
+  wild_talent_id: *wild_talent_tremorsense_id
+  level_obtained: 4
+
+
+game_character_skill_rank:
+- id: 1
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_craft_alchemy_id
+  applied_at_level: 1
+- id: 2
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_craft_alchemy_id
+  applied_at_level: 2
+- id: 3
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_craft_alchemy_id
+  applied_at_level: 3
+- id: 4
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_craft_alchemy_id
+  applied_at_level: 4
+- id: 5
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_craft_alchemy_id
+  applied_at_level: 5
+- id: 6
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_craft_alchemy_id
+  applied_at_level: 6
+- id: 7
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 1
+- id: 8
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 2
+- id: 9
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 3
+- id: 10
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 4
+- id: 11
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 5
+- id: 12
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 6
+- id: 13
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_arcana_id
+  applied_at_level: 1
+- id: 14
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_arcana_id
+  applied_at_level: 2
+- id: 15
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_arcana_id
+  applied_at_level: 3
+- id: 16
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_arcana_id
+  applied_at_level: 4
+- id: 17
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_arcana_id
+  applied_at_level: 5
+- id: 18
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_arcana_id
+  applied_at_level: 6
+- id: 20
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 2
+- id: 21
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 3
+- id: 22
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 4
+- id: 23
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 5
+- id: 24
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 6
+- id: 25
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 1
+- id: 26
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 2
+- id: 27
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 3
+- id: 28
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 4
+- id: 29
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 5
+- id: 30
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 6
+- id: 31
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 1
+- id: 32
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 2
+- id: 33
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 3
+- id: 34
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 4
+- id: 35
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 5
+- id: 36
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 6
+- id: 37
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_climb_id
+  applied_at_level: 1
+- id: 39
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_knowledge_dungeoneering_id
+  applied_at_level: 3
+- id: 40
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_knowledge_dungeoneering_id
+  applied_at_level: 4
+- id: 41
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_knowledge_dungeoneering_id
+  applied_at_level: 5
+- id: 42
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_knowledge_dungeoneering_id
+  applied_at_level: 6
+- id: 135
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_heal_id
+  applied_at_level: 1
+- id: 44
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 1
+- id: 137
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_fly_id
+  applied_at_level: 2
+- id: 47
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_use_magic_device_id
+  applied_at_level: 1
+- id: 138
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_fly_id
+  applied_at_level: 3
+- id: 49
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_spellcraft_id
+  applied_at_level: 1
+- id: 50
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_spellcraft_id
+  applied_at_level: 2
+- id: 51
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_spellcraft_id
+  applied_at_level: 3
+- id: 52
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_spellcraft_id
+  applied_at_level: 4
+- id: 53
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_spellcraft_id
+  applied_at_level: 5
+- id: 54
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_spellcraft_id
+  applied_at_level: 6
+- id: 55
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_perception_id
+  applied_at_level: 1
+- id: 56
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_perception_id
+  applied_at_level: 2
+- id: 57
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_perception_id
+  applied_at_level: 3
+- id: 58
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_perception_id
+  applied_at_level: 4
+- id: 59
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_perception_id
+  applied_at_level: 5
+- id: 60
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_perception_id
+  applied_at_level: 6
+- id: 139
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_fly_id
+  applied_at_level: 4
+- id: 140
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_fly_id
+  applied_at_level: 5
+- id: 141
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_fly_id
+  applied_at_level: 6
+- id: 64
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_use_magic_device_id
+  applied_at_level: 2
+- id: 65
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_use_magic_device_id
+  applied_at_level: 3
+- id: 66
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_use_magic_device_id
+  applied_at_level: 4
+- id: 67
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_use_magic_device_id
+  applied_at_level: 5
+- id: 68
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_use_magic_device_id
+  applied_at_level: 6
+- id: 149
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_nature_id
+  applied_at_level: 2
+- id: 150
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_nature_id
+  applied_at_level: 3
+- id: 151
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_planes_id
+  applied_at_level: 2
+- id: 152
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_planes_id
+  applied_at_level: 3
+- id: 153
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_engineering_id
+  applied_at_level: 2
+- id: 154
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_engineering_id
+  applied_at_level: 3
+- id: 155
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_engineering_id
+  applied_at_level: 4
+- id: 156
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_engineering_id
+  applied_at_level: 5
+- id: 157
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_engineering_id
+  applied_at_level: 6
+- id: 158
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_nature_id
+  applied_at_level: 4
+- id: 159
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_nature_id
+  applied_at_level: 5
+- id: 87
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_fly_id
+  applied_at_level: 1
+- id: 160
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_nature_id
+  applied_at_level: 6
+- id: 161
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_planes_id
+  applied_at_level: 4
+- id: 162
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_planes_id
+  applied_at_level: 5
+- id: 163
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_planes_id
+  applied_at_level: 6
+- id: 92
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_sleight_of_hand_id
+  applied_at_level: 1
+- id: 168
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_ bluff_id
+  applied_at_level: 3
+- id: 169
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_ bluff_id
+  applied_at_level: 4
+- id: 170
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_ bluff_id
+  applied_at_level: 5
+- id: 171
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_ bluff_id
+  applied_at_level: 6
+- id: 102
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_nature_id
+  applied_at_level: 1
+- id: 173
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_profession_id
+  applied_at_level: 2
+- id: 176
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_climb_id
+  applied_at_level: 2
+- id: 113
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_heal_id
+  applied_at_level: 1
+
+
+game_character_armor:
+- game_character_id: *vardon_id
+  armor_id: *armor_mithral_chainshirt_id
+
+game_character_trait:
+- game_character_id: *vardon_id
+  trait_id: *trait_pragmatic_activator_id
+- game_character_id: *vardon_id
+  trait_id: *trait_clever_wordplay_diplomacy_id
+
+# ================= CHARACTER SPELL TABLE =================
+game_character_spell:
+# Vardon's Extracts
+- game_character_id: *vardon_id
+  spell_id: *spell_shield_id
+  level: 1
+  prepared: 2
+  used: 0
+- game_character_id: *vardon_id
+  spell_id: *spell_cure_light_wounds_id
+  level: 1
+  prepared: 1
+  used: 0
+- game_character_id: *vardon_id
+  spell_id: *spell_enlarge_person_id
+  level: 1
+  prepared: 1
+  used: 0
+- game_character_id: *vardon_id
+  spell_id: *spell_invisibility_id
+  level: 2
+  prepared: 1
+  used: 0
+- game_character_id: *vardon_id
+  spell_id: *spell_bull_s_strength_id
+  level: 2
+  prepared: 1
+  used: 0
+
+# ================= CHARACTER ANCESTRAL TRAIT TABLE =================
+
+
+# ================= CHARACTER DISCOVERY TABLE =================
+game_character_discovery:
+- game_character_id: *vardon_id
+  discovery_id: *discovery_precise_bombs_id
+  level_obtained: 2
+- game_character_id: *vardon_id
+  discovery_id: *discovery_mutagen_id
+  level_obtained: 1
+- game_character_id: *vardon_id
+  discovery_id: *discovery_explosive_bomb_id
+  level_obtained: 4
+
+# ================= CHARACTER WEAPON TABLE =================
+game_character_weapon:
+- game_character_id: *vardon_id
+  weapon_id: *weapon_dagger_id
+  enhancement: 0
+  masterwork: true
+- game_character_id: *killiq_id
+  weapon_id: *weapon_kukri_id
+  enhancement: 1
+  masterwork: true

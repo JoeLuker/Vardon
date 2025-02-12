@@ -46,6 +46,13 @@ def load_yaml_to_db(yaml_file_path, dsn):
 
                     logger.info(f"Processing table: {table_name} with {len(rows)} rows")
                     
+                    # Truncate the table before inserting new data
+                    truncate_statement = sql.SQL("TRUNCATE TABLE {} CASCADE").format(
+                        sql.Identifier(table_name)
+                    )
+                    cur.execute(truncate_statement)
+                    logger.info(f"Truncated table: {table_name}")
+                    
                     # 4) Insert each record
                     for idx, row in enumerate(rows, 1):
                         if not isinstance(row, dict):
@@ -80,18 +87,26 @@ def load_yaml_to_db(yaml_file_path, dsn):
     
     logger.info("YAML data loaded successfully!")
 
+
+
 # ------------------------------------------------------------------------------
 # Example usage
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
+    # Force reload of environment variables
+    load_dotenv(override=True)
+    
     # Replace with your actual DSN parameters
     DB_USER = os.getenv("user")
     DB_PASSWORD = os.getenv("password")
-    DB_HOST = os.getenv("host")
+    DB_HOST = os.getenv("host").replace("http://", "")
     DB_PORT = os.getenv("port")
     DB_NAME = os.getenv("dbname")
 
-    DSN = f"dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD} host={DB_HOST} port={DB_PORT}"
+    # Log the connection details (excluding password)
+    logger.info(f"Attempting connection with: host={DB_HOST}, port={DB_PORT}, user={DB_USER}, dbname={DB_NAME}")
+
+    DSN = f"dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD} host={DB_HOST} port={DB_PORT} sslmode=disable"
 
     # Path to the YAML file
     YAML_FILE = "pathfinder_data.yaml"

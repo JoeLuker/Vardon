@@ -8,9 +8,7 @@
 	// Types
 	import type { PageData } from './$types';
 	import type { ValueWithBreakdown, EnrichedCharacter } from '$lib/domain/characterCalculations';
-	import type { CompleteCharacter } from '$lib/db/getCompleteCharacter';
-	import type { GameRulesData } from '$lib/db/getGameRulesData';
-	import { getGameRulesData } from '$lib/db/getGameRulesData';
+	import type { CompleteCharacter } from '$lib/db/gameRules.api';
 
 	// Child components
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
@@ -24,38 +22,20 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
 
-	// DB references
-	import {
-			gameCharacterApi,
-			gameCharacterAbilityApi,
-			gameCharacterClassApi,
-			gameCharacterFeatApi,
-			gameCharacterSkillRankApi,
-			gameCharacterArchetypeApi,
-			gameCharacterAncestryApi,
-			gameCharacterClassFeatureApi,
-			gameCharacterCorruptionApi,
-			gameCharacterCorruptionManifestationApi,
-			gameCharacterWildTalentApi,
-			gameCharacterEquipmentApi,
-			gameCharacterArmorApi,
-			classApi,
-			featApi,
-			gameCharacterAbpChoiceApi
-	} from '$lib/db/references';
-
-	import { getCompleteCharacter } from '$lib/db/getCompleteCharacter';
-	import { enrichCharacterData } from '$lib/domain/characterCalculations';
+	// Game Rules API
+	import { GameRulesAPI, supabase } from '$lib/db';
 
 	// Props from the load function
 	let { data } = $props<{ data: PageData }>();
+
+	// Create GameRules instance
+	const gameRules = new GameRulesAPI(supabase);
 
 	// Svelte 5 runic state for reactivity
 	let rawCharacter = $state<CompleteCharacter | null>(null);
 	let character = $state<EnrichedCharacter | null>(null);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
-	let gameRules = $state<GameRulesData | null>(null);
 
 	// Optional: reference maps if we want to fetch class/feat details
 	let classMap = new Map<number, any>();
@@ -71,15 +51,40 @@
 
 	let isUnmounting = $state(false);
 
+	// Import enrichCharacterData
+	import { enrichCharacterData } from '$lib/domain/characterCalculations';
 
 	/**
-	 * initReferenceData: optional function to fetch classes/feats, store them in classMap/featMap
+	 * Remove timestamp fields recursively from an object
+	 */
+	function removeTimestamps<T>(obj: T): T {
+		if (!obj || typeof obj !== 'object') return obj;
+		
+		if (Array.isArray(obj)) {
+			return obj.map(removeTimestamps) as T;
+		}
+		
+		const newObj = { ...obj } as any;
+		delete newObj.created_at;
+		delete newObj.updated_at;
+		
+		for (const key in newObj) {
+			if (typeof newObj[key] === 'object') {
+				newObj[key] = removeTimestamps(newObj[key]);
+			}
+		}
+		
+		return newObj;
+	}
+
+	/**
+	 * initReferenceData: optional function to fetch classes/feats
 	 */
 	async function initReferenceData(): Promise<void> {
 		try {
 			const [classes, feats] = await Promise.all([
-				classApi.getAllRows(),
-				featApi.getAllRows()
+				gameRules.getAllClass(),
+				gameRules.getAllFeat()
 			]);
 			classes.forEach((c) => classMap.set(c.id, c));
 			feats.forEach((f) => featMap.set(f.id, f));
@@ -97,15 +102,16 @@
 			(async () => {
 				if (isUnmounting) return;
 				
-				// Load gameRules first, then use it
 				try {
-					gameRules = await getGameRulesData();
 					await initReferenceData();
 					
 					rawCharacter = data.rawCharacter ?? null;
-					if (gameRules && rawCharacter) {
-						character = enrichCharacterData(rawCharacter, gameRules);
-						console.log('Loaded character data:', JSON.stringify(character, null, 2));
+					if (rawCharacter) {
+						console.log('Raw character before enrichment:', JSON.stringify(removeTimestamps(rawCharacter), null, 2));
+						(async () => {
+							character = await enrichCharacterData(rawCharacter, gameRules);
+							console.log('Enriched character (mount):', JSON.stringify(removeTimestamps(character), null, 2));
+						})();
 					} else {
 						console.error('Game rules not loaded');
 					}
@@ -133,10 +139,6 @@
 			cleanupWatchers();
 			currentCharId = newId;
 			
-			if (!gameRules) {
-				gameRules = await getGameRulesData();
-			}
-			
 			await loadCharacter(newId, gameRules);
 
 			if (!isUnmounting) {
@@ -148,7 +150,7 @@
 	/**
 	 * loadCharacter: fetch from DB and re-enrich
 	 */
-	async function loadCharacter(charId: number, rules: GameRulesData | null) {
+	async function loadCharacter(charId: number, rules: GameRulesAPI | null) {
 		if (!rules) {
 			error = 'Game rules not loaded';
 			return;
@@ -156,9 +158,10 @@
 		
 		try {
 			isLoading = true;
-			const fetched = await getCompleteCharacter(charId);
+			const fetched = await rules.getCompleteCharacterData(charId);
 			rawCharacter = fetched;
-			character = fetched ? enrichCharacterData(fetched, rules) : null;
+			character = fetched ? await enrichCharacterData(fetched, rules) : null;
+			console.log('Enriched character (load):', removeTimestamps(character));
 			isLoading = false;
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
@@ -168,14 +171,14 @@
 	}
 
 	/**
-	 * initWatchers: attach supabase watchers (only once)
+	 * initWatchers: attach supabase watchers
 	 */
 	function initWatchers() {
 		if (watchersInitialized) return;
 		watchersInitialized = true;
 
 		// Main character table watcher
-		gameCharacterApi.startWatch(async (type, row) => {
+		gameRules.watchGameCharacter((type, row) => {
 			if (row?.id !== currentCharId) return;
 			
 			if (type === 'delete') {
@@ -194,53 +197,57 @@
 					label: row.label
 				};
 				if (gameRules) {
-					character = enrichCharacterData(rawCharacter, gameRules);
+					(async () => {
+						character = await enrichCharacterData(rawCharacter, gameRules);
+					})();
 				}
 				return;
 			}
 		});
 
 		// For skill ranks and other bridging tables
-		gameCharacterSkillRankApi.startWatch(async (_type, row) => {
+		gameRules.watchGameCharacterSkillRank(async (_type, row) => {
 			if (row?.game_character_id === currentCharId && currentCharId && rawCharacter) {
 				// Only update the skills portion
-				const updatedChar = await getCompleteCharacter(currentCharId);
+				const updatedChar = await gameRules.getCompleteCharacterData(currentCharId);
 				if (updatedChar) {
-					rawCharacter = {
-						...rawCharacter,
-						skillRanks: updatedChar.skillRanks,
-					};
-					if (gameRules && rawCharacter) {
-						character = enrichCharacterData(rawCharacter, gameRules);
+					rawCharacter = updatedChar;
+					if (gameRules) {
+						(async () => {
+							character = await enrichCharacterData(updatedChar, gameRules);
+						})();
 					}
 				}
 			}
 		});
 
-		// For other bridging tables, use selective updates when possible
-		const tables = [
-			gameCharacterAbilityApi,
-			gameCharacterClassApi,
-			gameCharacterFeatApi,
-			gameCharacterArchetypeApi,
-			gameCharacterAncestryApi,
-			gameCharacterClassFeatureApi,
-			gameCharacterCorruptionApi,
-			gameCharacterCorruptionManifestationApi,
-			gameCharacterWildTalentApi,
-			gameCharacterEquipmentApi,
-			gameCharacterArmorApi,
-			gameCharacterAbpChoiceApi
-		];
+		// Watch all other character-related tables
+		const watchFunctions = [
+			'watchGameCharacterAbility',
+			'watchGameCharacterClass',
+			'watchGameCharacterFeat',
+			'watchGameCharacterArchetype',
+			'watchGameCharacterAncestry',
+			'watchGameCharacterClassFeature',
+			'watchGameCharacterCorruption',
+			'watchGameCharacterCorruptionManifestation',
+			'watchGameCharacterWildTalent',
+			'watchGameCharacterEquipment',
+			'watchGameCharacterArmor',
+			'watchGameCharacterAbpChoice'
+		] as const;
 
-		for (const table of tables) {
-			table.startWatch(async (_type, row) => {
-				if (row?.game_character_id === currentCharId && currentCharId) {
-					// For these tables, we need to do a full refresh but without loading state
-					const fetched = await getCompleteCharacter(currentCharId);
+		for (const watchFn of watchFunctions) {
+			gameRules[watchFn](async (_row: any) => {
+				if (_row?.game_character_id === currentCharId && currentCharId) {
+					const fetched = await gameRules.getCompleteCharacterData(currentCharId);
 					if (fetched) {
 						rawCharacter = fetched;
-						character = enrichCharacterData(fetched, gameRules!);
+						if (gameRules) {
+							(async () => {
+								character = await enrichCharacterData(fetched, gameRules);
+							})();
+						}
 					}
 				}
 			});
@@ -254,20 +261,7 @@
 		if (!watchersInitialized) return;
 
 		try {
-			gameCharacterApi.stopWatch();
-			gameCharacterAbilityApi.stopWatch();
-			gameCharacterClassApi.stopWatch();
-			gameCharacterFeatApi.stopWatch();
-			gameCharacterSkillRankApi.stopWatch();
-			gameCharacterArchetypeApi.stopWatch();
-			gameCharacterAncestryApi.stopWatch();
-			gameCharacterClassFeatureApi.stopWatch();
-			gameCharacterCorruptionApi.stopWatch();
-			gameCharacterCorruptionManifestationApi.stopWatch();
-			gameCharacterWildTalentApi.stopWatch();
-			gameCharacterEquipmentApi.stopWatch();
-			gameCharacterArmorApi.stopWatch();
-			gameCharacterAbpChoiceApi.stopWatch();
+			gameRules.stopAllWatchers();
 		} catch (err) {
 			console.error('Error cleaning up watchers:', err);
 		} finally {
@@ -335,19 +329,15 @@
 						onUpdateDB={async (changes) => {
 							if (!character?.id) return;
 							if (changes.type === 'add') {
-								await gameCharacterSkillRankApi.createRow({
+								await gameRules.createGameCharacterSkillRank({
 									game_character_id: character.id,
 									skill_id: changes.skillId,
 									applied_at_level: changes.level,
 								});
 							} else {
-								const existingRanks = await gameCharacterSkillRankApi.getRowsByFilter({
-									game_character_id: character.id,
-									skill_id: changes.skillId,
-									applied_at_level: changes.level,
-								});
-								if (existingRanks?.length) {
-									await gameCharacterSkillRankApi.deleteRow(existingRanks[0].id);
+								const existingRank = await gameRules.getGameCharacterSkillRankById(changes.skillId);
+								if (existingRank) {
+									await gameRules.deleteGameCharacterSkillRank(existingRank.id);
 								}
 							}
 						}}
@@ -362,7 +352,7 @@
 						character={character}
 						onUpdateDB={async (changes) => {
 							if (!character?.id) return;
-							await gameCharacterApi.updateRow({
+							await gameRules.updateGameCharacter({
 								id: character.id,
 								...changes
 							});
