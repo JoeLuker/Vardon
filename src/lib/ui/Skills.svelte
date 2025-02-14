@@ -229,12 +229,7 @@
 							
 							<button 
 								class="flex flex-col items-center px-2 py-1 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
-								onclick={() => onSelectValue?.({
-									level,
-									total: totalPoints,
-									remaining: remainingPoints,
-									ranks: ranksAtLevel
-								})}
+								onclick={() => onSelectValue?.(character?.skillPoints?.total[level])}
 								type="button"
 							>
 								<span class="text-xs text-muted-foreground">Level {level}</span>
@@ -304,6 +299,16 @@
 																disabled={!!operationInProgress || (!hasRank && !canAdd)}
 																onclick={(e: MouseEvent) => {
 																	e.stopPropagation();
+																	if (hasRank) {
+																		onSelectValue?.({
+																			total: 1,
+																			source: `Level ${level} Skill Rank`,
+																			breakdown: [{
+																				source: `Allocated at level ${level}`,
+																				value: 1
+																			}]
+																		});
+																	}
 																	handleCellClick(skill.id, level);
 																}}
 															>
@@ -382,6 +387,16 @@
 														disabled={!!operationInProgress || (!hasRank && !canAdd)}
 														onclick={(e: MouseEvent) => {
 															e.stopPropagation();
+															if (hasRank) {
+																onSelectValue?.({
+																	total: 1,
+																	source: `Level ${level} Skill Rank`,
+																	breakdown: [{
+																		source: `Allocated at level ${level}`,
+																		value: 1
+																	}]
+																});
+															}
 															handleCellClick(skill.id, level);
 														}}
 													>

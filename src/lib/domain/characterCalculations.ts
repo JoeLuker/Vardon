@@ -812,7 +812,8 @@ export function calculateTotalLevel(char: CompleteCharacter): number {
 }
 
 export function calculateSkillPointsTotal(
-	char: CompleteCharacter
+	char: CompleteCharacter,
+	intMod: number
 ): Record<number, ValueWithBreakdown> {
 	const skillPointsTotal: Record<number, ValueWithBreakdown> = {};
 	
@@ -820,31 +821,48 @@ export function calculateSkillPointsTotal(
 	for (const charClass of (char.game_character_class ?? [])) {
 		const classSkillPoints = charClass.class.skill_ranks_per_level ?? 0;
 		const maxLevel = charClass.level ?? 1;
+		const isHuman = char.game_character_ancestry?.[0]?.ancestry?.name?.toLowerCase() === 'human';
 		
 		// Calculate for each level up to current
 		for (let level = 1; level <= maxLevel; level++) {
-			const intBonus = getAbilityModifier(char, 'intelligence');
-			const ancestralBonus = 0;
-			
-			skillPointsTotal[level] = buildGenericStat(`Level ${level} Skill Points`, [
-				{ source: `${charClass.class.label ?? 'Unknown'} Base`, value: classSkillPoints },
-				{ source: 'Intelligence Modifier', value: intBonus },
-				{ source: 'Ancestral Bonus', value: ancestralBonus }
-			]);
+			const bonuses = [
+				{ 
+					source: `${charClass.class.label ?? 'Unknown'} Base`, 
+					value: classSkillPoints 
+				},
+				{ 
+					source: 'Intelligence Modifier', 
+					value: Math.max(intMod, 1) // Minimum of 1 skill point per level
+				}
+			];
+
+			// Add human bonus if applicable
+			if (isHuman) {
+				bonuses.push({ 
+					source: 'Human Bonus', 
+					value: 1 
+				});
+			}
+
+			// Add favored class bonus if this class was chosen for the level
+			const hasFavoredClassSkillBonus = char.game_character_favored_class_bonus?.some(fcb => 
+				fcb.class_id === charClass.class_id && 
+				fcb.level === level && 
+				fcb.favored_class_choice.name === 'skill'
+			);
+
+			if (hasFavoredClassSkillBonus) {
+				bonuses.push({ 
+					source: 'Favored Class Bonus', 
+					value: 1 
+				});
+			}
+
+			skillPointsTotal[level] = buildGenericStat(`Level ${level} Skill Points`, bonuses);
 		}
 	}
 	
 	return skillPointsTotal;
-}
-
-function getAbilityModifier(
-	char: CompleteCharacter,
-	abilityName: string
-): number {
-	const ability = char.game_character_ability?.find(
-		a => a.ability?.name?.toLowerCase() === abilityName.toLowerCase()
-	);
-	return ability ? abilityMod(ability.value) : 0;
 }
 
 function calculateSkillPointsRemaining(
@@ -1094,8 +1112,8 @@ export async function enrichCharacterData(
 
 		// Skill points
 		skillPoints: {
-			total: calculateSkillPointsTotal(char),
-			remaining: calculateSkillPointsRemaining(char, calculateSkillPointsTotal(char))
+			total: calculateSkillPointsTotal(char, intMod),
+			remaining: calculateSkillPointsRemaining(char, calculateSkillPointsTotal(char, intMod))
 		},
 		totalLevel: calculateTotalLevel(char),
 		skillsWithRanks,
