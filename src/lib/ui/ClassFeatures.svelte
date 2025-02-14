@@ -1,112 +1,105 @@
 <script lang="ts">
 	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-	import type { GameCharacterClass, GameCharacterClassFeature, Class, ClassFeature } from '$lib/db/gameRules.api';
+	import type { ProcessedFeature } from '$lib/domain/characterCalculations';
 	import * as Card from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
-    
-	interface ProcessedFeature {
-		id: number;
-		name: string;
-		label: string;
-		description: string | null;
-		type: string | null;
-		level: number;
-		className: string;
-	}
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { X } from 'lucide-svelte';
 
 	let { character } = $props<{
 		character?: EnrichedCharacter | null;
 	}>();
 
-	// Process class features into a flat array sorted by level
-	let processedFeatures = $derived(() => {
-		if (!character?.classes) return [];
-
-		const features: ProcessedFeature[] = [];
-		
-		(character.classes as Array<GameCharacterClass & { 
-			features?: Array<GameCharacterClassFeature & {
-				base: ClassFeature;
-			}>;
-			base: Class;
-		}>).forEach((characterClass) => {
-			characterClass.features?.forEach((feature) => {
-				features.push({
-					id: feature.base.id,
-					name: feature.base.name,
-					label: feature.base.label ?? feature.base.name,
-					description: feature.base.description,
-					type: feature.base.type,
-					level: feature.level_obtained,
-					className: characterClass.base.label ?? characterClass.base.name
-				});
-			});
-		});
-
-		return features.sort((a, b) => a.level - b.level);
-	});
-
-	// Group features by level
 	let featuresByLevel = $derived(() => {
-		const grouped = new Map<number, ProcessedFeature[]>();
+		if (!character?.processedClassFeatures) return new Map();
 		
-		processedFeatures().forEach(feature => {
+		const grouped = new Map<number, ProcessedFeature[]>();
+		for (const feature of character.processedClassFeatures) {
 			if (!grouped.has(feature.level)) {
 				grouped.set(feature.level, []);
 			}
 			grouped.get(feature.level)?.push(feature);
-		});
-		
+		}
 		return grouped;
+	});
+
+	let selectedFeature = $state<{ label: string; description: string } | null>(null);
+	let dialogOpen = $state(false);
+
+	function showFeatureDescription(feature: { label: string; description: string }) {
+		selectedFeature = feature;
+		dialogOpen = true;
+	}
+
+	$effect(() => {
+		if (character) {
+			// Convert Map to a plain object for better console logging
+			const groupedForLogging = Object.fromEntries(featuresByLevel());
+			console.log('Character:', character);
+			console.log('Processed Features:', character.processedClassFeatures);
+			console.log('Grouped Features:', groupedForLogging);
+		}
 	});
 </script>
 
 <Card.Root>
 	<Card.Header>
 		<Card.Title>Class Features</Card.Title>
+		{#if character?.game_character_class[0]?.class?.description}
+			<button 
+				class="text-left hover:text-muted-foreground"
+				onclick={() => showFeatureDescription({ 
+					label: character.game_character_class[0].class.label ?? 'Class Description',
+					description: character.game_character_class[0].class.description ?? ''
+				})}
+			>
+				<Card.Description class="line-clamp-2">
+					{character.game_character_class[0].class.description}
+				</Card.Description>
+			</button>
+		{/if}
 	</Card.Header>
 	<Card.Content>
 		{#if !character}
 			<div class="rounded-md border border-muted p-4">
 				<p class="text-muted-foreground">Loading class features...</p>
 			</div>
-		{:else if processedFeatures().length === 0}
+		{:else if character.processedClassFeatures.length === 0}
 			<div class="rounded-md border border-muted p-4">
 				<p class="text-muted-foreground">No class features found.</p>
 			</div>
 		{:else}
-			<ScrollArea class="h-[400px] pr-4">
-				<div class="space-y-6">
-					{#each [...featuresByLevel().entries()].sort(([a], [b]) => a - b) as [level, features]}
+			<ScrollArea class="h-[calc(100vh-24rem)] min-h-[400px] max-h-[800px] pr-4">
+				<div class="space-y-4 sm:space-y-6">
+					{#each Array.from(featuresByLevel() as unknown as Map<number, ProcessedFeature[]>).sort((a, b) => a[0] - b[0]) as [level, features]}
 						<div class="feature-level-group">
-							<h3 class="text-lg font-semibold mb-2">
-								Level {level}
-							</h3>
-							<div class="space-y-4">
+							<h3 class="text-base sm:text-lg font-semibold mb-2">Level {level}</h3>
+							<div class="space-y-2 sm:space-y-4">
 								{#each features as feature}
-									<div class="feature-card">
-										<div class="feature-header">
-											<h4 class="text-base font-medium">
-												{feature.label}
-											</h4>
-											<div class="flex gap-2 items-center">
-												<Badge variant="outline">
-													{feature.className}
-												</Badge>
+									<button 
+										class="feature w-full text-left hover:bg-muted/50 p-2 sm:p-3 rounded-lg"
+										onclick={() => showFeatureDescription({ 
+											label: feature.label,
+											description: feature.description || 'No description available'
+										})}
+									>
+										<div class="flex flex-col gap-2">
+											<div class="flex items-center gap-2">
+												<h4 class="text-sm sm:text-base font-semibold">
+													{feature.label}
+												</h4>
 												{#if feature.type}
-													<Badge variant="secondary">
-														{feature.type}
-													</Badge>
+													<Badge variant="outline">{feature.type}</Badge>
 												{/if}
 											</div>
+											{#if feature.description}
+												<p class="text-sm text-muted-foreground line-clamp-2">
+													{feature.description}
+												</p>
+											{/if}
 										</div>
-										{#if feature.description}
-											<p class="text-sm text-muted-foreground mt-2">
-												{feature.description}
-											</p>
-										{/if}
-									</div>
+									</button>
 								{/each}
 							</div>
 						</div>
@@ -117,9 +110,24 @@
 	</Card.Content>
 </Card.Root>
 
+<!-- Feature Description Dialog -->
+<Dialog.Root bind:open={dialogOpen}>
+	<Dialog.Content class="max-h-[90vh] w-full overflow-y-auto">
+		{#if selectedFeature}
+			<Dialog.Header class="space-y-2">
+				<Dialog.Title>{selectedFeature.label}</Dialog.Title>
+			</Dialog.Header>
+			<div class="prose prose-sm dark:prose-invert max-w-none py-4">
+				<p class="whitespace-pre-wrap">{selectedFeature.description}</p>
+			</div>
+
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>
+
 <style lang="postcss">
 	.feature-card {
-		@apply rounded-lg border p-4 transition-colors;
+		@apply rounded-lg border p-3 sm:p-4 transition-colors;
 		border-color: hsl(var(--border) / 0.2);
 		background-color: hsl(var(--background));
 
@@ -129,6 +137,6 @@
 	}
 
 	.feature-header {
-		@apply flex flex-wrap justify-between items-start gap-2;
+		@apply flex flex-col sm:flex-row sm:flex-wrap justify-between items-start gap-2;
 	}
 </style> 

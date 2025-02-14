@@ -83,6 +83,7 @@ export interface EnrichedCharacter extends CompleteCharacter {
 	};
 	totalLevel: number;
 	skillsWithRanks: SkillWithRanks[];
+	processedClassFeatures: ProcessedFeature[];
 }
 
 interface BonusEntry {
@@ -849,6 +850,43 @@ async function getSkillsWithRanks(
 	return skillsWithRanks;
 }
 
+export interface ProcessedFeature {
+	id: number;
+	name: string;
+	label: string;
+	description: string | null;
+	type: string | null;
+	level: number;
+	className: string;
+}
+
+export function processClassFeatures(char: CompleteCharacter): ProcessedFeature[] {
+	if (!char.game_character_class_feature) return [];
+
+	const uniqueFeatures = new Map();
+	char.game_character_class_feature.forEach(feature => {
+		if (!uniqueFeatures.has(feature.class_feature_id)) {
+			uniqueFeatures.set(feature.class_feature_id, {
+				id: feature.class_feature.id,
+				name: feature.class_feature.name,
+				label: feature.class_feature.label ?? feature.class_feature.name,
+				description: parseNewlines(feature.class_feature.description),
+				type: feature.class_feature.type,
+				level: feature.level_obtained,
+				className: char.game_character_class[0].class.label ?? char.game_character_class[0].class.name
+			});
+		}
+	});
+
+	return Array.from(uniqueFeatures.values())
+		.sort((a, b) => a.level - b.level);
+}
+
+function parseNewlines(text: string | null): string {
+	if (!text) return '';
+	return text.replace(/\\n/g, '\n');
+}
+
 //
 // =====================  MAIN ENRICHING FUNCTION  =====================
 //
@@ -918,6 +956,9 @@ export async function enrichCharacterData(
 	// 8) Attacks with corrected ability mods
 	const attacks = await computeAttacks(char, gameRules, bab, strMod, dexMod, intMod);
 
+	// Process class features
+	const processedClassFeatures = processClassFeatures(char);
+
 	// 9) Collate final result with corrected ability mods
 	const enriched: EnrichedCharacter = {
 		...char,
@@ -967,11 +1008,15 @@ export async function enrichCharacterData(
 			remaining: calculateSkillPointsRemaining(char, calculateSkillPointsTotal(char, gameRules))
 		},
 		totalLevel: calculateTotalLevel(char),
-		skillsWithRanks
+		skillsWithRanks,
+
+		// Add processed class features
+		processedClassFeatures
 	};
 
 	return enriched;
 }
+
 
 
 

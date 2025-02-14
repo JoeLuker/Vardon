@@ -926,7 +926,7 @@ class:
   label: 'Alchemist'
   hit_die: 8
   base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
-  skill_ranks_per_level: 4
+  skill_ranks_per_level: 6 # it's actually 4, but I'm giving 6 for my player
   fortitude: 'good'
   reflex: 'good'
   will: 'poor'
@@ -940,7 +940,7 @@ class:
   label: 'Kineticist'
   hit_die: 8
   base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
-  skill_ranks_per_level: 4
+  skill_ranks_per_level: 6 # it's actually 4, but I'm giving 6 for my player
   fortitude: 'good'
   reflex: 'good'
   will: 'poor'

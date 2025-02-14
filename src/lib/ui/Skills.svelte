@@ -170,20 +170,6 @@
 			operationInProgress = null;
 		}
 	}
-
-	$effect(() => {
-		console.log('Skill Points:', {
-			total: Object.fromEntries(Object.entries(character?.skillPoints?.total ?? {})),
-			remaining: Object.fromEntries(Object.entries(character?.skillPoints?.remaining ?? {})),
-			levelNumbers,
-			ranksByLevel: levelNumbers.map(level => ({
-				level,
-				ranks: character?.game_character_skill_rank?.filter(
-					(rank: GameCharacterSkillRank) => rank.applied_at_level === level
-				)
-			}))
-		});
-	});
 </script>
 
 <div class="skills-container">
@@ -550,11 +536,8 @@
 	.skill-points-grid {
 		display: grid;
 		gap: 0.5rem;
-		/* This will create 4-5 columns depending on container width */
 		grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
-		/* Forces items to fill rows from left to right */
 		grid-auto-flow: dense;
-		/* Ensures consistent width across columns */
 		grid-auto-columns: 1fr;
 	}
 

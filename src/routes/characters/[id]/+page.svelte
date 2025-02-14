@@ -18,6 +18,7 @@
 	import Saves from '$lib/ui/Saves.svelte';
 	import CombatStats from '$lib/ui/CombatStats.svelte';
 	import ACStats from '$lib/ui/ACStats.svelte';
+	import ClassFeatures from '$lib/ui/ClassFeatures.svelte';
 
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
@@ -303,10 +304,11 @@
 
 		<!-- Tabs -->
 		<Tabs.Root value="abilityScores" class="w-full">
-			<Tabs.List class="grid w-full grid-cols-3">
+			<Tabs.List class="grid w-full grid-cols-4">
 				<Tabs.Trigger value="abilityScores">Ability Scores</Tabs.Trigger>
 				<Tabs.Trigger value="skills">Skills</Tabs.Trigger>
 				<Tabs.Trigger value="combat">Combat</Tabs.Trigger>
+				<Tabs.Trigger value="features">Features</Tabs.Trigger>
 			</Tabs.List>
 
 			<!-- AbilityScores -->
@@ -369,6 +371,15 @@
 					<CombatStats
 						character={character}
 						onSelectValue={handleSelectValue}
+					/>
+				</div>
+			</Tabs.Content>
+
+			<!-- Features -->
+			<Tabs.Content value="features">
+				<div class="rounded-lg bg-secondary p-6">
+					<ClassFeatures
+						character={character}
 					/>
 				</div>
 			</Tabs.Content>

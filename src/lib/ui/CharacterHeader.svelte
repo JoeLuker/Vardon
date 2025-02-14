@@ -31,11 +31,15 @@
 					{/if}
 
 					<span class="text-muted-foreground">
-						{character.ancestries?.[0]?.base?.label ?? '???'}
-						{#if character.classes?.length}
+						{character.game_character_ancestry?.[0]?.ancestry?.label ?? '???'}
+						{#if character.game_character_class?.length}
 							{': '}
-							{character.classes
-								.map((c: { base?: { label: string } }) => c.base?.label ?? '???')
+							{character.game_character_class
+								.map((c: { class: { label: string } }) => {
+									const archetype = character.game_character_archetype?.[0]?.archetype?.label;
+									const className = c.class?.label ?? '???';
+									return `${archetype ? `${archetype} ` : ''}${className}`;
+								})
 								.join(', ')}
 						{/if}
 					</span>
