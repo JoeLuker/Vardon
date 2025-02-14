@@ -706,23 +706,78 @@ interface AttackParts {
 		damage: ValueWithBreakdown;
 	};
 }
+/** Calculate base attack bonus including all iterative attacks */
+async function calculateBAB(
+	char: CompleteCharacter
+): Promise<number[]> {
+	// Get all character classes and their BAB progression IDs
+	const charClasses = char.game_character_class ?? [];
 
+	// Calculate base BAB based on progression type
+	let baseBAB = 0;
+	for (const charClass of charClasses) {
+		const classLevel = charClass.level ?? 1;
+		const progressionId = charClass.class.base_attack_bonus_progression;
+		
+		if (progressionId) {
+			// Handle different BAB progression types
+			switch (progressionId) {
+				case 1: // Full BAB
+					baseBAB += classLevel;
+					break;
+				case 2: // 3/4 BAB
+					baseBAB += Math.floor(classLevel * 0.75);
+					break;
+				case 3: // 1/2 BAB
+					baseBAB += Math.floor(classLevel * 0.5);
+					break;
+				default:
+					console.warn(`Unknown BAB progression ID: ${progressionId}`);
+			}
+		}
+	}
+
+	// Calculate iterative attacks
+	const attacks: number[] = [baseBAB];
+	
+	// Add iterative attacks at -5 penalties
+	let iterativeBAB = baseBAB;
+	while (iterativeBAB > 5) {
+		iterativeBAB -= 5;
+		attacks.push(iterativeBAB);
+	}
+
+	return attacks;
+}
+
+// Update computeAttacks to use the new BAB calculation
 async function computeAttacks(
 	char: CompleteCharacter,
 	gameRules: GameRulesAPI,
-	bab: number,
 	strMod: number,
 	dexMod: number,
 	intMod: number
 ): Promise<AttackParts> {
 	const weaponAttune = await getAbpBonusFromNodes(char, gameRules, 'weapon_attunement');
+	const babProgression = await calculateBAB(char);
 
 	function buildAttack(label: string, abilityModifier: number): ValueWithBreakdown {
-		return buildGenericStat(label, [
-			{ source: 'BAB', value: bab },
+		const bonuses: BonusEntry[] = [
+			{ source: 'Base Attack', value: babProgression[0] },
 			{ source: 'Ability mod', value: abilityModifier },
 			{ source: 'Weapon Attunement', value: weaponAttune }
-		]);
+		];
+
+		// Add iterative attacks to the label if they exist
+		if (babProgression.length > 1) {
+			const iteratives = babProgression
+				.slice(1)
+				.map(bab => bab + abilityModifier + weaponAttune)
+				.join('/');
+			label = `${label} (${bonuses[0].value + abilityModifier + weaponAttune}/${iteratives})`;
+		}
+
+		return buildGenericStat(label, bonuses);
 	}
 
 	const melee = buildAttack('Melee Attack', strMod);
@@ -989,7 +1044,7 @@ export async function enrichCharacterData(
 	const skillsWithRanks = await getSkillsWithRanks(char, gameRules, cache.classSkillIds);
 
 	// 8) Attacks with corrected ability mods
-	const attacks = await computeAttacks(char, gameRules, bab, strMod, dexMod, intMod);
+	const attacks = await computeAttacks(char, gameRules, strMod, dexMod, intMod);
 
 	// Process class features
 	const processedClassFeatures = processClassFeatures(char);
