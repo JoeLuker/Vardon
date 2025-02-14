@@ -1,24 +1,30 @@
 
 /**
  * Game Rules API
- * Generated 2025-02-11T23:53:27.767682
+ * Generated 2025-02-14T00:49:14.261641
  * 
  * Provides type-safe access to game rules with relationship handling, CRUD operations, and realtime updates.
  */
 
+ import type { SupabaseClient } from '@supabase/supabase-js';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import type { SupabaseClient } from '@supabase/supabase-js';
-
-// Base types for all game rules
 import type { Database } from '$lib/domain/types/supabase';
 
-
-
+// Base types for database tables
 type DbTables = Database['public']['Tables'];
 
+// Generic types for all game rules
 export type GameRule<T extends keyof DbTables> = DbTables[T]['Row'];
 export type GameRuleInsert<T extends keyof DbTables> = DbTables[T]['Insert'];
-export type GameRuleUpdate<T extends keyof DbTables> = DbTables[T]['Update'] & { id?: number };
+export type GameRuleUpdate<T extends keyof DbTables> = Omit<DbTables[T]['Update'], 'id'> & { id: number };
+
+// Realtime event types
+export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE';
+export type RealtimePayload<T> = {
+    eventType: RealtimeEvent;
+    new: T | null;
+    old: T | null;
+};
 
 // Specific rule types
 export type Ability = GameRule<"ability">;
@@ -280,7 +286,6 @@ export type WildTalentType = GameRule<"wild_talent_type">;
 export type WildTalentTypeInsert = GameRuleInsert<"wild_talent_type">;
 export type WildTalentTypeUpdate = GameRuleUpdate<"wild_talent_type">; 
 
-
 export interface CompleteCharacter extends GameCharacter {
     game_character_class: Array<GameCharacterClass & { class: Class }>;
     game_character_skill_rank: Array<GameCharacterSkillRank & { skill: Skill }>;
@@ -303,7 +308,98 @@ export interface CompleteCharacter extends GameCharacter {
     game_character_weapon: Array<GameCharacterWeapon & { weapon: Weapon }>;
 }
 
+/** Interface for preloading common game data */
+export interface PreloadTableData {
+    ability?: Ability[];
+    abp_bonus_type?: AbpBonusType[];
+    abp_node?: AbpNode[];
+    abp_node_bonus?: AbpNodeBonus[];
+    abp_node_group?: AbpNodeGroup[];
+    ancestry?: Ancestry[];
+    archetype?: Archetype[];
+    archetype_class_feature?: ArchetypeClassFeature[];
+    armor?: Armor[];
+    bonus_attack_progression?: BonusAttackProgression[];
+    bonus_type?: BonusType[];
+    classData?: Class[];
+    class_feature?: ClassFeature[];
+    class_feature_benefit?: ClassFeatureBenefit[];
+    class_skill?: ClassSkill[];
+    consumable?: Consumable[];
+    corruption?: Corruption[];
+    corruption_manifestation?: CorruptionManifestation[];
+    discovery?: Discovery[];
+    element?: Element[];
+    equipment?: Equipment[];
+    favored_class_choice?: FavoredClassChoice[];
+    feat?: Feat[];
+    feat_benefit?: FeatBenefit[];
+    fulfillment_qualification_mapping?: FulfillmentQualificationMapping[];
+    game_character?: GameCharacter[];
+    game_character_ability?: GameCharacterAbility[];
+    game_character_abp_choice?: GameCharacterAbpChoice[];
+    game_character_ancestry?: GameCharacterAncestry[];
+    game_character_archetype?: GameCharacterArchetype[];
+    game_character_armor?: GameCharacterArmor[];
+    game_character_class?: GameCharacterClass[];
+    game_character_class_feature?: GameCharacterClassFeature[];
+    game_character_consumable?: GameCharacterConsumable[];
+    game_character_corruption?: GameCharacterCorruption[];
+    game_character_corruption_manifestation?: GameCharacterCorruptionManifestation[];
+    game_character_discovery?: GameCharacterDiscovery[];
+    game_character_equipment?: GameCharacterEquipment[];
+    game_character_favored_class_bonus?: GameCharacterFavoredClassBonus[];
+    game_character_feat?: GameCharacterFeat[];
+    game_character_skill_rank?: GameCharacterSkillRank[];
+    game_character_spell?: GameCharacterSpell[];
+    game_character_trait?: GameCharacterTrait[];
+    game_character_weapon?: GameCharacterWeapon[];
+    game_character_wild_talent?: GameCharacterWildTalent[];
+    legendary_gift_type?: LegendaryGiftType[];
+    monk_unchained_ki_power?: MonkUnchainedKiPower[];
+    prerequisite_fulfillment?: PrerequisiteFulfillment[];
+    prerequisite_requirement?: PrerequisiteRequirement[];
+    prerequisite_requirement_fulfillment_mapping?: PrerequisiteRequirementFulfillmentMapping[];
+    prerequisite_requirement_type?: PrerequisiteRequirementType[];
+    qinggong_monk_ki_power?: QinggongMonkKiPower[];
+    qinggong_monk_ki_power_type?: QinggongMonkKiPowerType[];
+    qualification_type?: QualificationType[];
+    rule?: Rule[];
+    skill?: Skill[];
+    sorcerer_bloodline?: SorcererBloodline[];
+    spell?: Spell[];
+    spell_casting_time?: SpellCastingTime[];
+    spell_casting_time_mapping?: SpellCastingTimeMapping[];
+    spell_component?: SpellComponent[];
+    spell_component_mapping?: SpellComponentMapping[];
+    spell_component_type?: SpellComponentType[];
+    spell_consumable?: SpellConsumable[];
+    spell_duration?: SpellDuration[];
+    spell_duration_mapping?: SpellDurationMapping[];
+    spell_list?: SpellList[];
+    spell_list_class_feature_benefit_mapping?: SpellListClassFeatureBenefitMapping[];
+    spell_list_feat_mapping?: SpellListFeatMapping[];
+    spell_list_spell_mapping?: SpellListSpellMapping[];
+    spell_range?: SpellRange[];
+    spell_range_mapping?: SpellRangeMapping[];
+    spell_school?: SpellSchool[];
+    spell_school_mapping?: SpellSchoolMapping[];
+    spell_sorcerer_bloodline_mapping?: SpellSorcererBloodlineMapping[];
+    spell_subdomain_mapping?: SpellSubdomainMapping[];
+    spell_target?: SpellTarget[];
+    spell_target_mapping?: SpellTargetMapping[];
+    spellcasting_class_feature?: SpellcastingClassFeature[];
+    spellcasting_preparation_type?: SpellcastingPreparationType[];
+    spellcasting_type?: SpellcastingType[];
+    subdomain?: Subdomain[];
+    trait?: Trait[];
+    weapon?: Weapon[];
+    wild_talent?: WildTalent[];
+    wild_talent_type?: WildTalentType[];
+}
 
+
+/** Relationship cache structure */
 export interface GameRuleRelationships {
     abilityByAbilityId: Record<number, Ability[]>;
     abpBonusTypeByBonusTypeId: Record<number, AbpBonusType[]>;
@@ -353,98 +449,159 @@ export interface GameRuleRelationships {
     wildTalentTypeByWildTalentTypeId: Record<number, WildTalentType[]>;
 }
 
-class TableOperations<T extends { id: number }, TInsert, TUpdate> {
+
+/** Base class for table operations with caching and realtime updates */
+export class TableOperations<T extends { id: number }, TInsert, TUpdate extends { id: number }> {
+    private cache = new Map<number, T>();
+    private allDataLoaded = false;
     private channel: RealtimeChannel | null = null;
 
     constructor(
         private supabase: SupabaseClient,
-        private tableName: string,
-        private cache: Map<number, T> = new Map()
-    ) {}
+        private tableName: string
+    ) {
+        if (!tableName) throw new Error('Table name is required');
+    }
 
+    /** Get all records from the table with caching */
     async getAll(): Promise<T[]> {
-        const { data, error } = await this.supabase
-            .from(this.tableName)
-            .select('*')
-            .order('id');
-        if (error) throw error;
-        
-        // Update cache
-        data?.forEach(item => this.cache.set(item.id, item));
-        return data;
-    }
+        try {
+            if (this.allDataLoaded) {
+                return Array.from(this.cache.values());
+            }
 
-    async getById(id: number): Promise<T | null> {
-        // Check cache first
-        if (this.cache.has(id)) {
-            return this.cache.get(id) || null;
-        }
-
-        const { data, error } = await this.supabase
-            .from(this.tableName)
-            .select('*')
-            .eq('id', id)
-            .single();
-        if (error && error.code !== 'PGRST116') throw error;
-        
-        // Update cache
-        if (data) this.cache.set(data.id, data);
-        return data;
-    }
-
-    async getByIds(ids: number[]): Promise<T[]> {
-        if (!ids.length) return [];
-        
-        // Check which ids we need to fetch
-        const uncachedIds = ids.filter(id => !this.cache.has(id));
-        
-        if (uncachedIds.length > 0) {
             const { data, error } = await this.supabase
                 .from(this.tableName)
                 .select('*')
-                .in('id', uncachedIds);
+                .order('id');
             if (error) throw error;
             
-            // Update cache with new data
-            data?.forEach(item => this.cache.set(item.id, item));
+            // Update cache
+            data?.forEach(item => this.cache.set(item.id, item as T));
+            this.allDataLoaded = true;
+            return data as T[] || [];
+        } catch (error) {
+            console.error(`Error fetching all ${this.tableName}:`, error);
+            throw error;
         }
-        
-        // Return all requested items from cache
-        return ids.map(id => this.cache.get(id)).filter((item): item is T => item != null);
     }
 
-    async create(newItem: TInsert): Promise<T | null> {
-        const { data, error } = await this.supabase
-            .from(this.tableName)
-            .insert(newItem)
-            .select()
-            .single();
-        if (error) throw error;
-        return data;
+    /** Get a single record by ID with caching */
+    async getById(id: number): Promise<T | null> {
+        try {
+            // Check cache first
+            if (this.cache.has(id)) {
+                return this.cache.get(id) || null;
+            }
+
+            const { data, error } = await this.supabase
+                .from(this.tableName)
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error;
+            
+            // Update cache
+            if (data) this.cache.set(data.id, data as T);
+            return data as T;
+        } catch (error) {
+            console.error(`Error fetching ${this.tableName} by id:`, error);
+            throw error;
+        }
     }
 
-    async update(changes: TUpdate & { id?: number }): Promise<T | null> {
-        const { id, ...rest } = changes;
-        if (!id) throw new Error(`update${this.tableName}: missing "id" field`);
-        const { data, error } = await this.supabase
-            .from(this.tableName)
-            .update(rest)
-            .eq('id', id)
-            .select()
-            .single();
-        if (error) throw error;
-        return data;
+    /** Get multiple records by IDs with caching */
+    async getByIds(ids: number[]): Promise<T[]> {
+        try {
+            if (!ids.length) return [];
+            
+            // Check which ids we need to fetch
+            const uncachedIds = ids.filter(id => !this.cache.has(id));
+            
+            if (uncachedIds.length > 0) {
+                const { data, error } = await this.supabase
+                    .from(this.tableName)
+                    .select('*')
+                    .in('id', uncachedIds);
+                if (error) throw error;
+                
+                // Update cache with new data
+                data?.forEach(item => this.cache.set(item.id, item as T));
+            }
+            
+            // Return all requested items from cache
+            return ids.map(id => this.cache.get(id)).filter((item): item is T => item != null);
+        } catch (error) {
+            console.error(`Error fetching ${this.tableName} by ids:`, error);
+            throw error;
+        }
     }
 
+    /** Create a new record */
+    async create(newItem: TInsert): Promise<T> {
+        try {
+            const { data, error } = await this.supabase
+                .from(this.tableName)
+                .insert(newItem)
+                .select()
+                .single();
+            if (error) throw error;
+            if (!data) throw new Error(`Failed to create ${this.tableName}`);
+            
+            // Update cache
+            const result = data as T;
+            this.cache.set(result.id, result);
+            return result;
+        } catch (error) {
+            console.error(`Error creating ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    /** Update an existing record */
+    async update(changes: TUpdate): Promise<T> {
+        try {
+            const { id } = changes;
+            if (!id) throw new Error(`update${this.tableName}: missing "id" field`);
+            
+            const { data, error } = await this.supabase
+                .from(this.tableName)
+                .update(changes)
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            if (!data) throw new Error(`Failed to update ${this.tableName}`);
+            
+            // Update cache
+            const result = data as T;
+            this.cache.set(result.id, result);
+            return result;
+        } catch (error) {
+            console.error(`Error updating ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    /** Delete a record */
     async delete(id: number): Promise<boolean> {
-        const { error } = await this.supabase
-            .from(this.tableName)
-            .delete()
-            .eq('id', id);
-        if (error) throw error;
-        return true;
+        try {
+            const { error } = await this.supabase
+                .from(this.tableName)
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            
+            // Remove from cache
+            this.cache.delete(id);
+            return true;
+        } catch (error) {
+            console.error(`Error deleting ${this.tableName}:`, error);
+            throw error;
+        }
     }
 
+    /** Watch for realtime changes */
     watch(
         onChange: (type: 'insert' | 'update' | 'delete', row: T, oldRow?: T) => void
     ): () => void {
@@ -454,7 +611,7 @@ class TableOperations<T extends { id: number }, TInsert, TUpdate> {
 
         this.channel = this.supabase
             .channel(`${this.tableName}_changes`)
-            .on(
+            .on<T>(
                 'postgres_changes',
                 {
                     event: '*',
@@ -463,11 +620,17 @@ class TableOperations<T extends { id: number }, TInsert, TUpdate> {
                 },
                 (payload) => {
                     if (payload.eventType === 'INSERT' && payload.new) {
-                        onChange('insert', payload.new as T);
+                        const newRow = payload.new as T;
+                        this.cache.set(newRow.id, newRow);
+                        onChange('insert', newRow);
                     } else if (payload.eventType === 'UPDATE' && payload.new) {
-                        onChange('update', payload.new as T, payload.old as T);
+                        const newRow = payload.new as T;
+                        this.cache.set(newRow.id, newRow);
+                        onChange('update', newRow, payload.old as T);
                     } else if (payload.eventType === 'DELETE' && payload.old) {
-                        onChange('delete', payload.old as T);
+                        const oldRow = payload.old as T;
+                        this.cache.delete(oldRow.id);
+                        onChange('delete', oldRow);
                     }
                 }
             )
@@ -476,6 +639,7 @@ class TableOperations<T extends { id: number }, TInsert, TUpdate> {
         return () => this.stopWatch();
     }
 
+    /** Stop watching for realtime changes */
     stopWatch(): void {
         if (this.channel) {
             try {
@@ -490,241 +654,193 @@ class TableOperations<T extends { id: number }, TInsert, TUpdate> {
 }
 
 export class GameRulesAPI {
+    [key: string]: any;
+
     private relationships: GameRuleRelationships = {
-                abilityByAbilityId: {},
-        abpBonusTypeByBonusTypeId: {},
-        abpNodeByNodeId: {},
-        abpNodeGroupByGroupId: {},
-        ancestryByAncestryId: {},
-        archetypeByArchetypeId: {},
-        armorByArmorId: {},
-        bonusAttackProgressionByBaseAttackBonusProgression: {},
-        bonusTypeByBonusTypeId: {},
-        classByClassId: {},
-        classFeatureBenefitByClassFeatureBenefitId: {},
-        classFeatureByClassFeatureId: {},
-        classFeatureByFeatureId: {},
-        consumableByConsumableId: {},
-        corruptionByCorruptionId: {},
-        corruptionManifestationByManifestationId: {},
-        discoveryByDiscoveryId: {},
-        equipmentByEquipmentId: {},
-        favoredClassChoiceByChoiceId: {},
-        featByFeatId: {},
-        gameCharacterByGameCharacterId: {},
-        prerequisiteFulfillmentByFulfillmentId: {},
-        prerequisiteFulfillmentByPrerequisiteFulfillmentId: {},
-        prerequisiteRequirementByPrerequisiteRequirementId: {},
-        prerequisiteRequirementTypeByRequirementTypeId: {},
-        qinggongMonkKiPowerTypeByPowerTypeId: {},
-        qualificationTypeByQualificationTypeId: {},
-        skillBySkillId: {},
-        sorcererBloodlineBySorcererBloodlineId: {},
-        spellBySpellId: {},
-        spellCastingTimeBySpellCastingTimeId: {},
-        spellComponentBySpellComponentId: {},
-        spellComponentTypeByTypeId: {},
-        spellDurationBySpellDurationId: {},
-        spellListBySpellListId: {},
-        spellRangeBySpellRangeId: {},
-        spellSchoolBySchoolId: {},
-        spellSchoolBySpellSchoolId: {},
-        spellTargetBySpellTargetId: {},
-        spellcastingPreparationTypeByPreparationType: {},
-        spellcastingTypeBySpellcastingType: {},
-        subdomainBySubdomainId: {},
-        traitByTraitId: {},
-        weaponByWeaponId: {},
-        wildTalentByWildTalentId: {},
-        wildTalentTypeByWildTalentTypeId: {}
+        abilityByAbilityId: {},abpBonusTypeByBonusTypeId: {},abpNodeByNodeId: {},abpNodeGroupByGroupId: {},ancestryByAncestryId: {},archetypeByArchetypeId: {},armorByArmorId: {},bonusAttackProgressionByBaseAttackBonusProgression: {},bonusTypeByBonusTypeId: {},classByClassId: {},classFeatureBenefitByClassFeatureBenefitId: {},classFeatureByClassFeatureId: {},classFeatureByFeatureId: {},consumableByConsumableId: {},corruptionByCorruptionId: {},corruptionManifestationByManifestationId: {},discoveryByDiscoveryId: {},equipmentByEquipmentId: {},favoredClassChoiceByChoiceId: {},featByFeatId: {},gameCharacterByGameCharacterId: {},prerequisiteFulfillmentByFulfillmentId: {},prerequisiteFulfillmentByPrerequisiteFulfillmentId: {},prerequisiteRequirementByPrerequisiteRequirementId: {},prerequisiteRequirementTypeByRequirementTypeId: {},qinggongMonkKiPowerTypeByPowerTypeId: {},qualificationTypeByQualificationTypeId: {},skillBySkillId: {},sorcererBloodlineBySorcererBloodlineId: {},spellBySpellId: {},spellCastingTimeBySpellCastingTimeId: {},spellComponentBySpellComponentId: {},spellComponentTypeByTypeId: {},spellDurationBySpellDurationId: {},spellListBySpellListId: {},spellRangeBySpellRangeId: {},spellSchoolBySchoolId: {},spellSchoolBySpellSchoolId: {},spellTargetBySpellTargetId: {},spellcastingPreparationTypeByPreparationType: {},spellcastingTypeBySpellcastingType: {},subdomainBySubdomainId: {},traitByTraitId: {},weaponByWeaponId: {},wildTalentByWildTalentId: {},wildTalentTypeByWildTalentTypeId: {}
     };
 
     // Watcher management
     private watchers: Array<() => void> = [];
-    
-    stopAllWatchers() {
-        this.watchers.forEach(unsubscribe => unsubscribe());
-        this.watchers = [];
-    }
 
     // Table operations instances
-    private abilityOps: TableOperations<Ability, AbilityInsert, AbilityUpdate>;
-    private abp_bonus_typeOps: TableOperations<AbpBonusType, AbpBonusTypeInsert, AbpBonusTypeUpdate>;
-    private abp_nodeOps: TableOperations<AbpNode, AbpNodeInsert, AbpNodeUpdate>;
-    private abp_node_bonusOps: TableOperations<AbpNodeBonus, AbpNodeBonusInsert, AbpNodeBonusUpdate>;
-    private abp_node_groupOps: TableOperations<AbpNodeGroup, AbpNodeGroupInsert, AbpNodeGroupUpdate>;
-    private ancestryOps: TableOperations<Ancestry, AncestryInsert, AncestryUpdate>;
-    private archetypeOps: TableOperations<Archetype, ArchetypeInsert, ArchetypeUpdate>;
-    private archetype_class_featureOps: TableOperations<ArchetypeClassFeature, ArchetypeClassFeatureInsert, ArchetypeClassFeatureUpdate>;
-    private armorOps: TableOperations<Armor, ArmorInsert, ArmorUpdate>;
-    private bonus_attack_progressionOps: TableOperations<BonusAttackProgression, BonusAttackProgressionInsert, BonusAttackProgressionUpdate>;
-    private bonus_typeOps: TableOperations<BonusType, BonusTypeInsert, BonusTypeUpdate>;
-    private classOps: TableOperations<Class, ClassInsert, ClassUpdate>;
-    private class_featureOps: TableOperations<ClassFeature, ClassFeatureInsert, ClassFeatureUpdate>;
-    private class_feature_benefitOps: TableOperations<ClassFeatureBenefit, ClassFeatureBenefitInsert, ClassFeatureBenefitUpdate>;
-    private class_skillOps: TableOperations<ClassSkill, ClassSkillInsert, ClassSkillUpdate>;
-    private consumableOps: TableOperations<Consumable, ConsumableInsert, ConsumableUpdate>;
-    private corruptionOps: TableOperations<Corruption, CorruptionInsert, CorruptionUpdate>;
-    private corruption_manifestationOps: TableOperations<CorruptionManifestation, CorruptionManifestationInsert, CorruptionManifestationUpdate>;
-    private discoveryOps: TableOperations<Discovery, DiscoveryInsert, DiscoveryUpdate>;
-    private elementOps: TableOperations<Element, ElementInsert, ElementUpdate>;
-    private equipmentOps: TableOperations<Equipment, EquipmentInsert, EquipmentUpdate>;
-    private favored_class_choiceOps: TableOperations<FavoredClassChoice, FavoredClassChoiceInsert, FavoredClassChoiceUpdate>;
-    private featOps: TableOperations<Feat, FeatInsert, FeatUpdate>;
-    private feat_benefitOps: TableOperations<FeatBenefit, FeatBenefitInsert, FeatBenefitUpdate>;
-    private fulfillment_qualification_mappingOps: TableOperations<FulfillmentQualificationMapping, FulfillmentQualificationMappingInsert, FulfillmentQualificationMappingUpdate>;
-    private game_characterOps: TableOperations<GameCharacter, GameCharacterInsert, GameCharacterUpdate>;
-    private game_character_abilityOps: TableOperations<GameCharacterAbility, GameCharacterAbilityInsert, GameCharacterAbilityUpdate>;
-    private game_character_abp_choiceOps: TableOperations<GameCharacterAbpChoice, GameCharacterAbpChoiceInsert, GameCharacterAbpChoiceUpdate>;
-    private game_character_ancestryOps: TableOperations<GameCharacterAncestry, GameCharacterAncestryInsert, GameCharacterAncestryUpdate>;
-    private game_character_archetypeOps: TableOperations<GameCharacterArchetype, GameCharacterArchetypeInsert, GameCharacterArchetypeUpdate>;
-    private game_character_armorOps: TableOperations<GameCharacterArmor, GameCharacterArmorInsert, GameCharacterArmorUpdate>;
-    private game_character_classOps: TableOperations<GameCharacterClass, GameCharacterClassInsert, GameCharacterClassUpdate>;
-    private game_character_class_featureOps: TableOperations<GameCharacterClassFeature, GameCharacterClassFeatureInsert, GameCharacterClassFeatureUpdate>;
-    private game_character_consumableOps: TableOperations<GameCharacterConsumable, GameCharacterConsumableInsert, GameCharacterConsumableUpdate>;
-    private game_character_corruptionOps: TableOperations<GameCharacterCorruption, GameCharacterCorruptionInsert, GameCharacterCorruptionUpdate>;
-    private game_character_corruption_manifestationOps: TableOperations<GameCharacterCorruptionManifestation, GameCharacterCorruptionManifestationInsert, GameCharacterCorruptionManifestationUpdate>;
-    private game_character_discoveryOps: TableOperations<GameCharacterDiscovery, GameCharacterDiscoveryInsert, GameCharacterDiscoveryUpdate>;
-    private game_character_equipmentOps: TableOperations<GameCharacterEquipment, GameCharacterEquipmentInsert, GameCharacterEquipmentUpdate>;
-    private game_character_favored_class_bonusOps: TableOperations<GameCharacterFavoredClassBonus, GameCharacterFavoredClassBonusInsert, GameCharacterFavoredClassBonusUpdate>;
-    private game_character_featOps: TableOperations<GameCharacterFeat, GameCharacterFeatInsert, GameCharacterFeatUpdate>;
-    private game_character_skill_rankOps: TableOperations<GameCharacterSkillRank, GameCharacterSkillRankInsert, GameCharacterSkillRankUpdate>;
-    private game_character_spellOps: TableOperations<GameCharacterSpell, GameCharacterSpellInsert, GameCharacterSpellUpdate>;
-    private game_character_traitOps: TableOperations<GameCharacterTrait, GameCharacterTraitInsert, GameCharacterTraitUpdate>;
-    private game_character_weaponOps: TableOperations<GameCharacterWeapon, GameCharacterWeaponInsert, GameCharacterWeaponUpdate>;
-    private game_character_wild_talentOps: TableOperations<GameCharacterWildTalent, GameCharacterWildTalentInsert, GameCharacterWildTalentUpdate>;
-    private legendary_gift_typeOps: TableOperations<LegendaryGiftType, LegendaryGiftTypeInsert, LegendaryGiftTypeUpdate>;
-    private monk_unchained_ki_powerOps: TableOperations<MonkUnchainedKiPower, MonkUnchainedKiPowerInsert, MonkUnchainedKiPowerUpdate>;
-    private prerequisite_fulfillmentOps: TableOperations<PrerequisiteFulfillment, PrerequisiteFulfillmentInsert, PrerequisiteFulfillmentUpdate>;
-    private prerequisite_requirementOps: TableOperations<PrerequisiteRequirement, PrerequisiteRequirementInsert, PrerequisiteRequirementUpdate>;
-    private prerequisite_requirement_fulfillment_mappingOps: TableOperations<PrerequisiteRequirementFulfillmentMapping, PrerequisiteRequirementFulfillmentMappingInsert, PrerequisiteRequirementFulfillmentMappingUpdate>;
-    private prerequisite_requirement_typeOps: TableOperations<PrerequisiteRequirementType, PrerequisiteRequirementTypeInsert, PrerequisiteRequirementTypeUpdate>;
-    private qinggong_monk_ki_powerOps: TableOperations<QinggongMonkKiPower, QinggongMonkKiPowerInsert, QinggongMonkKiPowerUpdate>;
-    private qinggong_monk_ki_power_typeOps: TableOperations<QinggongMonkKiPowerType, QinggongMonkKiPowerTypeInsert, QinggongMonkKiPowerTypeUpdate>;
-    private qualification_typeOps: TableOperations<QualificationType, QualificationTypeInsert, QualificationTypeUpdate>;
-    private ruleOps: TableOperations<Rule, RuleInsert, RuleUpdate>;
-    private skillOps: TableOperations<Skill, SkillInsert, SkillUpdate>;
-    private sorcerer_bloodlineOps: TableOperations<SorcererBloodline, SorcererBloodlineInsert, SorcererBloodlineUpdate>;
-    private spellOps: TableOperations<Spell, SpellInsert, SpellUpdate>;
-    private spell_casting_timeOps: TableOperations<SpellCastingTime, SpellCastingTimeInsert, SpellCastingTimeUpdate>;
-    private spell_casting_time_mappingOps: TableOperations<SpellCastingTimeMapping, SpellCastingTimeMappingInsert, SpellCastingTimeMappingUpdate>;
-    private spell_componentOps: TableOperations<SpellComponent, SpellComponentInsert, SpellComponentUpdate>;
-    private spell_component_mappingOps: TableOperations<SpellComponentMapping, SpellComponentMappingInsert, SpellComponentMappingUpdate>;
-    private spell_component_typeOps: TableOperations<SpellComponentType, SpellComponentTypeInsert, SpellComponentTypeUpdate>;
-    private spell_consumableOps: TableOperations<SpellConsumable, SpellConsumableInsert, SpellConsumableUpdate>;
-    private spell_durationOps: TableOperations<SpellDuration, SpellDurationInsert, SpellDurationUpdate>;
-    private spell_duration_mappingOps: TableOperations<SpellDurationMapping, SpellDurationMappingInsert, SpellDurationMappingUpdate>;
-    private spell_listOps: TableOperations<SpellList, SpellListInsert, SpellListUpdate>;
-    private spell_list_class_feature_benefit_mappingOps: TableOperations<SpellListClassFeatureBenefitMapping, SpellListClassFeatureBenefitMappingInsert, SpellListClassFeatureBenefitMappingUpdate>;
-    private spell_list_feat_mappingOps: TableOperations<SpellListFeatMapping, SpellListFeatMappingInsert, SpellListFeatMappingUpdate>;
-    private spell_list_spell_mappingOps: TableOperations<SpellListSpellMapping, SpellListSpellMappingInsert, SpellListSpellMappingUpdate>;
-    private spell_rangeOps: TableOperations<SpellRange, SpellRangeInsert, SpellRangeUpdate>;
-    private spell_range_mappingOps: TableOperations<SpellRangeMapping, SpellRangeMappingInsert, SpellRangeMappingUpdate>;
-    private spell_schoolOps: TableOperations<SpellSchool, SpellSchoolInsert, SpellSchoolUpdate>;
-    private spell_school_mappingOps: TableOperations<SpellSchoolMapping, SpellSchoolMappingInsert, SpellSchoolMappingUpdate>;
-    private spell_sorcerer_bloodline_mappingOps: TableOperations<SpellSorcererBloodlineMapping, SpellSorcererBloodlineMappingInsert, SpellSorcererBloodlineMappingUpdate>;
-    private spell_subdomain_mappingOps: TableOperations<SpellSubdomainMapping, SpellSubdomainMappingInsert, SpellSubdomainMappingUpdate>;
-    private spell_targetOps: TableOperations<SpellTarget, SpellTargetInsert, SpellTargetUpdate>;
-    private spell_target_mappingOps: TableOperations<SpellTargetMapping, SpellTargetMappingInsert, SpellTargetMappingUpdate>;
-    private spellcasting_class_featureOps: TableOperations<SpellcastingClassFeature, SpellcastingClassFeatureInsert, SpellcastingClassFeatureUpdate>;
-    private spellcasting_preparation_typeOps: TableOperations<SpellcastingPreparationType, SpellcastingPreparationTypeInsert, SpellcastingPreparationTypeUpdate>;
-    private spellcasting_typeOps: TableOperations<SpellcastingType, SpellcastingTypeInsert, SpellcastingTypeUpdate>;
-    private subdomainOps: TableOperations<Subdomain, SubdomainInsert, SubdomainUpdate>;
-    private traitOps: TableOperations<Trait, TraitInsert, TraitUpdate>;
-    private weaponOps: TableOperations<Weapon, WeaponInsert, WeaponUpdate>;
-    private wild_talentOps: TableOperations<WildTalent, WildTalentInsert, WildTalentUpdate>;
-    private wild_talent_typeOps: TableOperations<WildTalentType, WildTalentTypeInsert, WildTalentTypeUpdate>;
-
+        private abilityOps!: TableOperations<Ability, AbilityInsert, AbilityUpdate>;
+    private abp_bonus_typeOps!: TableOperations<AbpBonusType, AbpBonusTypeInsert, AbpBonusTypeUpdate>;
+    private abp_nodeOps!: TableOperations<AbpNode, AbpNodeInsert, AbpNodeUpdate>;
+    private abp_node_bonusOps!: TableOperations<AbpNodeBonus, AbpNodeBonusInsert, AbpNodeBonusUpdate>;
+    private abp_node_groupOps!: TableOperations<AbpNodeGroup, AbpNodeGroupInsert, AbpNodeGroupUpdate>;
+    private ancestryOps!: TableOperations<Ancestry, AncestryInsert, AncestryUpdate>;
+    private archetypeOps!: TableOperations<Archetype, ArchetypeInsert, ArchetypeUpdate>;
+    private archetype_class_featureOps!: TableOperations<ArchetypeClassFeature, ArchetypeClassFeatureInsert, ArchetypeClassFeatureUpdate>;
+    private armorOps!: TableOperations<Armor, ArmorInsert, ArmorUpdate>;
+    private bonus_attack_progressionOps!: TableOperations<BonusAttackProgression, BonusAttackProgressionInsert, BonusAttackProgressionUpdate>;
+    private bonus_typeOps!: TableOperations<BonusType, BonusTypeInsert, BonusTypeUpdate>;
+    private classOps!: TableOperations<Class, ClassInsert, ClassUpdate>;
+    private class_featureOps!: TableOperations<ClassFeature, ClassFeatureInsert, ClassFeatureUpdate>;
+    private class_feature_benefitOps!: TableOperations<ClassFeatureBenefit, ClassFeatureBenefitInsert, ClassFeatureBenefitUpdate>;
+    private class_skillOps!: TableOperations<ClassSkill, ClassSkillInsert, ClassSkillUpdate>;
+    private consumableOps!: TableOperations<Consumable, ConsumableInsert, ConsumableUpdate>;
+    private corruptionOps!: TableOperations<Corruption, CorruptionInsert, CorruptionUpdate>;
+    private corruption_manifestationOps!: TableOperations<CorruptionManifestation, CorruptionManifestationInsert, CorruptionManifestationUpdate>;
+    private discoveryOps!: TableOperations<Discovery, DiscoveryInsert, DiscoveryUpdate>;
+    private elementOps!: TableOperations<Element, ElementInsert, ElementUpdate>;
+    private equipmentOps!: TableOperations<Equipment, EquipmentInsert, EquipmentUpdate>;
+    private favored_class_choiceOps!: TableOperations<FavoredClassChoice, FavoredClassChoiceInsert, FavoredClassChoiceUpdate>;
+    private featOps!: TableOperations<Feat, FeatInsert, FeatUpdate>;
+    private feat_benefitOps!: TableOperations<FeatBenefit, FeatBenefitInsert, FeatBenefitUpdate>;
+    private fulfillment_qualification_mappingOps!: TableOperations<FulfillmentQualificationMapping, FulfillmentQualificationMappingInsert, FulfillmentQualificationMappingUpdate>;
+    private game_characterOps!: TableOperations<GameCharacter, GameCharacterInsert, GameCharacterUpdate>;
+    private game_character_abilityOps!: TableOperations<GameCharacterAbility, GameCharacterAbilityInsert, GameCharacterAbilityUpdate>;
+    private game_character_abp_choiceOps!: TableOperations<GameCharacterAbpChoice, GameCharacterAbpChoiceInsert, GameCharacterAbpChoiceUpdate>;
+    private game_character_ancestryOps!: TableOperations<GameCharacterAncestry, GameCharacterAncestryInsert, GameCharacterAncestryUpdate>;
+    private game_character_archetypeOps!: TableOperations<GameCharacterArchetype, GameCharacterArchetypeInsert, GameCharacterArchetypeUpdate>;
+    private game_character_armorOps!: TableOperations<GameCharacterArmor, GameCharacterArmorInsert, GameCharacterArmorUpdate>;
+    private game_character_classOps!: TableOperations<GameCharacterClass, GameCharacterClassInsert, GameCharacterClassUpdate>;
+    private game_character_class_featureOps!: TableOperations<GameCharacterClassFeature, GameCharacterClassFeatureInsert, GameCharacterClassFeatureUpdate>;
+    private game_character_consumableOps!: TableOperations<GameCharacterConsumable, GameCharacterConsumableInsert, GameCharacterConsumableUpdate>;
+    private game_character_corruptionOps!: TableOperations<GameCharacterCorruption, GameCharacterCorruptionInsert, GameCharacterCorruptionUpdate>;
+    private game_character_corruption_manifestationOps!: TableOperations<GameCharacterCorruptionManifestation, GameCharacterCorruptionManifestationInsert, GameCharacterCorruptionManifestationUpdate>;
+    private game_character_discoveryOps!: TableOperations<GameCharacterDiscovery, GameCharacterDiscoveryInsert, GameCharacterDiscoveryUpdate>;
+    private game_character_equipmentOps!: TableOperations<GameCharacterEquipment, GameCharacterEquipmentInsert, GameCharacterEquipmentUpdate>;
+    private game_character_favored_class_bonusOps!: TableOperations<GameCharacterFavoredClassBonus, GameCharacterFavoredClassBonusInsert, GameCharacterFavoredClassBonusUpdate>;
+    private game_character_featOps!: TableOperations<GameCharacterFeat, GameCharacterFeatInsert, GameCharacterFeatUpdate>;
+    private game_character_skill_rankOps!: TableOperations<GameCharacterSkillRank, GameCharacterSkillRankInsert, GameCharacterSkillRankUpdate>;
+    private game_character_spellOps!: TableOperations<GameCharacterSpell, GameCharacterSpellInsert, GameCharacterSpellUpdate>;
+    private game_character_traitOps!: TableOperations<GameCharacterTrait, GameCharacterTraitInsert, GameCharacterTraitUpdate>;
+    private game_character_weaponOps!: TableOperations<GameCharacterWeapon, GameCharacterWeaponInsert, GameCharacterWeaponUpdate>;
+    private game_character_wild_talentOps!: TableOperations<GameCharacterWildTalent, GameCharacterWildTalentInsert, GameCharacterWildTalentUpdate>;
+    private legendary_gift_typeOps!: TableOperations<LegendaryGiftType, LegendaryGiftTypeInsert, LegendaryGiftTypeUpdate>;
+    private monk_unchained_ki_powerOps!: TableOperations<MonkUnchainedKiPower, MonkUnchainedKiPowerInsert, MonkUnchainedKiPowerUpdate>;
+    private prerequisite_fulfillmentOps!: TableOperations<PrerequisiteFulfillment, PrerequisiteFulfillmentInsert, PrerequisiteFulfillmentUpdate>;
+    private prerequisite_requirementOps!: TableOperations<PrerequisiteRequirement, PrerequisiteRequirementInsert, PrerequisiteRequirementUpdate>;
+    private prerequisite_requirement_fulfillment_mappingOps!: TableOperations<PrerequisiteRequirementFulfillmentMapping, PrerequisiteRequirementFulfillmentMappingInsert, PrerequisiteRequirementFulfillmentMappingUpdate>;
+    private prerequisite_requirement_typeOps!: TableOperations<PrerequisiteRequirementType, PrerequisiteRequirementTypeInsert, PrerequisiteRequirementTypeUpdate>;
+    private qinggong_monk_ki_powerOps!: TableOperations<QinggongMonkKiPower, QinggongMonkKiPowerInsert, QinggongMonkKiPowerUpdate>;
+    private qinggong_monk_ki_power_typeOps!: TableOperations<QinggongMonkKiPowerType, QinggongMonkKiPowerTypeInsert, QinggongMonkKiPowerTypeUpdate>;
+    private qualification_typeOps!: TableOperations<QualificationType, QualificationTypeInsert, QualificationTypeUpdate>;
+    private ruleOps!: TableOperations<Rule, RuleInsert, RuleUpdate>;
+    private skillOps!: TableOperations<Skill, SkillInsert, SkillUpdate>;
+    private sorcerer_bloodlineOps!: TableOperations<SorcererBloodline, SorcererBloodlineInsert, SorcererBloodlineUpdate>;
+    private spellOps!: TableOperations<Spell, SpellInsert, SpellUpdate>;
+    private spell_casting_timeOps!: TableOperations<SpellCastingTime, SpellCastingTimeInsert, SpellCastingTimeUpdate>;
+    private spell_casting_time_mappingOps!: TableOperations<SpellCastingTimeMapping, SpellCastingTimeMappingInsert, SpellCastingTimeMappingUpdate>;
+    private spell_componentOps!: TableOperations<SpellComponent, SpellComponentInsert, SpellComponentUpdate>;
+    private spell_component_mappingOps!: TableOperations<SpellComponentMapping, SpellComponentMappingInsert, SpellComponentMappingUpdate>;
+    private spell_component_typeOps!: TableOperations<SpellComponentType, SpellComponentTypeInsert, SpellComponentTypeUpdate>;
+    private spell_consumableOps!: TableOperations<SpellConsumable, SpellConsumableInsert, SpellConsumableUpdate>;
+    private spell_durationOps!: TableOperations<SpellDuration, SpellDurationInsert, SpellDurationUpdate>;
+    private spell_duration_mappingOps!: TableOperations<SpellDurationMapping, SpellDurationMappingInsert, SpellDurationMappingUpdate>;
+    private spell_listOps!: TableOperations<SpellList, SpellListInsert, SpellListUpdate>;
+    private spell_list_class_feature_benefit_mappingOps!: TableOperations<SpellListClassFeatureBenefitMapping, SpellListClassFeatureBenefitMappingInsert, SpellListClassFeatureBenefitMappingUpdate>;
+    private spell_list_feat_mappingOps!: TableOperations<SpellListFeatMapping, SpellListFeatMappingInsert, SpellListFeatMappingUpdate>;
+    private spell_list_spell_mappingOps!: TableOperations<SpellListSpellMapping, SpellListSpellMappingInsert, SpellListSpellMappingUpdate>;
+    private spell_rangeOps!: TableOperations<SpellRange, SpellRangeInsert, SpellRangeUpdate>;
+    private spell_range_mappingOps!: TableOperations<SpellRangeMapping, SpellRangeMappingInsert, SpellRangeMappingUpdate>;
+    private spell_schoolOps!: TableOperations<SpellSchool, SpellSchoolInsert, SpellSchoolUpdate>;
+    private spell_school_mappingOps!: TableOperations<SpellSchoolMapping, SpellSchoolMappingInsert, SpellSchoolMappingUpdate>;
+    private spell_sorcerer_bloodline_mappingOps!: TableOperations<SpellSorcererBloodlineMapping, SpellSorcererBloodlineMappingInsert, SpellSorcererBloodlineMappingUpdate>;
+    private spell_subdomain_mappingOps!: TableOperations<SpellSubdomainMapping, SpellSubdomainMappingInsert, SpellSubdomainMappingUpdate>;
+    private spell_targetOps!: TableOperations<SpellTarget, SpellTargetInsert, SpellTargetUpdate>;
+    private spell_target_mappingOps!: TableOperations<SpellTargetMapping, SpellTargetMappingInsert, SpellTargetMappingUpdate>;
+    private spellcasting_class_featureOps!: TableOperations<SpellcastingClassFeature, SpellcastingClassFeatureInsert, SpellcastingClassFeatureUpdate>;
+    private spellcasting_preparation_typeOps!: TableOperations<SpellcastingPreparationType, SpellcastingPreparationTypeInsert, SpellcastingPreparationTypeUpdate>;
+    private spellcasting_typeOps!: TableOperations<SpellcastingType, SpellcastingTypeInsert, SpellcastingTypeUpdate>;
+    private subdomainOps!: TableOperations<Subdomain, SubdomainInsert, SubdomainUpdate>;
+    private traitOps!: TableOperations<Trait, TraitInsert, TraitUpdate>;
+    private weaponOps!: TableOperations<Weapon, WeaponInsert, WeaponUpdate>;
+    private wild_talentOps!: TableOperations<WildTalent, WildTalentInsert, WildTalentUpdate>;
+    private wild_talent_typeOps!: TableOperations<WildTalentType, WildTalentTypeInsert, WildTalentTypeUpdate>;
+    
     constructor(private supabase: SupabaseClient) {
-        this.abilityOps = new TableOperations(supabase, 'ability');
-        this.abp_bonus_typeOps = new TableOperations(supabase, 'abp_bonus_type');
-        this.abp_nodeOps = new TableOperations(supabase, 'abp_node');
-        this.abp_node_bonusOps = new TableOperations(supabase, 'abp_node_bonus');
-        this.abp_node_groupOps = new TableOperations(supabase, 'abp_node_group');
-        this.ancestryOps = new TableOperations(supabase, 'ancestry');
-        this.archetypeOps = new TableOperations(supabase, 'archetype');
-        this.archetype_class_featureOps = new TableOperations(supabase, 'archetype_class_feature');
-        this.armorOps = new TableOperations(supabase, 'armor');
-        this.bonus_attack_progressionOps = new TableOperations(supabase, 'bonus_attack_progression');
-        this.bonus_typeOps = new TableOperations(supabase, 'bonus_type');
-        this.classOps = new TableOperations(supabase, 'class');
-        this.class_featureOps = new TableOperations(supabase, 'class_feature');
-        this.class_feature_benefitOps = new TableOperations(supabase, 'class_feature_benefit');
-        this.class_skillOps = new TableOperations(supabase, 'class_skill');
-        this.consumableOps = new TableOperations(supabase, 'consumable');
-        this.corruptionOps = new TableOperations(supabase, 'corruption');
-        this.corruption_manifestationOps = new TableOperations(supabase, 'corruption_manifestation');
-        this.discoveryOps = new TableOperations(supabase, 'discovery');
-        this.elementOps = new TableOperations(supabase, 'element');
-        this.equipmentOps = new TableOperations(supabase, 'equipment');
-        this.favored_class_choiceOps = new TableOperations(supabase, 'favored_class_choice');
-        this.featOps = new TableOperations(supabase, 'feat');
-        this.feat_benefitOps = new TableOperations(supabase, 'feat_benefit');
-        this.fulfillment_qualification_mappingOps = new TableOperations(supabase, 'fulfillment_qualification_mapping');
-        this.game_characterOps = new TableOperations(supabase, 'game_character');
-        this.game_character_abilityOps = new TableOperations(supabase, 'game_character_ability');
-        this.game_character_abp_choiceOps = new TableOperations(supabase, 'game_character_abp_choice');
-        this.game_character_ancestryOps = new TableOperations(supabase, 'game_character_ancestry');
-        this.game_character_archetypeOps = new TableOperations(supabase, 'game_character_archetype');
-        this.game_character_armorOps = new TableOperations(supabase, 'game_character_armor');
-        this.game_character_classOps = new TableOperations(supabase, 'game_character_class');
-        this.game_character_class_featureOps = new TableOperations(supabase, 'game_character_class_feature');
-        this.game_character_consumableOps = new TableOperations(supabase, 'game_character_consumable');
-        this.game_character_corruptionOps = new TableOperations(supabase, 'game_character_corruption');
-        this.game_character_corruption_manifestationOps = new TableOperations(supabase, 'game_character_corruption_manifestation');
-        this.game_character_discoveryOps = new TableOperations(supabase, 'game_character_discovery');
-        this.game_character_equipmentOps = new TableOperations(supabase, 'game_character_equipment');
-        this.game_character_favored_class_bonusOps = new TableOperations(supabase, 'game_character_favored_class_bonus');
-        this.game_character_featOps = new TableOperations(supabase, 'game_character_feat');
-        this.game_character_skill_rankOps = new TableOperations(supabase, 'game_character_skill_rank');
-        this.game_character_spellOps = new TableOperations(supabase, 'game_character_spell');
-        this.game_character_traitOps = new TableOperations(supabase, 'game_character_trait');
-        this.game_character_weaponOps = new TableOperations(supabase, 'game_character_weapon');
-        this.game_character_wild_talentOps = new TableOperations(supabase, 'game_character_wild_talent');
-        this.legendary_gift_typeOps = new TableOperations(supabase, 'legendary_gift_type');
-        this.monk_unchained_ki_powerOps = new TableOperations(supabase, 'monk_unchained_ki_power');
-        this.prerequisite_fulfillmentOps = new TableOperations(supabase, 'prerequisite_fulfillment');
-        this.prerequisite_requirementOps = new TableOperations(supabase, 'prerequisite_requirement');
-        this.prerequisite_requirement_fulfillment_mappingOps = new TableOperations(supabase, 'prerequisite_requirement_fulfillment_mapping');
-        this.prerequisite_requirement_typeOps = new TableOperations(supabase, 'prerequisite_requirement_type');
-        this.qinggong_monk_ki_powerOps = new TableOperations(supabase, 'qinggong_monk_ki_power');
-        this.qinggong_monk_ki_power_typeOps = new TableOperations(supabase, 'qinggong_monk_ki_power_type');
-        this.qualification_typeOps = new TableOperations(supabase, 'qualification_type');
-        this.ruleOps = new TableOperations(supabase, 'rule');
-        this.skillOps = new TableOperations(supabase, 'skill');
-        this.sorcerer_bloodlineOps = new TableOperations(supabase, 'sorcerer_bloodline');
-        this.spellOps = new TableOperations(supabase, 'spell');
-        this.spell_casting_timeOps = new TableOperations(supabase, 'spell_casting_time');
-        this.spell_casting_time_mappingOps = new TableOperations(supabase, 'spell_casting_time_mapping');
-        this.spell_componentOps = new TableOperations(supabase, 'spell_component');
-        this.spell_component_mappingOps = new TableOperations(supabase, 'spell_component_mapping');
-        this.spell_component_typeOps = new TableOperations(supabase, 'spell_component_type');
-        this.spell_consumableOps = new TableOperations(supabase, 'spell_consumable');
-        this.spell_durationOps = new TableOperations(supabase, 'spell_duration');
-        this.spell_duration_mappingOps = new TableOperations(supabase, 'spell_duration_mapping');
-        this.spell_listOps = new TableOperations(supabase, 'spell_list');
-        this.spell_list_class_feature_benefit_mappingOps = new TableOperations(supabase, 'spell_list_class_feature_benefit_mapping');
-        this.spell_list_feat_mappingOps = new TableOperations(supabase, 'spell_list_feat_mapping');
-        this.spell_list_spell_mappingOps = new TableOperations(supabase, 'spell_list_spell_mapping');
-        this.spell_rangeOps = new TableOperations(supabase, 'spell_range');
-        this.spell_range_mappingOps = new TableOperations(supabase, 'spell_range_mapping');
-        this.spell_schoolOps = new TableOperations(supabase, 'spell_school');
-        this.spell_school_mappingOps = new TableOperations(supabase, 'spell_school_mapping');
-        this.spell_sorcerer_bloodline_mappingOps = new TableOperations(supabase, 'spell_sorcerer_bloodline_mapping');
-        this.spell_subdomain_mappingOps = new TableOperations(supabase, 'spell_subdomain_mapping');
-        this.spell_targetOps = new TableOperations(supabase, 'spell_target');
-        this.spell_target_mappingOps = new TableOperations(supabase, 'spell_target_mapping');
-        this.spellcasting_class_featureOps = new TableOperations(supabase, 'spellcasting_class_feature');
-        this.spellcasting_preparation_typeOps = new TableOperations(supabase, 'spellcasting_preparation_type');
-        this.spellcasting_typeOps = new TableOperations(supabase, 'spellcasting_type');
-        this.subdomainOps = new TableOperations(supabase, 'subdomain');
-        this.traitOps = new TableOperations(supabase, 'trait');
-        this.weaponOps = new TableOperations(supabase, 'weapon');
-        this.wild_talentOps = new TableOperations(supabase, 'wild_talent');
-        this.wild_talent_typeOps = new TableOperations(supabase, 'wild_talent_type');
+        if (!supabase) throw new Error('Supabase client is required');
+        this.abilityOps = new TableOperations<Ability, AbilityInsert, AbilityUpdate>(supabase, "ability");
+        this.abp_bonus_typeOps = new TableOperations<AbpBonusType, AbpBonusTypeInsert, AbpBonusTypeUpdate>(supabase, "abp_bonus_type");
+        this.abp_nodeOps = new TableOperations<AbpNode, AbpNodeInsert, AbpNodeUpdate>(supabase, "abp_node");
+        this.abp_node_bonusOps = new TableOperations<AbpNodeBonus, AbpNodeBonusInsert, AbpNodeBonusUpdate>(supabase, "abp_node_bonus");
+        this.abp_node_groupOps = new TableOperations<AbpNodeGroup, AbpNodeGroupInsert, AbpNodeGroupUpdate>(supabase, "abp_node_group");
+        this.ancestryOps = new TableOperations<Ancestry, AncestryInsert, AncestryUpdate>(supabase, "ancestry");
+        this.archetypeOps = new TableOperations<Archetype, ArchetypeInsert, ArchetypeUpdate>(supabase, "archetype");
+        this.archetype_class_featureOps = new TableOperations<ArchetypeClassFeature, ArchetypeClassFeatureInsert, ArchetypeClassFeatureUpdate>(supabase, "archetype_class_feature");
+        this.armorOps = new TableOperations<Armor, ArmorInsert, ArmorUpdate>(supabase, "armor");
+        this.bonus_attack_progressionOps = new TableOperations<BonusAttackProgression, BonusAttackProgressionInsert, BonusAttackProgressionUpdate>(supabase, "bonus_attack_progression");
+        this.bonus_typeOps = new TableOperations<BonusType, BonusTypeInsert, BonusTypeUpdate>(supabase, "bonus_type");
+        this.classOps = new TableOperations<Class, ClassInsert, ClassUpdate>(supabase, "class");
+        this.class_featureOps = new TableOperations<ClassFeature, ClassFeatureInsert, ClassFeatureUpdate>(supabase, "class_feature");
+        this.class_feature_benefitOps = new TableOperations<ClassFeatureBenefit, ClassFeatureBenefitInsert, ClassFeatureBenefitUpdate>(supabase, "class_feature_benefit");
+        this.class_skillOps = new TableOperations<ClassSkill, ClassSkillInsert, ClassSkillUpdate>(supabase, "class_skill");
+        this.consumableOps = new TableOperations<Consumable, ConsumableInsert, ConsumableUpdate>(supabase, "consumable");
+        this.corruptionOps = new TableOperations<Corruption, CorruptionInsert, CorruptionUpdate>(supabase, "corruption");
+        this.corruption_manifestationOps = new TableOperations<CorruptionManifestation, CorruptionManifestationInsert, CorruptionManifestationUpdate>(supabase, "corruption_manifestation");
+        this.discoveryOps = new TableOperations<Discovery, DiscoveryInsert, DiscoveryUpdate>(supabase, "discovery");
+        this.elementOps = new TableOperations<Element, ElementInsert, ElementUpdate>(supabase, "element");
+        this.equipmentOps = new TableOperations<Equipment, EquipmentInsert, EquipmentUpdate>(supabase, "equipment");
+        this.favored_class_choiceOps = new TableOperations<FavoredClassChoice, FavoredClassChoiceInsert, FavoredClassChoiceUpdate>(supabase, "favored_class_choice");
+        this.featOps = new TableOperations<Feat, FeatInsert, FeatUpdate>(supabase, "feat");
+        this.feat_benefitOps = new TableOperations<FeatBenefit, FeatBenefitInsert, FeatBenefitUpdate>(supabase, "feat_benefit");
+        this.fulfillment_qualification_mappingOps = new TableOperations<FulfillmentQualificationMapping, FulfillmentQualificationMappingInsert, FulfillmentQualificationMappingUpdate>(supabase, "fulfillment_qualification_mapping");
+        this.game_characterOps = new TableOperations<GameCharacter, GameCharacterInsert, GameCharacterUpdate>(supabase, "game_character");
+        this.game_character_abilityOps = new TableOperations<GameCharacterAbility, GameCharacterAbilityInsert, GameCharacterAbilityUpdate>(supabase, "game_character_ability");
+        this.game_character_abp_choiceOps = new TableOperations<GameCharacterAbpChoice, GameCharacterAbpChoiceInsert, GameCharacterAbpChoiceUpdate>(supabase, "game_character_abp_choice");
+        this.game_character_ancestryOps = new TableOperations<GameCharacterAncestry, GameCharacterAncestryInsert, GameCharacterAncestryUpdate>(supabase, "game_character_ancestry");
+        this.game_character_archetypeOps = new TableOperations<GameCharacterArchetype, GameCharacterArchetypeInsert, GameCharacterArchetypeUpdate>(supabase, "game_character_archetype");
+        this.game_character_armorOps = new TableOperations<GameCharacterArmor, GameCharacterArmorInsert, GameCharacterArmorUpdate>(supabase, "game_character_armor");
+        this.game_character_classOps = new TableOperations<GameCharacterClass, GameCharacterClassInsert, GameCharacterClassUpdate>(supabase, "game_character_class");
+        this.game_character_class_featureOps = new TableOperations<GameCharacterClassFeature, GameCharacterClassFeatureInsert, GameCharacterClassFeatureUpdate>(supabase, "game_character_class_feature");
+        this.game_character_consumableOps = new TableOperations<GameCharacterConsumable, GameCharacterConsumableInsert, GameCharacterConsumableUpdate>(supabase, "game_character_consumable");
+        this.game_character_corruptionOps = new TableOperations<GameCharacterCorruption, GameCharacterCorruptionInsert, GameCharacterCorruptionUpdate>(supabase, "game_character_corruption");
+        this.game_character_corruption_manifestationOps = new TableOperations<GameCharacterCorruptionManifestation, GameCharacterCorruptionManifestationInsert, GameCharacterCorruptionManifestationUpdate>(supabase, "game_character_corruption_manifestation");
+        this.game_character_discoveryOps = new TableOperations<GameCharacterDiscovery, GameCharacterDiscoveryInsert, GameCharacterDiscoveryUpdate>(supabase, "game_character_discovery");
+        this.game_character_equipmentOps = new TableOperations<GameCharacterEquipment, GameCharacterEquipmentInsert, GameCharacterEquipmentUpdate>(supabase, "game_character_equipment");
+        this.game_character_favored_class_bonusOps = new TableOperations<GameCharacterFavoredClassBonus, GameCharacterFavoredClassBonusInsert, GameCharacterFavoredClassBonusUpdate>(supabase, "game_character_favored_class_bonus");
+        this.game_character_featOps = new TableOperations<GameCharacterFeat, GameCharacterFeatInsert, GameCharacterFeatUpdate>(supabase, "game_character_feat");
+        this.game_character_skill_rankOps = new TableOperations<GameCharacterSkillRank, GameCharacterSkillRankInsert, GameCharacterSkillRankUpdate>(supabase, "game_character_skill_rank");
+        this.game_character_spellOps = new TableOperations<GameCharacterSpell, GameCharacterSpellInsert, GameCharacterSpellUpdate>(supabase, "game_character_spell");
+        this.game_character_traitOps = new TableOperations<GameCharacterTrait, GameCharacterTraitInsert, GameCharacterTraitUpdate>(supabase, "game_character_trait");
+        this.game_character_weaponOps = new TableOperations<GameCharacterWeapon, GameCharacterWeaponInsert, GameCharacterWeaponUpdate>(supabase, "game_character_weapon");
+        this.game_character_wild_talentOps = new TableOperations<GameCharacterWildTalent, GameCharacterWildTalentInsert, GameCharacterWildTalentUpdate>(supabase, "game_character_wild_talent");
+        this.legendary_gift_typeOps = new TableOperations<LegendaryGiftType, LegendaryGiftTypeInsert, LegendaryGiftTypeUpdate>(supabase, "legendary_gift_type");
+        this.monk_unchained_ki_powerOps = new TableOperations<MonkUnchainedKiPower, MonkUnchainedKiPowerInsert, MonkUnchainedKiPowerUpdate>(supabase, "monk_unchained_ki_power");
+        this.prerequisite_fulfillmentOps = new TableOperations<PrerequisiteFulfillment, PrerequisiteFulfillmentInsert, PrerequisiteFulfillmentUpdate>(supabase, "prerequisite_fulfillment");
+        this.prerequisite_requirementOps = new TableOperations<PrerequisiteRequirement, PrerequisiteRequirementInsert, PrerequisiteRequirementUpdate>(supabase, "prerequisite_requirement");
+        this.prerequisite_requirement_fulfillment_mappingOps = new TableOperations<PrerequisiteRequirementFulfillmentMapping, PrerequisiteRequirementFulfillmentMappingInsert, PrerequisiteRequirementFulfillmentMappingUpdate>(supabase, "prerequisite_requirement_fulfillment_mapping");
+        this.prerequisite_requirement_typeOps = new TableOperations<PrerequisiteRequirementType, PrerequisiteRequirementTypeInsert, PrerequisiteRequirementTypeUpdate>(supabase, "prerequisite_requirement_type");
+        this.qinggong_monk_ki_powerOps = new TableOperations<QinggongMonkKiPower, QinggongMonkKiPowerInsert, QinggongMonkKiPowerUpdate>(supabase, "qinggong_monk_ki_power");
+        this.qinggong_monk_ki_power_typeOps = new TableOperations<QinggongMonkKiPowerType, QinggongMonkKiPowerTypeInsert, QinggongMonkKiPowerTypeUpdate>(supabase, "qinggong_monk_ki_power_type");
+        this.qualification_typeOps = new TableOperations<QualificationType, QualificationTypeInsert, QualificationTypeUpdate>(supabase, "qualification_type");
+        this.ruleOps = new TableOperations<Rule, RuleInsert, RuleUpdate>(supabase, "rule");
+        this.skillOps = new TableOperations<Skill, SkillInsert, SkillUpdate>(supabase, "skill");
+        this.sorcerer_bloodlineOps = new TableOperations<SorcererBloodline, SorcererBloodlineInsert, SorcererBloodlineUpdate>(supabase, "sorcerer_bloodline");
+        this.spellOps = new TableOperations<Spell, SpellInsert, SpellUpdate>(supabase, "spell");
+        this.spell_casting_timeOps = new TableOperations<SpellCastingTime, SpellCastingTimeInsert, SpellCastingTimeUpdate>(supabase, "spell_casting_time");
+        this.spell_casting_time_mappingOps = new TableOperations<SpellCastingTimeMapping, SpellCastingTimeMappingInsert, SpellCastingTimeMappingUpdate>(supabase, "spell_casting_time_mapping");
+        this.spell_componentOps = new TableOperations<SpellComponent, SpellComponentInsert, SpellComponentUpdate>(supabase, "spell_component");
+        this.spell_component_mappingOps = new TableOperations<SpellComponentMapping, SpellComponentMappingInsert, SpellComponentMappingUpdate>(supabase, "spell_component_mapping");
+        this.spell_component_typeOps = new TableOperations<SpellComponentType, SpellComponentTypeInsert, SpellComponentTypeUpdate>(supabase, "spell_component_type");
+        this.spell_consumableOps = new TableOperations<SpellConsumable, SpellConsumableInsert, SpellConsumableUpdate>(supabase, "spell_consumable");
+        this.spell_durationOps = new TableOperations<SpellDuration, SpellDurationInsert, SpellDurationUpdate>(supabase, "spell_duration");
+        this.spell_duration_mappingOps = new TableOperations<SpellDurationMapping, SpellDurationMappingInsert, SpellDurationMappingUpdate>(supabase, "spell_duration_mapping");
+        this.spell_listOps = new TableOperations<SpellList, SpellListInsert, SpellListUpdate>(supabase, "spell_list");
+        this.spell_list_class_feature_benefit_mappingOps = new TableOperations<SpellListClassFeatureBenefitMapping, SpellListClassFeatureBenefitMappingInsert, SpellListClassFeatureBenefitMappingUpdate>(supabase, "spell_list_class_feature_benefit_mapping");
+        this.spell_list_feat_mappingOps = new TableOperations<SpellListFeatMapping, SpellListFeatMappingInsert, SpellListFeatMappingUpdate>(supabase, "spell_list_feat_mapping");
+        this.spell_list_spell_mappingOps = new TableOperations<SpellListSpellMapping, SpellListSpellMappingInsert, SpellListSpellMappingUpdate>(supabase, "spell_list_spell_mapping");
+        this.spell_rangeOps = new TableOperations<SpellRange, SpellRangeInsert, SpellRangeUpdate>(supabase, "spell_range");
+        this.spell_range_mappingOps = new TableOperations<SpellRangeMapping, SpellRangeMappingInsert, SpellRangeMappingUpdate>(supabase, "spell_range_mapping");
+        this.spell_schoolOps = new TableOperations<SpellSchool, SpellSchoolInsert, SpellSchoolUpdate>(supabase, "spell_school");
+        this.spell_school_mappingOps = new TableOperations<SpellSchoolMapping, SpellSchoolMappingInsert, SpellSchoolMappingUpdate>(supabase, "spell_school_mapping");
+        this.spell_sorcerer_bloodline_mappingOps = new TableOperations<SpellSorcererBloodlineMapping, SpellSorcererBloodlineMappingInsert, SpellSorcererBloodlineMappingUpdate>(supabase, "spell_sorcerer_bloodline_mapping");
+        this.spell_subdomain_mappingOps = new TableOperations<SpellSubdomainMapping, SpellSubdomainMappingInsert, SpellSubdomainMappingUpdate>(supabase, "spell_subdomain_mapping");
+        this.spell_targetOps = new TableOperations<SpellTarget, SpellTargetInsert, SpellTargetUpdate>(supabase, "spell_target");
+        this.spell_target_mappingOps = new TableOperations<SpellTargetMapping, SpellTargetMappingInsert, SpellTargetMappingUpdate>(supabase, "spell_target_mapping");
+        this.spellcasting_class_featureOps = new TableOperations<SpellcastingClassFeature, SpellcastingClassFeatureInsert, SpellcastingClassFeatureUpdate>(supabase, "spellcasting_class_feature");
+        this.spellcasting_preparation_typeOps = new TableOperations<SpellcastingPreparationType, SpellcastingPreparationTypeInsert, SpellcastingPreparationTypeUpdate>(supabase, "spellcasting_preparation_type");
+        this.spellcasting_typeOps = new TableOperations<SpellcastingType, SpellcastingTypeInsert, SpellcastingTypeUpdate>(supabase, "spellcasting_type");
+        this.subdomainOps = new TableOperations<Subdomain, SubdomainInsert, SubdomainUpdate>(supabase, "subdomain");
+        this.traitOps = new TableOperations<Trait, TraitInsert, TraitUpdate>(supabase, "trait");
+        this.weaponOps = new TableOperations<Weapon, WeaponInsert, WeaponUpdate>(supabase, "weapon");
+        this.wild_talentOps = new TableOperations<WildTalent, WildTalentInsert, WildTalentUpdate>(supabase, "wild_talent");
+        this.wild_talent_typeOps = new TableOperations<WildTalentType, WildTalentTypeInsert, WildTalentTypeUpdate>(supabase, "wild_talent_type");
     }
 
-    // Table operations methods
     // Ability operations
     getAllAbility = () => this.abilityOps.getAll();
     getAbilityById = (id: number) => this.abilityOps.getById(id);
@@ -1844,9 +1960,48 @@ export class GameRulesAPI {
     };
     stopWatchWildTalentType = () => this.wild_talent_typeOps.stopWatch();
 
+
+    /**
+     * Preload common game data into cache
+     * @param data Partial data to preload
+     * @returns The preloaded data
+     */
+    preloadCommonData = async (data: Partial<PreloadTableData>): Promise<PreloadTableData> => {
+        // Validate input
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid data provided to preloadCommonData');
+        }
+
+        try {
+            // Update cache for each table
+            Object.entries(data).forEach(([tableName, items]) => {
+                if (Array.isArray(items)) {
+                    const opsKey = tableName === 'classData' ? 'classOps' : `${tableName}Ops`;
+                    const ops = this[opsKey];
+                    if (ops) {
+                        items.forEach(item => {
+                            if (item && typeof item === 'object' && 'id' in item) {
+                                ops.cache.set(item.id, item);
+                            }
+                        });
+                        ops.allDataLoaded = true;
+                    }
+                }
+            });
+
+            return data;
+        } catch (error) {
+            console.error('Error in preloadCommonData:', error);
+            throw error;
+        }
+    };
+
     // Relationship functions
 
     async getBonusAttackProgressionForClass(ids: number[]): Promise<Record<number, BonusAttackProgression[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.bonusAttackProgressionByBaseAttackBonusProgression[id]);
         
@@ -1857,42 +2012,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     base_attack_bonus_progression,
-                    bonus_attack_progression_data:bonus_attack_progression:*
+                    bonus_attack_progression_data:bonus_attack_progression(*)
                 `)
-                .in('base_attack_bonus_progression', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        base_attack_bonus_progression: number; 
-                        bonus_attack_progression_data: BonusAttackProgression 
-                    }>; 
-                    error: any; 
+                .in('base_attack_bonus_progression', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        base_attack_bonus_progression: number;
+                        bonus_attack_progression_data: BonusAttackProgression;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching bonus_attack_progression for class: ${error.message}`);
+            if (!data) return {};
             
             // Group results by base_attack_bonus_progression
             const results: Record<number, BonusAttackProgression[]> = {};
-            data?.forEach(row => {
-                const id = row['base_attack_bonus_progression'];
+            data.forEach(row => {
+                const id = row.base_attack_bonus_progression;
                 if (!results[id]) results[id] = [];
-                if (row['bonus_attack_progression_data']) results[id].push(row['bonus_attack_progression_data']);
+                if (row.bonus_attack_progression_data) {
+                    results[id].push(row.bonus_attack_progression_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.bonusAttackProgressionByBaseAttackBonusProgression[id] = results[id];
+                this.relationships.bonusAttackProgressionByBaseAttackBonusProgression[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, BonusAttackProgression[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.bonusAttackProgressionByBaseAttackBonusProgression[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.bonusAttackProgressionByBaseAttackBonusProgression[id] || []
+            ])
+        );
     }
 
     async getAbilityForSkill(ids: number[]): Promise<Record<number, Ability[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abilityByAbilityId[id]);
         
@@ -1903,42 +2066,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     ability_id,
-                    ability_data:ability:*
+                    ability_data:ability(*)
                 `)
-                .in('ability_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        ability_id: number; 
-                        ability_data: Ability 
-                    }>; 
-                    error: any; 
+                .in('ability_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        ability_id: number;
+                        ability_data: Ability;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching ability for skill: ${error.message}`);
+            if (!data) return {};
             
             // Group results by ability_id
             const results: Record<number, Ability[]> = {};
-            data?.forEach(row => {
-                const id = row['ability_id'];
+            data.forEach(row => {
+                const id = row.ability_id;
                 if (!results[id]) results[id] = [];
-                if (row['ability_data']) results[id].push(row['ability_data']);
+                if (row.ability_data) {
+                    results[id].push(row.ability_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abilityByAbilityId[id] = results[id];
+                this.relationships.abilityByAbilityId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Ability[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abilityByAbilityId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abilityByAbilityId[id] || []
+            ])
+        );
     }
 
     async getClassForClassFeature(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -1949,42 +2120,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getClassFeatureForClassFeatureBenefit(ids: number[]): Promise<Record<number, ClassFeature[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classFeatureByClassFeatureId[id]);
         
@@ -1995,42 +2174,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_feature_id,
-                    class_feature_data:class_feature:*
+                    class_feature_data:class_feature(*)
                 `)
-                .in('class_feature_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_feature_id: number; 
-                        class_feature_data: ClassFeature 
-                    }>; 
-                    error: any; 
+                .in('class_feature_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_feature_id: number;
+                        class_feature_data: ClassFeature;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class_feature for class_feature_benefit: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_feature_id
             const results: Record<number, ClassFeature[]> = {};
-            data?.forEach(row => {
-                const id = row['class_feature_id'];
+            data.forEach(row => {
+                const id = row.class_feature_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_feature_data']) results[id].push(row['class_feature_data']);
+                if (row.class_feature_data) {
+                    results[id].push(row.class_feature_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classFeatureByClassFeatureId[id] = results[id];
+                this.relationships.classFeatureByClassFeatureId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, ClassFeature[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classFeatureByClassFeatureId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classFeatureByClassFeatureId[id] || []
+            ])
+        );
     }
 
     async getClassFeatureForSpellcastingClassFeature(ids: number[]): Promise<Record<number, ClassFeature[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classFeatureByClassFeatureId[id]);
         
@@ -2041,42 +2228,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_feature_id,
-                    class_feature_data:class_feature:*
+                    class_feature_data:class_feature(*)
                 `)
-                .in('class_feature_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_feature_id: number; 
-                        class_feature_data: ClassFeature 
-                    }>; 
-                    error: any; 
+                .in('class_feature_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_feature_id: number;
+                        class_feature_data: ClassFeature;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class_feature for spellcasting_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_feature_id
             const results: Record<number, ClassFeature[]> = {};
-            data?.forEach(row => {
-                const id = row['class_feature_id'];
+            data.forEach(row => {
+                const id = row.class_feature_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_feature_data']) results[id].push(row['class_feature_data']);
+                if (row.class_feature_data) {
+                    results[id].push(row.class_feature_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classFeatureByClassFeatureId[id] = results[id];
+                this.relationships.classFeatureByClassFeatureId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, ClassFeature[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classFeatureByClassFeatureId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classFeatureByClassFeatureId[id] || []
+            ])
+        );
     }
 
     async getSpellcastingTypeForSpellcastingClassFeature(ids: number[]): Promise<Record<number, SpellcastingType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellcastingTypeBySpellcastingType[id]);
         
@@ -2087,42 +2282,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spellcasting_type,
-                    spellcasting_type_data:spellcasting_type:*
+                    spellcasting_type_data:spellcasting_type(*)
                 `)
-                .in('spellcasting_type', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spellcasting_type: number; 
-                        spellcasting_type_data: SpellcastingType 
-                    }>; 
-                    error: any; 
+                .in('spellcasting_type', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spellcasting_type: number;
+                        spellcasting_type_data: SpellcastingType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spellcasting_type for spellcasting_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spellcasting_type
             const results: Record<number, SpellcastingType[]> = {};
-            data?.forEach(row => {
-                const id = row['spellcasting_type'];
+            data.forEach(row => {
+                const id = row.spellcasting_type;
                 if (!results[id]) results[id] = [];
-                if (row['spellcasting_type_data']) results[id].push(row['spellcasting_type_data']);
+                if (row.spellcasting_type_data) {
+                    results[id].push(row.spellcasting_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellcastingTypeBySpellcastingType[id] = results[id];
+                this.relationships.spellcastingTypeBySpellcastingType[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellcastingType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellcastingTypeBySpellcastingType[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellcastingTypeBySpellcastingType[id] || []
+            ])
+        );
     }
 
     async getSpellcastingPreparationTypeForSpellcastingClassFeature(ids: number[]): Promise<Record<number, SpellcastingPreparationType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellcastingPreparationTypeByPreparationType[id]);
         
@@ -2133,42 +2336,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     preparation_type,
-                    spellcasting_preparation_type_data:spellcasting_preparation_type:*
+                    spellcasting_preparation_type_data:spellcasting_preparation_type(*)
                 `)
-                .in('preparation_type', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        preparation_type: number; 
-                        spellcasting_preparation_type_data: SpellcastingPreparationType 
-                    }>; 
-                    error: any; 
+                .in('preparation_type', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        preparation_type: number;
+                        spellcasting_preparation_type_data: SpellcastingPreparationType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spellcasting_preparation_type for spellcasting_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by preparation_type
             const results: Record<number, SpellcastingPreparationType[]> = {};
-            data?.forEach(row => {
-                const id = row['preparation_type'];
+            data.forEach(row => {
+                const id = row.preparation_type;
                 if (!results[id]) results[id] = [];
-                if (row['spellcasting_preparation_type_data']) results[id].push(row['spellcasting_preparation_type_data']);
+                if (row.spellcasting_preparation_type_data) {
+                    results[id].push(row.spellcasting_preparation_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellcastingPreparationTypeByPreparationType[id] = results[id];
+                this.relationships.spellcastingPreparationTypeByPreparationType[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellcastingPreparationType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellcastingPreparationTypeByPreparationType[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellcastingPreparationTypeByPreparationType[id] || []
+            ])
+        );
     }
 
     async getAbilityForSpellcastingClassFeature(ids: number[]): Promise<Record<number, Ability[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abilityByAbilityId[id]);
         
@@ -2179,42 +2390,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     ability_id,
-                    ability_data:ability:*
+                    ability_data:ability(*)
                 `)
-                .in('ability_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        ability_id: number; 
-                        ability_data: Ability 
-                    }>; 
-                    error: any; 
+                .in('ability_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        ability_id: number;
+                        ability_data: Ability;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching ability for spellcasting_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by ability_id
             const results: Record<number, Ability[]> = {};
-            data?.forEach(row => {
-                const id = row['ability_id'];
+            data.forEach(row => {
+                const id = row.ability_id;
                 if (!results[id]) results[id] = [];
-                if (row['ability_data']) results[id].push(row['ability_data']);
+                if (row.ability_data) {
+                    results[id].push(row.ability_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abilityByAbilityId[id] = results[id];
+                this.relationships.abilityByAbilityId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Ability[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abilityByAbilityId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abilityByAbilityId[id] || []
+            ])
+        );
     }
 
     async getClassForArchetype(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -2225,42 +2444,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for archetype: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getClassForArchetypeClassFeature(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -2271,42 +2498,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for archetype_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getArchetypeForArchetypeClassFeature(ids: number[]): Promise<Record<number, Archetype[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.archetypeByArchetypeId[id]);
         
@@ -2317,42 +2552,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     archetype_id,
-                    archetype_data:archetype:*
+                    archetype_data:archetype(*)
                 `)
-                .in('archetype_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        archetype_id: number; 
-                        archetype_data: Archetype 
-                    }>; 
-                    error: any; 
+                .in('archetype_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        archetype_id: number;
+                        archetype_data: Archetype;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching archetype for archetype_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by archetype_id
             const results: Record<number, Archetype[]> = {};
-            data?.forEach(row => {
-                const id = row['archetype_id'];
+            data.forEach(row => {
+                const id = row.archetype_id;
                 if (!results[id]) results[id] = [];
-                if (row['archetype_data']) results[id].push(row['archetype_data']);
+                if (row.archetype_data) {
+                    results[id].push(row.archetype_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.archetypeByArchetypeId[id] = results[id];
+                this.relationships.archetypeByArchetypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Archetype[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.archetypeByArchetypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.archetypeByArchetypeId[id] || []
+            ])
+        );
     }
 
     async getClassFeatureForArchetypeClassFeature(ids: number[]): Promise<Record<number, ClassFeature[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classFeatureByFeatureId[id]);
         
@@ -2363,42 +2606,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     feature_id,
-                    class_feature_data:class_feature:*
+                    class_feature_data:class_feature(*)
                 `)
-                .in('feature_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        feature_id: number; 
-                        class_feature_data: ClassFeature 
-                    }>; 
-                    error: any; 
+                .in('feature_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        feature_id: number;
+                        class_feature_data: ClassFeature;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class_feature for archetype_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by feature_id
             const results: Record<number, ClassFeature[]> = {};
-            data?.forEach(row => {
-                const id = row['feature_id'];
+            data.forEach(row => {
+                const id = row.feature_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_feature_data']) results[id].push(row['class_feature_data']);
+                if (row.class_feature_data) {
+                    results[id].push(row.class_feature_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classFeatureByFeatureId[id] = results[id];
+                this.relationships.classFeatureByFeatureId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, ClassFeature[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classFeatureByFeatureId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classFeatureByFeatureId[id] || []
+            ])
+        );
     }
 
     async getCorruptionForCorruptionManifestation(ids: number[]): Promise<Record<number, Corruption[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.corruptionByCorruptionId[id]);
         
@@ -2409,42 +2660,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     corruption_id,
-                    corruption_data:corruption:*
+                    corruption_data:corruption(*)
                 `)
-                .in('corruption_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        corruption_id: number; 
-                        corruption_data: Corruption 
-                    }>; 
-                    error: any; 
+                .in('corruption_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        corruption_id: number;
+                        corruption_data: Corruption;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching corruption for corruption_manifestation: ${error.message}`);
+            if (!data) return {};
             
             // Group results by corruption_id
             const results: Record<number, Corruption[]> = {};
-            data?.forEach(row => {
-                const id = row['corruption_id'];
+            data.forEach(row => {
+                const id = row.corruption_id;
                 if (!results[id]) results[id] = [];
-                if (row['corruption_data']) results[id].push(row['corruption_data']);
+                if (row.corruption_data) {
+                    results[id].push(row.corruption_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.corruptionByCorruptionId[id] = results[id];
+                this.relationships.corruptionByCorruptionId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Corruption[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.corruptionByCorruptionId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.corruptionByCorruptionId[id] || []
+            ])
+        );
     }
 
     async getClassForWildTalent(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -2455,42 +2714,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for wild_talent: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getWildTalentTypeForWildTalent(ids: number[]): Promise<Record<number, WildTalentType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.wildTalentTypeByWildTalentTypeId[id]);
         
@@ -2501,42 +2768,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     wild_talent_type_id,
-                    wild_talent_type_data:wild_talent_type:*
+                    wild_talent_type_data:wild_talent_type(*)
                 `)
-                .in('wild_talent_type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        wild_talent_type_id: number; 
-                        wild_talent_type_data: WildTalentType 
-                    }>; 
-                    error: any; 
+                .in('wild_talent_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        wild_talent_type_id: number;
+                        wild_talent_type_data: WildTalentType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching wild_talent_type for wild_talent: ${error.message}`);
+            if (!data) return {};
             
             // Group results by wild_talent_type_id
             const results: Record<number, WildTalentType[]> = {};
-            data?.forEach(row => {
-                const id = row['wild_talent_type_id'];
+            data.forEach(row => {
+                const id = row.wild_talent_type_id;
                 if (!results[id]) results[id] = [];
-                if (row['wild_talent_type_data']) results[id].push(row['wild_talent_type_data']);
+                if (row.wild_talent_type_data) {
+                    results[id].push(row.wild_talent_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.wildTalentTypeByWildTalentTypeId[id] = results[id];
+                this.relationships.wildTalentTypeByWildTalentTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, WildTalentType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.wildTalentTypeByWildTalentTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.wildTalentTypeByWildTalentTypeId[id] || []
+            ])
+        );
     }
 
     async getClassForMonkUnchainedKiPower(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -2547,42 +2822,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for monk_unchained_ki_power: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getBonusTypeForEquipment(ids: number[]): Promise<Record<number, BonusType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.bonusTypeByBonusTypeId[id]);
         
@@ -2593,42 +2876,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     bonus_type_id,
-                    bonus_type_data:bonus_type:*
+                    bonus_type_data:bonus_type(*)
                 `)
-                .in('bonus_type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        bonus_type_id: number; 
-                        bonus_type_data: BonusType 
-                    }>; 
-                    error: any; 
+                .in('bonus_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        bonus_type_id: number;
+                        bonus_type_data: BonusType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching bonus_type for equipment: ${error.message}`);
+            if (!data) return {};
             
             // Group results by bonus_type_id
             const results: Record<number, BonusType[]> = {};
-            data?.forEach(row => {
-                const id = row['bonus_type_id'];
+            data.forEach(row => {
+                const id = row.bonus_type_id;
                 if (!results[id]) results[id] = [];
-                if (row['bonus_type_data']) results[id].push(row['bonus_type_data']);
+                if (row.bonus_type_data) {
+                    results[id].push(row.bonus_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.bonusTypeByBonusTypeId[id] = results[id];
+                this.relationships.bonusTypeByBonusTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, BonusType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.bonusTypeByBonusTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.bonusTypeByBonusTypeId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellConsumable(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -2639,42 +2930,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_consumable: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterClass(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -2685,42 +2984,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_class: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getClassForGameCharacterClass(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -2731,42 +3038,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for game_character_class: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getClassForClassSkill(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -2777,42 +3092,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for class_skill: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getSkillForClassSkill(ids: number[]): Promise<Record<number, Skill[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.skillBySkillId[id]);
         
@@ -2823,42 +3146,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     skill_id,
-                    skill_data:skill:*
+                    skill_data:skill(*)
                 `)
-                .in('skill_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        skill_id: number; 
-                        skill_data: Skill 
-                    }>; 
-                    error: any; 
+                .in('skill_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        skill_id: number;
+                        skill_data: Skill;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching skill for class_skill: ${error.message}`);
+            if (!data) return {};
             
             // Group results by skill_id
             const results: Record<number, Skill[]> = {};
-            data?.forEach(row => {
-                const id = row['skill_id'];
+            data.forEach(row => {
+                const id = row.skill_id;
                 if (!results[id]) results[id] = [];
-                if (row['skill_data']) results[id].push(row['skill_data']);
+                if (row.skill_data) {
+                    results[id].push(row.skill_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.skillBySkillId[id] = results[id];
+                this.relationships.skillBySkillId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Skill[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.skillBySkillId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.skillBySkillId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterSkillRank(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -2869,42 +3200,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_skill_rank: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getSkillForGameCharacterSkillRank(ids: number[]): Promise<Record<number, Skill[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.skillBySkillId[id]);
         
@@ -2915,42 +3254,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     skill_id,
-                    skill_data:skill:*
+                    skill_data:skill(*)
                 `)
-                .in('skill_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        skill_id: number; 
-                        skill_data: Skill 
-                    }>; 
-                    error: any; 
+                .in('skill_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        skill_id: number;
+                        skill_data: Skill;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching skill for game_character_skill_rank: ${error.message}`);
+            if (!data) return {};
             
             // Group results by skill_id
             const results: Record<number, Skill[]> = {};
-            data?.forEach(row => {
-                const id = row['skill_id'];
+            data.forEach(row => {
+                const id = row.skill_id;
                 if (!results[id]) results[id] = [];
-                if (row['skill_data']) results[id].push(row['skill_data']);
+                if (row.skill_data) {
+                    results[id].push(row.skill_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.skillBySkillId[id] = results[id];
+                this.relationships.skillBySkillId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Skill[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.skillBySkillId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.skillBySkillId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterAbility(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -2961,42 +3308,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_ability: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getAbilityForGameCharacterAbility(ids: number[]): Promise<Record<number, Ability[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abilityByAbilityId[id]);
         
@@ -3007,42 +3362,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     ability_id,
-                    ability_data:ability:*
+                    ability_data:ability(*)
                 `)
-                .in('ability_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        ability_id: number; 
-                        ability_data: Ability 
-                    }>; 
-                    error: any; 
+                .in('ability_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        ability_id: number;
+                        ability_data: Ability;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching ability for game_character_ability: ${error.message}`);
+            if (!data) return {};
             
             // Group results by ability_id
             const results: Record<number, Ability[]> = {};
-            data?.forEach(row => {
-                const id = row['ability_id'];
+            data.forEach(row => {
+                const id = row.ability_id;
                 if (!results[id]) results[id] = [];
-                if (row['ability_data']) results[id].push(row['ability_data']);
+                if (row.ability_data) {
+                    results[id].push(row.ability_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abilityByAbilityId[id] = results[id];
+                this.relationships.abilityByAbilityId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Ability[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abilityByAbilityId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abilityByAbilityId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterFeat(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3053,42 +3416,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_feat: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getFeatForGameCharacterFeat(ids: number[]): Promise<Record<number, Feat[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.featByFeatId[id]);
         
@@ -3099,42 +3470,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     feat_id,
-                    feat_data:feat:*
+                    feat_data:feat(*)
                 `)
-                .in('feat_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        feat_id: number; 
-                        feat_data: Feat 
-                    }>; 
-                    error: any; 
+                .in('feat_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        feat_id: number;
+                        feat_data: Feat;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching feat for game_character_feat: ${error.message}`);
+            if (!data) return {};
             
             // Group results by feat_id
             const results: Record<number, Feat[]> = {};
-            data?.forEach(row => {
-                const id = row['feat_id'];
+            data.forEach(row => {
+                const id = row.feat_id;
                 if (!results[id]) results[id] = [];
-                if (row['feat_data']) results[id].push(row['feat_data']);
+                if (row.feat_data) {
+                    results[id].push(row.feat_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.featByFeatId[id] = results[id];
+                this.relationships.featByFeatId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Feat[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.featByFeatId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.featByFeatId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterConsumable(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3145,42 +3524,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_consumable: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getConsumableForGameCharacterConsumable(ids: number[]): Promise<Record<number, Consumable[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.consumableByConsumableId[id]);
         
@@ -3191,42 +3578,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     consumable_id,
-                    consumable_data:consumable:*
+                    consumable_data:consumable(*)
                 `)
-                .in('consumable_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        consumable_id: number; 
-                        consumable_data: Consumable 
-                    }>; 
-                    error: any; 
+                .in('consumable_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        consumable_id: number;
+                        consumable_data: Consumable;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching consumable for game_character_consumable: ${error.message}`);
+            if (!data) return {};
             
             // Group results by consumable_id
             const results: Record<number, Consumable[]> = {};
-            data?.forEach(row => {
-                const id = row['consumable_id'];
+            data.forEach(row => {
+                const id = row.consumable_id;
                 if (!results[id]) results[id] = [];
-                if (row['consumable_data']) results[id].push(row['consumable_data']);
+                if (row.consumable_data) {
+                    results[id].push(row.consumable_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.consumableByConsumableId[id] = results[id];
+                this.relationships.consumableByConsumableId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Consumable[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.consumableByConsumableId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.consumableByConsumableId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterArchetype(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3237,42 +3632,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_archetype: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getArchetypeForGameCharacterArchetype(ids: number[]): Promise<Record<number, Archetype[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.archetypeByArchetypeId[id]);
         
@@ -3283,42 +3686,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     archetype_id,
-                    archetype_data:archetype:*
+                    archetype_data:archetype(*)
                 `)
-                .in('archetype_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        archetype_id: number; 
-                        archetype_data: Archetype 
-                    }>; 
-                    error: any; 
+                .in('archetype_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        archetype_id: number;
+                        archetype_data: Archetype;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching archetype for game_character_archetype: ${error.message}`);
+            if (!data) return {};
             
             // Group results by archetype_id
             const results: Record<number, Archetype[]> = {};
-            data?.forEach(row => {
-                const id = row['archetype_id'];
+            data.forEach(row => {
+                const id = row.archetype_id;
                 if (!results[id]) results[id] = [];
-                if (row['archetype_data']) results[id].push(row['archetype_data']);
+                if (row.archetype_data) {
+                    results[id].push(row.archetype_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.archetypeByArchetypeId[id] = results[id];
+                this.relationships.archetypeByArchetypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Archetype[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.archetypeByArchetypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.archetypeByArchetypeId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterAncestry(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3329,42 +3740,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_ancestry: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getAncestryForGameCharacterAncestry(ids: number[]): Promise<Record<number, Ancestry[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.ancestryByAncestryId[id]);
         
@@ -3375,42 +3794,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     ancestry_id,
-                    ancestry_data:ancestry:*
+                    ancestry_data:ancestry(*)
                 `)
-                .in('ancestry_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        ancestry_id: number; 
-                        ancestry_data: Ancestry 
-                    }>; 
-                    error: any; 
+                .in('ancestry_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        ancestry_id: number;
+                        ancestry_data: Ancestry;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching ancestry for game_character_ancestry: ${error.message}`);
+            if (!data) return {};
             
             // Group results by ancestry_id
             const results: Record<number, Ancestry[]> = {};
-            data?.forEach(row => {
-                const id = row['ancestry_id'];
+            data.forEach(row => {
+                const id = row.ancestry_id;
                 if (!results[id]) results[id] = [];
-                if (row['ancestry_data']) results[id].push(row['ancestry_data']);
+                if (row.ancestry_data) {
+                    results[id].push(row.ancestry_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.ancestryByAncestryId[id] = results[id];
+                this.relationships.ancestryByAncestryId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Ancestry[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.ancestryByAncestryId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.ancestryByAncestryId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterClassFeature(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3421,42 +3848,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getClassFeatureForGameCharacterClassFeature(ids: number[]): Promise<Record<number, ClassFeature[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classFeatureByClassFeatureId[id]);
         
@@ -3467,42 +3902,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_feature_id,
-                    class_feature_data:class_feature:*
+                    class_feature_data:class_feature(*)
                 `)
-                .in('class_feature_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_feature_id: number; 
-                        class_feature_data: ClassFeature 
-                    }>; 
-                    error: any; 
+                .in('class_feature_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_feature_id: number;
+                        class_feature_data: ClassFeature;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class_feature for game_character_class_feature: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_feature_id
             const results: Record<number, ClassFeature[]> = {};
-            data?.forEach(row => {
-                const id = row['class_feature_id'];
+            data.forEach(row => {
+                const id = row.class_feature_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_feature_data']) results[id].push(row['class_feature_data']);
+                if (row.class_feature_data) {
+                    results[id].push(row.class_feature_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classFeatureByClassFeatureId[id] = results[id];
+                this.relationships.classFeatureByClassFeatureId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, ClassFeature[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classFeatureByClassFeatureId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classFeatureByClassFeatureId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterCorruption(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3513,42 +3956,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_corruption: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getCorruptionForGameCharacterCorruption(ids: number[]): Promise<Record<number, Corruption[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.corruptionByCorruptionId[id]);
         
@@ -3559,42 +4010,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     corruption_id,
-                    corruption_data:corruption:*
+                    corruption_data:corruption(*)
                 `)
-                .in('corruption_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        corruption_id: number; 
-                        corruption_data: Corruption 
-                    }>; 
-                    error: any; 
+                .in('corruption_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        corruption_id: number;
+                        corruption_data: Corruption;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching corruption for game_character_corruption: ${error.message}`);
+            if (!data) return {};
             
             // Group results by corruption_id
             const results: Record<number, Corruption[]> = {};
-            data?.forEach(row => {
-                const id = row['corruption_id'];
+            data.forEach(row => {
+                const id = row.corruption_id;
                 if (!results[id]) results[id] = [];
-                if (row['corruption_data']) results[id].push(row['corruption_data']);
+                if (row.corruption_data) {
+                    results[id].push(row.corruption_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.corruptionByCorruptionId[id] = results[id];
+                this.relationships.corruptionByCorruptionId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Corruption[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.corruptionByCorruptionId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.corruptionByCorruptionId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterCorruptionManifestation(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3605,42 +4064,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_corruption_manifestation: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getCorruptionManifestationForGameCharacterCorruptionManifestation(ids: number[]): Promise<Record<number, CorruptionManifestation[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.corruptionManifestationByManifestationId[id]);
         
@@ -3651,42 +4118,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     manifestation_id,
-                    corruption_manifestation_data:corruption_manifestation:*
+                    corruption_manifestation_data:corruption_manifestation(*)
                 `)
-                .in('manifestation_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        manifestation_id: number; 
-                        corruption_manifestation_data: CorruptionManifestation 
-                    }>; 
-                    error: any; 
+                .in('manifestation_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        manifestation_id: number;
+                        corruption_manifestation_data: CorruptionManifestation;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching corruption_manifestation for game_character_corruption_manifestation: ${error.message}`);
+            if (!data) return {};
             
             // Group results by manifestation_id
             const results: Record<number, CorruptionManifestation[]> = {};
-            data?.forEach(row => {
-                const id = row['manifestation_id'];
+            data.forEach(row => {
+                const id = row.manifestation_id;
                 if (!results[id]) results[id] = [];
-                if (row['corruption_manifestation_data']) results[id].push(row['corruption_manifestation_data']);
+                if (row.corruption_manifestation_data) {
+                    results[id].push(row.corruption_manifestation_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.corruptionManifestationByManifestationId[id] = results[id];
+                this.relationships.corruptionManifestationByManifestationId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, CorruptionManifestation[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.corruptionManifestationByManifestationId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.corruptionManifestationByManifestationId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterWildTalent(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3697,42 +4172,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_wild_talent: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getWildTalentForGameCharacterWildTalent(ids: number[]): Promise<Record<number, WildTalent[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.wildTalentByWildTalentId[id]);
         
@@ -3743,42 +4226,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     wild_talent_id,
-                    wild_talent_data:wild_talent:*
+                    wild_talent_data:wild_talent(*)
                 `)
-                .in('wild_talent_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        wild_talent_id: number; 
-                        wild_talent_data: WildTalent 
-                    }>; 
-                    error: any; 
+                .in('wild_talent_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        wild_talent_id: number;
+                        wild_talent_data: WildTalent;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching wild_talent for game_character_wild_talent: ${error.message}`);
+            if (!data) return {};
             
             // Group results by wild_talent_id
             const results: Record<number, WildTalent[]> = {};
-            data?.forEach(row => {
-                const id = row['wild_talent_id'];
+            data.forEach(row => {
+                const id = row.wild_talent_id;
                 if (!results[id]) results[id] = [];
-                if (row['wild_talent_data']) results[id].push(row['wild_talent_data']);
+                if (row.wild_talent_data) {
+                    results[id].push(row.wild_talent_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.wildTalentByWildTalentId[id] = results[id];
+                this.relationships.wildTalentByWildTalentId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, WildTalent[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.wildTalentByWildTalentId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.wildTalentByWildTalentId[id] || []
+            ])
+        );
     }
 
     async getAbpNodeGroupForAbpNode(ids: number[]): Promise<Record<number, AbpNodeGroup[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abpNodeGroupByGroupId[id]);
         
@@ -3789,42 +4280,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     group_id,
-                    abp_node_group_data:abp_node_group:*
+                    abp_node_group_data:abp_node_group(*)
                 `)
-                .in('group_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        group_id: number; 
-                        abp_node_group_data: AbpNodeGroup 
-                    }>; 
-                    error: any; 
+                .in('group_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        group_id: number;
+                        abp_node_group_data: AbpNodeGroup;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching abp_node_group for abp_node: ${error.message}`);
+            if (!data) return {};
             
             // Group results by group_id
             const results: Record<number, AbpNodeGroup[]> = {};
-            data?.forEach(row => {
-                const id = row['group_id'];
+            data.forEach(row => {
+                const id = row.group_id;
                 if (!results[id]) results[id] = [];
-                if (row['abp_node_group_data']) results[id].push(row['abp_node_group_data']);
+                if (row.abp_node_group_data) {
+                    results[id].push(row.abp_node_group_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abpNodeGroupByGroupId[id] = results[id];
+                this.relationships.abpNodeGroupByGroupId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, AbpNodeGroup[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abpNodeGroupByGroupId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abpNodeGroupByGroupId[id] || []
+            ])
+        );
     }
 
     async getAbpNodeForAbpNodeBonus(ids: number[]): Promise<Record<number, AbpNode[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abpNodeByNodeId[id]);
         
@@ -3835,42 +4334,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     node_id,
-                    abp_node_data:abp_node:*
+                    abp_node_data:abp_node(*)
                 `)
-                .in('node_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        node_id: number; 
-                        abp_node_data: AbpNode 
-                    }>; 
-                    error: any; 
+                .in('node_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        node_id: number;
+                        abp_node_data: AbpNode;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching abp_node for abp_node_bonus: ${error.message}`);
+            if (!data) return {};
             
             // Group results by node_id
             const results: Record<number, AbpNode[]> = {};
-            data?.forEach(row => {
-                const id = row['node_id'];
+            data.forEach(row => {
+                const id = row.node_id;
                 if (!results[id]) results[id] = [];
-                if (row['abp_node_data']) results[id].push(row['abp_node_data']);
+                if (row.abp_node_data) {
+                    results[id].push(row.abp_node_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abpNodeByNodeId[id] = results[id];
+                this.relationships.abpNodeByNodeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, AbpNode[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abpNodeByNodeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abpNodeByNodeId[id] || []
+            ])
+        );
     }
 
     async getAbpBonusTypeForAbpNodeBonus(ids: number[]): Promise<Record<number, AbpBonusType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abpBonusTypeByBonusTypeId[id]);
         
@@ -3881,42 +4388,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     bonus_type_id,
-                    abp_bonus_type_data:abp_bonus_type:*
+                    abp_bonus_type_data:abp_bonus_type(*)
                 `)
-                .in('bonus_type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        bonus_type_id: number; 
-                        abp_bonus_type_data: AbpBonusType 
-                    }>; 
-                    error: any; 
+                .in('bonus_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        bonus_type_id: number;
+                        abp_bonus_type_data: AbpBonusType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching abp_bonus_type for abp_node_bonus: ${error.message}`);
+            if (!data) return {};
             
             // Group results by bonus_type_id
             const results: Record<number, AbpBonusType[]> = {};
-            data?.forEach(row => {
-                const id = row['bonus_type_id'];
+            data.forEach(row => {
+                const id = row.bonus_type_id;
                 if (!results[id]) results[id] = [];
-                if (row['abp_bonus_type_data']) results[id].push(row['abp_bonus_type_data']);
+                if (row.abp_bonus_type_data) {
+                    results[id].push(row.abp_bonus_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abpBonusTypeByBonusTypeId[id] = results[id];
+                this.relationships.abpBonusTypeByBonusTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, AbpBonusType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abpBonusTypeByBonusTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abpBonusTypeByBonusTypeId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterAbpChoice(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -3927,42 +4442,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_abp_choice: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getAbpNodeGroupForGameCharacterAbpChoice(ids: number[]): Promise<Record<number, AbpNodeGroup[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abpNodeGroupByGroupId[id]);
         
@@ -3973,42 +4496,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     group_id,
-                    abp_node_group_data:abp_node_group:*
+                    abp_node_group_data:abp_node_group(*)
                 `)
-                .in('group_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        group_id: number; 
-                        abp_node_group_data: AbpNodeGroup 
-                    }>; 
-                    error: any; 
+                .in('group_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        group_id: number;
+                        abp_node_group_data: AbpNodeGroup;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching abp_node_group for game_character_abp_choice: ${error.message}`);
+            if (!data) return {};
             
             // Group results by group_id
             const results: Record<number, AbpNodeGroup[]> = {};
-            data?.forEach(row => {
-                const id = row['group_id'];
+            data.forEach(row => {
+                const id = row.group_id;
                 if (!results[id]) results[id] = [];
-                if (row['abp_node_group_data']) results[id].push(row['abp_node_group_data']);
+                if (row.abp_node_group_data) {
+                    results[id].push(row.abp_node_group_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abpNodeGroupByGroupId[id] = results[id];
+                this.relationships.abpNodeGroupByGroupId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, AbpNodeGroup[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abpNodeGroupByGroupId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abpNodeGroupByGroupId[id] || []
+            ])
+        );
     }
 
     async getAbpNodeForGameCharacterAbpChoice(ids: number[]): Promise<Record<number, AbpNode[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.abpNodeByNodeId[id]);
         
@@ -4019,42 +4550,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     node_id,
-                    abp_node_data:abp_node:*
+                    abp_node_data:abp_node(*)
                 `)
-                .in('node_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        node_id: number; 
-                        abp_node_data: AbpNode 
-                    }>; 
-                    error: any; 
+                .in('node_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        node_id: number;
+                        abp_node_data: AbpNode;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching abp_node for game_character_abp_choice: ${error.message}`);
+            if (!data) return {};
             
             // Group results by node_id
             const results: Record<number, AbpNode[]> = {};
-            data?.forEach(row => {
-                const id = row['node_id'];
+            data.forEach(row => {
+                const id = row.node_id;
                 if (!results[id]) results[id] = [];
-                if (row['abp_node_data']) results[id].push(row['abp_node_data']);
+                if (row.abp_node_data) {
+                    results[id].push(row.abp_node_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.abpNodeByNodeId[id] = results[id];
+                this.relationships.abpNodeByNodeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, AbpNode[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.abpNodeByNodeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.abpNodeByNodeId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterFavoredClassBonus(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4065,42 +4604,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_favored_class_bonus: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getFavoredClassChoiceForGameCharacterFavoredClassBonus(ids: number[]): Promise<Record<number, FavoredClassChoice[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.favoredClassChoiceByChoiceId[id]);
         
@@ -4111,42 +4658,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     choice_id,
-                    favored_class_choice_data:favored_class_choice:*
+                    favored_class_choice_data:favored_class_choice(*)
                 `)
-                .in('choice_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        choice_id: number; 
-                        favored_class_choice_data: FavoredClassChoice 
-                    }>; 
-                    error: any; 
+                .in('choice_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        choice_id: number;
+                        favored_class_choice_data: FavoredClassChoice;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching favored_class_choice for game_character_favored_class_bonus: ${error.message}`);
+            if (!data) return {};
             
             // Group results by choice_id
             const results: Record<number, FavoredClassChoice[]> = {};
-            data?.forEach(row => {
-                const id = row['choice_id'];
+            data.forEach(row => {
+                const id = row.choice_id;
                 if (!results[id]) results[id] = [];
-                if (row['favored_class_choice_data']) results[id].push(row['favored_class_choice_data']);
+                if (row.favored_class_choice_data) {
+                    results[id].push(row.favored_class_choice_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.favoredClassChoiceByChoiceId[id] = results[id];
+                this.relationships.favoredClassChoiceByChoiceId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, FavoredClassChoice[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.favoredClassChoiceByChoiceId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.favoredClassChoiceByChoiceId[id] || []
+            ])
+        );
     }
 
     async getClassForGameCharacterFavoredClassBonus(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -4157,42 +4712,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for game_character_favored_class_bonus: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterEquipment(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4203,42 +4766,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_equipment: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getEquipmentForGameCharacterEquipment(ids: number[]): Promise<Record<number, Equipment[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.equipmentByEquipmentId[id]);
         
@@ -4249,42 +4820,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     equipment_id,
-                    equipment_data:equipment:*
+                    equipment_data:equipment(*)
                 `)
-                .in('equipment_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        equipment_id: number; 
-                        equipment_data: Equipment 
-                    }>; 
-                    error: any; 
+                .in('equipment_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        equipment_id: number;
+                        equipment_data: Equipment;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching equipment for game_character_equipment: ${error.message}`);
+            if (!data) return {};
             
             // Group results by equipment_id
             const results: Record<number, Equipment[]> = {};
-            data?.forEach(row => {
-                const id = row['equipment_id'];
+            data.forEach(row => {
+                const id = row.equipment_id;
                 if (!results[id]) results[id] = [];
-                if (row['equipment_data']) results[id].push(row['equipment_data']);
+                if (row.equipment_data) {
+                    results[id].push(row.equipment_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.equipmentByEquipmentId[id] = results[id];
+                this.relationships.equipmentByEquipmentId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Equipment[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.equipmentByEquipmentId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.equipmentByEquipmentId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterArmor(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4295,42 +4874,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_armor: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getArmorForGameCharacterArmor(ids: number[]): Promise<Record<number, Armor[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.armorByArmorId[id]);
         
@@ -4341,42 +4928,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     armor_id,
-                    armor_data:armor:*
+                    armor_data:armor(*)
                 `)
-                .in('armor_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        armor_id: number; 
-                        armor_data: Armor 
-                    }>; 
-                    error: any; 
+                .in('armor_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        armor_id: number;
+                        armor_data: Armor;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching armor for game_character_armor: ${error.message}`);
+            if (!data) return {};
             
             // Group results by armor_id
             const results: Record<number, Armor[]> = {};
-            data?.forEach(row => {
-                const id = row['armor_id'];
+            data.forEach(row => {
+                const id = row.armor_id;
                 if (!results[id]) results[id] = [];
-                if (row['armor_data']) results[id].push(row['armor_data']);
+                if (row.armor_data) {
+                    results[id].push(row.armor_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.armorByArmorId[id] = results[id];
+                this.relationships.armorByArmorId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Armor[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.armorByArmorId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.armorByArmorId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterTrait(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4387,42 +4982,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_trait: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getTraitForGameCharacterTrait(ids: number[]): Promise<Record<number, Trait[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.traitByTraitId[id]);
         
@@ -4433,42 +5036,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     trait_id,
-                    trait_data:trait:*
+                    trait_data:trait(*)
                 `)
-                .in('trait_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        trait_id: number; 
-                        trait_data: Trait 
-                    }>; 
-                    error: any; 
+                .in('trait_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        trait_id: number;
+                        trait_data: Trait;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching trait for game_character_trait: ${error.message}`);
+            if (!data) return {};
             
             // Group results by trait_id
             const results: Record<number, Trait[]> = {};
-            data?.forEach(row => {
-                const id = row['trait_id'];
+            data.forEach(row => {
+                const id = row.trait_id;
                 if (!results[id]) results[id] = [];
-                if (row['trait_data']) results[id].push(row['trait_data']);
+                if (row.trait_data) {
+                    results[id].push(row.trait_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.traitByTraitId[id] = results[id];
+                this.relationships.traitByTraitId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Trait[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.traitByTraitId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.traitByTraitId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterSpell(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4479,42 +5090,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_spell: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getSpellForGameCharacterSpell(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -4525,42 +5144,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for game_character_spell: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterDiscovery(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4571,42 +5198,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_discovery: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getDiscoveryForGameCharacterDiscovery(ids: number[]): Promise<Record<number, Discovery[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.discoveryByDiscoveryId[id]);
         
@@ -4617,42 +5252,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     discovery_id,
-                    discovery_data:discovery:*
+                    discovery_data:discovery(*)
                 `)
-                .in('discovery_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        discovery_id: number; 
-                        discovery_data: Discovery 
-                    }>; 
-                    error: any; 
+                .in('discovery_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        discovery_id: number;
+                        discovery_data: Discovery;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching discovery for game_character_discovery: ${error.message}`);
+            if (!data) return {};
             
             // Group results by discovery_id
             const results: Record<number, Discovery[]> = {};
-            data?.forEach(row => {
-                const id = row['discovery_id'];
+            data.forEach(row => {
+                const id = row.discovery_id;
                 if (!results[id]) results[id] = [];
-                if (row['discovery_data']) results[id].push(row['discovery_data']);
+                if (row.discovery_data) {
+                    results[id].push(row.discovery_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.discoveryByDiscoveryId[id] = results[id];
+                this.relationships.discoveryByDiscoveryId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Discovery[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.discoveryByDiscoveryId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.discoveryByDiscoveryId[id] || []
+            ])
+        );
     }
 
     async getGameCharacterForGameCharacterWeapon(ids: number[]): Promise<Record<number, GameCharacter[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.gameCharacterByGameCharacterId[id]);
         
@@ -4663,42 +5306,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     game_character_id,
-                    game_character_data:game_character:*
+                    game_character_data:game_character(*)
                 `)
-                .in('game_character_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        game_character_id: number; 
-                        game_character_data: GameCharacter 
-                    }>; 
-                    error: any; 
+                .in('game_character_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        game_character_id: number;
+                        game_character_data: GameCharacter;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching game_character for game_character_weapon: ${error.message}`);
+            if (!data) return {};
             
             // Group results by game_character_id
             const results: Record<number, GameCharacter[]> = {};
-            data?.forEach(row => {
-                const id = row['game_character_id'];
+            data.forEach(row => {
+                const id = row.game_character_id;
                 if (!results[id]) results[id] = [];
-                if (row['game_character_data']) results[id].push(row['game_character_data']);
+                if (row.game_character_data) {
+                    results[id].push(row.game_character_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.gameCharacterByGameCharacterId[id] = results[id];
+                this.relationships.gameCharacterByGameCharacterId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, GameCharacter[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.gameCharacterByGameCharacterId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.gameCharacterByGameCharacterId[id] || []
+            ])
+        );
     }
 
     async getWeaponForGameCharacterWeapon(ids: number[]): Promise<Record<number, Weapon[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.weaponByWeaponId[id]);
         
@@ -4709,42 +5360,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     weapon_id,
-                    weapon_data:weapon:*
+                    weapon_data:weapon(*)
                 `)
-                .in('weapon_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        weapon_id: number; 
-                        weapon_data: Weapon 
-                    }>; 
-                    error: any; 
+                .in('weapon_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        weapon_id: number;
+                        weapon_data: Weapon;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching weapon for game_character_weapon: ${error.message}`);
+            if (!data) return {};
             
             // Group results by weapon_id
             const results: Record<number, Weapon[]> = {};
-            data?.forEach(row => {
-                const id = row['weapon_id'];
+            data.forEach(row => {
+                const id = row.weapon_id;
                 if (!results[id]) results[id] = [];
-                if (row['weapon_data']) results[id].push(row['weapon_data']);
+                if (row.weapon_data) {
+                    results[id].push(row.weapon_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.weaponByWeaponId[id] = results[id];
+                this.relationships.weaponByWeaponId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Weapon[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.weaponByWeaponId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.weaponByWeaponId[id] || []
+            ])
+        );
     }
 
     async getSpellComponentTypeForSpellComponent(ids: number[]): Promise<Record<number, SpellComponentType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellComponentTypeByTypeId[id]);
         
@@ -4755,42 +5414,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     type_id,
-                    spell_component_type_data:spell_component_type:*
+                    spell_component_type_data:spell_component_type(*)
                 `)
-                .in('type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        type_id: number; 
-                        spell_component_type_data: SpellComponentType 
-                    }>; 
-                    error: any; 
+                .in('type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        type_id: number;
+                        spell_component_type_data: SpellComponentType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_component_type for spell_component: ${error.message}`);
+            if (!data) return {};
             
             // Group results by type_id
             const results: Record<number, SpellComponentType[]> = {};
-            data?.forEach(row => {
-                const id = row['type_id'];
+            data.forEach(row => {
+                const id = row.type_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_component_type_data']) results[id].push(row['spell_component_type_data']);
+                if (row.spell_component_type_data) {
+                    results[id].push(row.spell_component_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellComponentTypeByTypeId[id] = results[id];
+                this.relationships.spellComponentTypeByTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellComponentType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellComponentTypeByTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellComponentTypeByTypeId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellComponentMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -4801,42 +5468,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_component_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellComponentForSpellComponentMapping(ids: number[]): Promise<Record<number, SpellComponent[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellComponentBySpellComponentId[id]);
         
@@ -4847,42 +5522,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_component_id,
-                    spell_component_data:spell_component:*
+                    spell_component_data:spell_component(*)
                 `)
-                .in('spell_component_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_component_id: number; 
-                        spell_component_data: SpellComponent 
-                    }>; 
-                    error: any; 
+                .in('spell_component_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_component_id: number;
+                        spell_component_data: SpellComponent;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_component for spell_component_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_component_id
             const results: Record<number, SpellComponent[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_component_id'];
+            data.forEach(row => {
+                const id = row.spell_component_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_component_data']) results[id].push(row['spell_component_data']);
+                if (row.spell_component_data) {
+                    results[id].push(row.spell_component_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellComponentBySpellComponentId[id] = results[id];
+                this.relationships.spellComponentBySpellComponentId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellComponent[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellComponentBySpellComponentId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellComponentBySpellComponentId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellSorcererBloodlineMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -4893,42 +5576,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_sorcerer_bloodline_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSorcererBloodlineForSpellSorcererBloodlineMapping(ids: number[]): Promise<Record<number, SorcererBloodline[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.sorcererBloodlineBySorcererBloodlineId[id]);
         
@@ -4939,42 +5630,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     sorcerer_bloodline_id,
-                    sorcerer_bloodline_data:sorcerer_bloodline:*
+                    sorcerer_bloodline_data:sorcerer_bloodline(*)
                 `)
-                .in('sorcerer_bloodline_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        sorcerer_bloodline_id: number; 
-                        sorcerer_bloodline_data: SorcererBloodline 
-                    }>; 
-                    error: any; 
+                .in('sorcerer_bloodline_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        sorcerer_bloodline_id: number;
+                        sorcerer_bloodline_data: SorcererBloodline;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching sorcerer_bloodline for spell_sorcerer_bloodline_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by sorcerer_bloodline_id
             const results: Record<number, SorcererBloodline[]> = {};
-            data?.forEach(row => {
-                const id = row['sorcerer_bloodline_id'];
+            data.forEach(row => {
+                const id = row.sorcerer_bloodline_id;
                 if (!results[id]) results[id] = [];
-                if (row['sorcerer_bloodline_data']) results[id].push(row['sorcerer_bloodline_data']);
+                if (row.sorcerer_bloodline_data) {
+                    results[id].push(row.sorcerer_bloodline_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.sorcererBloodlineBySorcererBloodlineId[id] = results[id];
+                this.relationships.sorcererBloodlineBySorcererBloodlineId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SorcererBloodline[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.sorcererBloodlineBySorcererBloodlineId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.sorcererBloodlineBySorcererBloodlineId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellSubdomainMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -4985,42 +5684,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_subdomain_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSubdomainForSpellSubdomainMapping(ids: number[]): Promise<Record<number, Subdomain[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.subdomainBySubdomainId[id]);
         
@@ -5031,42 +5738,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     subdomain_id,
-                    subdomain_data:subdomain:*
+                    subdomain_data:subdomain(*)
                 `)
-                .in('subdomain_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        subdomain_id: number; 
-                        subdomain_data: Subdomain 
-                    }>; 
-                    error: any; 
+                .in('subdomain_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        subdomain_id: number;
+                        subdomain_data: Subdomain;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching subdomain for spell_subdomain_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by subdomain_id
             const results: Record<number, Subdomain[]> = {};
-            data?.forEach(row => {
-                const id = row['subdomain_id'];
+            data.forEach(row => {
+                const id = row.subdomain_id;
                 if (!results[id]) results[id] = [];
-                if (row['subdomain_data']) results[id].push(row['subdomain_data']);
+                if (row.subdomain_data) {
+                    results[id].push(row.subdomain_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.subdomainBySubdomainId[id] = results[id];
+                this.relationships.subdomainBySubdomainId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Subdomain[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.subdomainBySubdomainId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.subdomainBySubdomainId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellSchoolMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -5077,42 +5792,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_school_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellSchoolForSpellSchoolMapping(ids: number[]): Promise<Record<number, SpellSchool[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellSchoolBySpellSchoolId[id]);
         
@@ -5123,42 +5846,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_school_id,
-                    spell_school_data:spell_school:*
+                    spell_school_data:spell_school(*)
                 `)
-                .in('spell_school_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_school_id: number; 
-                        spell_school_data: SpellSchool 
-                    }>; 
-                    error: any; 
+                .in('spell_school_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_school_id: number;
+                        spell_school_data: SpellSchool;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_school for spell_school_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_school_id
             const results: Record<number, SpellSchool[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_school_id'];
+            data.forEach(row => {
+                const id = row.spell_school_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_school_data']) results[id].push(row['spell_school_data']);
+                if (row.spell_school_data) {
+                    results[id].push(row.spell_school_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellSchoolBySpellSchoolId[id] = results[id];
+                this.relationships.spellSchoolBySpellSchoolId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellSchool[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellSchoolBySpellSchoolId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellSchoolBySpellSchoolId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellCastingTimeMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -5169,42 +5900,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_casting_time_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellCastingTimeForSpellCastingTimeMapping(ids: number[]): Promise<Record<number, SpellCastingTime[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellCastingTimeBySpellCastingTimeId[id]);
         
@@ -5215,42 +5954,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_casting_time_id,
-                    spell_casting_time_data:spell_casting_time:*
+                    spell_casting_time_data:spell_casting_time(*)
                 `)
-                .in('spell_casting_time_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_casting_time_id: number; 
-                        spell_casting_time_data: SpellCastingTime 
-                    }>; 
-                    error: any; 
+                .in('spell_casting_time_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_casting_time_id: number;
+                        spell_casting_time_data: SpellCastingTime;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_casting_time for spell_casting_time_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_casting_time_id
             const results: Record<number, SpellCastingTime[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_casting_time_id'];
+            data.forEach(row => {
+                const id = row.spell_casting_time_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_casting_time_data']) results[id].push(row['spell_casting_time_data']);
+                if (row.spell_casting_time_data) {
+                    results[id].push(row.spell_casting_time_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellCastingTimeBySpellCastingTimeId[id] = results[id];
+                this.relationships.spellCastingTimeBySpellCastingTimeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellCastingTime[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellCastingTimeBySpellCastingTimeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellCastingTimeBySpellCastingTimeId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellRangeMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -5261,42 +6008,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_range_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellRangeForSpellRangeMapping(ids: number[]): Promise<Record<number, SpellRange[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellRangeBySpellRangeId[id]);
         
@@ -5307,42 +6062,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_range_id,
-                    spell_range_data:spell_range:*
+                    spell_range_data:spell_range(*)
                 `)
-                .in('spell_range_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_range_id: number; 
-                        spell_range_data: SpellRange 
-                    }>; 
-                    error: any; 
+                .in('spell_range_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_range_id: number;
+                        spell_range_data: SpellRange;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_range for spell_range_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_range_id
             const results: Record<number, SpellRange[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_range_id'];
+            data.forEach(row => {
+                const id = row.spell_range_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_range_data']) results[id].push(row['spell_range_data']);
+                if (row.spell_range_data) {
+                    results[id].push(row.spell_range_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellRangeBySpellRangeId[id] = results[id];
+                this.relationships.spellRangeBySpellRangeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellRange[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellRangeBySpellRangeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellRangeBySpellRangeId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellTargetMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -5353,42 +6116,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_target_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellTargetForSpellTargetMapping(ids: number[]): Promise<Record<number, SpellTarget[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellTargetBySpellTargetId[id]);
         
@@ -5399,42 +6170,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_target_id,
-                    spell_target_data:spell_target:*
+                    spell_target_data:spell_target(*)
                 `)
-                .in('spell_target_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_target_id: number; 
-                        spell_target_data: SpellTarget 
-                    }>; 
-                    error: any; 
+                .in('spell_target_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_target_id: number;
+                        spell_target_data: SpellTarget;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_target for spell_target_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_target_id
             const results: Record<number, SpellTarget[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_target_id'];
+            data.forEach(row => {
+                const id = row.spell_target_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_target_data']) results[id].push(row['spell_target_data']);
+                if (row.spell_target_data) {
+                    results[id].push(row.spell_target_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellTargetBySpellTargetId[id] = results[id];
+                this.relationships.spellTargetBySpellTargetId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellTarget[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellTargetBySpellTargetId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellTargetBySpellTargetId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellDurationMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -5445,42 +6224,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_duration_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellDurationForSpellDurationMapping(ids: number[]): Promise<Record<number, SpellDuration[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellDurationBySpellDurationId[id]);
         
@@ -5491,42 +6278,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_duration_id,
-                    spell_duration_data:spell_duration:*
+                    spell_duration_data:spell_duration(*)
                 `)
-                .in('spell_duration_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_duration_id: number; 
-                        spell_duration_data: SpellDuration 
-                    }>; 
-                    error: any; 
+                .in('spell_duration_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_duration_id: number;
+                        spell_duration_data: SpellDuration;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_duration for spell_duration_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_duration_id
             const results: Record<number, SpellDuration[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_duration_id'];
+            data.forEach(row => {
+                const id = row.spell_duration_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_duration_data']) results[id].push(row['spell_duration_data']);
+                if (row.spell_duration_data) {
+                    results[id].push(row.spell_duration_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellDurationBySpellDurationId[id] = results[id];
+                this.relationships.spellDurationBySpellDurationId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellDuration[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellDurationBySpellDurationId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellDurationBySpellDurationId[id] || []
+            ])
+        );
     }
 
     async getSpellListForSpellListClassFeatureBenefitMapping(ids: number[]): Promise<Record<number, SpellList[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellListBySpellListId[id]);
         
@@ -5537,42 +6332,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_list_id,
-                    spell_list_data:spell_list:*
+                    spell_list_data:spell_list(*)
                 `)
-                .in('spell_list_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_list_id: number; 
-                        spell_list_data: SpellList 
-                    }>; 
-                    error: any; 
+                .in('spell_list_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_list_id: number;
+                        spell_list_data: SpellList;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_list for spell_list_class_feature_benefit_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_list_id
             const results: Record<number, SpellList[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_list_id'];
+            data.forEach(row => {
+                const id = row.spell_list_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_list_data']) results[id].push(row['spell_list_data']);
+                if (row.spell_list_data) {
+                    results[id].push(row.spell_list_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellListBySpellListId[id] = results[id];
+                this.relationships.spellListBySpellListId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellList[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellListBySpellListId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellListBySpellListId[id] || []
+            ])
+        );
     }
 
     async getClassFeatureBenefitForSpellListClassFeatureBenefitMapping(ids: number[]): Promise<Record<number, ClassFeatureBenefit[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classFeatureBenefitByClassFeatureBenefitId[id]);
         
@@ -5583,42 +6386,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_feature_benefit_id,
-                    class_feature_benefit_data:class_feature_benefit:*
+                    class_feature_benefit_data:class_feature_benefit(*)
                 `)
-                .in('class_feature_benefit_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_feature_benefit_id: number; 
-                        class_feature_benefit_data: ClassFeatureBenefit 
-                    }>; 
-                    error: any; 
+                .in('class_feature_benefit_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_feature_benefit_id: number;
+                        class_feature_benefit_data: ClassFeatureBenefit;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class_feature_benefit for spell_list_class_feature_benefit_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_feature_benefit_id
             const results: Record<number, ClassFeatureBenefit[]> = {};
-            data?.forEach(row => {
-                const id = row['class_feature_benefit_id'];
+            data.forEach(row => {
+                const id = row.class_feature_benefit_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_feature_benefit_data']) results[id].push(row['class_feature_benefit_data']);
+                if (row.class_feature_benefit_data) {
+                    results[id].push(row.class_feature_benefit_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classFeatureBenefitByClassFeatureBenefitId[id] = results[id];
+                this.relationships.classFeatureBenefitByClassFeatureBenefitId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, ClassFeatureBenefit[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classFeatureBenefitByClassFeatureBenefitId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classFeatureBenefitByClassFeatureBenefitId[id] || []
+            ])
+        );
     }
 
     async getSpellListForSpellListFeatMapping(ids: number[]): Promise<Record<number, SpellList[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellListBySpellListId[id]);
         
@@ -5629,42 +6440,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_list_id,
-                    spell_list_data:spell_list:*
+                    spell_list_data:spell_list(*)
                 `)
-                .in('spell_list_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_list_id: number; 
-                        spell_list_data: SpellList 
-                    }>; 
-                    error: any; 
+                .in('spell_list_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_list_id: number;
+                        spell_list_data: SpellList;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_list for spell_list_feat_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_list_id
             const results: Record<number, SpellList[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_list_id'];
+            data.forEach(row => {
+                const id = row.spell_list_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_list_data']) results[id].push(row['spell_list_data']);
+                if (row.spell_list_data) {
+                    results[id].push(row.spell_list_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellListBySpellListId[id] = results[id];
+                this.relationships.spellListBySpellListId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellList[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellListBySpellListId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellListBySpellListId[id] || []
+            ])
+        );
     }
 
     async getFeatForSpellListFeatMapping(ids: number[]): Promise<Record<number, Feat[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.featByFeatId[id]);
         
@@ -5675,42 +6494,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     feat_id,
-                    feat_data:feat:*
+                    feat_data:feat(*)
                 `)
-                .in('feat_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        feat_id: number; 
-                        feat_data: Feat 
-                    }>; 
-                    error: any; 
+                .in('feat_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        feat_id: number;
+                        feat_data: Feat;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching feat for spell_list_feat_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by feat_id
             const results: Record<number, Feat[]> = {};
-            data?.forEach(row => {
-                const id = row['feat_id'];
+            data.forEach(row => {
+                const id = row.feat_id;
                 if (!results[id]) results[id] = [];
-                if (row['feat_data']) results[id].push(row['feat_data']);
+                if (row.feat_data) {
+                    results[id].push(row.feat_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.featByFeatId[id] = results[id];
+                this.relationships.featByFeatId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Feat[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.featByFeatId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.featByFeatId[id] || []
+            ])
+        );
     }
 
     async getSpellForSpellListSpellMapping(ids: number[]): Promise<Record<number, Spell[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellBySpellId[id]);
         
@@ -5721,42 +6548,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_id,
-                    spell_data:spell:*
+                    spell_data:spell(*)
                 `)
-                .in('spell_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_id: number; 
-                        spell_data: Spell 
-                    }>; 
-                    error: any; 
+                .in('spell_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_id: number;
+                        spell_data: Spell;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell for spell_list_spell_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_id
             const results: Record<number, Spell[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_id'];
+            data.forEach(row => {
+                const id = row.spell_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_data']) results[id].push(row['spell_data']);
+                if (row.spell_data) {
+                    results[id].push(row.spell_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellBySpellId[id] = results[id];
+                this.relationships.spellBySpellId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Spell[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellBySpellId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellBySpellId[id] || []
+            ])
+        );
     }
 
     async getSpellListForSpellListSpellMapping(ids: number[]): Promise<Record<number, SpellList[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellListBySpellListId[id]);
         
@@ -5767,42 +6602,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     spell_list_id,
-                    spell_list_data:spell_list:*
+                    spell_list_data:spell_list(*)
                 `)
-                .in('spell_list_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        spell_list_id: number; 
-                        spell_list_data: SpellList 
-                    }>; 
-                    error: any; 
+                .in('spell_list_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        spell_list_id: number;
+                        spell_list_data: SpellList;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_list for spell_list_spell_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by spell_list_id
             const results: Record<number, SpellList[]> = {};
-            data?.forEach(row => {
-                const id = row['spell_list_id'];
+            data.forEach(row => {
+                const id = row.spell_list_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_list_data']) results[id].push(row['spell_list_data']);
+                if (row.spell_list_data) {
+                    results[id].push(row.spell_list_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellListBySpellListId[id] = results[id];
+                this.relationships.spellListBySpellListId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellList[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellListBySpellListId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellListBySpellListId[id] || []
+            ])
+        );
     }
 
     async getPrerequisiteRequirementTypeForPrerequisiteRequirement(ids: number[]): Promise<Record<number, PrerequisiteRequirementType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.prerequisiteRequirementTypeByRequirementTypeId[id]);
         
@@ -5813,42 +6656,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     requirement_type_id,
-                    prerequisite_requirement_type_data:prerequisite_requirement_type:*
+                    prerequisite_requirement_type_data:prerequisite_requirement_type(*)
                 `)
-                .in('requirement_type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        requirement_type_id: number; 
-                        prerequisite_requirement_type_data: PrerequisiteRequirementType 
-                    }>; 
-                    error: any; 
+                .in('requirement_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        requirement_type_id: number;
+                        prerequisite_requirement_type_data: PrerequisiteRequirementType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching prerequisite_requirement_type for prerequisite_requirement: ${error.message}`);
+            if (!data) return {};
             
             // Group results by requirement_type_id
             const results: Record<number, PrerequisiteRequirementType[]> = {};
-            data?.forEach(row => {
-                const id = row['requirement_type_id'];
+            data.forEach(row => {
+                const id = row.requirement_type_id;
                 if (!results[id]) results[id] = [];
-                if (row['prerequisite_requirement_type_data']) results[id].push(row['prerequisite_requirement_type_data']);
+                if (row.prerequisite_requirement_type_data) {
+                    results[id].push(row.prerequisite_requirement_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.prerequisiteRequirementTypeByRequirementTypeId[id] = results[id];
+                this.relationships.prerequisiteRequirementTypeByRequirementTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, PrerequisiteRequirementType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.prerequisiteRequirementTypeByRequirementTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.prerequisiteRequirementTypeByRequirementTypeId[id] || []
+            ])
+        );
     }
 
     async getPrerequisiteFulfillmentForFulfillmentQualificationMapping(ids: number[]): Promise<Record<number, PrerequisiteFulfillment[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.prerequisiteFulfillmentByFulfillmentId[id]);
         
@@ -5859,42 +6710,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     fulfillment_id,
-                    prerequisite_fulfillment_data:prerequisite_fulfillment:*
+                    prerequisite_fulfillment_data:prerequisite_fulfillment(*)
                 `)
-                .in('fulfillment_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        fulfillment_id: number; 
-                        prerequisite_fulfillment_data: PrerequisiteFulfillment 
-                    }>; 
-                    error: any; 
+                .in('fulfillment_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        fulfillment_id: number;
+                        prerequisite_fulfillment_data: PrerequisiteFulfillment;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching prerequisite_fulfillment for fulfillment_qualification_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by fulfillment_id
             const results: Record<number, PrerequisiteFulfillment[]> = {};
-            data?.forEach(row => {
-                const id = row['fulfillment_id'];
+            data.forEach(row => {
+                const id = row.fulfillment_id;
                 if (!results[id]) results[id] = [];
-                if (row['prerequisite_fulfillment_data']) results[id].push(row['prerequisite_fulfillment_data']);
+                if (row.prerequisite_fulfillment_data) {
+                    results[id].push(row.prerequisite_fulfillment_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.prerequisiteFulfillmentByFulfillmentId[id] = results[id];
+                this.relationships.prerequisiteFulfillmentByFulfillmentId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, PrerequisiteFulfillment[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.prerequisiteFulfillmentByFulfillmentId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.prerequisiteFulfillmentByFulfillmentId[id] || []
+            ])
+        );
     }
 
     async getQualificationTypeForFulfillmentQualificationMapping(ids: number[]): Promise<Record<number, QualificationType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.qualificationTypeByQualificationTypeId[id]);
         
@@ -5905,42 +6764,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     qualification_type_id,
-                    qualification_type_data:qualification_type:*
+                    qualification_type_data:qualification_type(*)
                 `)
-                .in('qualification_type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        qualification_type_id: number; 
-                        qualification_type_data: QualificationType 
-                    }>; 
-                    error: any; 
+                .in('qualification_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        qualification_type_id: number;
+                        qualification_type_data: QualificationType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching qualification_type for fulfillment_qualification_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by qualification_type_id
             const results: Record<number, QualificationType[]> = {};
-            data?.forEach(row => {
-                const id = row['qualification_type_id'];
+            data.forEach(row => {
+                const id = row.qualification_type_id;
                 if (!results[id]) results[id] = [];
-                if (row['qualification_type_data']) results[id].push(row['qualification_type_data']);
+                if (row.qualification_type_data) {
+                    results[id].push(row.qualification_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.qualificationTypeByQualificationTypeId[id] = results[id];
+                this.relationships.qualificationTypeByQualificationTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, QualificationType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.qualificationTypeByQualificationTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.qualificationTypeByQualificationTypeId[id] || []
+            ])
+        );
     }
 
     async getPrerequisiteRequirementForPrerequisiteRequirementFulfillmentMapping(ids: number[]): Promise<Record<number, PrerequisiteRequirement[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.prerequisiteRequirementByPrerequisiteRequirementId[id]);
         
@@ -5951,42 +6818,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     prerequisite_requirement_id,
-                    prerequisite_requirement_data:prerequisite_requirement:*
+                    prerequisite_requirement_data:prerequisite_requirement(*)
                 `)
-                .in('prerequisite_requirement_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        prerequisite_requirement_id: number; 
-                        prerequisite_requirement_data: PrerequisiteRequirement 
-                    }>; 
-                    error: any; 
+                .in('prerequisite_requirement_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        prerequisite_requirement_id: number;
+                        prerequisite_requirement_data: PrerequisiteRequirement;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching prerequisite_requirement for prerequisite_requirement_fulfillment_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by prerequisite_requirement_id
             const results: Record<number, PrerequisiteRequirement[]> = {};
-            data?.forEach(row => {
-                const id = row['prerequisite_requirement_id'];
+            data.forEach(row => {
+                const id = row.prerequisite_requirement_id;
                 if (!results[id]) results[id] = [];
-                if (row['prerequisite_requirement_data']) results[id].push(row['prerequisite_requirement_data']);
+                if (row.prerequisite_requirement_data) {
+                    results[id].push(row.prerequisite_requirement_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.prerequisiteRequirementByPrerequisiteRequirementId[id] = results[id];
+                this.relationships.prerequisiteRequirementByPrerequisiteRequirementId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, PrerequisiteRequirement[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.prerequisiteRequirementByPrerequisiteRequirementId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.prerequisiteRequirementByPrerequisiteRequirementId[id] || []
+            ])
+        );
     }
 
     async getPrerequisiteFulfillmentForPrerequisiteRequirementFulfillmentMapping(ids: number[]): Promise<Record<number, PrerequisiteFulfillment[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.prerequisiteFulfillmentByPrerequisiteFulfillmentId[id]);
         
@@ -5997,42 +6872,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     prerequisite_fulfillment_id,
-                    prerequisite_fulfillment_data:prerequisite_fulfillment:*
+                    prerequisite_fulfillment_data:prerequisite_fulfillment(*)
                 `)
-                .in('prerequisite_fulfillment_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        prerequisite_fulfillment_id: number; 
-                        prerequisite_fulfillment_data: PrerequisiteFulfillment 
-                    }>; 
-                    error: any; 
+                .in('prerequisite_fulfillment_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        prerequisite_fulfillment_id: number;
+                        prerequisite_fulfillment_data: PrerequisiteFulfillment;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching prerequisite_fulfillment for prerequisite_requirement_fulfillment_mapping: ${error.message}`);
+            if (!data) return {};
             
             // Group results by prerequisite_fulfillment_id
             const results: Record<number, PrerequisiteFulfillment[]> = {};
-            data?.forEach(row => {
-                const id = row['prerequisite_fulfillment_id'];
+            data.forEach(row => {
+                const id = row.prerequisite_fulfillment_id;
                 if (!results[id]) results[id] = [];
-                if (row['prerequisite_fulfillment_data']) results[id].push(row['prerequisite_fulfillment_data']);
+                if (row.prerequisite_fulfillment_data) {
+                    results[id].push(row.prerequisite_fulfillment_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.prerequisiteFulfillmentByPrerequisiteFulfillmentId[id] = results[id];
+                this.relationships.prerequisiteFulfillmentByPrerequisiteFulfillmentId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, PrerequisiteFulfillment[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.prerequisiteFulfillmentByPrerequisiteFulfillmentId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.prerequisiteFulfillmentByPrerequisiteFulfillmentId[id] || []
+            ])
+        );
     }
 
     async getFeatForFeatBenefit(ids: number[]): Promise<Record<number, Feat[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.featByFeatId[id]);
         
@@ -6043,42 +6926,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     feat_id,
-                    feat_data:feat:*
+                    feat_data:feat(*)
                 `)
-                .in('feat_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        feat_id: number; 
-                        feat_data: Feat 
-                    }>; 
-                    error: any; 
+                .in('feat_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        feat_id: number;
+                        feat_data: Feat;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching feat for feat_benefit: ${error.message}`);
+            if (!data) return {};
             
             // Group results by feat_id
             const results: Record<number, Feat[]> = {};
-            data?.forEach(row => {
-                const id = row['feat_id'];
+            data.forEach(row => {
+                const id = row.feat_id;
                 if (!results[id]) results[id] = [];
-                if (row['feat_data']) results[id].push(row['feat_data']);
+                if (row.feat_data) {
+                    results[id].push(row.feat_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.featByFeatId[id] = results[id];
+                this.relationships.featByFeatId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Feat[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.featByFeatId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.featByFeatId[id] || []
+            ])
+        );
     }
 
     async getSpellSchoolForFeatBenefit(ids: number[]): Promise<Record<number, SpellSchool[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.spellSchoolBySchoolId[id]);
         
@@ -6089,42 +6980,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     school_id,
-                    spell_school_data:spell_school:*
+                    spell_school_data:spell_school(*)
                 `)
-                .in('school_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        school_id: number; 
-                        spell_school_data: SpellSchool 
-                    }>; 
-                    error: any; 
+                .in('school_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        school_id: number;
+                        spell_school_data: SpellSchool;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching spell_school for feat_benefit: ${error.message}`);
+            if (!data) return {};
             
             // Group results by school_id
             const results: Record<number, SpellSchool[]> = {};
-            data?.forEach(row => {
-                const id = row['school_id'];
+            data.forEach(row => {
+                const id = row.school_id;
                 if (!results[id]) results[id] = [];
-                if (row['spell_school_data']) results[id].push(row['spell_school_data']);
+                if (row.spell_school_data) {
+                    results[id].push(row.spell_school_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.spellSchoolBySchoolId[id] = results[id];
+                this.relationships.spellSchoolBySchoolId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, SpellSchool[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.spellSchoolBySchoolId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellSchoolBySchoolId[id] || []
+            ])
+        );
     }
 
     async getQinggongMonkKiPowerTypeForQinggongMonkKiPower(ids: number[]): Promise<Record<number, QinggongMonkKiPowerType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id]);
         
@@ -6135,42 +7034,50 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     power_type_id,
-                    qinggong_monk_ki_power_type_data:qinggong_monk_ki_power_type:*
+                    qinggong_monk_ki_power_type_data:qinggong_monk_ki_power_type(*)
                 `)
-                .in('power_type_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        power_type_id: number; 
-                        qinggong_monk_ki_power_type_data: QinggongMonkKiPowerType 
-                    }>; 
-                    error: any; 
+                .in('power_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        power_type_id: number;
+                        qinggong_monk_ki_power_type_data: QinggongMonkKiPowerType;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching qinggong_monk_ki_power_type for qinggong_monk_ki_power: ${error.message}`);
+            if (!data) return {};
             
             // Group results by power_type_id
             const results: Record<number, QinggongMonkKiPowerType[]> = {};
-            data?.forEach(row => {
-                const id = row['power_type_id'];
+            data.forEach(row => {
+                const id = row.power_type_id;
                 if (!results[id]) results[id] = [];
-                if (row['qinggong_monk_ki_power_type_data']) results[id].push(row['qinggong_monk_ki_power_type_data']);
+                if (row.qinggong_monk_ki_power_type_data) {
+                    results[id].push(row.qinggong_monk_ki_power_type_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] = results[id];
+                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, QinggongMonkKiPowerType[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] || []
+            ])
+        );
     }
 
     async getClassForQinggongMonkKiPower(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
         // Filter out ids that are already cached
         const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
         
@@ -6181,42 +7088,48 @@ export class GameRulesAPI {
                 .select(`
                     id,
                     class_id,
-                    class_data:class:*
+                    class_data:class(*)
                 `)
-                .in('class_id', uncachedIds) as unknown) as { 
-                    data: Array<{ 
-                        class_id: number; 
-                        class_data: Class 
-                    }>; 
-                    error: any; 
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
                 };
             
-            if (error) throw error;
+            if (error) throw new Error(`Error fetching class for qinggong_monk_ki_power: ${error.message}`);
+            if (!data) return {};
             
             // Group results by class_id
             const results: Record<number, Class[]> = {};
-            data?.forEach(row => {
-                const id = row['class_id'];
+            data.forEach(row => {
+                const id = row.class_id;
                 if (!results[id]) results[id] = [];
-                if (row['class_data']) results[id].push(row['class_data']);
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
             });
             
             // Update cache
-            Object.keys(results).forEach(idStr => {
+            Object.entries(results).forEach(([idStr, value]) => {
                 const id = Number(idStr);
-                this.relationships.classByClassId[id] = results[id];
+                this.relationships.classByClassId[id] = value;
             });
         }
         
         // Return requested relationships from cache
-        const result: Record<number, Class[]> = {};
-        ids.forEach(id => {
-            result[id] = this.relationships.classByClassId[id] || [];
-        });
-        return result;
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
     }
 
     // Character grain functions
+
     async getCompleteCharacterData(characterId: number): Promise<CompleteCharacter | null> {
         const { data, error } = await this.supabase
             .from('game_character')
@@ -6281,4 +7194,109 @@ export class GameRulesAPI {
         if (error) throw error;
         return data || [];
     }
+
+    // Batch operations
+
+    async getCharacterRelatedData(characterId: number) {
+        const { data, error } = await this.supabase
+            .from('game_character')
+            .select(`
+                *,
+                game_character_class (*),
+                game_character_skill_rank (*),
+                game_character_ability (*),
+                game_character_feat (*)
+            `)
+            .eq('id', characterId)
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    watchCharacterRelatedTables(
+        characterId: number,
+        onChange: (changes: {
+            type: 'insert' | 'update' | 'delete';
+            table: string;
+            row: any;
+            oldRow?: any;
+        }) => void
+    ) {
+        const tables = [
+            'game_character',
+            'game_character_class',
+            'game_character_skill_rank',
+            'game_character_ability',
+            'game_character_feat'
+        ];
+
+        const channels = tables.map(table =>
+            this.supabase
+                .channel(`${table}_changes_${characterId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table,
+                        filter: `game_character_id=eq.${characterId}`
+                    },
+                    (payload) => {
+                        onChange({
+                            type: payload.eventType as 'insert' | 'update' | 'delete',
+                            table,
+                            row: payload.new,
+                            oldRow: payload.old
+                        });
+                    }
+                )
+                .subscribe()
+        );
+
+        return () => channels.forEach(channel => {
+            try {
+                this.supabase.removeChannel(channel);
+            } catch (err) {
+                console.error('Error removing channel:', err);
+            }
+        });
+    }
+
+
+    // Optimized queries with joins
+
+    /** Get ABP cache data with optimized joins */
+    async getAbpCacheData(effectiveLevel: number, chosenNodeIds: number[]) {
+        const [nodesResult, chosenNodesResult] = await Promise.all([
+            this.supabase
+                .from('abp_node')
+                .select(`
+                    *,
+                    abp_node_group!inner(*),
+                    abp_node_bonus(
+                        *,
+                        abp_bonus_type(*)
+                    )
+                `)
+                .lt('abp_node_group.level', effectiveLevel),
+
+            this.supabase
+                .from('abp_node')
+                .select(`
+                    *,
+                    abp_node_bonus(
+                        *,
+                        abp_bonus_type(*)
+                    )
+                `)
+                .in('id', chosenNodeIds)
+        ]);
+
+        return {
+            nodes: nodesResult.data || [],
+            chosenNodes: chosenNodesResult.data || []
+        };
+    }
+
 }

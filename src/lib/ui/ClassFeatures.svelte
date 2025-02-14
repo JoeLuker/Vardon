@@ -5,7 +5,6 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import { X } from 'lucide-svelte';
 
 	let { character } = $props<{
 		character?: EnrichedCharacter | null;
@@ -28,6 +27,7 @@
 	let dialogOpen = $state(false);
 
 	function showFeatureDescription(feature: { label: string; description: string }) {
+		console.log('Opening dialog with feature:', feature);
 		selectedFeature = feature;
 		dialogOpen = true;
 	}
@@ -112,17 +112,30 @@
 
 <!-- Feature Description Dialog -->
 <Dialog.Root bind:open={dialogOpen}>
-	<Dialog.Content class="max-h-[90vh] w-full overflow-y-auto">
-		{#if selectedFeature}
-			<Dialog.Header class="space-y-2">
-				<Dialog.Title>{selectedFeature.label}</Dialog.Title>
-			</Dialog.Header>
-			<div class="prose prose-sm dark:prose-invert max-w-none py-4">
-				<p class="whitespace-pre-wrap">{selectedFeature.description}</p>
-			</div>
+	<Dialog.Portal>
+		<Dialog.Overlay class="animate-in fade-in-0" />
+		<Dialog.Content 
+			class="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[95vw] max-w-lg rounded-lg border bg-background shadow-lg overflow-hidden"
+		>
+			{#if selectedFeature}
+				<Dialog.Header class="border-b bg-background p-6">
+					<Dialog.Title class="text-xl font-semibold leading-none">{selectedFeature.label}</Dialog.Title>
+				</Dialog.Header>
 
-		{/if}
-	</Dialog.Content>
+				<div class="p-6 overflow-y-auto max-h-[60vh]">
+					<div class="prose prose-sm dark:prose-invert max-w-none">
+						<p class="whitespace-pre-wrap">{selectedFeature.description}</p>
+					</div>
+				</div>
+
+				<div class="border-t bg-background p-4">
+					<Dialog.Close class="w-full h-10 inline-flex items-center justify-center rounded-md bg-primary font-medium text-primary-foreground hover:bg-primary/90">
+						Close
+					</Dialog.Close>
+				</div>
+			{/if}
+		</Dialog.Content>
+	</Dialog.Portal>
 </Dialog.Root>
 
 <style lang="postcss">

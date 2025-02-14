@@ -939,7 +939,7 @@ class:
   name: 'kineticist'
   label: 'Kineticist'
   hit_die: 8
-  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  base_attack_bonus_progression: *bonus_attack_progression_full_id # it's actually three-quarters, but I'm giving full for my player
   skill_ranks_per_level: 6 # it's actually 4, but I'm giving 6 for my player
   fortitude: 'good'
   reflex: 'good'
