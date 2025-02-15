@@ -3763,6 +3763,33 @@ archetype_class_feature:
   class_id: *class_kineticist_id
   feature_id: *class_feature_powerful_fist_id
   level_obtained: 5
+
+archetype_replacement:
+- id: &archetype_replacement_mindchemist_mutagen_id 1
+  archetype_id: *archetype_mindchemist_id
+  replaced_feature_id: *class_feature_mutagen_id
+  replacement_feature_id: *class_feature_cognatogen_id
+
+- id: &archetype_replacement_mindchemist_poison_use_id 2
+  archetype_id: *archetype_mindchemist_id
+  replaced_feature_id: *class_feature_poison_use_id
+  replacement_feature_id: *class_feature_perfect_recall_id
+
+- id: &archetype_replacement_mindchemist_swift_poisoning_id 3
+  archetype_id: *archetype_mindchemist_id
+  replaced_feature_id: *class_feature_swift_poisoning_id
+  replacement_feature_id: *class_feature_mindchemist_bonus_feat_id
+
+- id: &archetype_replacement_elemental_ascetic_infusion_id 4
+  archetype_id: *archetype_elemental_ascetic_id
+  replaced_feature_id: *class_feature_infusion_id
+  replacement_feature_id: *class_feature_elemental_flurry_id
+
+- id: &archetype_replacement_elemental_ascetic_gather_power_id 5
+  archetype_id: *archetype_elemental_ascetic_id
+  replaced_feature_id: *class_feature_gather_power_id
+  replacement_feature_id: *class_feature_elemental_wisdom_id
+
 weapon:
 # TODO: NEED TO DOUBLE CHECK THESE
 - id: &weapon_dagger_id 1000

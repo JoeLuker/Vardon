@@ -19,6 +19,7 @@
 	import CombatStats from '$lib/ui/CombatStats.svelte';
 	import ACStats from '$lib/ui/ACStats.svelte';
 	import ClassFeatures from '$lib/ui/ClassFeatures.svelte';
+	import Feats from '$lib/ui/Feats.svelte';
 
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
@@ -377,8 +378,11 @@
 
 			<!-- Features -->
 			<Tabs.Content value="features">
-				<div class="rounded-lg bg-secondary p-6">
+				<div class="rounded-lg bg-secondary p-6 space-y-6">
 					<ClassFeatures
+						character={character}
+					/>
+					<Feats
 						character={character}
 					/>
 				</div>

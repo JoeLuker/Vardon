@@ -1,7 +1,7 @@
 
 /**
  * Game Rules API
- * Generated 2025-02-14T00:49:14.261641
+ * Generated 2025-02-14T17:36:32.484022
  * 
  * Provides type-safe access to game rules with relationship handling, CRUD operations, and realtime updates.
  */
@@ -51,6 +51,9 @@ export type ArchetypeUpdate = GameRuleUpdate<"archetype">;
 export type ArchetypeClassFeature = GameRule<"archetype_class_feature">;
 export type ArchetypeClassFeatureInsert = GameRuleInsert<"archetype_class_feature">;
 export type ArchetypeClassFeatureUpdate = GameRuleUpdate<"archetype_class_feature">; 
+export type ArchetypeReplacement = GameRule<"archetype_replacement">;
+export type ArchetypeReplacementInsert = GameRuleInsert<"archetype_replacement">;
+export type ArchetypeReplacementUpdate = GameRuleUpdate<"archetype_replacement">; 
 export type Armor = GameRule<"armor">;
 export type ArmorInsert = GameRuleInsert<"armor">;
 export type ArmorUpdate = GameRuleUpdate<"armor">; 
@@ -318,6 +321,7 @@ export interface PreloadTableData {
     ancestry?: Ancestry[];
     archetype?: Archetype[];
     archetype_class_feature?: ArchetypeClassFeature[];
+    archetype_replacement?: ArchetypeReplacement[];
     armor?: Armor[];
     bonus_attack_progression?: BonusAttackProgression[];
     bonus_type?: BonusType[];
@@ -413,6 +417,8 @@ export interface GameRuleRelationships {
     classByClassId: Record<number, Class[]>;
     classFeatureByClassFeatureId: Record<number, ClassFeature[]>;
     classFeatureByFeatureId: Record<number, ClassFeature[]>;
+    classFeatureByReplacedFeatureId: Record<number, ClassFeature[]>;
+    classFeatureByReplacementFeatureId: Record<number, ClassFeature[]>;
     classFeatureBenefitByClassFeatureBenefitId: Record<number, ClassFeatureBenefit[]>;
     consumableByConsumableId: Record<number, Consumable[]>;
     corruptionByCorruptionId: Record<number, Corruption[]>;
@@ -657,7 +663,7 @@ export class GameRulesAPI {
     [key: string]: any;
 
     private relationships: GameRuleRelationships = {
-        abilityByAbilityId: {},abpBonusTypeByBonusTypeId: {},abpNodeByNodeId: {},abpNodeGroupByGroupId: {},ancestryByAncestryId: {},archetypeByArchetypeId: {},armorByArmorId: {},bonusAttackProgressionByBaseAttackBonusProgression: {},bonusTypeByBonusTypeId: {},classByClassId: {},classFeatureBenefitByClassFeatureBenefitId: {},classFeatureByClassFeatureId: {},classFeatureByFeatureId: {},consumableByConsumableId: {},corruptionByCorruptionId: {},corruptionManifestationByManifestationId: {},discoveryByDiscoveryId: {},equipmentByEquipmentId: {},favoredClassChoiceByChoiceId: {},featByFeatId: {},gameCharacterByGameCharacterId: {},prerequisiteFulfillmentByFulfillmentId: {},prerequisiteFulfillmentByPrerequisiteFulfillmentId: {},prerequisiteRequirementByPrerequisiteRequirementId: {},prerequisiteRequirementTypeByRequirementTypeId: {},qinggongMonkKiPowerTypeByPowerTypeId: {},qualificationTypeByQualificationTypeId: {},skillBySkillId: {},sorcererBloodlineBySorcererBloodlineId: {},spellBySpellId: {},spellCastingTimeBySpellCastingTimeId: {},spellComponentBySpellComponentId: {},spellComponentTypeByTypeId: {},spellDurationBySpellDurationId: {},spellListBySpellListId: {},spellRangeBySpellRangeId: {},spellSchoolBySchoolId: {},spellSchoolBySpellSchoolId: {},spellTargetBySpellTargetId: {},spellcastingPreparationTypeByPreparationType: {},spellcastingTypeBySpellcastingType: {},subdomainBySubdomainId: {},traitByTraitId: {},weaponByWeaponId: {},wildTalentByWildTalentId: {},wildTalentTypeByWildTalentTypeId: {}
+        abilityByAbilityId: {},abpBonusTypeByBonusTypeId: {},abpNodeByNodeId: {},abpNodeGroupByGroupId: {},ancestryByAncestryId: {},archetypeByArchetypeId: {},armorByArmorId: {},bonusAttackProgressionByBaseAttackBonusProgression: {},bonusTypeByBonusTypeId: {},classByClassId: {},classFeatureBenefitByClassFeatureBenefitId: {},classFeatureByClassFeatureId: {},classFeatureByFeatureId: {},classFeatureByReplacedFeatureId: {},classFeatureByReplacementFeatureId: {},consumableByConsumableId: {},corruptionByCorruptionId: {},corruptionManifestationByManifestationId: {},discoveryByDiscoveryId: {},equipmentByEquipmentId: {},favoredClassChoiceByChoiceId: {},featByFeatId: {},gameCharacterByGameCharacterId: {},prerequisiteFulfillmentByFulfillmentId: {},prerequisiteFulfillmentByPrerequisiteFulfillmentId: {},prerequisiteRequirementByPrerequisiteRequirementId: {},prerequisiteRequirementTypeByRequirementTypeId: {},qinggongMonkKiPowerTypeByPowerTypeId: {},qualificationTypeByQualificationTypeId: {},skillBySkillId: {},sorcererBloodlineBySorcererBloodlineId: {},spellBySpellId: {},spellCastingTimeBySpellCastingTimeId: {},spellComponentBySpellComponentId: {},spellComponentTypeByTypeId: {},spellDurationBySpellDurationId: {},spellListBySpellListId: {},spellRangeBySpellRangeId: {},spellSchoolBySchoolId: {},spellSchoolBySpellSchoolId: {},spellTargetBySpellTargetId: {},spellcastingPreparationTypeByPreparationType: {},spellcastingTypeBySpellcastingType: {},subdomainBySubdomainId: {},traitByTraitId: {},weaponByWeaponId: {},wildTalentByWildTalentId: {},wildTalentTypeByWildTalentTypeId: {}
     };
 
     // Watcher management
@@ -761,6 +767,7 @@ export class GameRulesAPI {
         this.ancestryOps = new TableOperations<Ancestry, AncestryInsert, AncestryUpdate>(supabase, "ancestry");
         this.archetypeOps = new TableOperations<Archetype, ArchetypeInsert, ArchetypeUpdate>(supabase, "archetype");
         this.archetype_class_featureOps = new TableOperations<ArchetypeClassFeature, ArchetypeClassFeatureInsert, ArchetypeClassFeatureUpdate>(supabase, "archetype_class_feature");
+        this.archetype_replacementOps = new TableOperations<ArchetypeReplacement, ArchetypeReplacementInsert, ArchetypeReplacementUpdate>(supabase, "archetype_replacement");
         this.armorOps = new TableOperations<Armor, ArmorInsert, ArmorUpdate>(supabase, "armor");
         this.bonus_attack_progressionOps = new TableOperations<BonusAttackProgression, BonusAttackProgressionInsert, BonusAttackProgressionUpdate>(supabase, "bonus_attack_progression");
         this.bonus_typeOps = new TableOperations<BonusType, BonusTypeInsert, BonusTypeUpdate>(supabase, "bonus_type");
@@ -945,6 +952,19 @@ export class GameRulesAPI {
         return unsubscribe;
     };
     stopWatchArchetypeClassFeature = () => this.archetype_class_featureOps.stopWatch();
+    // ArchetypeReplacement operations
+    getAllArchetypeReplacement = () => this.archetype_replacementOps.getAll();
+    getArchetypeReplacementById = (id: number) => this.archetype_replacementOps.getById(id);
+    createArchetypeReplacement = (newItem: ArchetypeReplacementInsert) => this.archetype_replacementOps.create(newItem);
+    updateArchetypeReplacement = (changes: ArchetypeReplacementUpdate) => this.archetype_replacementOps.update(changes);
+    deleteArchetypeReplacement = (id: number) => this.archetype_replacementOps.delete(id);
+    getArchetypeReplacementsByIds = (ids: number[]) => this.archetype_replacementOps.getByIds(ids);
+    watchArchetypeReplacement = (onChange: (type: 'insert' | 'update' | 'delete', row: ArchetypeReplacement, oldRow?: ArchetypeReplacement) => void) => {
+        const unsubscribe = this.archetype_replacementOps.watch(onChange);
+        this.watchers.push(unsubscribe);
+        return unsubscribe;
+    };
+    stopWatchArchetypeReplacement = () => this.archetype_replacementOps.stopWatch();
     // Armor operations
     getAllArmor = () => this.armorOps.getAll();
     getArmorById = (id: number) => this.armorOps.getById(id);
@@ -1997,6 +2017,330 @@ export class GameRulesAPI {
     };
 
     // Relationship functions
+
+    async getSpellSchoolForFeatBenefit(ids: number[]): Promise<Record<number, SpellSchool[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
+        // Filter out ids that are already cached
+        const uncachedIds = ids.filter(id => !this.relationships.spellSchoolBySchoolId[id]);
+        
+        if (uncachedIds.length > 0) {
+            // Load uncached relationships in bulk
+            const { data, error } = await (this.supabase
+                .from('feat_benefit')
+                .select(`
+                    id,
+                    school_id,
+                    spell_school_data:spell_school(*)
+                `)
+                .in('school_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        school_id: number;
+                        spell_school_data: SpellSchool;
+                    }> | null;
+                    error: any;
+                };
+            
+            if (error) throw new Error(`Error fetching spell_school for feat_benefit: ${error.message}`);
+            if (!data) return {};
+            
+            // Group results by school_id
+            const results: Record<number, SpellSchool[]> = {};
+            data.forEach(row => {
+                const id = row.school_id;
+                if (!results[id]) results[id] = [];
+                if (row.spell_school_data) {
+                    results[id].push(row.spell_school_data);
+                }
+            });
+            
+            // Update cache
+            Object.entries(results).forEach(([idStr, value]) => {
+                const id = Number(idStr);
+                this.relationships.spellSchoolBySchoolId[id] = value;
+            });
+        }
+        
+        // Return requested relationships from cache
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.spellSchoolBySchoolId[id] || []
+            ])
+        );
+    }
+
+    async getFeatForFeatBenefit(ids: number[]): Promise<Record<number, Feat[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
+        // Filter out ids that are already cached
+        const uncachedIds = ids.filter(id => !this.relationships.featByFeatId[id]);
+        
+        if (uncachedIds.length > 0) {
+            // Load uncached relationships in bulk
+            const { data, error } = await (this.supabase
+                .from('feat_benefit')
+                .select(`
+                    id,
+                    feat_id,
+                    feat_data:feat(*)
+                `)
+                .in('feat_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        feat_id: number;
+                        feat_data: Feat;
+                    }> | null;
+                    error: any;
+                };
+            
+            if (error) throw new Error(`Error fetching feat for feat_benefit: ${error.message}`);
+            if (!data) return {};
+            
+            // Group results by feat_id
+            const results: Record<number, Feat[]> = {};
+            data.forEach(row => {
+                const id = row.feat_id;
+                if (!results[id]) results[id] = [];
+                if (row.feat_data) {
+                    results[id].push(row.feat_data);
+                }
+            });
+            
+            // Update cache
+            Object.entries(results).forEach(([idStr, value]) => {
+                const id = Number(idStr);
+                this.relationships.featByFeatId[id] = value;
+            });
+        }
+        
+        // Return requested relationships from cache
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.featByFeatId[id] || []
+            ])
+        );
+    }
+
+    async getQinggongMonkKiPowerTypeForQinggongMonkKiPower(ids: number[]): Promise<Record<number, QinggongMonkKiPowerType[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
+        // Filter out ids that are already cached
+        const uncachedIds = ids.filter(id => !this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id]);
+        
+        if (uncachedIds.length > 0) {
+            // Load uncached relationships in bulk
+            const { data, error } = await (this.supabase
+                .from('qinggong_monk_ki_power')
+                .select(`
+                    id,
+                    power_type_id,
+                    qinggong_monk_ki_power_type_data:qinggong_monk_ki_power_type(*)
+                `)
+                .in('power_type_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        power_type_id: number;
+                        qinggong_monk_ki_power_type_data: QinggongMonkKiPowerType;
+                    }> | null;
+                    error: any;
+                };
+            
+            if (error) throw new Error(`Error fetching qinggong_monk_ki_power_type for qinggong_monk_ki_power: ${error.message}`);
+            if (!data) return {};
+            
+            // Group results by power_type_id
+            const results: Record<number, QinggongMonkKiPowerType[]> = {};
+            data.forEach(row => {
+                const id = row.power_type_id;
+                if (!results[id]) results[id] = [];
+                if (row.qinggong_monk_ki_power_type_data) {
+                    results[id].push(row.qinggong_monk_ki_power_type_data);
+                }
+            });
+            
+            // Update cache
+            Object.entries(results).forEach(([idStr, value]) => {
+                const id = Number(idStr);
+                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] = value;
+            });
+        }
+        
+        // Return requested relationships from cache
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] || []
+            ])
+        );
+    }
+
+    async getClassForQinggongMonkKiPower(ids: number[]): Promise<Record<number, Class[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
+        // Filter out ids that are already cached
+        const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
+        
+        if (uncachedIds.length > 0) {
+            // Load uncached relationships in bulk
+            const { data, error } = await (this.supabase
+                .from('qinggong_monk_ki_power')
+                .select(`
+                    id,
+                    class_id,
+                    class_data:class(*)
+                `)
+                .in('class_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        class_id: number;
+                        class_data: Class;
+                    }> | null;
+                    error: any;
+                };
+            
+            if (error) throw new Error(`Error fetching class for qinggong_monk_ki_power: ${error.message}`);
+            if (!data) return {};
+            
+            // Group results by class_id
+            const results: Record<number, Class[]> = {};
+            data.forEach(row => {
+                const id = row.class_id;
+                if (!results[id]) results[id] = [];
+                if (row.class_data) {
+                    results[id].push(row.class_data);
+                }
+            });
+            
+            // Update cache
+            Object.entries(results).forEach(([idStr, value]) => {
+                const id = Number(idStr);
+                this.relationships.classByClassId[id] = value;
+            });
+        }
+        
+        // Return requested relationships from cache
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classByClassId[id] || []
+            ])
+        );
+    }
+
+    async getArchetypeForArchetypeReplacement(ids: number[]): Promise<Record<number, Archetype[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
+        // Filter out ids that are already cached
+        const uncachedIds = ids.filter(id => !this.relationships.archetypeByArchetypeId[id]);
+        
+        if (uncachedIds.length > 0) {
+            // Load uncached relationships in bulk
+            const { data, error } = await (this.supabase
+                .from('archetype_replacement')
+                .select(`
+                    id,
+                    archetype_id,
+                    archetype_data:archetype(*)
+                `)
+                .in('archetype_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        archetype_id: number;
+                        archetype_data: Archetype;
+                    }> | null;
+                    error: any;
+                };
+            
+            if (error) throw new Error(`Error fetching archetype for archetype_replacement: ${error.message}`);
+            if (!data) return {};
+            
+            // Group results by archetype_id
+            const results: Record<number, Archetype[]> = {};
+            data.forEach(row => {
+                const id = row.archetype_id;
+                if (!results[id]) results[id] = [];
+                if (row.archetype_data) {
+                    results[id].push(row.archetype_data);
+                }
+            });
+            
+            // Update cache
+            Object.entries(results).forEach(([idStr, value]) => {
+                const id = Number(idStr);
+                this.relationships.archetypeByArchetypeId[id] = value;
+            });
+        }
+        
+        // Return requested relationships from cache
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.archetypeByArchetypeId[id] || []
+            ])
+        );
+    }
+
+    async getClassFeatureForArchetypeReplacement(ids: number[]): Promise<Record<number, ClassFeature[]>> {
+        // Skip if no ids provided
+        if (!ids.length) return {};
+
+        // Filter out ids that are already cached
+        const uncachedIds = ids.filter(id => !this.relationships.classFeatureByReplacementFeatureId[id]);
+        
+        if (uncachedIds.length > 0) {
+            // Load uncached relationships in bulk
+            const { data, error } = await (this.supabase
+                .from('archetype_replacement')
+                .select(`
+                    id,
+                    replacement_feature_id,
+                    class_feature_data:class_feature(*)
+                `)
+                .in('replacement_feature_id', uncachedIds)) as unknown as {
+                    data: Array<{
+                        id: number;
+                        replacement_feature_id: number;
+                        class_feature_data: ClassFeature;
+                    }> | null;
+                    error: any;
+                };
+            
+            if (error) throw new Error(`Error fetching class_feature for archetype_replacement: ${error.message}`);
+            if (!data) return {};
+            
+            // Group results by replacement_feature_id
+            const results: Record<number, ClassFeature[]> = {};
+            data.forEach(row => {
+                const id = row.replacement_feature_id;
+                if (!results[id]) results[id] = [];
+                if (row.class_feature_data) {
+                    results[id].push(row.class_feature_data);
+                }
+            });
+            
+            // Update cache
+            Object.entries(results).forEach(([idStr, value]) => {
+                const id = Number(idStr);
+                this.relationships.classFeatureByReplacementFeatureId[id] = value;
+            });
+        }
+        
+        // Return requested relationships from cache
+        return Object.fromEntries(
+            ids.map(id => [
+                id,
+                this.relationships.classFeatureByReplacementFeatureId[id] || []
+            ])
+        );
+    }
 
     async getBonusAttackProgressionForClass(ids: number[]): Promise<Record<number, BonusAttackProgression[]>> {
         // Skip if no ids provided
@@ -6912,222 +7256,6 @@ export class GameRulesAPI {
         );
     }
 
-    async getFeatForFeatBenefit(ids: number[]): Promise<Record<number, Feat[]>> {
-        // Skip if no ids provided
-        if (!ids.length) return {};
-
-        // Filter out ids that are already cached
-        const uncachedIds = ids.filter(id => !this.relationships.featByFeatId[id]);
-        
-        if (uncachedIds.length > 0) {
-            // Load uncached relationships in bulk
-            const { data, error } = await (this.supabase
-                .from('feat_benefit')
-                .select(`
-                    id,
-                    feat_id,
-                    feat_data:feat(*)
-                `)
-                .in('feat_id', uncachedIds)) as unknown as {
-                    data: Array<{
-                        id: number;
-                        feat_id: number;
-                        feat_data: Feat;
-                    }> | null;
-                    error: any;
-                };
-            
-            if (error) throw new Error(`Error fetching feat for feat_benefit: ${error.message}`);
-            if (!data) return {};
-            
-            // Group results by feat_id
-            const results: Record<number, Feat[]> = {};
-            data.forEach(row => {
-                const id = row.feat_id;
-                if (!results[id]) results[id] = [];
-                if (row.feat_data) {
-                    results[id].push(row.feat_data);
-                }
-            });
-            
-            // Update cache
-            Object.entries(results).forEach(([idStr, value]) => {
-                const id = Number(idStr);
-                this.relationships.featByFeatId[id] = value;
-            });
-        }
-        
-        // Return requested relationships from cache
-        return Object.fromEntries(
-            ids.map(id => [
-                id,
-                this.relationships.featByFeatId[id] || []
-            ])
-        );
-    }
-
-    async getSpellSchoolForFeatBenefit(ids: number[]): Promise<Record<number, SpellSchool[]>> {
-        // Skip if no ids provided
-        if (!ids.length) return {};
-
-        // Filter out ids that are already cached
-        const uncachedIds = ids.filter(id => !this.relationships.spellSchoolBySchoolId[id]);
-        
-        if (uncachedIds.length > 0) {
-            // Load uncached relationships in bulk
-            const { data, error } = await (this.supabase
-                .from('feat_benefit')
-                .select(`
-                    id,
-                    school_id,
-                    spell_school_data:spell_school(*)
-                `)
-                .in('school_id', uncachedIds)) as unknown as {
-                    data: Array<{
-                        id: number;
-                        school_id: number;
-                        spell_school_data: SpellSchool;
-                    }> | null;
-                    error: any;
-                };
-            
-            if (error) throw new Error(`Error fetching spell_school for feat_benefit: ${error.message}`);
-            if (!data) return {};
-            
-            // Group results by school_id
-            const results: Record<number, SpellSchool[]> = {};
-            data.forEach(row => {
-                const id = row.school_id;
-                if (!results[id]) results[id] = [];
-                if (row.spell_school_data) {
-                    results[id].push(row.spell_school_data);
-                }
-            });
-            
-            // Update cache
-            Object.entries(results).forEach(([idStr, value]) => {
-                const id = Number(idStr);
-                this.relationships.spellSchoolBySchoolId[id] = value;
-            });
-        }
-        
-        // Return requested relationships from cache
-        return Object.fromEntries(
-            ids.map(id => [
-                id,
-                this.relationships.spellSchoolBySchoolId[id] || []
-            ])
-        );
-    }
-
-    async getQinggongMonkKiPowerTypeForQinggongMonkKiPower(ids: number[]): Promise<Record<number, QinggongMonkKiPowerType[]>> {
-        // Skip if no ids provided
-        if (!ids.length) return {};
-
-        // Filter out ids that are already cached
-        const uncachedIds = ids.filter(id => !this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id]);
-        
-        if (uncachedIds.length > 0) {
-            // Load uncached relationships in bulk
-            const { data, error } = await (this.supabase
-                .from('qinggong_monk_ki_power')
-                .select(`
-                    id,
-                    power_type_id,
-                    qinggong_monk_ki_power_type_data:qinggong_monk_ki_power_type(*)
-                `)
-                .in('power_type_id', uncachedIds)) as unknown as {
-                    data: Array<{
-                        id: number;
-                        power_type_id: number;
-                        qinggong_monk_ki_power_type_data: QinggongMonkKiPowerType;
-                    }> | null;
-                    error: any;
-                };
-            
-            if (error) throw new Error(`Error fetching qinggong_monk_ki_power_type for qinggong_monk_ki_power: ${error.message}`);
-            if (!data) return {};
-            
-            // Group results by power_type_id
-            const results: Record<number, QinggongMonkKiPowerType[]> = {};
-            data.forEach(row => {
-                const id = row.power_type_id;
-                if (!results[id]) results[id] = [];
-                if (row.qinggong_monk_ki_power_type_data) {
-                    results[id].push(row.qinggong_monk_ki_power_type_data);
-                }
-            });
-            
-            // Update cache
-            Object.entries(results).forEach(([idStr, value]) => {
-                const id = Number(idStr);
-                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] = value;
-            });
-        }
-        
-        // Return requested relationships from cache
-        return Object.fromEntries(
-            ids.map(id => [
-                id,
-                this.relationships.qinggongMonkKiPowerTypeByPowerTypeId[id] || []
-            ])
-        );
-    }
-
-    async getClassForQinggongMonkKiPower(ids: number[]): Promise<Record<number, Class[]>> {
-        // Skip if no ids provided
-        if (!ids.length) return {};
-
-        // Filter out ids that are already cached
-        const uncachedIds = ids.filter(id => !this.relationships.classByClassId[id]);
-        
-        if (uncachedIds.length > 0) {
-            // Load uncached relationships in bulk
-            const { data, error } = await (this.supabase
-                .from('qinggong_monk_ki_power')
-                .select(`
-                    id,
-                    class_id,
-                    class_data:class(*)
-                `)
-                .in('class_id', uncachedIds)) as unknown as {
-                    data: Array<{
-                        id: number;
-                        class_id: number;
-                        class_data: Class;
-                    }> | null;
-                    error: any;
-                };
-            
-            if (error) throw new Error(`Error fetching class for qinggong_monk_ki_power: ${error.message}`);
-            if (!data) return {};
-            
-            // Group results by class_id
-            const results: Record<number, Class[]> = {};
-            data.forEach(row => {
-                const id = row.class_id;
-                if (!results[id]) results[id] = [];
-                if (row.class_data) {
-                    results[id].push(row.class_data);
-                }
-            });
-            
-            // Update cache
-            Object.entries(results).forEach(([idStr, value]) => {
-                const id = Number(idStr);
-                this.relationships.classByClassId[id] = value;
-            });
-        }
-        
-        // Return requested relationships from cache
-        return Object.fromEntries(
-            ids.map(id => [
-                id,
-                this.relationships.classByClassId[id] || []
-            ])
-        );
-    }
-
     // Character grain functions
 
     async getCompleteCharacterData(characterId: number): Promise<CompleteCharacter | null> {
@@ -7136,13 +7264,30 @@ export class GameRulesAPI {
             .select(`
                 *,
                 game_character_class:game_character_class(*, class(*)),
+                game_character_class_feature:game_character_class_feature(
+                    *,
+                    class_feature!inner(*)
+                ),
+                game_character_archetype:game_character_archetype(
+                    *,
+                    archetype!inner(
+                        *,
+                        archetype_class_feature(
+                            *,
+                            class_feature!inner(*)
+                        ),
+                        archetype_replacement(
+                            *,
+                            replaced_feature:class_feature!replaced_feature_id(*),
+                            replacement_feature:class_feature!replacement_feature_id(*)
+                        )
+                    )
+                ),
                 game_character_skill_rank:game_character_skill_rank(*, skill(*)),
                 game_character_ability:game_character_ability(*, ability(*)),
                 game_character_feat:game_character_feat(*, feat(*)),
                 game_character_consumable:game_character_consumable(*, consumable(*)),
-                game_character_archetype:game_character_archetype(*, archetype(*)),
                 game_character_ancestry:game_character_ancestry(*, ancestry(*)),
-                game_character_class_feature:game_character_class_feature(*, class_feature(*)),
                 game_character_corruption:game_character_corruption(*, corruption(*)),
                 game_character_corruption_manifestation:game_character_corruption_manifestation(*, corruption_manifestation(*)),
                 game_character_wild_talent:game_character_wild_talent(*, wild_talent(*)),
@@ -7299,4 +7444,18 @@ export class GameRulesAPI {
         };
     }
 
+
+    // // Complete character query
+    // async getCompleteCharacterData(characterId: number): Promise<CompleteCharacter | null> {
+    //     const { data, error } = await this.supabase
+    //         .from('game_character')
+    //         .select(`
+    //             *,\n                game_character_ability:game_character_ability(*, ability(*)),\n                game_character_abp_choice:game_character_abp_choice(*, abp_choice(*)),\n                game_character_ancestry:game_character_ancestry(*, ancestry(*)),\n                game_character_archetype:game_character_archetype(*, archetype(*)),\n                game_character_armor:game_character_armor(*, armor(*)),\n                game_character_class:game_character_class(*, class(*)),\n                game_character_class_feature:game_character_class_feature(*, class_feature(*)),\n                game_character_consumable:game_character_consumable(*, consumable(*)),\n                game_character_corruption:game_character_corruption(*, corruption(*)),\n                game_character_corruption_manifestation:game_character_corruption_manifestation(*, corruption_manifestation(*)),\n                game_character_discovery:game_character_discovery(*, discovery(*)),\n                game_character_equipment:game_character_equipment(*, equipment(*)),\n                game_character_favored_class_bonus:game_character_favored_class_bonus(*, favored_class_bonus(*)),\n                game_character_feat:game_character_feat(*, feat(*)),\n                game_character_skill_rank:game_character_skill_rank(*, skill_rank(*)),\n                game_character_spell:game_character_spell(*, spell(*)),\n                game_character_trait:game_character_trait(*, trait(*)),\n                game_character_weapon:game_character_weapon(*, weapon(*)),\n                game_character_wild_talent:game_character_wild_talent(*, wild_talent(*)),\n                ability:ability(*),\n                abp_node:abp_node(*),\n                abp_node_group:abp_node_group(*),\n                ancestry:ancestry(*),\n                archetype:archetype(*),\n                armor:armor(*),\n                class:class(*),\n                class:class(*),\n                class_feature:class_feature(*),\n                consumable:consumable(*),\n                corruption:corruption(*),\n                corruption_manifestation:corruption_manifestation(*),\n                discovery:discovery(*),\n                equipment:equipment(*),\n                favored_class_choice:favored_class_choice(*),\n                feat:feat(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                game_character:game_character(*),\n                skill:skill(*),\n                spell:spell(*),\n                trait:trait(*),\n                weapon:weapon(*),\n                wild_talent:wild_talent(*),\n                ability:ability(*),\n                abp_node_group:abp_node_group(*),\n                bonus_attack_progression:bonus_attack_progression(*),\n                bonus_attack_progression:bonus_attack_progression(*),\n                bonus_type:bonus_type(*),\n                class:class(*),\n                class:class(*),\n                class:class(*),\n                corruption:corruption(*),\n                wild_talent_type:wild_talent_type(*)
+    //         `)
+    //         .eq('id', characterId)
+    //         .single();
+
+    //     if (error) throw error;
+    //     return data;
+    // }
 }

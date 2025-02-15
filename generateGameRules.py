@@ -5,7 +5,7 @@ Generates TypeScript code for accessing game rules data with proper relationship
 """
 
 import psycopg2
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -46,6 +46,55 @@ def get_game_tables(dsn: str) -> Tuple[List[str], Dict[str, List[Tuple[str, str]
                 relationships[table].append((column, foreign_table))
 
             return tables, relationships
+
+def get_character_related_tables(dsn: str) -> List[Dict[str, Any]]:
+    """Get all tables that relate to game_character with their join paths"""
+    with psycopg2.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            # Get all tables that start with game_character_
+            cur.execute("""
+                WITH RECURSIVE related_tables AS (
+                    -- Base case: direct relationships to game_character
+                    SELECT 
+                        table_name,
+                        table_name::text as join_path,
+                        1 as depth
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name LIKE 'game_character_%'
+                    
+                    UNION
+                    
+                    -- Recursive case: find foreign key relationships
+                    SELECT 
+                        ccu.table_name,
+                        rt.join_path || '(' || ccu.table_name::text || ')',
+                        rt.depth + 1
+                    FROM related_tables rt
+                    JOIN information_schema.table_constraints tc 
+                        ON tc.table_name = rt.table_name
+                    JOIN information_schema.constraint_column_usage ccu 
+                        ON ccu.constraint_name = tc.constraint_name
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                    AND tc.table_schema = 'public'
+                    AND rt.depth < 3  -- Limit depth to prevent infinite recursion
+                )
+                SELECT DISTINCT 
+                    table_name,
+                    join_path,
+                    depth
+                FROM related_tables
+                ORDER BY depth, table_name;
+            """)
+            
+            return [
+                {
+                    'table': row[0],
+                    'join_path': row[1],
+                    'depth': row[2]
+                }
+                for row in cur.fetchall()
+            ]
 
 def to_ts_name(db_name: str, pascal: bool = False) -> str:
     """Convert database name to TypeScript name"""
@@ -562,7 +611,37 @@ def generate_optimized_queries() -> str:
     }
 """
 
-def generate_game_rules_api(tables: List[str], relationships: Dict[str, List[Tuple[str, str]]]) -> str:
+def generate_complete_character_query(related_tables: List[Dict[str, Any]]) -> str:
+    """Generate the complete character query with all related tables"""
+    select_parts = ['*']
+    
+    for table in related_tables:
+        base_name = table['table']
+        # Build the select part with proper nesting
+        select_part = f"{base_name}:{base_name}(*"
+        
+        # Add nested selects for foreign key relationships
+        if table['depth'] == 1:
+            # For direct character relationships, check for secondary relationships
+            select_part += f", {table['table'].replace('game_character_', '')}(*)"
+            
+        select_part += ")"
+        select_parts.append(select_part)
+    
+    return f"""    async getCompleteCharacterData(characterId: number): Promise<CompleteCharacter | null> {{
+        const {{ data, error }} = await this.supabase
+            .from('game_character')
+            .select(`
+                {',\\n                '.join(select_parts)}
+            `)
+            .eq('id', characterId)
+            .single();
+
+        if (error) throw error;
+        return data;
+    }}"""
+
+def generate_game_rules_api(tables: List[str], relationships: Dict[str, List[Tuple[str, str]]], dsn: str) -> str:
     """Generate the complete game rules API"""
     # Get character grain types and methods separately
     character_types, character_methods = generate_character_grain_function(relationships)
@@ -650,6 +729,12 @@ def generate_game_rules_api(tables: List[str], relationships: Dict[str, List[Tup
     }
 """
 
+    # Get character-related tables
+    character_related = get_character_related_tables(dsn)
+    
+    # Generate the complete character query
+    complete_character_query = generate_complete_character_query(character_related)
+
     return f"""
 /**
  * Game Rules API
@@ -705,6 +790,9 @@ export class GameRulesAPI {{
 
     // Optimized queries with joins
 {generate_optimized_queries()}
+
+    // Complete character query
+{complete_character_query}
 }}
 """
 
@@ -717,7 +805,7 @@ def generate_game_rules_code(dsn: str) -> None:
     # os.makedirs('src/gameRules', exist_ok=True)
     
     # Generate API file
-    api_content = generate_game_rules_api(tables, relationships)
+    api_content = generate_game_rules_api(tables, relationships, dsn)
     
     with open('src/lib/db/gameRules.api.ts', 'w') as f:
         f.write(api_content)

@@ -92,6 +92,9 @@
 												{#if feature.type}
 													<Badge variant="outline">{feature.type}</Badge>
 												{/if}
+												{#if feature.isArchetype}
+													<Badge variant="secondary">Archetype</Badge>
+												{/if}
 											</div>
 											{#if feature.description}
 												<p class="text-sm text-muted-foreground line-clamp-2">

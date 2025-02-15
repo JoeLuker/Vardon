@@ -296,6 +296,55 @@ export type Database = {
           },
         ]
       }
+      archetype_replacement: {
+        Row: {
+          archetype_id: number
+          created_at: string | null
+          id: number
+          replaced_feature_id: number
+          replacement_feature_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          archetype_id: number
+          created_at?: string | null
+          id?: number
+          replaced_feature_id: number
+          replacement_feature_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          archetype_id?: number
+          created_at?: string | null
+          id?: number
+          replaced_feature_id?: number
+          replacement_feature_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archetype_replacement_archetype_id_fkey"
+            columns: ["archetype_id"]
+            isOneToOne: false
+            referencedRelation: "archetype"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archetype_replacement_replaced_feature_id_fkey"
+            columns: ["replaced_feature_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archetype_replacement_replacement_feature_id_fkey"
+            columns: ["replacement_feature_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       armor: {
         Row: {
           arcane_spell_failure_chance: number | null

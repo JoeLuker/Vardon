@@ -131,6 +131,28 @@ interface CharacterCache {
 	classSkillIds: Set<number>;
 }
 
+interface ArchetypeWithFeatures {
+    class_id: number | null;
+    created_at: string | null;
+    id: number;
+    label: string | null;
+    name: string;
+    updated_at: string | null;
+    archetype_class_feature?: Array<{
+        archetype_id: number;
+        class_id: number;
+        feature_id: number;
+        level_obtained: number;
+        class_feature?: {
+            id: number;
+            name: string;
+            label: string | null;
+            description: string | null;
+            type: string | null;
+        };
+    }>;
+}
+
 //
 // =====================  CORE UTILITY FUNCTIONS  =====================
 //
@@ -929,33 +951,78 @@ export interface ProcessedFeature {
 	type: string | null;
 	level: number;
 	className: string;
+	isArchetype?: boolean;
+	replacedFeatureIds?: number[];
 }
 
-export function processClassFeatures(char: CompleteCharacter): ProcessedFeature[] {
-	if (!char.game_character_class_feature) return [];
+async function processClassFeatures(char: CompleteCharacter): Promise<ProcessedFeature[]> {
+    // First, get all replacement mappings
+    const replacedFeatureIds = new Set<number>();
+    
+    // Process archetype features first
+    const archetypeFeatures = (char.game_character_archetype ?? []).flatMap(archRef => {
+        const archetype = archRef.archetype as ArchetypeWithFeatures;
+        if (!archetype?.archetype_class_feature) return [];
 
-	const uniqueFeatures = new Map();
-	char.game_character_class_feature.forEach(feature => {
-		if (!uniqueFeatures.has(feature.class_feature_id)) {
-			uniqueFeatures.set(feature.class_feature_id, {
-				id: feature.class_feature.id,
-				name: feature.class_feature.name,
-				label: feature.class_feature.label ?? feature.class_feature.name,
-				description: parseNewlines(feature.class_feature.description),
-				type: feature.class_feature.type,
-				level: feature.level_obtained,
-				className: char.game_character_class[0].class.label ?? char.game_character_class[0].class.name
-			});
-		}
-	});
+        return archetype.archetype_class_feature
+            .filter(f => f.level_obtained <= calculateTotalLevel(char))
+            .map(f => {
+                // Get the feature this archetype feature replaces
+                const replacedFeature = char.game_character_class_feature?.find(cf => 
+                    cf.class_feature_id === f.feature_id
+                )?.class_feature;
 
-	return Array.from(uniqueFeatures.values())
-		.sort((a, b) => a.level - b.level);
-}
+                if (replacedFeature) {
+                    console.log('replacedFeature found:', replacedFeature);
+                    replacedFeatureIds.add(replacedFeature.id);
+                } else {
+                    console.log('No replacedFeature found for:', {
+                        archetype,
+                        classId: f.class_id,
+                        level: f.level_obtained
+                    });
+                }
 
-function parseNewlines(text: string | null): string {
-	if (!text) return '';
-	return text.replace(/\\n/g, '\n');
+                return {
+                    id: f.class_feature?.id ?? 0,
+                    name: f.class_feature?.name ?? `unknown feature ${f.feature_id}`,
+                    label: f.class_feature?.label ?? f.class_feature?.name ?? 'Unknown Feature',
+                    description: f.class_feature?.description ?? null,
+                    type: f.class_feature?.type ?? null,
+                    level: f.level_obtained ?? 1,
+                    className: archetype.name,
+                    isArchetype: true,
+                    replacedFeatureIds: replacedFeature ? [replacedFeature.id] : undefined
+                };
+            });
+    });
+
+    // Process base class features, excluding replaced ones
+    const baseFeatures = (char.game_character_class_feature ?? [])
+        .filter(feature => 
+            // Only include features that:
+            // 1. Haven't been replaced by archetypes
+            // 2. Have valid data
+            // 3. Are obtained at or below current level
+            !replacedFeatureIds.has(feature.class_feature.id) &&
+            feature.class_feature &&
+            feature.level_obtained <= calculateTotalLevel(char)
+        )
+        .map(feature => ({
+            id: feature.class_feature.id,
+            name: feature.class_feature.name ?? 'Unknown Feature',
+            label: feature.class_feature.label ?? feature.class_feature.name ?? 'Unknown Feature',
+            description: feature.class_feature.description,
+            type: feature.class_feature.type,
+            level: feature.level_obtained,
+            className: char.game_character_class?.find(c => 
+                c.class_id === feature.class_feature.class_id
+            )?.class.name ?? 'Unknown Class'
+        }));
+
+    // Combine and sort by level
+    return [...baseFeatures, ...archetypeFeatures]
+        .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
 }
 
 //
@@ -1065,7 +1132,7 @@ export async function enrichCharacterData(
 	const attacks = await computeAttacks(char, gameRules, strMod, dexMod, intMod);
 
 	// Process class features
-	const processedClassFeatures = processClassFeatures(char);
+	const processedClassFeatures = await processClassFeatures(char);
 
 	// 9) Collate final result with corrected ability mods
 	const enriched: EnrichedCharacter = {

@@ -968,7 +968,15 @@ create table
     updated_at TIMESTAMPTZ default now()
   );
 
-
+create table
+  archetype_replacement (
+    id BIGSERIAL primary key,
+    archetype_id bigint not null references archetype (id) on delete cascade,
+    replaced_feature_id bigint not null references class_feature (id) on delete cascade,
+    replacement_feature_id bigint not null references class_feature (id) on delete cascade,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
 
 create publication suparealtime for all tables;
 
