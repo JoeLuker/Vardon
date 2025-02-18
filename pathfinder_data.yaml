@@ -2720,15 +2720,9 @@ class_feature_benefit:
   feature_level: 6
 
 class_feature_benefit_bonus:
-- id: &class_feature_benefit_bonus_elemental_ascetic_ac_bonus_level_2_id 1
-  class_feature_benefit_id: *class_feature_benefit_elemental_ascetic_ac_bonus_level_2_id
-  value: 1
-  target_specifier_id: *target_specifier_ac_id
-  bonus_type_id: *bonus_untyped_id
-
 - id: &class_feature_benefit_bonus_elemental_ascetic_ac_bonus_level_6_id 2
   class_feature_benefit_id: *class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id
-  value: 2
+  value: 1
   target_specifier_id: *target_specifier_ac_id
   bonus_type_id: *bonus_untyped_id
 

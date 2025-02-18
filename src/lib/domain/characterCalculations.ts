@@ -515,6 +515,7 @@ async function computeACStats(
 	char: CompleteCharacter,
 	gameRules: GameRulesAPI,
 	dexMod: number,
+	wisMod: number,
 	cache: CharacterCache
 ): Promise<ACParts> {
 	const sizeData = await calculateSize(char);
@@ -533,6 +534,11 @@ async function computeACStats(
 	const deflection = await getAbpBonusFromNodes(char, gameRules, 'deflection');
 	const hasDodgeFeat = char.game_character_feat?.some(f => f.feat?.name === 'dodge') ?? false;
 
+	// Check for Ascetic AC bonus feature
+	const hasAsceticACBonus = char.processedClassFeatures?.some(f => 
+		f.name === 'ac_bonus_ascetic'
+	) ?? false;
+
 	// Define all possible AC components
 	const acComponents = {
 		base: { source: 'Base', value: 10 , type: 'base'},
@@ -541,6 +547,7 @@ async function computeACStats(
 				type: 'armor' },
 		shield: { source: 'Shield', value: getShieldBonus(char), type: 'shield' },
 		dex: { source: 'Dex mod', value: effectiveDexMod, type: 'dex' },
+		wisdom: { source: 'Wisdom mod (Ascetic)', value: wisMod, type: 'wisdom' },
 		size: { source: 'Size', value: sizeData.modifier, type: 'size' },
 		natural: { source: `Natural Armor (${naturalArmorEnhancement > 0 ? `+${naturalArmorEnhancement}` : ''})`, 
 				  value: totalNaturalBonus, 
@@ -548,6 +555,15 @@ async function computeACStats(
 		deflection: { source: 'Deflection', value: deflection, type: 'deflection' },
 		dodge: { source: 'Dodge feat', value: hasDodgeFeat ? 1 : 0, type: 'dodge' }
 	};
+
+	// Add Wisdom modifier if character has Ascetic AC bonus
+	if (hasAsceticACBonus) {
+		acComponents.wisdom = { 
+			source: 'Wisdom mod (Ascetic)', 
+			value: wisMod, 
+			type: 'wisdom' 
+		};
+	}
 
 	const allBonuses = [
 		...Object.values(acComponents).filter(b => b.value !== 0),
@@ -893,11 +909,12 @@ async function computeAttacks(
 	strMod: number,
 	dexMod: number,
 	intMod: number,
+	wisMod: number,
 	cache: CharacterCache
 ): Promise<AttackParts> {
 	const attackBonuses = await calculateAttackBonuses(char, gameRules);
 	const sizeData = await calculateSize(char);
-	const { allBonuses } = await computeACStats(char, gameRules, dexMod, cache);
+	const { allBonuses } = await computeACStats(char, gameRules, dexMod, wisMod, cache);
 
 	function buildAttack(label: string, abilityModifier: number, abilityName: string): ValueWithBreakdown {
 		const bonuses: BonusEntry[] = [
@@ -1129,7 +1146,7 @@ export async function enrichCharacterData(
 	const will = buildSave(cache, 'Will', baseWill, wisMod, resistance, 'Wisdom');
 
 	// 4) Compute AC stats with corrected dexMod
-	const { ac, touch_ac, flat_footed_ac } = await computeACStats(char, gameRules, dexMod, cache);
+	const { ac, touch_ac, flat_footed_ac } = await computeACStats(char, gameRules, dexMod, wisMod, cache);
 
 	// 5) Initiative (single stat)
 	const initiative = buildGenericStat('Initiative', [
@@ -1154,7 +1171,7 @@ export async function enrichCharacterData(
 	const skillsWithRanks = await getSkillsWithRanks(char, gameRules, cache.classSkillIds);
 
 	// 8) Attacks with corrected ability mods
-	const attacks = await computeAttacks(char, gameRules, strMod, dexMod, intMod, cache);
+	const attacks = await computeAttacks(char, gameRules, strMod, dexMod, intMod, wisMod, cache);
 
 	// Process class features with gameRules
 	const processedClassFeatures = char.processedClassFeatures ?? [];
