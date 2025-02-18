@@ -561,7 +561,7 @@ async function computeACStats(
 		acComponents.wisdom = { 
 			source: 'Wisdom mod (Ascetic)', 
 			value: wisMod, 
-			type: 'wisdom' 
+			type: 'monk' 
 		};
 	}
 
@@ -617,6 +617,7 @@ function computeCombatManeuvers(
 	attackBonuses: AttackBonuses,
 	strMod: number,
 	dexMod: number,
+	wisMod: number,
 	acBonuses: BonusEntry[],
 	cache: CharacterCache,
 	size: string = 'medium'
@@ -662,7 +663,7 @@ function computeCombatManeuvers(
 	];
 
 	// Add applicable AC bonuses
-	const applicableTypes = ['circumstance', 'deflection', 'dodge', 'insight', 'luck', 'morale', 'profane', 'sacred', 'penalty'];
+	const applicableTypes = ['circumstance', 'deflection', 'dodge', 'insight', 'luck', 'morale', 'profane', 'sacred', 'penalty', 'monk'];
 	const filteredBonuses = acBonuses.filter(bonus => 
 		!bonus.type || applicableTypes.includes(bonus.type)
 	);
@@ -949,6 +950,7 @@ async function computeAttacks(
 		attackBonuses,
 		strMod,
 		dexMod,
+		wisMod,
 		allBonuses,
 		cache,
 		sizeData.effectiveSize
