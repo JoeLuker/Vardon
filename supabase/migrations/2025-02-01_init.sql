@@ -179,7 +179,7 @@ create table
     class_feature_id bigint not null references class_feature (id) on delete cascade,
     name text not null,
     label text,
-    level int,
+    feature_level int,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -232,7 +232,7 @@ create table
     class_id bigint not null references class (id) on delete cascade,
     archetype_id bigint not null references archetype (id) on delete cascade,
     feature_id bigint not null references class_feature (id) on delete cascade,
-    level_obtained int,
+    feature_level int,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
@@ -423,7 +423,9 @@ create table
     skill_id bigint not null references skill (id) on delete cascade,
     applied_at_level int not null default 1,
     created_at TIMESTAMPTZ default now(),
-    updated_at TIMESTAMPTZ default now()
+    updated_at TIMESTAMPTZ default now(),
+    CONSTRAINT unique_game_character_skill_level UNIQUE (game_character_id, skill_id, applied_at_level)
+
   );
 
 -- Add new bridging tables
@@ -969,14 +971,88 @@ create table
   );
 
 create table
-  archetype_replacement (
+  archetype_class_feature_replacement (
     id BIGSERIAL primary key,
-    archetype_id bigint not null references archetype (id) on delete cascade,
-    replaced_feature_id bigint not null references class_feature (id) on delete cascade,
-    replacement_feature_id bigint not null references class_feature (id) on delete cascade,
+    replaced_class_feature_id bigint not null references class_feature (id) on delete cascade,
+    archetype_class_feature_id bigint not null references archetype_class_feature (id) on delete cascade,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );
+
+create table
+  archetype_class_feature_alteration (
+    id BIGSERIAL primary key,
+    altered_class_feature_id bigint not null references class_feature (id) on delete cascade,
+    archetype_class_feature_id bigint not null references archetype_class_feature (id) on delete cascade,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  target_specifier (
+    id BIGSERIAL primary key,
+    name text not null,
+    label text,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );  
+
+create table
+  class_feature_benefit_bonus (
+    id BIGSERIAL primary key,
+    class_feature_benefit_id bigint not null references class_feature_benefit (id) on delete cascade,
+    target_specifier_id bigint not null references target_specifier (id) on delete cascade,
+    bonus_type_id bigint not null references bonus_type (id) on delete cascade,
+    value int not null,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table ancestry_trait (
+    id BIGSERIAL primary key,
+    name text not null,
+    label text,
+    ancestry_id bigint not null references ancestry (id) on delete cascade,
+    is_standard boolean not null default true,
+    description text,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+);
+
+create table ancestry_trait_replacement (
+    id BIGSERIAL primary key,
+    replacing_trait_id bigint not null references ancestry_trait (id) on delete cascade,
+    replaced_trait_id bigint not null references ancestry_trait (id) on delete cascade,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+);
+
+create table game_character_ancestry_trait (
+    id BIGSERIAL primary key,
+    game_character_id bigint not null references game_character (id) on delete cascade,
+    ancestry_trait_id bigint not null references ancestry_trait (id) on delete cascade,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+);
+
+create table ancestry_trait_benefit (
+    id BIGSERIAL primary key,
+    ancestry_trait_id bigint not null references ancestry_trait (id) on delete cascade,
+    name text not null,
+    label text,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+);
+
+create table ancestry_trait_benefit_bonus (
+    id BIGSERIAL primary key,
+    ancestry_trait_benefit_id bigint not null references ancestry_trait_benefit (id) on delete cascade,
+    target_specifier_id bigint not null references target_specifier (id) on delete cascade,
+    bonus_type_id bigint not null references bonus_type (id) on delete cascade,
+    value int not null,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+);
 
 create publication suparealtime for all tables;
 

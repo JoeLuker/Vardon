@@ -76,6 +76,24 @@ def load_yaml_to_db(yaml_file_path, dsn):
                         except Exception as e:
                             logger.error(f"Error inserting row {idx} into {table_name}: {str(e)}")
                             raise
+                    
+                    # Update the sequence if 'id' column exists
+                    if 'id' in columns:
+                        try:
+                            update_sequence_text = f"""
+                            SELECT setval(
+                                pg_get_serial_sequence('{table_name}', 'id'),
+                                COALESCE((SELECT MAX(id) FROM {table_name}), 0) + 1,
+                                false
+                            )
+                            """
+
+                            update_sequence = sql.SQL(update_sequence_text)
+                            # print(update_sequence)
+                            cur.execute(update_sequence)
+                            logger.info(f"Updated sequence for {table_name}.id")
+                        except Exception as e:
+                            logger.warning(f"Could not update sequence for {table_name}: {str(e)}")
                 
                 # 5) Commit once all inserts are done
                 conn.commit()

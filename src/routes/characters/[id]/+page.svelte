@@ -183,14 +183,14 @@
 		gameRules.watchGameCharacter((type, row) => {
 			if (row?.id !== currentCharId) return;
 			
-			if (type === 'delete') {
+			if (type === 'DELETE') {
 				rawCharacter = null;
 				character = null;
 				return;
 			}
 
 			// For simple updates, patch the existing character
-			if (type === 'update' && rawCharacter) {
+			if (type === 'UPDATE' && rawCharacter) {
 				rawCharacter = {
 					...rawCharacter,
 					current_hp: row.current_hp,
@@ -210,7 +210,6 @@
 		// For skill ranks and other bridging tables
 		gameRules.watchGameCharacterSkillRank(async (_type, row) => {
 			if (row?.game_character_id === currentCharId && currentCharId && rawCharacter) {
-				// Only update the skills portion
 				const updatedChar = await gameRules.getCompleteCharacterData(currentCharId);
 				if (updatedChar) {
 					rawCharacter = updatedChar;
@@ -240,7 +239,7 @@
 		] as const;
 
 		for (const watchFn of watchFunctions) {
-			gameRules[watchFn](async (_row: any) => {
+			gameRules[watchFn](async (_type, _row: any) => {
 				if (_row?.game_character_id === currentCharId && currentCharId) {
 					const fetched = await gameRules.getCompleteCharacterData(currentCharId);
 					if (fetched) {
@@ -338,7 +337,12 @@
 									applied_at_level: changes.level,
 								});
 							} else {
-								const existingRank = await gameRules.getGameCharacterSkillRankById(changes.skillId);
+								// Find the specific skill rank from the character's existing ranks
+								const existingRank = character.game_character_skill_rank?.find(
+									rank => rank.skill_id === changes.skillId && 
+										   rank.applied_at_level === changes.level
+								);
+								
 								if (existingRank) {
 									await gameRules.deleteGameCharacterSkillRank(existingRank.id);
 								}
@@ -355,8 +359,7 @@
 						character={character}
 						onUpdateDB={async (changes) => {
 							if (!character?.id) return;
-							await gameRules.updateGameCharacter({
-								id: character.id,
+							await gameRules.updateGameCharacter(character.id, {
 								...changes
 							});
 						}}

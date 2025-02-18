@@ -7,6 +7,7 @@
 	// Domain
 	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
 	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+	import type { ClassFeature } from '$lib/db/gameRules.types';
 
 	/**
 	 * Props:
@@ -23,14 +24,11 @@
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
 
-	/**
-	 * totalLevel as a runes-based derived variable
-	 * If there's no character or classes, default to 0.
-	 */
-	let totalLevel = $derived.by(() => {
-		if (!character?.classes) return 0;
-		return character.classes.reduce((acc: number, cls: { level?: number }) => 
-			acc + (cls.level || 1), 0);
+	// Check if character has the bomb class feature
+	let hasBombFeature = $derived.by(() => {
+		return character?.processedClassFeatures?.some(
+			(feature: ClassFeature) => feature.name === 'bomb'
+		) ?? false;
 	});
 </script>
 
@@ -68,36 +66,38 @@
 			</div>
 		</button>
 
-		<!-- Bomb Attack -->
-		<button
-			class="grid w-full grid-cols-2 gap-4 rounded-md p-2 transition-colors hover:bg-accent"
-			onclick={() => {
-				onSelectValue?.(character?.attacks.bomb.attack);
-			}}
-		>
-			<div class="flex items-center gap-2">
-				<Bomb class="h-4 w-4" />
-				<span class="font-semibold">Bomb Attack</span>
-			</div>
-			<div class="text-right">
-				{formatModifier(character?.attacks.bomb.attack.total ?? 0)}
-			</div>
-		</button>
+		{#if hasBombFeature}
+			<!-- Bomb Attack -->
+			<button
+				class="grid w-full grid-cols-2 gap-4 rounded-md p-2 transition-colors hover:bg-accent"
+				onclick={() => {
+					onSelectValue?.(character?.attacks.bomb.attack);
+				}}
+			>
+				<div class="flex items-center gap-2">
+					<Bomb class="h-4 w-4" />
+					<span class="font-semibold">Bomb Attack</span>
+				</div>
+				<div class="text-right">
+					{formatModifier(character?.attacks.bomb.attack.total ?? 0)}
+				</div>
+			</button>
 
-		<!-- Bomb Damage -->
-		<button
-			class="grid w-full grid-cols-2 gap-4 rounded-md p-2 pl-6 transition-colors hover:bg-accent"
-			onclick={() => {
-				onSelectValue?.(character?.attacks.bomb.damage);
-			}}
-		>
-			<div class="flex items-center gap-2">
-				<span class="font-semibold">Bomb Damage</span>
-			</div>
-			<div class="text-right">
-				{Math.floor((totalLevel + 1) / 2)}d6{" "}
-				{formatModifier(character?.attacks.bomb.damage.total ?? 0)}
-			</div>
-		</button>
+			<!-- Bomb Damage -->
+			<button
+				class="grid w-full grid-cols-2 gap-4 rounded-md p-2 pl-6 transition-colors hover:bg-accent"
+				onclick={() => {
+					onSelectValue?.(character?.attacks.bomb.damage);
+				}}
+			>
+				<div class="flex items-center gap-2">
+					<span class="font-semibold">Bomb Damage</span>
+				</div>
+				<div class="text-right">
+					{character?.attacks.bomb.bombDice}d6{" "}
+					{formatModifier(character?.attacks.bomb.damage.total ?? 0)}
+				</div>
+			</button>
+		{/if}
 	</Card.Content>
 </Card.Root>

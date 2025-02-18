@@ -209,6 +209,173 @@ export type Database = {
         }
         Relationships: []
       }
+      ancestry_trait: {
+        Row: {
+          ancestry_id: number
+          created_at: string | null
+          description: string | null
+          id: number
+          is_standard: boolean
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_id: number
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_standard?: boolean
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_id?: number
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_standard?: boolean
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ancestry_trait_ancestry_id_fkey"
+            columns: ["ancestry_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ancestry_trait_benefit: {
+        Row: {
+          ancestry_trait_id: number
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_trait_id: number
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_trait_id?: number
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ancestry_trait_benefit_ancestry_trait_id_fkey"
+            columns: ["ancestry_trait_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry_trait"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ancestry_trait_benefit_bonus: {
+        Row: {
+          ancestry_trait_benefit_id: number
+          bonus_type_id: number
+          created_at: string | null
+          id: number
+          target_specifier_id: number
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          ancestry_trait_benefit_id: number
+          bonus_type_id: number
+          created_at?: string | null
+          id?: number
+          target_specifier_id: number
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          ancestry_trait_benefit_id?: number
+          bonus_type_id?: number
+          created_at?: string | null
+          id?: number
+          target_specifier_id?: number
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ancestry_trait_benefit_bonus_ancestry_trait_benefit_id_fkey"
+            columns: ["ancestry_trait_benefit_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry_trait_benefit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ancestry_trait_benefit_bonus_bonus_type_id_fkey"
+            columns: ["bonus_type_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ancestry_trait_benefit_bonus_target_specifier_id_fkey"
+            columns: ["target_specifier_id"]
+            isOneToOne: false
+            referencedRelation: "target_specifier"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ancestry_trait_replacement: {
+        Row: {
+          created_at: string | null
+          id: number
+          replaced_trait_id: number
+          replacing_trait_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          replaced_trait_id: number
+          replacing_trait_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          replaced_trait_id?: number
+          replacing_trait_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ancestry_trait_replacement_replaced_trait_id_fkey"
+            columns: ["replaced_trait_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry_trait"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ancestry_trait_replacement_replacing_trait_id_fkey"
+            columns: ["replacing_trait_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry_trait"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       archetype: {
         Row: {
           class_id: number | null
@@ -250,8 +417,8 @@ export type Database = {
           class_id: number
           created_at: string | null
           feature_id: number
+          feature_level: number | null
           id: number
-          level_obtained: number | null
           updated_at: string | null
         }
         Insert: {
@@ -259,8 +426,8 @@ export type Database = {
           class_id: number
           created_at?: string | null
           feature_id: number
+          feature_level?: number | null
           id?: number
-          level_obtained?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -268,8 +435,8 @@ export type Database = {
           class_id?: number
           created_at?: string | null
           feature_id?: number
+          feature_level?: number | null
           id?: number
-          level_obtained?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -296,49 +463,78 @@ export type Database = {
           },
         ]
       }
-      archetype_replacement: {
+      archetype_class_feature_alteration: {
         Row: {
-          archetype_id: number
+          altered_class_feature_id: number
+          archetype_class_feature_id: number
           created_at: string | null
           id: number
-          replaced_feature_id: number
-          replacement_feature_id: number
           updated_at: string | null
         }
         Insert: {
-          archetype_id: number
+          altered_class_feature_id: number
+          archetype_class_feature_id: number
           created_at?: string | null
           id?: number
-          replaced_feature_id: number
-          replacement_feature_id: number
           updated_at?: string | null
         }
         Update: {
-          archetype_id?: number
+          altered_class_feature_id?: number
+          archetype_class_feature_id?: number
           created_at?: string | null
           id?: number
-          replaced_feature_id?: number
-          replacement_feature_id?: number
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "archetype_replacement_archetype_id_fkey"
-            columns: ["archetype_id"]
+            foreignKeyName: "archetype_class_feature_alterat_archetype_class_feature_id_fkey"
+            columns: ["archetype_class_feature_id"]
             isOneToOne: false
-            referencedRelation: "archetype"
+            referencedRelation: "archetype_class_feature"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "archetype_replacement_replaced_feature_id_fkey"
-            columns: ["replaced_feature_id"]
+            foreignKeyName: "archetype_class_feature_alteratio_altered_class_feature_id_fkey"
+            columns: ["altered_class_feature_id"]
             isOneToOne: false
             referencedRelation: "class_feature"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      archetype_class_feature_replacement: {
+        Row: {
+          archetype_class_feature_id: number
+          created_at: string | null
+          id: number
+          replaced_class_feature_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          archetype_class_feature_id: number
+          created_at?: string | null
+          id?: number
+          replaced_class_feature_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          archetype_class_feature_id?: number
+          created_at?: string | null
+          id?: number
+          replaced_class_feature_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "archetype_replacement_replacement_feature_id_fkey"
-            columns: ["replacement_feature_id"]
+            foreignKeyName: "archetype_class_feature_replace_archetype_class_feature_id_fkey"
+            columns: ["archetype_class_feature_id"]
+            isOneToOne: false
+            referencedRelation: "archetype_class_feature"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archetype_class_feature_replacem_replaced_class_feature_id_fkey"
+            columns: ["replaced_class_feature_id"]
             isOneToOne: false
             referencedRelation: "class_feature"
             referencedColumns: ["id"]
@@ -548,27 +744,27 @@ export type Database = {
         Row: {
           class_feature_id: number
           created_at: string | null
+          feature_level: number | null
           id: number
           label: string | null
-          level: number | null
           name: string
           updated_at: string | null
         }
         Insert: {
           class_feature_id: number
           created_at?: string | null
+          feature_level?: number | null
           id?: number
           label?: string | null
-          level?: number | null
           name: string
           updated_at?: string | null
         }
         Update: {
           class_feature_id?: number
           created_at?: string | null
+          feature_level?: number | null
           id?: number
           label?: string | null
-          level?: number | null
           name?: string
           updated_at?: string | null
         }
@@ -578,6 +774,58 @@ export type Database = {
             columns: ["class_feature_id"]
             isOneToOne: false
             referencedRelation: "class_feature"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_feature_benefit_bonus: {
+        Row: {
+          bonus_type_id: number
+          class_feature_benefit_id: number
+          created_at: string | null
+          id: number
+          target_specifier_id: number
+          updated_at: string | null
+          value: number
+        }
+        Insert: {
+          bonus_type_id: number
+          class_feature_benefit_id: number
+          created_at?: string | null
+          id?: number
+          target_specifier_id: number
+          updated_at?: string | null
+          value: number
+        }
+        Update: {
+          bonus_type_id?: number
+          class_feature_benefit_id?: number
+          created_at?: string | null
+          id?: number
+          target_specifier_id?: number
+          updated_at?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_feature_benefit_bonus_bonus_type_id_fkey"
+            columns: ["bonus_type_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_feature_benefit_bonus_class_feature_benefit_id_fkey"
+            columns: ["class_feature_benefit_id"]
+            isOneToOne: false
+            referencedRelation: "class_feature_benefit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_feature_benefit_bonus_target_specifier_id_fkey"
+            columns: ["target_specifier_id"]
+            isOneToOne: false
+            referencedRelation: "target_specifier"
             referencedColumns: ["id"]
           },
         ]
@@ -1147,6 +1395,45 @@ export type Database = {
           },
           {
             foreignKeyName: "game_character_ancestry_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_character_ancestry_trait: {
+        Row: {
+          ancestry_trait_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          ancestry_trait_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          ancestry_trait_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_ancestry_trait_ancestry_trait_id_fkey"
+            columns: ["ancestry_trait_id"]
+            isOneToOne: false
+            referencedRelation: "ancestry_trait"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_ancestry_trait_game_character_id_fkey"
             columns: ["game_character_id"]
             isOneToOne: false
             referencedRelation: "game_character"
@@ -3058,6 +3345,30 @@ export type Database = {
         Relationships: []
       }
       subdomain: {
+        Row: {
+          created_at: string | null
+          id: number
+          label: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          label?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      target_specifier: {
         Row: {
           created_at: string | null
           id: number

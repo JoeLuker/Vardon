@@ -7,7 +7,7 @@
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
 	import type { GameRulesAPI } from '$lib/db/gameRules.api';
-	import type { GameCharacterSkillRank } from '$lib/db/gameRules.api';
+	import type { GameCharacterSkillRank } from '$lib/db/gameRules.types';
 	import _ from 'lodash';
 
 	interface ProcessedSkill {	
@@ -42,7 +42,7 @@
 		character, 
 		rules, 
 		onSelectValue = () => {},
-		onUpdateDB = async (_changes: any) => {} 
+		onUpdateDB = async (_changes: any) => {},
 	} = $props<{
 		character?: EnrichedCharacter | null;
 		rules?: GameRulesAPI | null;
@@ -61,26 +61,38 @@
 		Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1)
 	);
 
+	let optimisticSkillRanks = $state<GameCharacterSkillRank[]>([]);
+	let optimisticRemainingPoints = $state<Record<number, number>>({});
+
+	let currentSkillRanks = $derived(
+		optimisticSkillRanks.length > 0 
+			? optimisticSkillRanks 
+			: character?.game_character_skill_rank ?? []
+	);
 
 	let skillsByAbilityPromise = $derived.by(async () => {
 		if (!rules || !character) return {};
 
-		const result: Record<string, ProcessedSkill[]> = {};
-		const allSkills = await rules.getAllSkill();
-		
-		for (const baseSkill of allSkills) {
-			try {
-				const skillId = baseSkill.id;
-				const skillData = character.skills[skillId];  // Use the pre-calculated skill data
-				
-				if (!skillData) continue;  // Skip if no skill data exists
+		try {
+			const allSkills = await rules.getAllSkill();
+			const result: Record<string, ProcessedSkill[]> = {};
 
-				const ability = await rules.getAbilityById(baseSkill.ability_id);
-				const abilityName = skillData.overrides?.ability?.override ?? 
-					ability?.label ?? 'Unknown';
+	
+
+			for (const baseSkill of allSkills) {
+				const skillId = baseSkill.id;
+				const skillData = character.skills[skillId];
+				
+				if (!skillData) continue;
+
+				const baseAbility = baseSkill.ability;
+				// Use override if it exists, otherwise use the base ability
+				const abilityName = (skillData.overrides?.ability?.override ?? 
+					baseAbility?.label ?? 
+					'MISC').toUpperCase();
 
 				const skillWithRanks = character.skillsWithRanks?.find(
-					(s: { skillId: number; }) => s.skillId === baseSkill.id
+					(s: { skillId: number }) => s.skillId === baseSkill.id
 				);
 
 				const processed: ProcessedSkill = {
@@ -89,29 +101,26 @@
 					label: baseSkill.label,
 					ability: abilityName,
 					total: skillData.total,
-					ranks: character.game_character_skill_rank?.filter(
+					ranks: currentSkillRanks.filter(
 						(sr: GameCharacterSkillRank) => sr.skill_id === baseSkill.id
 					).length ?? 0,
 					trainedOnly: skillData.overrides?.trained_only ?? baseSkill.trained_only,
 					isClassSkill: skillWithRanks?.isClassSkill ?? false,
-					ranksByLevel: skillWithRanks?.skillRanks?.map((sr: { rank: any; }) => sr.rank) ?? [],
+					ranksByLevel: skillWithRanks?.skillRanks?.map(
+						(sr: { rank: number }) => sr.rank
+					) ?? [],
 					overrides: skillData.overrides
 				};
 
 				if (!result[abilityName]) result[abilityName] = [];
 				result[abilityName].push(processed);
-			} catch (error) {
-				console.error(`Error processing skill ${baseSkill.id}:`, error);
-				continue;
 			}
-		}
 
-		// Sort skills within each ability
-		for (const skills of Object.values(result)) {
-			skills.sort((a, b) => a.name.localeCompare(b.name));
+			return result;
+		} catch (error) {
+			console.error('Failed to load skills:', error);
+			throw new Error('Failed to load skills. Please try again.');
 		}
-
-		return result;
 	});
 
 
@@ -129,17 +138,22 @@
 		return mod >= 0 ? `+${mod}` : `${mod}`;
 	}
 
+	// Add state to track operations in progress
+	let operationsInProgress = $state(new Set<string>());
+
 	async function handleCellClick(skillId: number, level: number) {
-		if (operationInProgress) return;
+		const operationKey = `${skillId}-${level}`;
+		
+		if (operationsInProgress.has(operationKey)) return;
 		if (!character) return;
 		
-		const hasRank = character.game_character_skill_rank?.some(
+		const hasRank = currentSkillRanks.some(
 			(rank: GameCharacterSkillRank) => rank.skill_id === skillId && rank.applied_at_level === level
-		) ?? false;
+		);
 		
 		// Validate the operation
 		if (!hasRank) {
-			const remaining = character.skillPoints?.remaining[level] ?? 0;
+			const remaining = optimisticRemainingPoints[level] ?? character.skillPoints?.remaining[level] ?? 0;
 			if (remaining <= 0) {
 				error = "No skill points remaining for this level";
 				setTimeout(() => error = null, 3000);
@@ -147,29 +161,54 @@
 			}
 		}
 
-		// Create operation
-		const operation: UpdateOperation = {
-			skillId,
-			level,
-			type: hasRank ? 'remove' : 'add',
-			previousState: character.game_character_skill_rank
-				?.filter((rank: GameCharacterSkillRank) => rank.skill_id === skillId)
-				?.map((rank: GameCharacterSkillRank) => rank.applied_at_level) ?? []
-		};
-
 		try {
-			operationInProgress = operation;
-			await onUpdateDB(operation);
-			operationInProgress = null;
+			operationsInProgress.add(operationKey);
+
+			// Apply optimistic update
+			const newOptimisticRanks = hasRank 
+				? currentSkillRanks.filter((rank: { skill_id: number; applied_at_level: number; }) => 
+					!(rank.skill_id === skillId && rank.applied_at_level === level))
+				: [...currentSkillRanks, { 
+					skill_id: skillId, 
+					applied_at_level: level,
+				}];
+
+			const newRemainingPoints = { ...optimisticRemainingPoints };
+			newRemainingPoints[level] = (newRemainingPoints[level] ?? character.skillPoints?.remaining[level] ?? 0) + 
+				(hasRank ? 1 : -1);
+
+			optimisticSkillRanks = newOptimisticRanks;
+			optimisticRemainingPoints = newRemainingPoints;
+
+			// Let parent handle the DB update
+			await onUpdateDB({
+				skillId,
+				level,
+				type: hasRank ? 'remove' : 'add'
+			});
+			
 			error = null;
 		} catch (err) {
 			console.error('Failed skill update:', err);
+			optimisticSkillRanks = [];
+			optimisticRemainingPoints = {};
 			error = 'Failed to update skill rank. Please try again.';
 			setTimeout(() => error = null, 3000);
 		} finally {
-			operationInProgress = null;
+			operationsInProgress.delete(operationKey);
 		}
 	}
+
+	let getRemainingPoints = $derived((level: number) => 
+		optimisticRemainingPoints[level] ?? character?.skillPoints?.remaining[level] ?? 0
+	);
+
+	let hasSkillRank = $derived((skillId: number, level: number) => 
+		currentSkillRanks.some((rank: GameCharacterSkillRank) => 
+			rank.skill_id === skillId && 
+			rank.applied_at_level === level
+		)
+	);
 </script>
 
 <div class="skills-container">
@@ -222,7 +261,7 @@
 					<div class="skill-points-grid">
 						{#each levelNumbers as level}
 							{@const totalPoints = character?.skillPoints?.total[level]?.total ?? 0}
-							{@const remainingPoints = character?.skillPoints?.remaining[level] ?? 0}
+							{@const remainingPoints = getRemainingPoints(level)}
 							{@const ranksAtLevel = character?.game_character_skill_rank?.filter(
 								(rank: GameCharacterSkillRank) => rank.applied_at_level === level
 							) ?? []}
@@ -288,10 +327,8 @@
 												{#if showRankAllocation}
 													<div class="rank-grid">
 														{#each levelNumbers as level}
-															{@const hasRank = character?.game_character_skill_rank?.some(
-																(rank: GameCharacterSkillRank) => rank.skill_id === skill.id && rank.applied_at_level === level
-															) ?? false}
-															{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
+															{@const hasRank = hasSkillRank(skill.id, level)}
+															{@const canAdd = !hasRank && getRemainingPoints(level) > 0}
 															<Button
 																variant="outline"
 																size="sm"
@@ -299,16 +336,6 @@
 																disabled={!!operationInProgress || (!hasRank && !canAdd)}
 																onclick={(e: MouseEvent) => {
 																	e.stopPropagation();
-																	if (hasRank) {
-																		onSelectValue?.({
-																			total: 1,
-																			source: `Level ${level} Skill Rank`,
-																			breakdown: [{
-																				source: `Allocated at level ${level}`,
-																				value: 1
-																			}]
-																		});
-																	}
 																	handleCellClick(skill.id, level);
 																}}
 															>
@@ -376,10 +403,8 @@
 										{#if showRankAllocation}
 											<div class="rank-grid">
 												{#each levelNumbers as level}
-													{@const hasRank = character?.game_character_skill_rank?.some(
-														(rank: GameCharacterSkillRank) => rank.skill_id === skill.id && rank.applied_at_level === level
-													) ?? false}
-													{@const canAdd = !hasRank && (character?.skillPoints?.remaining[level] ?? 0) > 0}
+													{@const hasRank = hasSkillRank(skill.id, level)}
+													{@const canAdd = !hasRank && getRemainingPoints(level) > 0}
 													<Button
 														variant="outline"
 														size="sm"
@@ -387,16 +412,6 @@
 														disabled={!!operationInProgress || (!hasRank && !canAdd)}
 														onclick={(e: MouseEvent) => {
 															e.stopPropagation();
-															if (hasRank) {
-																onSelectValue?.({
-																	total: 1,
-																	source: `Level ${level} Skill Rank`,
-																	breakdown: [{
-																		source: `Allocated at level ${level}`,
-																		value: 1
-																	}]
-																});
-															}
 															handleCellClick(skill.id, level);
 														}}
 													>
@@ -520,34 +535,6 @@
 		grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
 	}
 
-	.rank-distribution-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-		gap: 1rem;
-		width: 100%;
-	}
-
-	.level-points {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.25rem;
-		padding: 0.5rem;
-		background-color: hsl(var(--muted));
-		border-radius: 0.5rem;
-	}
-
-	.level-label {
-		font-size: 0.875rem;
-		color: hsl(var(--muted-foreground));
-	}
-
-	.points-remaining {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: hsl(var(--primary));
-	}
-
 	.skill-points-grid {
 		display: grid;
 		gap: 0.5rem;
@@ -556,10 +543,4 @@
 		grid-auto-columns: 1fr;
 	}
 
-	.ability-badge {
-		display: flex;
-		gap: 0.25rem;
-		align-items: center;
-		font-size: 0.75rem;
-	}
 </style>

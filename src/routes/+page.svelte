@@ -15,7 +15,7 @@
 		// Then load/reload the entire list
 		await loadAllCharacters().then(() => {
 			if ($multiCharStore.length > 0) {
-				console.log(JSON.stringify($multiCharStore, null, 2));
+				// console.log(JSON.stringify($multiCharStore, null, 2));
 				// console.log($multiCharStore);
 			}
 		});

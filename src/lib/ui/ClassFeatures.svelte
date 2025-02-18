@@ -27,7 +27,7 @@
 	let dialogOpen = $state(false);
 
 	function showFeatureDescription(feature: { label: string; description: string }) {
-		console.log('Opening dialog with feature:', feature);
+		// console.log('Opening dialog with feature:', feature);
 		selectedFeature = feature;
 		dialogOpen = true;
 	}
@@ -35,10 +35,10 @@
 	$effect(() => {
 		if (character) {
 			// Convert Map to a plain object for better console logging
-			const groupedForLogging = Object.fromEntries(featuresByLevel());
-			console.log('Character:', character);
-			console.log('Processed Features:', character.processedClassFeatures);
-			console.log('Grouped Features:', groupedForLogging);
+			// const groupedForLogging = Object.fromEntries(featuresByLevel());
+			// console.log('Character:', character);
+			// console.log('Processed Features:', character.processedClassFeatures);
+			// console.log('Grouped Features:', groupedForLogging);
 		}
 	});
 </script>
@@ -92,8 +92,11 @@
 												{#if feature.type}
 													<Badge variant="outline">{feature.type}</Badge>
 												{/if}
-												{#if feature.isArchetype}
+												{#if feature.is_archetype}
 													<Badge variant="secondary">Archetype</Badge>
+												{/if}
+												{#if feature.alterations && feature.alterations.length > 0}
+													<Badge variant="destructive">Altered</Badge>
 												{/if}
 											</div>
 											{#if feature.description}
@@ -142,17 +145,5 @@
 </Dialog.Root>
 
 <style lang="postcss">
-	.feature-card {
-		@apply rounded-lg border p-3 sm:p-4 transition-colors;
-		border-color: hsl(var(--border) / 0.2);
-		background-color: hsl(var(--background));
 
-		&:hover {
-			background-color: hsl(var(--accent) / 0.3);
-		}
-	}
-
-	.feature-header {
-		@apply flex flex-col sm:flex-row sm:flex-wrap justify-between items-start gap-2;
-	}
 </style> 

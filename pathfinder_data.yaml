@@ -6,9 +6,41 @@ metadata:
   game_system: 'pathfinder_1e'
   schema_version: '3'
 user_id: &user_id '9c4e4bb1-db8d-41df-b796-b9454622eed2'
+
 # =============================================================================
 # 2) REFERENCE TABLES => tables
 # =============================================================================
+
+target_specifier:
+- id: &target_specifier_ac_id 1 # only specify the most common target specifier, so if it targets all AC's, just specify AC
+  name: 'ac'
+  label: 'AC'
+- id: &target_specifier_touch_ac_id 2
+  name: 'touch_ac'
+  label: 'Touch AC'
+- id: &target_specifier_flat_footed_ac_id 3
+  name: 'flat_footed_ac'
+  label: 'Flat-footed AC'
+
+- id: &target_specifier_strength_id 4
+  name: 'strength'
+  label: 'Strength'
+- id: &target_specifier_dexterity_id 5
+  name: 'dexterity'
+  label: 'Dexterity'
+- id: &target_specifier_constitution_id 6
+  name: 'constitution'
+  label: 'Constitution'
+- id: &target_specifier_intelligence_id 7
+  name: 'intelligence'
+  label: 'Intelligence'
+- id: &target_specifier_wisdom_id 8
+  name: 'wisdom'
+  label: 'Wisdom'
+- id: &target_specifier_charisma_id 9
+  name: 'charisma'
+  label: 'Charisma'
+
 ability:
 - id: &ability_str_id 401
   name: 'strength'
@@ -100,7 +132,7 @@ abp_bonus_type:
   name: 'armor_attunement'
   label: 'Armor Attunement'
 - id: &abp_weapon_attunement_id 18
-  name: 'attunement'
+  name: 'weapon_attunement'
   label: 'Weapon Attunement'
 - id: &abp_deflection_id 19
   name: 'deflection'
@@ -686,6 +718,323 @@ ancestry:
     Alignment and Religion: Oreads are, perhaps above all else, set in their ways, and any disruption of their routine is met with quiet disapproval. Oreads are fiercely protective of their friends, but don't seem particularly concerned with the well-being of those outside their small circle of acquaintances. As such, most oreads are lawful neutral. Religious life comes easily to the earth-touched. They appreciate the quiet, contemplative life of the monastic order, and most dedicate themselves to the worship of earth- or nature-related deities.
 
     Adventurers: Oreads are initially hesitant adventurers. They dislike leaving their homes and don't handle the shock of new experiences well. Usually it takes some outside force to rouse oreads into action, often by threatening their homes, lives, or friends. Once the initial threat is dealt with, however, oreads often find they've grown accustomed to the adventuring life, and continue to pursue it through the rest of their days. Oreads make good monks and fighters thanks to their prodigious strength and self-discipline.
+
+ancestry_trait:
+# Tengu Standard Racial Traits
+- id: &ancestry_trait_tengu_ability_scores_id 91
+  name: 'tengu_ability_scores'
+  label: 'Tengu Ability Score Modifiers'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are fast and observant, but relatively fragile and delicate. They gain +2 Dexterity, +2 Wisdom, –2 Constitution.
+
+- id: &ancestry_trait_tengu_type_id 92
+  name: 'tengu_type'
+  label: 'Type'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are humanoids with the tengu subtype.
+
+- id: &ancestry_trait_tengu_size_id 93
+  name: 'tengu_size'
+  label: 'Size'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are Medium creatures and receive no bonuses or penalties due to their size.
+
+- id: &ancestry_trait_tengu_speed_id 94
+  name: 'tengu_speed'
+  label: 'Speed'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus have a base speed of 30 feet.
+
+- id: &ancestry_trait_tengu_languages_id 95
+  name: 'tengu_languages'
+  label: 'Languages'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus begin play speaking Common and Tengu. Tengus with high Intelligence scores can choose any languages they want (except for secret languages, such as Druidic).
+
+- id: &ancestry_trait_tengu_sneaky_id 96
+  name: 'tengu_sneaky'
+  label: 'Sneaky'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus gain a +2 racial bonus on Perception and Stealth checks.
+
+- id: &ancestry_trait_tengu_gifted_linguist_id 97
+  name: 'tengu_gifted_linguist'
+  label: 'Gifted Linguist'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus gain a +4 racial bonus on Linguistics checks, and learn 2 languages each time they gain a rank in Linguistics rather than 1 language.
+
+- id: &ancestry_trait_tengu_swordtrained_id 98
+  name: 'tengu_swordtrained'
+  label: 'Swordtrained'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are trained from birth in swordplay, and as a result are automatically proficient with sword-like weapons (including bastard swords, daggers, elven curve blades, falchions, greatswords, kukris, longswords, punching daggers, rapiers, scimitars, short swords, and two-bladed swords).
+
+- id: &ancestry_trait_tengu_natural_weapons_id 99
+  name: 'tengu_natural_weapons'
+  label: 'Natural Weapons'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    A tengu has a bite attack that deals 1d3 points of damage.
+
+- id: &ancestry_trait_tengu_senses_id 100
+  name: 'tengu_senses'
+  label: 'Senses'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus have low-light vision allowing them to see twice as far as humans in conditions of dim light.
+
+- id: &ancestry_trait_oread_ability_scores_id 101
+  name: 'oread_ability_scores'
+  label: 'Oread Ability Score Modifiers'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads are strong, solid, stable, and stoic. They gain +2 Strength, +2 Wisdom, and –2 Charisma.
+
+- id: &ancestry_trait_oread_type_id 102
+  name: 'oread_type'
+  label: 'Type'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads are outsiders with the native subtype.
+
+- id: &ancestry_trait_oread_size_id 103
+  name: 'oread_size'
+  label: 'Size'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads are Medium creatures and thus have no bonuses or penalties due to their size.
+
+- id: &ancestry_trait_oread_speed_id 104
+  name: 'oread_speed'
+  label: 'Speed (Slow)'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads have a base speed of 20 feet.
+
+- id: &ancestry_trait_oread_languages_id 105
+  name: 'oread_languages'
+  label: 'Languages'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads begin play speaking Common and Terran. Oreads with high Intelligence scores can choose from the following: Aquan, Auran, Dwarven, Elven, Gnome, Halfling, Ignan, and Undercommon.
+
+- id: &ancestry_trait_oread_energy_resistance_id 106
+  name: 'oread_energy_resistance'
+  label: 'Energy Resistance'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads have acid resistance 5.
+
+- id: &ancestry_trait_oread_spell_like_ability_id 107
+  name: 'oread_spell_like_ability'
+  label: 'Spell-Like Ability'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oread can use magic stone 1/day (caster level equals the oread's total level; DC 11 + Charisma modifier).
+
+- id: &ancestry_trait_oread_darkvision_id 108
+  name: 'oread_darkvision'
+  label: 'Darkvision'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads can see perfectly in the dark up to 60 feet.
+
+- id: &ancestry_trait_oread_earth_affinity_id 109
+  name: 'oread_earth_affinity'
+  label: 'Earth Affinity'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oread sorcerers with the elemental (earth) bloodline treat their Charisma score as 2 points higher for all sorcerer spells and class abilities. Oread clerics with the Earth domain use their domain powers and spells at +1 caster level.
+
+# Oread Alternate Racial Traits
+- id: &ancestry_alternate_trait_oread_crystalline_form_id 6
+  name: 'oread_crystalline_form'
+  label: 'Crystalline Form'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Oreads with this trait gain a +2 racial bonus to AC against rays thanks to their reflective crystalline skin. In addition, once per day, they can deflect a single ray attack targeted at them as if they were using the Deflect Arrows feat.
+
+- id: &ancestry_alternate_trait_oread_earth_insight_id 7
+  name: 'oread_earth_insight'
+  label: 'Earth Insight'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Summon monster and summon nature's ally spells that such oreads cast last 2 rounds longer than normal when used to summon creatures with the earth subtype.
+
+- id: &ancestry_alternate_trait_oread_ferrous_growth_id 8
+  name: 'oread_ferrous_growth'
+  label: 'Ferrous Growth'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Once per day, such an oread can cause a touched piece of non-magical iron or steel to grow into an object up to 10 pounds in weight, such as a sword, crowbar, or light steel shield. This object remains in this form for 10 minutes or until broken or destroyed.
+
+- id: &ancestry_alternate_trait_oread_granite_skin_id 9
+  name: 'oread_granite_skin'
+  label: 'Granite Skin'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Rocky growths cover the skin of oreads with this racial trait. They gain a +1 racial bonus to natural armor.
+
+- id: &ancestry_alternate_trait_oread_mountain_born_id 10
+  name: 'oread_mountain_born'
+  label: 'Mountain-Born'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Oreads gain a +2 racial bonus on Acrobatics checks made to cross narrow ledges and on saves against altitude fatigue and sickness.
+
+- id: &ancestry_alternate_trait_oread_mostly_human_id 11
+  name: 'oread_mostly_human'
+  label: 'Mostly Human'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    A few oreads have appearances much closer to those of their human ancestors; in fact, they may not even realize their true race. Such geniekin appear to be human, save perhaps minor features like unusual eye color, and they count as humanoid (human) as well as outsider (native) for all purposes (such as humanoid-affecting spells such as charm person or enlarge person). These geniekin do not automatically gain their associated elemental language (but may select it as a bonus language if their Intelligence is high enough).
+
+# Tengu Alternate Racial Traits
+- id: &ancestry_alternate_trait_tengu_carrion_sense_id 1
+  name: 'tengu_carrion_sense'
+  label: 'Carrion Sense'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Many tengus have a natural ability to sniff out carrion. While their sense of smell isn't as keen as that of other species, it is particularly attuned to the scent of injuries or death. Tengus with this racial trait have a limited scent ability, which only functions for corpses and badly wounded creatures (50% or fewer hit points).
+
+- id: &ancestry_alternate_trait_tengu_claw_attack_id 2
+  name: 'tengu_claw_attack'
+  label: 'Claw Attack'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Tengus with this racial trait have learned to use their claws as natural weapons. They gain two claw attacks as primary natural attacks that deal 1d3 points of damage, and are treated as having the Improved Unarmed Strike feat for the purpose of qualifying for other feats.
+
+- id: &ancestry_alternate_trait_tengu_deft_swords_id 3
+  name: 'tengu_deft_swords'
+  label: 'Deft Swords'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Some tengu learn dazzling blade techniques that allow them to use their weapons to protect against combat maneuvers. They gain a +2 dodge bonus to CMD while wielding a swordlike weapon.
+
+- id: &ancestry_alternate_trait_tengu_exotic_weapon_training_id 4
+  name: 'tengu_exotic_weapon_training'
+  label: 'Exotic Weapon Training'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Instead of swords, some tengus are trained in exotic weaponry. Such tengus choose a number of eastern weapons equal to 3 + their Intelligence bonus, and gain proficiency with these weapons.
+
+- id: &ancestry_alternate_trait_tengu_glide_id 5
+  name: 'tengu_glide'
+  label: 'Glide'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Some tengus can use their feathered arms and legs to glide. Tengus with this racial trait can make a DC 15 Fly check to fall safely from any height without taking falling damage, as if using feather fall. When falling safely, a tengu may make an additional DC 15 Fly check to glide, moving 5 feet laterally for every 20 feet he falls.
+
+ancestry_trait_replacement:
+- replaced_trait_id: *ancestry_trait_oread_type_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_mostly_human_id
+- replaced_trait_id: *ancestry_trait_oread_languages_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_mostly_human_id
+- replaced_trait_id: *ancestry_trait_oread_earth_affinity_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_crystalline_form_id
+- replaced_trait_id: *ancestry_trait_oread_earth_affinity_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_earth_insight_id
+- replaced_trait_id: *ancestry_trait_oread_spell_like_ability_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_ferrous_growth_id
+- replaced_trait_id: *ancestry_trait_oread_energy_resistance_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_granite_skin_id
+- replaced_trait_id: *ancestry_trait_oread_spell_like_ability_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_mountain_born_id
+- replaced_trait_id: *ancestry_trait_tengu_gifted_linguist_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_carrion_sense_id
+- replaced_trait_id: *ancestry_trait_tengu_swordtrained_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_claw_attack_id
+- replaced_trait_id: *ancestry_trait_tengu_sneaky_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_deft_swords_id
+- replaced_trait_id: *ancestry_trait_tengu_natural_weapons_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_deft_swords_id
+- replaced_trait_id: *ancestry_trait_tengu_swordtrained_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_exotic_weapon_training_id
+- replaced_trait_id: *ancestry_trait_tengu_gifted_linguist_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_glide_id
+
+ancestry_trait_benefit:
+# Benefits for Tengu Gifted Linguist
+- id: &ancestry_trait_benefit_tengu_ability_scores_id 1
+  ancestry_trait_id: *ancestry_trait_tengu_ability_scores_id
+  name: 'ability_score_modifiers'
+  label: 'Tengu Ability Score Modifiers'
+
+# Benefits for Oread Crystalline Form
+- id: &ancestry_trait_benefit_oread_ability_scores_id 2
+  ancestry_trait_id: *ancestry_trait_oread_ability_scores_id
+  name: 'ability_score_modifiers'
+  label: 'Oread Ability Score Modifiers'
+
+ancestry_trait_benefit_bonus:
+# Bonus for Tengu Gifted Linguist
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_tengu_ability_scores_id
+  target_specifier_id: *target_specifier_dexterity_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_tengu_ability_scores_id
+  target_specifier_id: *target_specifier_wisdom_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_tengu_ability_scores_id
+  target_specifier_id: *target_specifier_constitution_id
+  bonus_type_id: *bonus_ancestral_id
+  value: -2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_oread_ability_scores_id
+  target_specifier_id: *target_specifier_strength_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_oread_ability_scores_id
+  target_specifier_id: *target_specifier_wisdom_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_oread_ability_scores_id
+  target_specifier_id: *target_specifier_charisma_id
+  bonus_type_id: *bonus_ancestral_id
+  value: -2
 
 # =============================================================================
 # 4) SKILLS
@@ -2254,109 +2603,134 @@ class_feature_benefit:
   class_feature_id: *class_feature_occultist_spellcasting_id
   name: 'occultist_divination_spellcasting_level_1'
   label: 'Level 1 Divination Implement Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_occultist_divination_spellcasting_level_2_id 11
   class_feature_id: *class_feature_occultist_spellcasting_id
   name: 'occultist_divination_spellcasting_level_2'
   label: 'Level 2 Divination Implement Spells'
-  level: 4
+  feature_level: 4
 
 - id: &class_feature_benefit_cleric_spellcasting_level_1_id 12
   class_feature_id: *class_feature_cleric_spellcasting_id
   name: 'cleric_spellcasting_level_1'
   label: 'Level 1 Cleric Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_cleric_spellcasting_level_2_id 13
   class_feature_id: *class_feature_cleric_spellcasting_id
   name: 'cleric_spellcasting_level_2'
   label: 'Level 2 Cleric Spells'
-  level: 3
+  feature_level: 3
 
 - id: &class_feature_benefit_oracle_spellcasting_level_1_id 14
   class_feature_id: *class_feature_oracle_spellcasting_id
   name: 'oracle_spellcasting_level_1'
   label: 'Level 1 Oracle Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_oracle_spellcasting_level_2_id 15
   class_feature_id: *class_feature_oracle_spellcasting_id
   name: 'oracle_spellcasting_level_2'
   label: 'Level 2 Oracle Spells'
-  level: 4
+  feature_level: 4
 
 - id: &class_feature_benefit_witch_spellcasting_level_1_id 16
   class_feature_id: *class_feature_witch_spellcasting_id
   name: 'witch_spellcasting_level_1'
   label: 'Level 1 Witch Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_witch_spellcasting_level_2_id 17
   class_feature_id: *class_feature_witch_spellcasting_id
   name: 'witch_spellcasting_level_2'
   label: 'Level 2 Witch Spells'
-  level: 3
+  feature_level: 3
 
 - id: &class_feature_benefit_warpriest_spellcasting_level_1_id 18
   class_feature_id: *class_feature_warpriest_spellcasting_id
   name: 'warpriest_spellcasting_level_1'
   label: 'Level 1 Warpriest Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_warpriest_spellcasting_level_2_id 19
   class_feature_id: *class_feature_warpriest_spellcasting_id
   name: 'warpriest_spellcasting_level_2'
   label: 'Level 2 Warpriest Spells'
-  level: 3
+  feature_level: 3
 
 - id: &class_feature_benefit_spiritualist_spellcasting_level_1_id 20
   class_feature_id: *class_feature_spiritualist_spellcasting_id
   name: 'spiritualist_spellcasting_level_1'
   label: 'Level 1 Spiritualist Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_spiritualist_spellcasting_level_2_id 21
   class_feature_id: *class_feature_spiritualist_spellcasting_id
   name: 'spiritualist_spellcasting_level_2'
   label: 'Level 2 Spiritualist Spells'
-  level: 4
+  feature_level: 4
 
 - id: &class_feature_benefit_shaman_spellcasting_level_1_id 22
   class_feature_id: *class_feature_shaman_spellcasting_id
   name: 'shaman_spellcasting_level_1'
   label: 'Level 1 Shaman Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_shaman_spellcasting_level_2_id 23
   class_feature_id: *class_feature_shaman_spellcasting_id
   name: 'shaman_spellcasting_level_2'
   label: 'Level 2 Shaman Spells'
-  level: 3
+  feature_level: 3
 
 - id: &class_feature_benefit_psychic_spellcasting_level_1_id 24
   class_feature_id: *class_feature_psychic_spellcasting_id
   name: 'psychic_spellcasting_level_1'
   label: 'Level 1 Psychic Spells'
-  level: 1
+  feature_level: 1
 
 - id: &class_feature_benefit_psychic_spellcasting_level_2_id 25
   class_feature_id: *class_feature_psychic_spellcasting_id
   name: 'psychic_spellcasting_level_2'
   label: 'Level 2 Psychic Spells'
-  level: 4
+  feature_level: 4
 
 - id: &class_feature_benefit_medium_spellcasting_level_1_id 26
   class_feature_id: *class_feature_medium_spellcasting_id
   name: 'medium_spellcasting_level_1'
   label: 'Level 1 Medium Spells'
-  level: 4
+  feature_level: 4
 
 - id: &class_feature_benefit_medium_spellcasting_level_2_id 27
   class_feature_id: *class_feature_medium_spellcasting_id
   name: 'medium_spellcasting_level_2'
   label: 'Level 2 Medium Spells'
-  level: 7
+  feature_level: 7
+
+- id: &class_feature_benefit_elemental_ascetic_ac_bonus_level_2_id 28
+  class_feature_id: *class_feature_ac_bonus_ascetic_id
+  name: 'elemental_ascetic_ac_bonus_level_2'
+  label: 'Level 2 Elemental Ascetic AC Bonus'
+  feature_level: 2
+
+- id: &class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id 29
+  class_feature_id: *class_feature_ac_bonus_ascetic_id
+  name: 'elemental_ascetic_ac_bonus_level_6'
+  label: 'Level 6 Elemental Ascetic AC Bonus'
+  feature_level: 6
+
+class_feature_benefit_bonus:
+- id: &class_feature_benefit_bonus_elemental_ascetic_ac_bonus_level_2_id 1
+  class_feature_benefit_id: *class_feature_benefit_elemental_ascetic_ac_bonus_level_2_id
+  value: 1
+  target_specifier_id: *target_specifier_ac_id
+  bonus_type_id: *bonus_untyped_id
+
+- id: &class_feature_benefit_bonus_elemental_ascetic_ac_bonus_level_6_id 2
+  class_feature_benefit_id: *class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id
+  value: 2
+  target_specifier_id: *target_specifier_ac_id
+  bonus_type_id: *bonus_untyped_id
 
 spellcasting_type:
 - id: &spellcasting_type_divine_id 1
@@ -3019,7 +3393,7 @@ rule:
   label: 'Spell Components'
   source: 'PRPG Core Rulebook pg. 212'
   description: |
-    A spell’s components explain what you must do or possess to cast the spell. The components entry in a spell description includes abbreviations that tell you what type of components it requires. Specifics for material and focus components are given at the end of the descriptive text. Usually you don’t need to worry about components, but when you can’t use a component for some reason or when a material or focus component is expensive, then the components are important.
+    A spell's components explain what you must do or possess to cast the spell. The components entry in a spell description includes abbreviations that tell you what type of components it requires. Specifics for material and focus components are given at the end of the descriptive text. Usually you don't need to worry about components, but when you can't use a component for some reason or when a material or focus component is expensive, then the components are important.
 
     If the Components line includes F/DF or M/DF, the arcane version of the spell has a focus component or a material component (the abbreviation before the slash) and the divine version has a divine focus component (the abbreviation after the slash).
 
@@ -3040,7 +3414,7 @@ spell_component_type:
   name: 'material'
   label: 'Material'
   abbreviation: 'M'
-  description: 'A material component consists of one or more physical substances or objects that are annihilated by the spell energies in the casting process. Unless a cost is given for a material component, the cost is negligible. Don’t bother to keep track of material components with negligible cost. Assume you have all you need as long as you have your spell component pouch.'
+  description: 'A material component consists of one or more physical substances or objects that are annihilated by the spell energies in the casting process. Unless a cost is given for a material component, the cost is negligible. Don''t bother to keep track of material components with negligible cost. Assume you have all you need as long as you have your spell component pouch.'
 - id: &spell_component_type_F_id 4
   name: 'focus'
   label: 'Focus'
@@ -3051,7 +3425,7 @@ spell_component_type:
   name: 'divine_focus'
   label: 'Divine Focus'
   abbreviation: 'DF'
-  description: 'A divine focus component is an item of spiritual significance. The divine focus for a cleric or a paladin is a holy symbol appropriate to the character’s faith. The divine focus for a druid or a ranger is a sprig of holly, or some other sacred plant.'
+  description: 'A divine focus component is an item of spiritual significance. The divine focus for a cleric or a paladin is a holy symbol appropriate to the character''s faith. The divine focus for a druid or a ranger is a sprig of holly, or some other sacred plant.'
 
 spell_component:
 - id: &spell_component_V_id 1
@@ -3715,14 +4089,26 @@ archetype:
   label: 'Elemental Ascetic'
 
 archetype_class_feature:
-- archetype_id: *archetype_mindchemist_id
+- id: &archetype_class_feature_mindchemist_cognatogen_id 1
+  archetype_id: *archetype_mindchemist_id
   class_id: *class_alchemist_id
   feature_id: *class_feature_cognatogen_id
-  level_obtained: 1
-- archetype_id: *archetype_mindchemist_id
+  feature_level: 1
+- id: &archetype_class_feature_mindchemist_bonus_feat_id 2
+  archetype_id: *archetype_mindchemist_id
   class_id: *class_alchemist_id
   feature_id: *class_feature_mindchemist_bonus_feat_id
-  level_obtained: 2
+  feature_level: 2
+- id: &archetype_class_feature_mindchemist_perfect_recall_id 3
+  archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_perfect_recall_id
+  feature_level: 2
+- id: &archetype_class_feature_mindchemist_languages_id 4
+  archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_mindchemist_languages_id
+  feature_level: 2
   # - archetype_id: *archetype_hungry_ghost_monk_id
   #   class_id: *class_monk_unchained_id
   #   feature_id: *class_feature_punishing_kick_id
@@ -3747,48 +4133,67 @@ archetype_class_feature:
   #   class_id: *class_alchemist_id
   #   feature_id: *class_feature_extra_bombs_id
   #   level_obtained: 1
-- archetype_id: *archetype_elemental_ascetic_id
+- id: &archetype_class_feature_elemental_ascetic_elemental_flurry_id 5
+  archetype_id: *archetype_elemental_ascetic_id
   class_id: *class_kineticist_id
   feature_id: *class_feature_elemental_flurry_id
-  level_obtained: 1
-- archetype_id: *archetype_elemental_ascetic_id
+  feature_level: 1
+- id: &archetype_class_feature_elemental_ascetic_elemental_wisdom_id 6
+  archetype_id: *archetype_elemental_ascetic_id
   class_id: *class_kineticist_id
   feature_id: *class_feature_elemental_wisdom_id
-  level_obtained: 1
-- archetype_id: *archetype_elemental_ascetic_id
+  feature_level: 1
+- id: &archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id 7
+  archetype_id: *archetype_elemental_ascetic_id
   class_id: *class_kineticist_id
   feature_id: *class_feature_ac_bonus_ascetic_id
-  level_obtained: 2
-- archetype_id: *archetype_elemental_ascetic_id
+  feature_level: 2
+- id: &archetype_class_feature_elemental_ascetic_powerful_fist_id 8
+  archetype_id: *archetype_elemental_ascetic_id
   class_id: *class_kineticist_id
   feature_id: *class_feature_powerful_fist_id
-  level_obtained: 5
+  feature_level: 5
+# =============================================================================
+# ARCHETYPE REPLACEMENTS
+# =============================================================================
 
-archetype_replacement:
+archetype_class_feature_replacement:
 - id: &archetype_replacement_mindchemist_mutagen_id 1
-  archetype_id: *archetype_mindchemist_id
-  replaced_feature_id: *class_feature_mutagen_id
-  replacement_feature_id: *class_feature_cognatogen_id
+  replaced_class_feature_id: *class_feature_mutagen_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_cognatogen_id
 
 - id: &archetype_replacement_mindchemist_poison_use_id 2
-  archetype_id: *archetype_mindchemist_id
-  replaced_feature_id: *class_feature_poison_use_id
-  replacement_feature_id: *class_feature_perfect_recall_id
+  replaced_class_feature_id: *class_feature_poison_use_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_perfect_recall_id
 
-- id: &archetype_replacement_mindchemist_swift_poisoning_id 3
-  archetype_id: *archetype_mindchemist_id
-  replaced_feature_id: *class_feature_swift_poisoning_id
-  replacement_feature_id: *class_feature_mindchemist_bonus_feat_id
+- id: &archetype_replacement_elemental_ascetic_elemental_overflow_id 3
+  replaced_class_feature_id: *class_feature_elemental_overflow_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_elemental_flurry_id
 
-- id: &archetype_replacement_elemental_ascetic_infusion_id 4
-  archetype_id: *archetype_elemental_ascetic_id
-  replaced_feature_id: *class_feature_infusion_id
-  replacement_feature_id: *class_feature_elemental_flurry_id
+- id: &archetype_replacement_elemental_ascetic_elemental_defense_id 4
+  replaced_class_feature_id: *class_feature_elemental_defense_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id
 
-- id: &archetype_replacement_elemental_ascetic_gather_power_id 5
-  archetype_id: *archetype_elemental_ascetic_id
-  replaced_feature_id: *class_feature_gather_power_id
-  replacement_feature_id: *class_feature_elemental_wisdom_id
+# =============================================================================
+# ARCHETYPE ALTERATIONS
+# =============================================================================
+
+archetype_class_feature_alteration:
+- id: &archetype_alteration_mindchemist_feat_id 1
+  altered_class_feature_id: *class_feature_discovery_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_bonus_feat_id
+
+- id: &archetype_alteration_mindchemist_lang_id 2
+  altered_class_feature_id: *class_feature_discovery_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_languages_id
+
+- id: &archetype_alteration_elemental_ascetic_blast_id 3
+  altered_class_feature_id: *class_feature_kinetic_blast_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_elemental_flurry_id
+
+- id: &archetype_alteration_elemental_ascetic_wild_talents_id 4
+  altered_class_feature_id: *class_feature_wild_talents_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_elemental_wisdom_id
 
 weapon:
 # TODO: NEED TO DOUBLE CHECK THESE
@@ -3953,7 +4358,7 @@ corruption_manifestation:
     Stain: No reflection; severe penalty with mirrors, etc.
 
 # ========== CHILDREN OF THE NIGHT ==========
-- id: &manifestation_children_of_night_id 502
+- id: &manifestation_children_of_the_night_id 502
   name: 'children_of_the_night'
   label: 'Children of the Night'
   corruption_id: *corruption_vampirism_id
@@ -4080,13 +4485,27 @@ game_character_ability:
   value: 14
 - game_character_id: *game_character_killiq_said_id
   ability_id: *ability_int_id
-  value: 8
+  value: 10
 - game_character_id: *game_character_killiq_said_id
   ability_id: *ability_wis_id
   value: 12
 - game_character_id: *game_character_killiq_said_id
   ability_id: *ability_cha_id
   value: 10
+
+game_character_ancestry_trait:
+# Only need to track non-standard choices
+
+# Vardon's Alternate Ancestry Traits
+- game_character_id: *game_character_vardon_salvador_id
+  ancestry_trait_id: *ancestry_alternate_trait_tengu_glide_id
+# Killiq's Alternate Ancestry Traits
+- game_character_id: *game_character_killiq_said_id
+  ancestry_trait_id: *ancestry_alternate_trait_oread_mountain_born_id
+
+- game_character_id: *game_character_killiq_said_id
+  ancestry_trait_id: *ancestry_alternate_trait_oread_mostly_human_id
+
 game_character_class:
 - game_character_id: *game_character_vardon_salvador_id
   class_id: *class_alchemist_id
@@ -4127,12 +4546,6 @@ game_character_class_feature:
 - game_character_id: *game_character_vardon_salvador_id
   class_feature_id: *class_feature_poison_resistance_id
   level_obtained: 2
-- game_character_id: *game_character_vardon_salvador_id
-  class_feature_id: *class_feature_perfect_recall_id
-  level_obtained: 2
-- game_character_id: *game_character_vardon_salvador_id
-  class_feature_id: *class_feature_cognatogen_id
-  level_obtained: 1
 - game_character_id: *game_character_vardon_salvador_id
   class_feature_id: *class_feature_mutagen_id
   level_obtained: 1
@@ -4318,7 +4731,7 @@ game_character_corruption_manifestation:
 
 # Vardon's active manifestations
 - game_character_id: *game_character_vardon_salvador_id
-  manifestation_id: *manifestation_children_of_night_id
+  manifestation_id: *manifestation_children_of_the_night_id
   active: true
 - game_character_id: *game_character_vardon_salvador_id
   manifestation_id: *manifestation_vampiric_grace_id

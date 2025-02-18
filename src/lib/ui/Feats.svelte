@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-    import type { GameCharacterFeat, Feat } from '$lib/db/gameRules.api';
+    import type { GameCharacterFeat, Feat } from '$lib/db/gameRules.types';
     
     let { character } = $props<{ character: EnrichedCharacter }>();
 
