@@ -617,7 +617,6 @@ function computeCombatManeuvers(
 	attackBonuses: AttackBonuses,
 	strMod: number,
 	dexMod: number,
-	wisMod: number,
 	acBonuses: BonusEntry[],
 	cache: CharacterCache,
 	size: string = 'medium'
@@ -950,7 +949,6 @@ async function computeAttacks(
 		attackBonuses,
 		strMod,
 		dexMod,
-		wisMod,
 		allBonuses,
 		cache,
 		sizeData.effectiveSize
@@ -1002,16 +1000,6 @@ export function calculateSkillPointsTotal(
 					value: baseAndInt,
 					type: 'base'
 				},
-				{ 
-					source: 'Intelligence modifier',
-					value: intMod,
-					type: 'ability'
-				},
-				{ 
-					source: 'Class base',
-					value: classSkillPoints,
-					type: 'class'
-				}
 			];
 
 			// Add favored class bonus if this class was chosen for the level

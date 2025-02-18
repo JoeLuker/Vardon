@@ -67,7 +67,9 @@ interface CompleteCharacter extends Row<'game_character'> {
     game_character_skill_rank?: (Row<'game_character_skill_rank'> & {
         skill: Row<'skill'>;
     })[];
-    game_character_favored_class_bonus?: GameCharacterFavoredClassBonusData[];
+    game_character_favored_class_bonus?: (Row<'game_character_favored_class_bonus'> & {
+        favored_class_choice: Row<'favored_class_choice'>;
+    })[];
     game_character_archetype?: (Row<'game_character_archetype'> & {
         archetype: Row<'archetype'>;
     })[];
@@ -225,7 +227,7 @@ export class GameRulesAPI {
                 game_character_corruption_manifestation(*, manifestation:corruption_manifestation(*)),
                 game_character_corruption(*, corruption(*)),
                 game_character_skill_rank(*, skill(*, ability(*))),
-                game_character_favored_class_bonus(*),
+                game_character_favored_class_bonus(*, favored_class_choice(*)),
                 game_character_archetype(
                     *, 
                     archetype(
