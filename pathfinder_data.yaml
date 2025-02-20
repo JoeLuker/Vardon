@@ -2739,77 +2739,1037 @@ spellcasting_type:
   name: 'psychic'
   label: 'Psychic'
 
-spellcasting_preparation_type:
-- id: &spellcasting_preparation_type_prepared_id 1
-  name: 'prepared'
-  label: 'Prepared'
+# =============================================================================
+# SPELL PROGRESSION TYPES
+# =============================================================================
 
-- id: &spellcasting_preparation_type_spontaneous_id 2
-  name: 'spontaneous'
-  label: 'Spontaneous'
+spell_progression_type:
+- id: &spell_progression_type_prepared_9_id 1
+  name: 'prepared_9'
+  label: '9-level Prepared Caster'
+  max_spell_level: 9
+  is_spontaneous: false
+
+- id: &spell_progression_type_spontaneous_9_id 2
+  name: 'spontaneous_9'
+  label: '9-level Spontaneous Caster'
+  max_spell_level: 9
+  is_spontaneous: true
+
+- id: &spell_progression_type_prepared_6_id 3
+  name: 'prepared_6'
+  label: '6-level Prepared Caster'
+  max_spell_level: 6
+  is_spontaneous: false
+
+- id: &spell_progression_type_spontaneous_6_id 4
+  name: 'spontaneous_6'
+  label: '6-level Spontaneous Caster'
+  max_spell_level: 6
+  is_spontaneous: true
+
+- id: &spell_progression_type_prepared_4_id 5
+  name: 'prepared_4'
+  label: '4-level Prepared Caster'
+  max_spell_level: 4
+  is_spontaneous: false
+
+- id: &spell_progression_type_spontaneous_4_id 6
+  name: 'spontaneous_4'
+  label: '4-level Spontaneous Caster'
+  max_spell_level: 4
+  is_spontaneous: true
+
+spell_progression:
+# 9-level Prepared (Druid)
+- id: 1
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 1
+  spell_level: 0
+  slots: 3
+
+- id: 2
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 1
+  spell_level: 1
+  slots: 1
+
+- id: 3
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 2
+  spell_level: 0
+  slots: 4
+
+- id: 4
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 2
+  spell_level: 1
+  slots: 2
+
+- id: 5
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 3
+  spell_level: 2
+  slots: 1
+
+- id: 6
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 4
+  spell_level: 1
+  slots: 3
+
+- id: 7
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 4
+  spell_level: 2
+  slots: 2
+
+- id: 8
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 5
+  spell_level: 3
+  slots: 1
+
+- id: 9
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 6
+  spell_level: 2
+  slots: 3
+
+- id: 10
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 6
+  spell_level: 3
+  slots: 2
+
+- id: 11
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 7
+  spell_level: 1
+  slots: 4
+
+- id: 12
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 7
+  spell_level: 4
+  slots: 1
+
+- id: 13
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 8
+  spell_level: 3
+  slots: 3
+
+- id: 14
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 8
+  spell_level: 4
+  slots: 2
+
+- id: 15
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 9
+  spell_level: 5
+  slots: 1
+
+- id: 16
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 10
+  spell_level: 4
+  slots: 3
+
+- id: 17
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 10
+  spell_level: 5
+  slots: 2
+
+- id: 18
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 11
+  spell_level: 6
+  slots: 1
+
+- id: 19
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 13
+  spell_level: 7
+  slots: 1
+
+- id: 20
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 15
+  spell_level: 8
+  slots: 1
+
+- id: 21
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 17
+  spell_level: 9
+  slots: 1
+
+- id: 22
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 19
+  spell_level: 8
+  slots: 3
+
+- id: 23
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 19
+  spell_level: 9
+  slots: 3
+
+- id: 24
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 20
+  spell_level: 8
+  slots: 4
+
+- id: 25
+  progression_type_id: *spell_progression_type_prepared_9_id
+  class_level: 20
+  spell_level: 9
+  slots: 4
+
+# 9-level Spontaneous (Sorcerer)
+- id: 100
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 1
+  spell_level: 1
+  slots: 3
+
+- id: 101
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 2
+  spell_level: 1
+  slots: 4
+
+- id: 102
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 3
+  spell_level: 1
+  slots: 5
+
+- id: 103
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 4
+  spell_level: 1
+  slots: 6
+
+- id: 104
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 4
+  spell_level: 2
+  slots: 3
+
+- id: 105
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 5
+  spell_level: 2
+  slots: 4
+
+- id: 106
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 6
+  spell_level: 2
+  slots: 5
+
+- id: 107
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 6
+  spell_level: 3
+  slots: 3
+
+- id: 108
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 7
+  spell_level: 2
+  slots: 6
+
+- id: 109
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 7
+  spell_level: 3
+  slots: 4
+
+- id: 110
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 8
+  spell_level: 3
+  slots: 5
+
+- id: 111
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 8
+  spell_level: 4
+  slots: 3
+
+- id: 112
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 9
+  spell_level: 3
+  slots: 6
+
+- id: 113
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 9
+  spell_level: 4
+  slots: 4
+
+- id: 114
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 10
+  spell_level: 4
+  slots: 5
+
+- id: 115
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 10
+  spell_level: 5
+  slots: 3
+
+- id: 116
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 11
+  spell_level: 4
+  slots: 6
+
+- id: 117
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 11
+  spell_level: 5
+  slots: 4
+
+- id: 118
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 12
+  spell_level: 5
+  slots: 5
+
+- id: 119
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 12
+  spell_level: 6
+  slots: 3
+
+- id: 120
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 13
+  spell_level: 5
+  slots: 6
+
+- id: 121
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 13
+  spell_level: 6
+  slots: 4
+
+- id: 122
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 14
+  spell_level: 6
+  slots: 5
+
+- id: 123
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 14
+  spell_level: 7
+  slots: 3
+
+- id: 124
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 15
+  spell_level: 6
+  slots: 6
+
+- id: 125
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 15
+  spell_level: 7
+  slots: 4
+
+- id: 126
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 16
+  spell_level: 7
+  slots: 5
+
+- id: 127
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 16
+  spell_level: 8
+  slots: 3
+
+- id: 128
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 17
+  spell_level: 7
+  slots: 6
+
+- id: 129
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 17
+  spell_level: 8
+  slots: 4
+
+- id: 130
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 18
+  spell_level: 8
+  slots: 5
+
+- id: 131
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 18
+  spell_level: 9
+  slots: 3
+
+- id: 132
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 19
+  spell_level: 8
+  slots: 6
+
+- id: 133
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 19
+  spell_level: 9
+  slots: 4
+
+- id: 134
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  class_level: 20
+  spell_level: 9
+  slots: 6
+
+# 6-level Prepared (Magus)
+- id: 300
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 1
+  spell_level: 0
+  slots: 3
+
+- id: 301
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 1
+  spell_level: 1
+  slots: 1
+
+- id: 302
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 2
+  spell_level: 0
+  slots: 4
+
+- id: 303
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 2
+  spell_level: 1
+  slots: 2
+
+- id: 304
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 3
+  spell_level: 1
+  slots: 3
+
+- id: 305
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 4
+  spell_level: 2
+  slots: 1
+
+- id: 306
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 5
+  spell_level: 1
+  slots: 4
+
+- id: 307
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 5
+  spell_level: 2
+  slots: 2
+
+- id: 308
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 6
+  spell_level: 0
+  slots: 5
+
+- id: 309
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 6
+  spell_level: 2
+  slots: 3
+
+- id: 310
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 7
+  spell_level: 3
+  slots: 1
+
+- id: 311
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 8
+  spell_level: 2
+  slots: 4
+
+- id: 312
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 8
+  spell_level: 3
+  slots: 2
+
+- id: 313
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 9
+  spell_level: 1
+  slots: 5
+
+- id: 314
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 9
+  spell_level: 3
+  slots: 3
+
+- id: 315
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 10
+  spell_level: 4
+  slots: 1
+
+- id: 316
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 11
+  spell_level: 3
+  slots: 4
+
+- id: 317
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 11
+  spell_level: 4
+  slots: 2
+
+- id: 318
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 12
+  spell_level: 2
+  slots: 5
+
+- id: 319
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 12
+  spell_level: 4
+  slots: 3
+
+- id: 320
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 13
+  spell_level: 5
+  slots: 1
+
+- id: 321
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 14
+  spell_level: 4
+  slots: 4
+
+- id: 322
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 14
+  spell_level: 5
+  slots: 2
+
+- id: 323
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 15
+  spell_level: 3
+  slots: 5
+
+- id: 324
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 15
+  spell_level: 5
+  slots: 3
+
+- id: 325
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 16
+  spell_level: 6
+  slots: 1
+
+- id: 326
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 17
+  spell_level: 5
+  slots: 4
+
+- id: 327
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 17
+  spell_level: 6
+  slots: 2
+
+- id: 328
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 18
+  spell_level: 4
+  slots: 5
+
+- id: 329
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 18
+  spell_level: 6
+  slots: 3
+
+- id: 330
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 19
+  spell_level: 5
+  slots: 5
+
+- id: 331
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 19
+  spell_level: 6
+  slots: 4
+
+- id: 332
+  progression_type_id: *spell_progression_type_prepared_6_id
+  class_level: 20
+  spell_level: 6
+  slots: 5
+
+# 6-level Spontaneous (Bard)
+- id: 400
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 1
+  spell_level: 1
+  slots: 1
+
+- id: 401
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 2
+  spell_level: 1
+  slots: 2
+
+- id: 402
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 3
+  spell_level: 1
+  slots: 3
+
+- id: 403
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 4
+  spell_level: 2
+  slots: 1
+
+- id: 404
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 5
+  spell_level: 1
+  slots: 4
+
+- id: 405
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 5
+  spell_level: 2
+  slots: 2
+
+- id: 406
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 6
+  spell_level: 2
+  slots: 3
+
+- id: 407
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 7
+  spell_level: 3
+  slots: 1
+
+- id: 408
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 8
+  spell_level: 2
+  slots: 4
+
+- id: 409
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 8
+  spell_level: 3
+  slots: 2
+
+- id: 410
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 9
+  spell_level: 1
+  slots: 5
+
+- id: 411
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 9
+  spell_level: 3
+  slots: 3
+
+- id: 412
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 10
+  spell_level: 4
+  slots: 1
+
+- id: 413
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 11
+  spell_level: 3
+  slots: 4
+
+- id: 414
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 11
+  spell_level: 4
+  slots: 2
+
+- id: 415
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 12
+  spell_level: 2
+  slots: 5
+
+- id: 416
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 12
+  spell_level: 4
+  slots: 3
+
+- id: 417
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 13
+  spell_level: 5
+  slots: 1
+
+- id: 418
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 14
+  spell_level: 4
+  slots: 4
+
+- id: 419
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 14
+  spell_level: 5
+  slots: 2
+
+- id: 420
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 15
+  spell_level: 3
+  slots: 5
+
+- id: 421
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 15
+  spell_level: 5
+  slots: 3
+
+- id: 422
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 16
+  spell_level: 6
+  slots: 1
+
+- id: 423
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 17
+  spell_level: 5
+  slots: 4
+
+- id: 424
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 17
+  spell_level: 6
+  slots: 2
+
+- id: 425
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 18
+  spell_level: 4
+  slots: 5
+
+- id: 426
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 18
+  spell_level: 6
+  slots: 3
+
+- id: 427
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 19
+  spell_level: 5
+  slots: 5
+
+- id: 428
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 19
+  spell_level: 6
+  slots: 4
+
+- id: 429
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  class_level: 20
+  spell_level: 6
+  slots: 5
+
+# 4-level Prepared (Ranger)
+- id: 500
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 4
+  spell_level: 1
+  slots: 0 # First access, but 0 slots
+
+- id: 501
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 5
+  spell_level: 1
+  slots: 1
+
+- id: 502
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 7
+  spell_level: 2
+  slots: 0 # First access, but 0 slots
+
+- id: 503
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 8
+  spell_level: 2
+  slots: 1
+
+- id: 504
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 9
+  spell_level: 1
+  slots: 2
+
+- id: 505
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 10
+  spell_level: 3
+  slots: 0 # First access, but 0 slots
+
+- id: 506
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 11
+  spell_level: 3
+  slots: 1
+
+- id: 507
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 12
+  spell_level: 2
+  slots: 2
+
+- id: 508
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 13
+  spell_level: 1
+  slots: 3
+
+- id: 509
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 13
+  spell_level: 4
+  slots: 0 # First access, but 0 slots
+
+- id: 510
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 14
+  spell_level: 4
+  slots: 1
+
+- id: 511
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 15
+  spell_level: 3
+  slots: 2
+
+- id: 512
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 16
+  spell_level: 2
+  slots: 3
+
+- id: 513
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 17
+  spell_level: 1
+  slots: 4
+
+- id: 514
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 18
+  spell_level: 4
+  slots: 2
+
+- id: 515
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 19
+  spell_level: 3
+  slots: 3
+
+- id: 516
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 20
+  spell_level: 2
+  slots: 4
+
+- id: 517
+  progression_type_id: *spell_progression_type_prepared_4_id
+  class_level: 20
+  spell_level: 4
+  slots: 3
+
+# 4-level Spontaneous (Bloodrager)
+- id: 600
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 4
+  spell_level: 1
+  slots: 1
+
+- id: 601
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 7
+  spell_level: 2
+  slots: 1
+
+- id: 602
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 9
+  spell_level: 1
+  slots: 2
+
+- id: 603
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 10
+  spell_level: 3
+  slots: 1
+
+- id: 604
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 12
+  spell_level: 2
+  slots: 2
+
+- id: 605
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 13
+  spell_level: 1
+  slots: 3
+
+- id: 606
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 13
+  spell_level: 4
+  slots: 1
+
+- id: 607
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 15
+  spell_level: 3
+  slots: 2
+
+- id: 608
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 16
+  spell_level: 2
+  slots: 3
+
+- id: 609
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 17
+  spell_level: 1
+  slots: 4
+
+- id: 610
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 18
+  spell_level: 4
+  slots: 2
+
+- id: 611
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 19
+  spell_level: 3
+  slots: 3
+
+- id: 612
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  class_level: 20
+  spell_level: 2
+  slots: 4
 
 spellcasting_class_feature:
 - id: &spellcasting_class_feature_cleric_id 1
   class_feature_id: *class_feature_cleric_spellcasting_id
-  max_spell_level: 9
-  spellcasting_type: *spellcasting_type_divine_id
-  preparation_type: *spellcasting_preparation_type_prepared_id
+  progression_type_id: *spell_progression_type_prepared_9_id
+  spellcasting_type_id: *spellcasting_type_divine_id
   ability_id: *ability_wis_id
 
 - id: &spellcasting_class_feature_witch_id 2
   class_feature_id: *class_feature_witch_spellcasting_id
-  max_spell_level: 9
-  spellcasting_type: *spellcasting_type_arcane_id
-  preparation_type: *spellcasting_preparation_type_prepared_id
+  progression_type_id: *spell_progression_type_prepared_9_id
+  spellcasting_type_id: *spellcasting_type_arcane_id
   ability_id: *ability_int_id
 
 - id: &spellcasting_class_feature_warpriest_id 3
   class_feature_id: *class_feature_warpriest_spellcasting_id
-  max_spell_level: 6
-  spellcasting_type: *spellcasting_type_divine_id
-  preparation_type: *spellcasting_preparation_type_prepared_id
+  progression_type_id: *spell_progression_type_prepared_6_id
+  spellcasting_type_id: *spellcasting_type_divine_id
   ability_id: *ability_wis_id
 
 - id: &spellcasting_class_feature_spiritualist_id 4
   class_feature_id: *class_feature_spiritualist_spellcasting_id
-  max_spell_level: 6
-  spellcasting_type: *spellcasting_type_psychic_id
-  preparation_type: *spellcasting_preparation_type_spontaneous_id
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
   ability_id: *ability_wis_id
 
 - id: &spellcasting_class_feature_shaman_id 5
   class_feature_id: *class_feature_shaman_spellcasting_id
-  max_spell_level: 9
-  spellcasting_type: *spellcasting_type_divine_id
-  preparation_type: *spellcasting_preparation_type_prepared_id
+  progression_type_id: *spell_progression_type_prepared_9_id
+  spellcasting_type_id: *spellcasting_type_divine_id
   ability_id: *ability_wis_id
 
 - id: &spellcasting_class_feature_psychic_id 6
   class_feature_id: *class_feature_psychic_spellcasting_id
-  max_spell_level: 9
-  spellcasting_type: *spellcasting_type_psychic_id
-  preparation_type: *spellcasting_preparation_type_spontaneous_id
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
   ability_id: *ability_int_id
 
 - id: &spellcasting_class_feature_medium_id 7
   class_feature_id: *class_feature_medium_spellcasting_id
-  max_spell_level: 4
-  spellcasting_type: *spellcasting_type_psychic_id
-  preparation_type: *spellcasting_preparation_type_spontaneous_id
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
   ability_id: *ability_cha_id
 
 - id: &spellcasting_class_feature_oracle_id 8
   class_feature_id: *class_feature_oracle_spellcasting_id
-  max_spell_level: 9
-  spellcasting_type: *spellcasting_type_divine_id
-  preparation_type: *spellcasting_preparation_type_spontaneous_id
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  spellcasting_type_id: *spellcasting_type_divine_id
   ability_id: *ability_cha_id
 
 - id: &spellcasting_class_feature_occultist_id 9
   class_feature_id: *class_feature_occultist_spellcasting_id
-  max_spell_level: 6
-  spellcasting_type: *spellcasting_type_psychic_id
-  preparation_type: *spellcasting_preparation_type_spontaneous_id
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
+  ability_id: *ability_int_id
+
+- id: &spellcasting_class_feature_alchemist_id 10
+  class_feature_id: *class_feature_alchemy_id
+  progression_type_id: *spell_progression_type_prepared_6_id
+  spellcasting_type_id: *spellcasting_type_arcane_id
   ability_id: *ability_int_id
 
 # =============================================================================
@@ -4914,10 +5874,6 @@ game_character_skill_rank:
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_stealth_id
   applied_at_level: 6
-- id: 37
-  game_character_id: *game_character_killiq_said_id
-  skill_id: *skill_climb_id
-  applied_at_level: 1
 - id: 39
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_knowledge_dungeoneering_id
@@ -4978,10 +5934,6 @@ game_character_skill_rank:
   game_character_id: *game_character_vardon_salvador_id
   skill_id: *skill_spellcraft_id
   applied_at_level: 6
-- id: 55
-  game_character_id: *game_character_vardon_salvador_id
-  skill_id: *skill_perception_id
-  applied_at_level: 1
 - id: 56
   game_character_id: *game_character_vardon_salvador_id
   skill_id: *skill_perception_id
@@ -5098,10 +6050,6 @@ game_character_skill_rank:
   game_character_id: *game_character_vardon_salvador_id
   skill_id: *skill_knowledge_planes_id
   applied_at_level: 6
-- id: 92
-  game_character_id: *game_character_vardon_salvador_id
-  skill_id: *skill_sleight_of_hand_id
-  applied_at_level: 1
 - id: 168
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_bluff_id
@@ -5122,18 +6070,78 @@ game_character_skill_rank:
   game_character_id: *game_character_vardon_salvador_id
   skill_id: *skill_knowledge_nature_id
   applied_at_level: 1
-- id: 173
-  game_character_id: *game_character_killiq_said_id
-  skill_id: *skill_profession_id
-  applied_at_level: 2
-- id: 176
-  game_character_id: *game_character_killiq_said_id
-  skill_id: *skill_climb_id
-  applied_at_level: 2
 - id: 113
   game_character_id: *game_character_vardon_salvador_id
   skill_id: *skill_heal_id
   applied_at_level: 1
+- id: 177
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_engineering_id
+  applied_at_level: 1
+- id: 186
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_knowledge_geography_id
+  applied_at_level: 1
+- id: 189
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 1
+- id: 190
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 2
+- id: 191
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_disable_device_id
+  applied_at_level: 3
+- id: 193
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_bluff_id
+  applied_at_level: 2
+- id: 194
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_sleight_of_hand_id
+  applied_at_level: 2
+- id: 195
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_knowledge_planes_id
+  applied_at_level: 1
+- id: 196
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_intimidate_id
+  applied_at_level: 1
+- id: 201
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_survival_id
+  applied_at_level: 3
+- id: 202
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_survival_id
+  applied_at_level: 4
+- id: 203
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_survival_id
+  applied_at_level: 5
+- id: 204
+  game_character_id: *game_character_vardon_salvador_id
+  skill_id: *skill_survival_id
+  applied_at_level: 6
+- id: 208
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_sense_motive_id
+  applied_at_level: 2
+- id: 212
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_profession_id
+  applied_at_level: 5
+- id: 213
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_sense_motive_id
+  applied_at_level: 4
+- id: 216
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_sense_motive_id
+  applied_at_level: 6
 
 game_character_armor:
 - game_character_id: *game_character_vardon_salvador_id
@@ -5199,3 +6207,40 @@ game_character_weapon:
   weapon_id: *weapon_kukri_id
   enhancement: 1
   masterwork: true
+
+game_character_spell_slot:
+- id: &spell_slot_vardon_1_1 1
+  game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  spell_level: 1
+  is_used: false
+
+- id: &spell_slot_vardon_1_2 2
+  game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  spell_level: 1
+  is_used: false
+
+- id: &spell_slot_vardon_1_3 3
+  game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  spell_level: 1
+  is_used: false
+
+- id: &spell_slot_vardon_1_4 4
+  game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  spell_level: 1
+  is_used: false
+
+- id: &spell_slot_vardon_2_1 5
+  game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  spell_level: 2
+  is_used: false
+
+- id: &spell_slot_vardon_2_2 6
+  game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  spell_level: 2
+  is_used: false

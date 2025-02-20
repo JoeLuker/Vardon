@@ -75,18 +75,21 @@
 {#if character}
 	<div class="card">
 		<div class="flex flex-col gap-2">
-			<Button
-				variant="ghost"
-				size="icon"
-				class="ml-auto opacity-50 transition-opacity hover:opacity-100"
-				onclick={() => (showModifierFirst = !showModifierFirst)}
-			>
-				<span class="sr-only">Toggle show modifier first</span>
-				<StretchHorizontal
-					class="h-4 w-4 transition-transform duration-200"
-					style={showModifierFirst ? 'transform: rotate(180deg)' : ''}
-				/>
-			</Button>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold">Ability Scores</h2>
+				<Button
+					variant="ghost"
+					size="icon"
+					class="opacity-50 transition-opacity hover:opacity-100"
+					onclick={() => (showModifierFirst = !showModifierFirst)}
+				>
+					<span class="sr-only">Toggle show modifier first</span>
+					<StretchHorizontal
+						class="h-4 w-4 transition-transform duration-200"
+						style={showModifierFirst ? 'transform: rotate(180deg)' : ''}
+					/>
+				</Button>
+			</div>
 			<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
 				{#each abilityMods as ability}
 					<button

@@ -2006,6 +2006,51 @@ export type Database = {
           },
         ]
       }
+      game_character_spell_slot: {
+        Row: {
+          class_id: number
+          created_at: string | null
+          game_character_id: number
+          id: number
+          is_used: boolean
+          spell_level: number
+          updated_at: string | null
+        }
+        Insert: {
+          class_id: number
+          created_at?: string | null
+          game_character_id: number
+          id?: number
+          is_used?: boolean
+          spell_level: number
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: number
+          created_at?: string | null
+          game_character_id?: number
+          id?: number
+          is_used?: boolean
+          spell_level?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_character_spell_slot_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_character_spell_slot_game_character_id_fkey"
+            columns: ["game_character_id"]
+            isOneToOne: false
+            referencedRelation: "game_character"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_character_trait: {
         Row: {
           created_at: string | null
@@ -2961,6 +3006,74 @@ export type Database = {
           },
         ]
       }
+      spell_progression: {
+        Row: {
+          class_level: number
+          created_at: string | null
+          id: number
+          progression_type_id: number
+          slots: number
+          spell_level: number
+          updated_at: string | null
+        }
+        Insert: {
+          class_level: number
+          created_at?: string | null
+          id?: number
+          progression_type_id: number
+          slots: number
+          spell_level: number
+          updated_at?: string | null
+        }
+        Update: {
+          class_level?: number
+          created_at?: string | null
+          id?: number
+          progression_type_id?: number
+          slots?: number
+          spell_level?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spell_progression_progression_type_id_fkey"
+            columns: ["progression_type_id"]
+            isOneToOne: false
+            referencedRelation: "spell_progression_type"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spell_progression_type: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_spontaneous: boolean
+          label: string | null
+          max_spell_level: number
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_spontaneous: boolean
+          label?: string | null
+          max_spell_level: number
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_spontaneous?: boolean
+          label?: string | null
+          max_spell_level?: number
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       spell_range: {
         Row: {
           created_at: string | null
@@ -3240,9 +3353,8 @@ export type Database = {
           class_feature_id: number
           created_at: string | null
           id: number
-          max_spell_level: number
-          preparation_type: number
-          spellcasting_type: number
+          progression_type_id: number
+          spellcasting_type_id: number
           updated_at: string | null
         }
         Insert: {
@@ -3250,9 +3362,8 @@ export type Database = {
           class_feature_id: number
           created_at?: string | null
           id?: number
-          max_spell_level: number
-          preparation_type: number
-          spellcasting_type: number
+          progression_type_id: number
+          spellcasting_type_id: number
           updated_at?: string | null
         }
         Update: {
@@ -3260,9 +3371,8 @@ export type Database = {
           class_feature_id?: number
           created_at?: string | null
           id?: number
-          max_spell_level?: number
-          preparation_type?: number
-          spellcasting_type?: number
+          progression_type_id?: number
+          spellcasting_type_id?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -3281,44 +3391,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "spellcasting_class_feature_preparation_type_fkey"
-            columns: ["preparation_type"]
+            foreignKeyName: "spellcasting_class_feature_progression_type_id_fkey"
+            columns: ["progression_type_id"]
             isOneToOne: false
-            referencedRelation: "spellcasting_preparation_type"
+            referencedRelation: "spell_progression_type"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "spellcasting_class_feature_spellcasting_type_fkey"
-            columns: ["spellcasting_type"]
+            foreignKeyName: "spellcasting_class_feature_spellcasting_type_id_fkey"
+            columns: ["spellcasting_type_id"]
             isOneToOne: false
             referencedRelation: "spellcasting_type"
             referencedColumns: ["id"]
           },
         ]
-      }
-      spellcasting_preparation_type: {
-        Row: {
-          created_at: string | null
-          id: number
-          label: string | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          label?: string | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       spellcasting_type: {
         Row: {

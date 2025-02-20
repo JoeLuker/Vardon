@@ -20,6 +20,8 @@
 	import ACStats from '$lib/ui/ACStats.svelte';
 	import ClassFeatures from '$lib/ui/ClassFeatures.svelte';
 	import Feats from '$lib/ui/Feats.svelte';
+	import Spells from '$lib/ui/Spells.svelte';
+	import SpellSlots from '$lib/ui/SpellSlots.svelte';
 
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Sheet from '$lib/components/ui/sheet';
@@ -304,15 +306,16 @@
 
 		<!-- Tabs -->
 		<Tabs.Root value="abilityScores" class="w-full">
-			<Tabs.List class="grid w-full grid-cols-4">
-				<Tabs.Trigger value="abilityScores">Ability Scores</Tabs.Trigger>
+			<Tabs.List class="grid w-full grid-cols-5">
+				<Tabs.Trigger value="stats">Stats</Tabs.Trigger>
 				<Tabs.Trigger value="skills">Skills</Tabs.Trigger>
 				<Tabs.Trigger value="combat">Combat</Tabs.Trigger>
 				<Tabs.Trigger value="features">Features</Tabs.Trigger>
+				<Tabs.Trigger value="spells">Spells</Tabs.Trigger>
 			</Tabs.List>
 
 			<!-- AbilityScores -->
-			<Tabs.Content value="abilityScores">
+			<Tabs.Content value="stats">
 				<div class="rounded-lg bg-secondary p-6">
 					<AbilityScores
 						character={character}
@@ -388,6 +391,16 @@
 					<Feats
 						character={character}
 					/>
+				</div>
+			</Tabs.Content>
+			<Tabs.Content value="spells">
+				<div class="rounded-lg bg-secondary p-6">
+					<SpellSlots
+						character={character}
+					/>
+					<Spells
+					character={character}
+				/>
 				</div>
 			</Tabs.Content>
 		</Tabs.Root>

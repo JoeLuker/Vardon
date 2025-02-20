@@ -4,6 +4,7 @@
 import { GameRulesAPI } from '../db/gameRules.api';
 import type { ProcessedClassFeature, CompleteCharacter } from '../db/gameRules.api';
 import type { Database } from '$lib/domain/types/supabase';
+import type { SpellcastingClassFeature } from '$lib/db/gameRules.types';
 
 type Tables = Database['public']['Tables']
 type Row<T extends keyof Tables> = Tables[T]['Row']
@@ -36,6 +37,12 @@ export interface SkillWithRanks {
 	name: string;
 	isClassSkill: boolean;
 	skillRanks: Array<{ level: number; rank: number }>;
+}
+
+export interface SpellSlotData {
+	base: number;
+	bonus: number;
+	total: number;
 }
 
 export interface EnrichedCharacter extends CompleteCharacter {
@@ -86,6 +93,7 @@ export interface EnrichedCharacter extends CompleteCharacter {
 	totalLevel: number;
 	skillsWithRanks: SkillWithRanks[];
 	processedClassFeatures: ProcessedClassFeature[];
+	spellSlots: Record<number, Record<number, SpellSlotData>>;
 }
 
 interface BonusEntry {
@@ -1096,6 +1104,9 @@ async function processClassFeatures(
 	);
 }
 
+
+
+
 //
 // =====================  MAIN ENRICHING FUNCTION  =====================
 //
@@ -1166,6 +1177,31 @@ export async function enrichCharacterData(
 	// Process class features with gameRules
 	const processedClassFeatures = char.processedClassFeatures ?? [];
 
+	// Calculate spell slots using the actual ability scores
+	const spellSlots: Record<number, Record<number, SpellSlotData>> = {};
+	
+	for (const charClass of char.game_character_class ?? []) {
+		const spellcastingFeature = findSpellcastingFeature(charClass);
+		
+		if (spellcastingFeature) {
+			// Get the ability score for this class's spellcasting
+			const abilityScore = (() => {
+				const abilityName = spellcastingFeature.ability?.name?.toLowerCase();
+				switch (abilityName) {
+					case 'strength': return strength.total;
+					case 'dexterity': return dexterity.total;
+					case 'constitution': return constitution.total;
+					case 'intelligence': return intelligence.total;
+					case 'wisdom': return wisdom.total;
+					case 'charisma': return charisma.total;
+					default: return 10;
+				}
+			})();
+
+			spellSlots[charClass.class_id] = getSpellSlotsForClass(charClass, abilityScore);
+		}
+	}
+
 	// 9) Collate final result with corrected ability mods
 	const enriched: EnrichedCharacter = {
 		...char,
@@ -1218,7 +1254,10 @@ export async function enrichCharacterData(
 		skillsWithRanks,
 
 		// Add processed class features
-		processedClassFeatures
+		processedClassFeatures,
+
+		// Spell slots
+		spellSlots
 	};
 
 	return enriched;
@@ -1355,7 +1394,6 @@ function getClassFeatureBonuses(
             }
         }
     }
-	console.log(bonusesBySource);
 
     return Object.values(bonusesBySource);
 }
@@ -1365,6 +1403,109 @@ declare module '../db/gameRules.api' {
     interface CompleteCharacter {
         processedClassFeatures?: ProcessedClassFeature[];
     }
+}
+
+// Update the interface to include class_features
+export interface ClassWithFeatures extends Row<'class'> {
+    class_feature?: Array<{
+        id: number;
+        spellcasting_class_feature?: SpellcastingClassFeature[];
+    }>;
+}
+
+export interface GameCharacterClass extends Row<'game_character_class'> {
+    class?: ClassWithFeatures;
+}
+
+function getSpellSlotsForClass(
+	charClass: GameCharacterClass,
+	abilityScore: number
+): Record<number, SpellSlotData> {
+	const slots: Record<number, SpellSlotData> = {};
+	
+	const spellcastingFeature = findSpellcastingFeature(charClass);
+	const progression = spellcastingFeature?.spell_progression_type?.spell_progression;
+	
+	if (!progression || !Array.isArray(progression)) {
+		return slots;
+	}
+
+	const classLevel = charClass.level || 1;
+	
+	// First pass: get base slots for each spell level
+	for (const entry of progression) {
+		// Only process entries up to the character's class level
+		if (entry.class_level <= classLevel) {
+			const spellLevel = entry.spell_level;
+			
+			// Initialize or update slots for this spell level
+			if (!slots[spellLevel]) {
+				slots[spellLevel] = { base: 0, bonus: 0, total: 0 };
+			}
+			
+			// Keep the highest number of slots for this spell level
+			slots[spellLevel].base = Math.max(slots[spellLevel].base, entry.slots);
+		}
+	}
+
+	// Second pass: calculate bonus slots for each level
+	for (const [levelStr, slotData] of Object.entries(slots)) {
+		const spellLevel = parseInt(levelStr);
+		
+		// Only add bonus slots for levels > 0 that have base slots
+		if (spellLevel > 0 && slotData.base > 0) {
+			// To cast spells of level N, need score of 10 + N
+			const minimumScore = 10 + spellLevel;
+			
+			if (abilityScore >= minimumScore) {
+				// Bonus spells = 1 + (score - minimum) / 8, floored
+				const bonusSlots = 1 + Math.floor((abilityScore - minimumScore) / 8);
+				slotData.bonus = bonusSlots;
+			} else {
+				slotData.bonus = 0;
+			}
+			
+			slotData.total = slotData.base + slotData.bonus;
+		} else {
+			// Level 0 spells don't get bonus slots
+			slotData.total = slotData.base;
+		}
+	}
+
+	return slots;
+}
+
+// First, let's define a more specific type for the class feature structure
+interface ClassFeatureWithSpellcasting {
+    id: number;
+	spellcasting_class_feature?: (Row<'spellcasting_class_feature'> & {
+		spellcasting_type?: Row<'spellcasting_type'>;
+		spell_progression_type?: Row<'spell_progression_type'>;
+		ability?: Row<'ability'>;
+	})[]; 
+}
+
+interface SpellcastingClassFeatureWithProgression {
+	ability?: Row<'ability'>;
+	spell_progression_type?: Row<'spell_progression_type'> & {
+		spell_progression?: Row<'spell_progression'>;
+	};
+}
+
+function findSpellcastingFeature(charClass: GameCharacterClass): SpellcastingClassFeatureWithProgression | undefined {
+    // Early return if no class or class features
+    if (!charClass.class?.class_feature) {
+        return undefined;
+    }
+
+    // Find the feature with spellcasting
+    const spellcastingFeature = charClass.class.class_feature.find(
+        (feature): feature is ClassFeatureWithSpellcasting => 
+            !!feature.spellcasting_class_feature?.length
+    );
+
+    // Return the first spellcasting feature if found
+    return spellcastingFeature?.spellcasting_class_feature?.[0];
 }
 
 

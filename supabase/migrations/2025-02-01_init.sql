@@ -193,22 +193,32 @@ create table
     updated_at TIMESTAMPTZ default now()
   );
 
-create table
-  spellcasting_preparation_type (
-    id BIGSERIAL primary key,
-    name text not null,
-    label text,
-    created_at TIMESTAMPTZ default now(),
-    updated_at TIMESTAMPTZ default now()
-  );
+create table spell_progression_type (
+  id BIGSERIAL primary key,
+  name text not null,
+  label text,
+  max_spell_level bigint not null,
+  is_spontaneous boolean not null,
+  created_at TIMESTAMPTZ default now(),
+  updated_at TIMESTAMPTZ default now()
+);
+
+create table spell_progression (
+  id BIGSERIAL primary key,
+  progression_type_id bigint not null references spell_progression_type (id) on delete cascade,
+  class_level int not null,
+  spell_level int not null,
+  slots int not null,
+  created_at TIMESTAMPTZ default now(),
+  updated_at TIMESTAMPTZ default now()
+);
 
 create table
   spellcasting_class_feature (
     id BIGSERIAL primary key,
     class_feature_id bigint not null references class_feature (id) on delete cascade,
-    max_spell_level int not null,
-    spellcasting_type bigint not null references spellcasting_type (id) on delete cascade,
-    preparation_type bigint not null references spellcasting_preparation_type (id) on delete cascade,
+    progression_type_id bigint not null references spell_progression_type (id) on delete cascade,
+    spellcasting_type_id bigint not null references spellcasting_type (id) on delete cascade,
     ability_id bigint not null references ability (id) on delete cascade,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
@@ -1053,6 +1063,17 @@ create table ancestry_trait_benefit_bonus (
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
 );
+
+create table
+  game_character_spell_slot (
+    id BIGSERIAL primary key,
+    game_character_id bigint not null references game_character (id) on delete cascade,
+    class_id bigint not null references class (id) on delete cascade,
+    spell_level int not null,
+    is_used boolean not null default false,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
 
 create publication suparealtime for all tables;
 

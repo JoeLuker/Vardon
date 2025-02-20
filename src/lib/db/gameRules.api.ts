@@ -9,12 +9,22 @@ type Tables = Database['public']['Tables']
 export type Row<T extends keyof Tables> = Tables[T]['Row']
 
 // Extend the base types with their relationships
+interface ClassWithFeatures extends Row<'class'> {
+    class_feature?: (Row<'class_feature'> & {
+        spellcasting_class_feature?: (Row<'spellcasting_class_feature'> & {
+            spellcasting_type?: Row<'spellcasting_type'>;
+            spell_progression_type?: Row<'spell_progression_type'>;
+            ability?: Row<'ability'>;
+        })[]; 
+    })[];
+}
+
 interface CompleteCharacter extends Row<'game_character'> {
     game_character_ability?: (Row<'game_character_ability'> & {
         ability: Row<'ability'>;
     })[];
     game_character_class?: (Row<'game_character_class'> & {
-        class: Row<'class'>;
+        class: ClassWithFeatures;
     })[];
     game_character_abp_choice?: (Row<'game_character_abp_choice'> & {
         node: Row<'abp_node'> & {
@@ -73,6 +83,7 @@ interface CompleteCharacter extends Row<'game_character'> {
     game_character_archetype?: (Row<'game_character_archetype'> & {
         archetype: Row<'archetype'>;
     })[];
+    spell_slots?: Record<number, Record<number, number>>;
 }
 
 interface AbpNodeWithBonuses extends Row<'abp_node'> {
@@ -157,6 +168,12 @@ export class GameRulesAPI {
     private abilityCache: any[] | null = null;
     private skillCache: any[] | null = null;
 
+    // Add cache for spell progression
+    private spellProgressionCache: {
+        types?: Row<'spell_progression_type'>[];
+        progressions?: Row<'spell_progression'>[];
+    } = {};
+
     constructor(private supabase: SupabaseClient<Database>) {}
 
     async getCompleteCharacterData(characterId: number): Promise<CompleteCharacter> {
@@ -165,7 +182,21 @@ export class GameRulesAPI {
             .select(`
                 *,
                 game_character_ability(*, ability(*)),
-                game_character_class(*, class(*)),
+                game_character_class(
+                    *,
+                    class(
+                        *,
+                        class_feature(
+                            *,
+                            spellcasting_class_feature(
+                                *,
+                                spellcasting_type(*),
+                                spell_progression_type(*, spell_progression(*)),
+                                ability(*)
+                            )
+                        )
+                    )
+                ),
                 game_character_abp_choice(
                     *,
                     node:abp_node(
@@ -210,10 +241,29 @@ export class GameRulesAPI {
                 game_character_equipment(*, equipment(*)),
                 game_character_feat(*, feat(*)),
                 game_character_trait(*, trait(*)),
+                game_character_spell_slot(*),
+                game_character_spell(
+                    *,
+                    spell(
+                        *,
+                        spell_school_mapping(*),
+                        spell_component_mapping(spell_component(*)),
+                        spell_casting_time_mapping(spell_casting_time(*)),
+                        spell_range_mapping(spell_range(*)),
+                        spell_duration_mapping(spell_duration(*)),
+                        spell_target_mapping(spell_target(*))
+                    )
+                ),
                 game_character_class_feature(
                     *, 
                     class_feature(
                         *, 
+                        spellcasting_class_feature(
+                            *,
+                            spellcasting_type(*),
+                            spell_progression_type(*),
+                            ability(*)
+                        ),
                         class_feature_benefit(
                             *, 
                             class_feature_benefit_bonus(
@@ -256,8 +306,10 @@ export class GameRulesAPI {
 
         if (error) throw new Error(`Failed to fetch character data: ${error.message}`);
         if (!data) throw new Error(`No character found with id ${characterId}`);
-        
-        return data as CompleteCharacter;
+
+        return {
+            ...data
+        } as CompleteCharacter;
     }
 
     async getAbpNode(nodeId: number): Promise<AbpNodeWithBonuses> {
@@ -741,6 +793,69 @@ export class GameRulesAPI {
                     })) || []
                 };
             });
+    }
+
+    // Get available spell slots for a character's spellcasting feature at a level
+    async getSpellSlots(progressionTypeId: number, classLevel: number): Promise<Record<number, number>> {
+        // Load progression data if not cached
+        if (!this.spellProgressionCache.progressions) {
+            const { data, error } = await this.supabase
+                .from('spell_progression')
+                .select('*')
+                .order('class_level', { ascending: false });
+
+            if (error) throw error;
+            this.spellProgressionCache.progressions = data;
+        }
+
+        console.log("BLOOGAGOOGA", this.spellProgressionCache.progressions);
+
+        // Filter to relevant entries and build slots map
+        const slots: Record<number, number> = {};
+        const entries = this.spellProgressionCache.progressions
+            .filter(entry => 
+                entry.progression_type_id === progressionTypeId && 
+                entry.class_level <= classLevel
+            );
+
+        // Take the most recent entry for each spell level
+        for (const entry of entries) {
+            if (slots[entry.spell_level] === undefined) {
+                slots[entry.spell_level] = entry.slots;
+            }
+        }
+
+        return slots;
+    }
+
+    // // Get spellcasting info for a class feature
+    // async getSpellcastingFeature(classFeatureId: number): Promise<SpellcastingFeature | null> {
+    //     const { data, error } = await this.supabase
+    //         .from('spellcasting_class_feature')
+    //         .select('*')
+    //         .eq('class_feature_id', classFeatureId)
+    //         .single();
+
+    //     if (error) return null;
+    //     return data as SpellcastingFeature;
+    // }
+
+    // Get all spell progression types
+    async getAllSpellProgressionType(): Promise<Row<'spell_progression_type'>[]> {
+        if (!this.spellProgressionCache.types) {
+            const { data, error } = await this.supabase
+                .from('spell_progression_type')
+                .select('*');
+
+            if (error) throw error;
+            this.spellProgressionCache.types = data;
+        }
+        return this.spellProgressionCache.types;
+    }
+
+    // Clear spell progression cache if needed
+    clearSpellProgressionCache() {
+        this.spellProgressionCache = {};
     }
 }
 
