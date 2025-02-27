@@ -51,7 +51,7 @@ ability:
   label: 'Dexterity'
   ability_type: 'physical'
 - id: &ability_con_id 403
-  name: 'con'
+  name: 'constitution'
   label: 'Constitution'
   ability_type: 'physical'
 - id: &ability_int_id 404
@@ -5364,10 +5364,18 @@ armor:
   armor_type: 'light'
   armor_bonus: 4
   max_dex: 6
-  arcane_spell_failure_chance: 10
+  arcane_spell_failure_chance: 0
   armor_check_penalty: 0
   weight: 10
   price: 1000
+
+- id: &bracers_of_armor_id 801
+  name: 'bracers_of_armor'
+  label: 'Bracers of Armor'
+  armor_type: 'none'
+  armor_bonus: 0
+  max_dex: 6
+  armor_check_penalty: 0
 consumable:
 - id: &consumable_alchemist_fire_id 900
   name: 'alchemist_fire'
@@ -5396,15 +5404,15 @@ game_character:
   name: 'vardon_salvador'
   label: 'Vardón Salvador'
   user_id: *user_id
-  current_hp: 37
-  max_hp: 37
+  current_hp: 46
+  max_hp: 46
   is_offline: false
 - id: &game_character_killiq_said_id 2
   name: 'killiq_said'
   label: "Killiq Sa'id"
   user_id: *user_id
-  current_hp: 67
-  max_hp: 67
+  current_hp: 71
+  max_hp: 71
   is_offline: false
 # Bridging Tables
 game_character_ability:
@@ -5463,10 +5471,10 @@ game_character_ancestry_trait:
 game_character_class:
 - game_character_id: *game_character_vardon_salvador_id
   class_id: *class_alchemist_id
-  level: 6
+  level: 7
 - game_character_id: *game_character_killiq_said_id
   class_id: *class_kineticist_id
-  level: 6
+  level: 7
 game_character_archetype:
 - game_character_id: *game_character_vardon_salvador_id
   archetype_id: *archetype_mindchemist_id
@@ -5624,6 +5632,10 @@ game_character_favored_class_bonus:
   class_id: *class_alchemist_id
   level: 6
   choice_id: *favored_skill_id
+- game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  level: 7
+  choice_id: *favored_skill_id
 # killiq's Favored Class Bonuses
 - game_character_id: *game_character_killiq_said_id
   class_id: *class_kineticist_id
@@ -5649,6 +5661,11 @@ game_character_favored_class_bonus:
   class_id: *class_kineticist_id
   level: 6
   choice_id: *favored_hp_id
+- game_character_id: *game_character_killiq_said_id
+  class_id: *class_kineticist_id
+  level: 7
+  choice_id: *favored_hp_id
+
 game_character_corruption:
 - game_character_id: *game_character_killiq_said_id
   corruption_id: *corruption_vampirism_id
@@ -5894,10 +5911,6 @@ game_character_skill_rank:
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_heal_id
   applied_at_level: 1
-- id: 44
-  game_character_id: *game_character_killiq_said_id
-  skill_id: *skill_acrobatics_id
-  applied_at_level: 1
 - id: 137
   game_character_id: *game_character_vardon_salvador_id
   skill_id: *skill_fly_id
@@ -6082,10 +6095,6 @@ game_character_skill_rank:
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_knowledge_geography_id
   applied_at_level: 1
-- id: 189
-  game_character_id: *game_character_killiq_said_id
-  skill_id: *skill_disable_device_id
-  applied_at_level: 1
 - id: 190
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_disable_device_id
@@ -6142,10 +6151,36 @@ game_character_skill_rank:
   game_character_id: *game_character_killiq_said_id
   skill_id: *skill_sense_motive_id
   applied_at_level: 6
+- id: 218
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_bluff_id
+  applied_at_level: 7
+- id: 219
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_acrobatics_id
+  applied_at_level: 7
+- id: 220
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_stealth_id
+  applied_at_level: 7
+- id: 221
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_perception_id
+  applied_at_level: 7
+- id: 222
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_sense_motive_id
+  applied_at_level: 7
+- id: 223
+  game_character_id: *game_character_killiq_said_id
+  skill_id: *skill_bluff_id
+  applied_at_level: 1
 
 game_character_armor:
 - game_character_id: *game_character_vardon_salvador_id
   armor_id: *armor_mithral_chainshirt_id
+- game_character_id: *game_character_killiq_said_id
+  armor_id: *bracers_of_armor_id
 
 game_character_trait:
 - game_character_id: *game_character_vardon_salvador_id
@@ -6155,7 +6190,7 @@ game_character_trait:
 
 # ================= CHARACTER SPELL TABLE =================
 game_character_spell:
-# Vardon's Extracts
+# Vardons Extracts
 - game_character_id: *game_character_vardon_salvador_id
   spell_id: *spell_shield_id
   level: 1

@@ -19,13 +19,13 @@
 
     // Initialize spell slots when character changes
     $effect(() => {
-        console.log('Character data:', character);
-        console.log('Character spell slots:', character?.spellSlots);
+        // console.log('Character data:', character);
+        // console.log('Character spell slots:', character?.spellSlots);
         
-        if (!character?.spellSlots) {
-            console.log('No spell slots found');
-            return;
-        }
+        // if (!character?.spellSlots) {
+        //     console.log('No spell slots found');
+        //     return;
+        // }
         
         const newCombinedSlots = new Map<number, { total: number; remaining: number }>();
         
@@ -42,7 +42,7 @@
             });
         });
         
-        console.log('New combined slots:', newCombinedSlots);
+        // console.log('New combined slots:', newCombinedSlots);
         combinedSlots = newCombinedSlots;
     });
 

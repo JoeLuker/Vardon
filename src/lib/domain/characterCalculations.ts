@@ -717,13 +717,14 @@ async function computeSkills(
 	const manifestations = char.game_character_corruption_manifestation ?? [];
 	const corruptions = char.game_character_corruption ?? [];
 	const hasVampiricGrace = manifestations.some(m => 
-		m.corruption_manifestation?.name === 'vampiric_grace' && m.active
+		m.manifestation?.name === 'vampiric_grace' && m.active
 	);
 	const hasAllure = manifestations.some(m => 
-		m.corruption_manifestation?.name === 'allure' && m.active
+		m.manifestation?.name === 'allure' && m.active
 	);
+	console.log("ALLURE", hasAllure);
 	const hasChildrenOfNight = manifestations.some(m => 
-		m.corruption_manifestation?.name === 'children_of_the_night' && m.active
+		m.manifestation?.name === 'children_of_the_night' && m.active
 	);
 	
 	// Get manifestation level for Allure bonus
@@ -835,8 +836,13 @@ async function computeSkills(
 
 		// Add Allure social skill bonuses
 		if (hasAllure) {
-			const skillName = skill.name?.toLowerCase();
-			if (skillName === 'bluff' || skillName === 'diplomacy' || skillName === 'intimidate') {
+			const skillName = skill.name?.toLowerCase() || '';
+			// More robust check for skills that should get the Allure bonus
+			const isAllureSkill = skillName === 'bluff' || 
+								  skillName === 'diplomacy' || 
+								  skillName === 'intimidate'
+			
+			if (isAllureSkill) {
 				skillBonuses.push({
 					source: 'Allure',
 					value: allureBonus,
@@ -1506,6 +1512,310 @@ function findSpellcastingFeature(charClass: GameCharacterClass): SpellcastingCla
 
     // Return the first spellcasting feature if found
     return spellcastingFeature?.spellcasting_class_feature?.[0];
+}
+
+// =====================  OPTIMIZED PARTIAL UPDATES  =====================
+//
+// These functions allow for updating only specific parts of the character
+// without re-enriching the entire character data.
+//
+
+/**
+ * Interface for the unified update options
+ */
+export type CharacterUpdateOptions = 
+  | SkillRankUpdateOptions
+  | HpUpdateOptions 
+  | AbilityUpdateOptions
+  | GenericUpdateOptions;
+
+interface BaseUpdateOptions {
+  currentCharacter: EnrichedCharacter | null;
+  rawCharacter: CompleteCharacter;
+  gameRules: GameRulesAPI;
+}
+
+export interface SkillRankUpdateOptions extends BaseUpdateOptions {
+  type: 'skillRank';
+  skillId: number;
+  isAdding: boolean;
+  level: number;
+}
+
+export interface HpUpdateOptions extends BaseUpdateOptions {
+  type: 'hp';
+  newCurrentHp: number;
+  newMaxHp?: number;
+}
+
+export interface AbilityUpdateOptions extends BaseUpdateOptions {
+  type: 'ability';
+  abilityId: number;
+  newValue: number;
+}
+
+export interface GenericUpdateOptions extends BaseUpdateOptions {
+  type: 'generic';
+}
+
+/**
+ * Adds or removes a skill rank in the raw character data
+ */
+export function updateRawCharacterSkillRank(
+  rawCharacter: CompleteCharacter,
+  skillId: number,
+  level: number,
+  isAdding: boolean
+): CompleteCharacter {
+  const updatedChar = { ...rawCharacter };
+  
+  // Initialize the skill rank array if it doesn't exist
+  if (!updatedChar.game_character_skill_rank) {
+    updatedChar.game_character_skill_rank = [];
+  }
+  
+  if (isAdding) {
+    // Add a temporary skill rank with a negative ID (will be replaced when DB updates)
+    const tempId = -Math.floor(Math.random() * 1000000);
+    updatedChar.game_character_skill_rank = [
+      ...updatedChar.game_character_skill_rank,
+      {
+        id: tempId,
+        game_character_id: updatedChar.id,
+        skill_id: skillId,
+        applied_at_level: level,
+      } as any
+    ];
+  } else {
+    // Remove the skill rank
+    updatedChar.game_character_skill_rank = updatedChar.game_character_skill_rank.filter(
+      rank => !(rank.skill_id === skillId && rank.applied_at_level === level)
+    );
+  }
+  
+  return updatedChar;
+}
+
+/**
+ * Updates a single skill value without re-enriching the entire character
+ */
+export function updateSkillRank(
+    character: EnrichedCharacter, 
+    skillId: number,
+    isAdding: boolean,
+    level: number
+): EnrichedCharacter {
+    // Early return if not a valid skill
+    if (!character.skills || !(skillId in character.skills)) {
+        return character;
+    }
+
+    // Clone the skills to avoid mutating the original
+    const updatedSkills = { ...character.skills };
+    const updatedSkill = { ...updatedSkills[skillId] };
+    
+    // Find the rank modifier in the list of modifiers
+    const rankIndex = updatedSkill.modifiers.findIndex(
+        m => m.source === 'Ranks'
+    );
+    
+    if (rankIndex >= 0) {
+        // Create a new array of modifiers to maintain immutability
+        const updatedModifiers = [...updatedSkill.modifiers];
+        const rankMod = { ...updatedModifiers[rankIndex] };
+        
+        // Update the rank value
+        if (isAdding) {
+            rankMod.value += 1;
+        } else {
+            rankMod.value = Math.max(0, rankMod.value - 1);
+        }
+        
+        updatedModifiers[rankIndex] = rankMod;
+        updatedSkill.modifiers = updatedModifiers;
+        
+        // Recalculate the total
+        updatedSkill.total = updatedModifiers.reduce(
+            (sum, mod) => sum + mod.value, 
+            0
+        );
+        
+        // Update this skill in the collection
+        updatedSkills[skillId] = updatedSkill;
+    }
+    
+    // Clean up any class skill modifier if removing the last rank
+    if (!isAdding && rankIndex >= 0) {
+        const updatedModifiers = [...updatedSkill.modifiers];
+        const rankMod = updatedModifiers[rankIndex];
+        
+        // If this was the last rank and there's a class skill bonus, remove it
+        if (rankMod.value === 0) {
+            const classSkillIndex = updatedModifiers.findIndex(
+                m => m.source === 'Class skill'
+            );
+            
+            if (classSkillIndex >= 0) {
+                // Remove the class skill bonus
+                updatedModifiers.splice(classSkillIndex, 1);
+                
+                // Recalculate total again after removing class skill bonus
+                updatedSkill.total = updatedModifiers.reduce(
+                    (sum, mod) => sum + mod.value, 
+                    0
+                );
+                
+                updatedSkill.modifiers = updatedModifiers;
+                updatedSkills[skillId] = updatedSkill;
+            }
+        }
+    }
+    
+    // Update the remaining skill points calculations with the correct level
+    const updatedRemaining = { ...character.skillPoints.remaining };
+    
+    if (level in updatedRemaining) {
+        updatedRemaining[level] = isAdding
+            ? updatedRemaining[level] - 1
+            : updatedRemaining[level] + 1;
+    }
+    
+    // Update skillsWithRanks to reflect the new rank
+    const updatedSkillsWithRanks = [...(character.skillsWithRanks || [])];
+    const existingSkillIndex = updatedSkillsWithRanks.findIndex(s => s.skillId === skillId);
+    
+    if (existingSkillIndex >= 0) {
+        const updatedSkillWithRanks = { ...updatedSkillsWithRanks[existingSkillIndex] };
+        
+        if (isAdding) {
+            // Add the new rank
+            updatedSkillWithRanks.skillRanks = [
+                ...updatedSkillWithRanks.skillRanks,
+                { level, rank: 1 }
+            ];
+        } else {
+            // Remove the rank at this level
+            updatedSkillWithRanks.skillRanks = updatedSkillWithRanks.skillRanks.filter(
+                r => r.level !== level
+            );
+        }
+        
+        updatedSkillsWithRanks[existingSkillIndex] = updatedSkillWithRanks;
+    } else if (isAdding) {
+        // If we're adding a rank to a skill that doesn't have any yet
+        updatedSkillsWithRanks.push({
+            skillId,
+            name: '', // We don't have this info easily available
+            isClassSkill: false, // Conservative default
+            skillRanks: [{ level, rank: 1 }]
+        });
+    }
+    
+    // Return the updated character with only the changed parts
+    return {
+        ...character,
+        skills: updatedSkills,
+        skillPoints: {
+            ...character.skillPoints,
+            remaining: updatedRemaining
+        },
+        skillsWithRanks: updatedSkillsWithRanks
+    };
+}
+
+/**
+ * Updates the current HP without re-enriching the entire character
+ */
+export function updateHp(
+    character: EnrichedCharacter,
+    newCurrentHp: number,
+    newMaxHp?: number
+): EnrichedCharacter {
+    // Simple update for HP values
+    const updatedChar = { ...character };
+    updatedChar.current_hp = newCurrentHp;
+    
+    if (newMaxHp !== undefined) {
+        updatedChar.max_hp = newMaxHp;
+    }
+    
+    return updatedChar;
+}
+
+/**
+ * Specialized facade around enrichCharacterData that can use optimized
+ * update functions when appropriate
+ */
+export async function updateCharacter(
+    options: CharacterUpdateOptions
+): Promise<{
+    enrichedCharacter: EnrichedCharacter;
+    updatedRawCharacter: CompleteCharacter;
+}> {
+    const { currentCharacter, rawCharacter } = options;
+    let updatedRawCharacter = { ...rawCharacter };
+    let enrichedCharacter: EnrichedCharacter;
+    
+    // Apply changes based on the update type
+    switch (options.type) {
+        case 'skillRank':
+            // Update the raw character data
+            updatedRawCharacter = updateRawCharacterSkillRank(
+                updatedRawCharacter,
+                options.skillId,
+                options.level,
+                options.isAdding
+            );
+            
+            // Use specialized update if we have a current character
+            if (currentCharacter) {
+                enrichedCharacter = updateSkillRank(
+                    currentCharacter,
+                    options.skillId,
+                    options.isAdding,
+                    options.level
+                );
+            } else {
+                // Fall back to full enrichment
+                enrichedCharacter = await enrichCharacterData(updatedRawCharacter, options.gameRules);
+            }
+            break;
+            
+        case 'hp':
+            // Update the raw character data
+            updatedRawCharacter = {
+                ...updatedRawCharacter,
+                current_hp: options.newCurrentHp,
+                max_hp: options.newMaxHp !== undefined 
+                    ? options.newMaxHp 
+                    : updatedRawCharacter.max_hp
+            };
+            
+            // Use specialized update if we have a current character
+            if (currentCharacter) {
+                enrichedCharacter = updateHp(
+                    currentCharacter,
+                    options.newCurrentHp,
+                    options.newMaxHp
+                );
+            } else {
+                // Fall back to full enrichment
+                enrichedCharacter = await enrichCharacterData(updatedRawCharacter, options.gameRules);
+            }
+            break;
+            
+        case 'ability':
+            // We would implement ability score updates here
+            // For now, fall back to full enrichment
+            enrichedCharacter = await enrichCharacterData(updatedRawCharacter, options.gameRules);
+            break;
+            
+        default:
+            // Generic update - always do full enrichment
+            enrichedCharacter = await enrichCharacterData(updatedRawCharacter, options.gameRules);
+    }
+    
+    return { enrichedCharacter, updatedRawCharacter };
 }
 
 

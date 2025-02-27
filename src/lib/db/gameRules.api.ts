@@ -808,7 +808,7 @@ export class GameRulesAPI {
             this.spellProgressionCache.progressions = data;
         }
 
-        console.log("BLOOGAGOOGA", this.spellProgressionCache.progressions);
+        // console.log("BLOOGAGOOGA", this.spellProgressionCache.progressions);
 
         // Filter to relevant entries and build slots map
         const slots: Record<number, number> = {};
