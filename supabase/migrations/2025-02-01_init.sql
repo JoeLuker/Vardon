@@ -277,8 +277,16 @@ create table
     label text,
     corruption_id bigint not null references corruption (id) on delete cascade,
     min_manifestation_level int not null default 1,
-    prerequisite_manifestation text,
     description text,
+    created_at TIMESTAMPTZ default now(),
+    updated_at TIMESTAMPTZ default now()
+  );
+
+create table
+  corruption_manifestation_prerequisite (
+    id BIGSERIAL primary key,
+    corruption_manifestation_id bigint not null references corruption_manifestation (id) on delete cascade,
+    prerequisite_manifestation_id bigint not null references corruption_manifestation (id) on delete cascade,
     created_at TIMESTAMPTZ default now(),
     updated_at TIMESTAMPTZ default now()
   );

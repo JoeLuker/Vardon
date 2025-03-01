@@ -9,6 +9,9 @@ import type { SpellcastingClassFeature } from '$lib/db/gameRules.types';
 type Tables = Database['public']['Tables']
 type Row<T extends keyof Tables> = Tables[T]['Row']
 
+// When using the character data, use "as" assertion to add these properties
+// Example: (characterData as CompleteCharacter & ExtendedCharacterProps)
+
 //
 // =====================  INTERFACES & TYPES  =====================
 //
@@ -260,7 +263,7 @@ async function getNaturalArmorEnhancement(
 }
 
 function getShieldBonus(char: CompleteCharacter): number {
-	const shield = char.game_character_equipment?.find(e => 
+	const shield = char.game_character_equipment?.find((e: any) => 
 		e.equipment?.equipment_category === 'shield' && 
 		e.equipment?.equippable === true
 	);
@@ -543,8 +546,8 @@ async function computeACStats(
 	const hasDodgeFeat = char.game_character_feat?.some(f => f.feat?.name === 'dodge') ?? false;
 
 	// Check for Ascetic AC bonus feature
-	const hasAsceticACBonus = char.processedClassFeatures?.some(f => 
-		f.name === 'ac_bonus_ascetic'
+	const hasAsceticACBonus = getProcessedClassFeatures(char).some(
+		(f: ProcessedClassFeature) => f.name === 'ac_bonus_ascetic'
 	) ?? false;
 
 	// Define all possible AC components
@@ -709,8 +712,8 @@ async function computeSkills(
 	) ?? false;
 
 	// Check for Perfect Recall (Mindchemist)
-	const hasPerfectRecall = char.processedClassFeatures?.some(f => 
-		f.name === 'perfect_recall' 
+	const hasPerfectRecall = getProcessedClassFeatures(char).some(
+		(f: ProcessedClassFeature) => f.name === 'perfect_recall'
 	) ?? false;
 
 	// Add Vampiric Grace Stealth bonus
@@ -1181,7 +1184,7 @@ export async function enrichCharacterData(
 	const attacks = await computeAttacks(char, gameRules, strMod, dexMod, intMod, wisMod, cache);
 
 	// Process class features with gameRules
-	const processedClassFeatures = char.processedClassFeatures ?? [];
+	const processedClassFeatures = getProcessedClassFeatures(char);
 
 	// Calculate spell slots using the actual ability scores
 	const spellSlots: Record<number, Record<number, SpellSlotData>> = {};
@@ -1271,7 +1274,7 @@ export async function enrichCharacterData(
 
 // Update loadCharacterCache to use processClassFeatures
 async function loadCharacterCache(
-	char: CompleteCharacter,
+	char: CompleteCharacter & { processedClassFeatures?: ProcessedClassFeature[] },
 	gameRules: GameRulesAPI
 ): Promise<CharacterCache> {
 	// Get all ABP data in a single call
@@ -1280,7 +1283,8 @@ async function loadCharacterCache(
 
 	// Get processed class features
 	const processedFeatures = await processClassFeatures(char, gameRules);
-	char.processedClassFeatures = processedFeatures;
+	// Use type assertion to assign to char
+	(char as any).processedClassFeatures = processedFeatures;
 
 	// Pre-process all ancestry trait bonuses
 	const bonusesByTarget: Record<string, BonusEntry[]> = {};
@@ -1370,45 +1374,46 @@ async function calculateBAB(char: CompleteCharacter): Promise<number[]> {
 // Remove ProcessedFeature interface and use ProcessedClassFeature instead
 export type ProcessedFeature = ProcessedClassFeature;
 
-/** Extract bonuses from class features targeting a specific stat */
-function getClassFeatureBonuses(
-    char: CompleteCharacter,
-    targetName: string
-): BonusEntry[] {
-    // Track highest bonus per source
-    const bonusesBySource: Record<string, BonusEntry> = {};
-    
-    // Safely access processedClassFeatures with optional chaining
-    const features = char.processedClassFeatures ?? [];
-    
-    for (const feature of features) {
-        for (const benefit of (feature.class_feature_benefit ?? [])) {
-            for (const bonus of (benefit.class_feature_benefit_bonus ?? [])) {
-                if (bonus.target_specifier.name.toLowerCase() === targetName.toLowerCase()) {
-                    const source = feature.label;
-                    const newBonus = {
-                        source: source,
-                        value: bonus.value,
-                        type: bonus.bonus_type.name ?? 'untyped'
-                    };
-                    
-                    // Only keep highest value bonus for each source
-                    if (!bonusesBySource[source] || bonusesBySource[source].value < newBonus.value) {
-                        bonusesBySource[source] = newBonus;
-                    }
-                }
-            }
-        }
-    }
-
-    return Object.values(bonusesBySource);
+/** 
+ * Safely access processed class features from either CompleteCharacter or EnrichedCharacter
+ */
+function getProcessedClassFeatures(char: CompleteCharacter | EnrichedCharacter): ProcessedClassFeature[] {
+  // For TypeScript, use type assertion to handle both types
+  return (char as any).processedClassFeatures ?? [];
 }
 
-// Add module augmentation to declare processedClassFeatures on CompleteCharacter
-declare module '../db/gameRules.api' {
-    interface CompleteCharacter {
-        processedClassFeatures?: ProcessedClassFeature[];
+/** Extract bonuses from class features targeting a specific stat */
+function getClassFeatureBonuses(
+  char: CompleteCharacter,
+  targetName: string
+): BonusEntry[] {
+  // Track highest bonus per source
+  const bonusesBySource: Record<string, BonusEntry> = {};
+  
+  // Safely access processedClassFeatures with our utility function
+  const features = getProcessedClassFeatures(char);
+  
+  for (const feature of features) {
+    for (const benefit of (feature.class_feature_benefit ?? [])) {
+      for (const bonus of (benefit.class_feature_benefit_bonus ?? [])) {
+        if (bonus.target_specifier.name.toLowerCase() === targetName.toLowerCase()) {
+          const source = feature.label;
+          const newBonus = {
+            source: source,
+            value: bonus.value,
+            type: bonus.bonus_type.name ?? 'untyped'
+          };
+          
+          // Only keep highest value bonus for each source
+          if (!bonusesBySource[source] || bonusesBySource[source].value < newBonus.value) {
+            bonusesBySource[source] = newBonus;
+          }
+        }
+      }
     }
+  }
+
+  return Object.values(bonusesBySource);
 }
 
 // Update the interface to include class_features

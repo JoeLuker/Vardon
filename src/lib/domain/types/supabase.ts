@@ -944,7 +944,6 @@ export type Database = {
           label: string | null
           min_manifestation_level: number
           name: string
-          prerequisite_manifestation: string | null
           updated_at: string | null
         }
         Insert: {
@@ -955,7 +954,6 @@ export type Database = {
           label?: string | null
           min_manifestation_level?: number
           name: string
-          prerequisite_manifestation?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -966,7 +964,6 @@ export type Database = {
           label?: string | null
           min_manifestation_level?: number
           name?: string
-          prerequisite_manifestation?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -975,6 +972,45 @@ export type Database = {
             columns: ["corruption_id"]
             isOneToOne: false
             referencedRelation: "corruption"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corruption_manifestation_prerequisite: {
+        Row: {
+          corruption_manifestation_id: number
+          created_at: string | null
+          id: number
+          prerequisite_manifestation_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          corruption_manifestation_id: number
+          created_at?: string | null
+          id?: number
+          prerequisite_manifestation_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          corruption_manifestation_id?: number
+          created_at?: string | null
+          id?: number
+          prerequisite_manifestation_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corruption_manifestation_prer_prerequisite_manifestation_i_fkey"
+            columns: ["prerequisite_manifestation_id"]
+            isOneToOne: false
+            referencedRelation: "corruption_manifestation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corruption_manifestation_prere_corruption_manifestation_id_fkey"
+            columns: ["corruption_manifestation_id"]
+            isOneToOne: false
+            referencedRelation: "corruption_manifestation"
             referencedColumns: ["id"]
           },
         ]

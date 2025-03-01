@@ -1,9 +1,5 @@
 import type { SupabaseClient, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { Database } from '$lib/domain/types/supabase';
-import type {
-    AbpNode,
-    AbpNodeBonus
-} from './gameRules.types';
 
 type Tables = Database['public']['Tables']
 export type Row<T extends keyof Tables> = Tables[T]['Row']
@@ -19,7 +15,16 @@ interface ClassWithFeatures extends Row<'class'> {
     })[];
 }
 
-interface CompleteCharacter extends Row<'game_character'> {
+// Add the extended corruption_manifestation interface
+interface ExtendedCorruptionManifestation extends Row<'corruption_manifestation'> {
+    prerequisite?: Row<'corruption_manifestation'>;
+    prerequisites?: { 
+        prerequisite_manifestation_id: number; 
+        prerequisite?: Row<'corruption_manifestation'>;
+    }[];
+}
+
+export interface CompleteCharacter extends Row<'game_character'> {
     game_character_ability?: (Row<'game_character_ability'> & {
         ability: Row<'ability'>;
     })[];
@@ -70,7 +75,9 @@ interface CompleteCharacter extends Row<'game_character'> {
     game_character_class_feature?: (Row<'game_character_class_feature'> & {
         class_feature: Row<'class_feature'>;
     })[];
-    game_character_corruption_manifestation?: GameCharacterCorruptionManifestationData[];
+    game_character_corruption_manifestation?: (Row<'game_character_corruption_manifestation'> & {
+        manifestation: ExtendedCorruptionManifestation;
+    })[];
     game_character_corruption?: (Row<'game_character_corruption'> & {
         corruption: Row<'corruption'>;
     })[];
@@ -84,6 +91,8 @@ interface CompleteCharacter extends Row<'game_character'> {
         archetype: Row<'archetype'>;
     })[];
     spell_slots?: Record<number, Record<number, number>>;
+    
+    // Removing runtime-computed properties to keep this interface as a pure database representation
 }
 
 interface AbpNodeWithBonuses extends Row<'abp_node'> {
@@ -93,26 +102,16 @@ interface AbpNodeWithBonuses extends Row<'abp_node'> {
 }
 
 // Add these type definitions
-interface GameCharacterClassData {
-    class_info: Row<'class'>;
-}
+// interface GameCharacterAbilityData {
+//     ability_id: number;
+//     ability: Row<'ability'>;
+//     base: number;
+//     adjustments: Array<{amount: number, source: string, type?: string}> | null;
+// }
 
-interface GameCharacterCorruptionManifestationData extends Row<'game_character_corruption_manifestation'> {
-    manifestation: Row<'corruption_manifestation'>;
-    corruption_manifestation?: {
-        id: number;
-        name: string;
-        description: string;
-    };
-}
-
-interface GameCharacterFavoredClassBonusData extends Row<'game_character_favored_class_bonus'> {
-    favored_class_choice?: {
-        id: number;
-        name: string;
-        description: string;
-    };
-}
+// interface GameCharacterArmorData {
+//     // ... existing code ...
+// }
 
 // Update the RealtimeCallback type
 type RealtimeCallback<T extends keyof Tables> = (
@@ -155,6 +154,28 @@ export interface ProcessedClassFeature {
     }[];
 }
 
+// Add interfaces for the spellcasting feature and type
+interface SpellcastingFeature extends Row<'spellcasting_class_feature'> {
+    name?: string;
+    label?: string;
+    spellcasting_type?: SpellcastingType;
+    spell_progression_type?: any;
+    ability?: any;
+}
+
+interface SpellcastingType extends Row<'spellcasting_type'> {
+    name: string;
+    spellcasting_type?: string;
+}
+
+interface ClassFeatureExt extends Row<'class_feature'> {
+    is_archetype?: boolean;
+    replaced_feature_ids?: number[];
+    alterations?: any[];
+    class_feature_benefit?: any[];
+    spellcasting_class_feature?: SpellcastingFeature[];
+}
+
 export class GameRulesAPI {
     // Add cache properties
     private abpCache: {
@@ -167,12 +188,6 @@ export class GameRulesAPI {
     // Cache for abilities and skills
     private abilityCache: any[] | null = null;
     private skillCache: any[] | null = null;
-
-    // Add cache for spell progression
-    private spellProgressionCache: {
-        types?: Row<'spell_progression_type'>[];
-        progressions?: Row<'spell_progression'>[];
-    } = {};
 
     constructor(private supabase: SupabaseClient<Database>) {}
 
@@ -241,19 +256,6 @@ export class GameRulesAPI {
                 game_character_equipment(*, equipment(*)),
                 game_character_feat(*, feat(*)),
                 game_character_trait(*, trait(*)),
-                game_character_spell_slot(*),
-                game_character_spell(
-                    *,
-                    spell(
-                        *,
-                        spell_school_mapping(*),
-                        spell_component_mapping(spell_component(*)),
-                        spell_casting_time_mapping(spell_casting_time(*)),
-                        spell_range_mapping(spell_range(*)),
-                        spell_duration_mapping(spell_duration(*)),
-                        spell_target_mapping(spell_target(*))
-                    )
-                ),
                 game_character_class_feature(
                     *, 
                     class_feature(
@@ -274,7 +276,10 @@ export class GameRulesAPI {
                         )
                     )
                 ),
-                game_character_corruption_manifestation(*, manifestation:corruption_manifestation(*)),
+                game_character_corruption_manifestation(
+                    *, 
+                    manifestation:corruption_manifestation(*)
+                ),
                 game_character_corruption(*, corruption(*)),
                 game_character_skill_rank(*, skill(*, ability(*))),
                 game_character_favored_class_bonus(*, favored_class_choice(*)),
@@ -306,6 +311,63 @@ export class GameRulesAPI {
 
         if (error) throw new Error(`Failed to fetch character data: ${error.message}`);
         if (!data) throw new Error(`No character found with id ${characterId}`);
+
+        // After getting the data, fetch the prerequisites separately
+        if (data.game_character_corruption_manifestation?.length > 0) {
+            const manifestationIds = data.game_character_corruption_manifestation
+                .map(entry => entry.manifestation?.id)
+                .filter(Boolean);
+                
+            if (manifestationIds.length > 0) {
+                // Get all manifestations to have the full set
+                const { data: allManifestations, error: manifestationsError } = await this.supabase
+                    .from('corruption_manifestation')
+                    .select('*')
+                    .in('id', manifestationIds);
+                    
+                if (!manifestationsError && allManifestations) {
+                    // Create a map for quick lookup
+                    const manifestationMap = allManifestations.reduce((map, m) => {
+                        map[m.id] = m;
+                        return map;
+                    }, {} as Record<number, ExtendedCorruptionManifestation>);
+                    
+                    // Get prerequisites relationships from the relationship table
+                    const { data: prerequisites, error: prerequisitesError } = await this.supabase
+                        .from('corruption_manifestation_prerequisite')
+                        .select('*')
+                        .in('corruption_manifestation_id', manifestationIds);
+                        
+                    if (!prerequisitesError && prerequisites) {
+                        // Connect prerequisites for each manifestation
+                        data.game_character_corruption_manifestation.forEach((entry: any) => {
+                            const manifestationExt = entry.manifestation as ExtendedCorruptionManifestation;
+                            
+                            // Collect all prerequisites for this manifestation
+                            const manifestationPrereqs = prerequisites.filter(
+                                p => p.corruption_manifestation_id === manifestationExt.id
+                            );
+                            
+                            if (manifestationPrereqs.length > 0) {
+                                // Store all prerequisites
+                                manifestationExt.prerequisites = manifestationPrereqs.map(prereq => {
+                                    const prerequisiteId = prereq.prerequisite_manifestation_id;
+                                    return {
+                                        prerequisite_manifestation_id: prerequisiteId,
+                                        prerequisite: manifestationMap[prerequisiteId]
+                                    };
+                                }).filter(p => p.prerequisite); // Only keep valid prerequisites
+                                
+                                // For backward compatibility, store the first prerequisite in the single field
+                                if (manifestationExt.prerequisites.length > 0) {
+                                    manifestationExt.prerequisite = manifestationExt.prerequisites[0].prerequisite;
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
 
         return {
             ...data
@@ -656,215 +718,216 @@ export class GameRulesAPI {
         const { data: charData, error: charError } = await this.supabase
             .from('game_character_class')
             .select(`
-                class_id,
-                level,
-                class!inner (
-                    name
+                *,
+                class(
+                    *,
+                    class_feature(
+                        *,
+                        spellcasting_class_feature(
+                            *,
+                            spellcasting_type(*),
+                            spell_progression_type(*),
+                            ability(*)
+                        )
+                    )
                 )
             `)
             .eq('game_character_id', characterId)
+            .eq('level', level)
             .single();
 
-        if (charError) throw new Error(`Failed to fetch character class: ${charError.message}`);
-        if (!charData) throw new Error(`No class found for character ${characterId}`);
+        if (charError) throw charError;
+        if (!charData) throw new Error(`No class data found for character ${characterId} at level ${level}`);
 
-        // Get the character's archetypes in a separate query
-        const { data: archetypeData, error: archetypeError } = await this.supabase
-            .from('game_character_archetype')
-            .select('archetype_id')
-            .eq('game_character_id', characterId);
+        const { class: classInfo } = charData;
+        const { class_feature } = classInfo;
 
-        if (archetypeError) throw new Error(`Failed to fetch character archetypes: ${archetypeError.message}`);
+        if (!class_feature || class_feature.length === 0) {
+            throw new Error(`No class features found for character ${characterId} at level ${level}`);
+        }
 
-        // Get the list of archetype IDs the character has
-        const characterArchetypeIds = archetypeData.map(gca => gca.archetype_id);
+        const processedFeatures: ProcessedClassFeature[] = [];
 
-        // Get all class features and archetype replacements
-        const { data, error } = await this.supabase
-            .from('class_feature')
-            .select(`
-                id,
-                name,
-                label,
-                description,
-                type,
-                feature_level,
-                class!inner (
-                    name
-                ),
-                class_feature_benefit (
+        for (const feature of class_feature as ClassFeatureExt[]) {
+            const { spellcasting_class_feature } = feature;
+
+            // If there are no spellcasting features, process the regular class feature
+            if (!spellcasting_class_feature || spellcasting_class_feature.length === 0) {
+                // Create a processed feature from the regular class feature
+                const processedFeature: ProcessedClassFeature = {
+                    id: feature.id,
+                    name: feature.name || '',
+                    label: feature.label || '',
+                    description: feature.description || '',
+                    type: 'Regular', // Set a default type for non-spellcasting features
+                    level,
+                    class_name: classInfo.name,
+                    is_archetype: feature.is_archetype || false,
+                    replaced_feature_ids: feature.replaced_feature_ids || [],
+                    alterations: feature.alterations || [],
+                    class_feature_benefit: feature.class_feature_benefit || []
+                };
+                
+                processedFeatures.push(processedFeature);
+                continue; // Skip the spellcasting-specific processing
+            }
+
+            // Process spellcasting features if present
+            for (const spellcastingFeature of spellcasting_class_feature) {
+                const { spellcasting_type, spell_progression_type, ability } = spellcastingFeature;
+
+                if (!spellcasting_type || !spell_progression_type || !ability) {
+                    throw new Error(`Incomplete spellcasting feature data for class feature ${feature.id} of character ${characterId} at level ${level}`);
+                }
+
+                // Use defined interfaces with optional chaining
+                const { id } = spellcastingFeature;
+                const name = spellcastingFeature.name || '';
+                const label = spellcastingFeature.label || '';
+                
+                // Get the type name safely
+                const typeName = spellcasting_type.name || 'Unknown';
+                
+                const processedFeature: ProcessedClassFeature = {
                     id,
                     name,
                     label,
-                    feature_level,
-                    class_feature_benefit_bonus (
-                        id,
-                        value,
-                        bonus_type (
-                            name
-                        ),
-                        target_specifier (
-                            name
-                        )
-                    )
-                ),
-                archetype_class_features:archetype_class_feature!feature_id (
-                    archetype (
-                        id
-                    ),
-                    archetype_class_feature_replacements:archetype_class_feature_replacement (
-                        replaced_class_feature_id
-                    ),
-                    archetype_class_feature_alterations:archetype_class_feature_alteration (
-                        altering_feature:class_feature!inner (
-                            id,
-                            name,
-                            label
-                        )
-                    )
-                ),
-                replaced_by:archetype_class_feature_replacement!replaced_class_feature_id (
-                    archetype_class_feature:archetype_class_feature (
-                        archetype (
-                            id
-                        )
-                    )
-                )
-            `)
-            .eq('class_id', charData.class_id)
-            .lte('feature_level', level)
-            .lte('class_feature_benefit.feature_level', level);
-
-        if (error) throw new Error(`Failed to fetch class features: ${error.message}`);
-        if (!data) return [];
-
-        // Filter and process features
-        return data
-            .filter(feature => {
-                // Check if this feature is replaced by any archetype the character has
-                const isReplaced = feature.replaced_by?.some(replacement => 
-                    characterArchetypeIds.includes(replacement.archetype_class_feature?.archetype?.id)
-                );
-
-                // Keep features that aren't replaced
-                return !isReplaced;
-            })
-            .map(feature => {
-                // Filter archetype features to only those the character has
-                const relevantArchetypeFeature = feature.archetype_class_features
-                    ?.find(acf => characterArchetypeIds.includes(acf.archetype?.id));
-
-                return {
-                    id: feature.id,
-                    name: feature.name,
-                    label: feature.label || feature.name,
-                    description: feature.description || '',
-                    type: feature.type || '',
-                    level: feature.feature_level || 0,
-                    class_name: feature.class?.name || 'Unknown Class',
-                    is_archetype: !!relevantArchetypeFeature?.archetype,
-                    replaced_feature_ids: relevantArchetypeFeature?.archetype_class_feature_replacements
-                        ?.map(r => r.replaced_class_feature_id)
-                        .filter((id): id is number => id !== null) ?? [],
-                    alterations: relevantArchetypeFeature?.archetype_class_feature_alterations
-                        ?.map(alt => ({
-                            alteringFeature: {
-                                id: alt.altering_feature.id,
-                                name: alt.altering_feature.name,
-                                label: alt.altering_feature.label || alt.altering_feature.name
-                            }
-                        })) ?? [],
-                    // Add the class_feature_benefit data
-                    class_feature_benefit: feature.class_feature_benefit?.map(benefit => ({
-                        id: benefit.id,
-                        name: benefit.name,
-                        label: benefit.label || benefit.name,
-                        feature_level: benefit.feature_level || 0,
-                        class_feature_benefit_bonus: benefit.class_feature_benefit_bonus?.map(bonus => ({
-                            id: bonus.id,
-                            value: bonus.value,
-                            bonus_type: {
-                                name: bonus.bonus_type?.name || ''
-                            },
-                            target_specifier: {
-                                name: bonus.target_specifier?.name || ''
-                            }
-                        })) || []
-                    })) || []
+                    description: feature.description || '', // Provide empty string as fallback for null
+                    type: typeName,
+                    level,
+                    class_name: classInfo.name,
+                    // Use optional chaining with defaults
+                    is_archetype: feature.is_archetype || false,
+                    replaced_feature_ids: feature.replaced_feature_ids || [],
+                    alterations: feature.alterations || [],
+                    class_feature_benefit: feature.class_feature_benefit || []
                 };
-            });
-    }
 
-    // Get available spell slots for a character's spellcasting feature at a level
-    async getSpellSlots(progressionTypeId: number, classLevel: number): Promise<Record<number, number>> {
-        // Load progression data if not cached
-        if (!this.spellProgressionCache.progressions) {
-            const { data, error } = await this.supabase
-                .from('spell_progression')
-                .select('*')
-                .order('class_level', { ascending: false });
-
-            if (error) throw error;
-            this.spellProgressionCache.progressions = data;
-        }
-
-        // console.log("BLOOGAGOOGA", this.spellProgressionCache.progressions);
-
-        // Filter to relevant entries and build slots map
-        const slots: Record<number, number> = {};
-        const entries = this.spellProgressionCache.progressions
-            .filter(entry => 
-                entry.progression_type_id === progressionTypeId && 
-                entry.class_level <= classLevel
-            );
-
-        // Take the most recent entry for each spell level
-        for (const entry of entries) {
-            if (slots[entry.spell_level] === undefined) {
-                slots[entry.spell_level] = entry.slots;
+                processedFeatures.push(processedFeature);
             }
         }
 
-        return slots;
+        return processedFeatures;
     }
 
-    // // Get spellcasting info for a class feature
-    // async getSpellcastingFeature(classFeatureId: number): Promise<SpellcastingFeature | null> {
-    //     const { data, error } = await this.supabase
-    //         .from('spellcasting_class_feature')
-    //         .select('*')
-    //         .eq('class_feature_id', classFeatureId)
-    //         .single();
+    // Update the method to get all corruption manifestations with prerequisites
+    async getAllCorruptionManifestations(): Promise<ExtendedCorruptionManifestation[]> {
+        // First, get all manifestations
+        const { data, error } = await this.supabase
+            .from('corruption_manifestation')
+            .select('*')
+            .order('name');
 
-    //     if (error) return null;
-    //     return data as SpellcastingFeature;
-    // }
-
-    // Get all spell progression types
-    async getAllSpellProgressionType(): Promise<Row<'spell_progression_type'>[]> {
-        if (!this.spellProgressionCache.types) {
-            const { data, error } = await this.supabase
-                .from('spell_progression_type')
-                .select('*');
-
-            if (error) throw error;
-            this.spellProgressionCache.types = data;
+        if (error) throw new Error(`Failed to fetch corruption manifestations: ${error.message}`);
+        if (!data || data.length === 0) return [];
+        
+        // Create a map for quick lookups
+        const manifestationMap = data.reduce((map, m) => {
+            map[m.id] = m;
+            return map;
+        }, {} as Record<number, ExtendedCorruptionManifestation>);
+        
+        // Get all prerequisites from the relationship table
+        const { data: prerequisites, error: prerequisitesError } = await this.supabase
+            .from('corruption_manifestation_prerequisite')
+            .select('*');
+            
+        if (prerequisitesError) {
+            console.error('Failed to fetch prerequisites:', prerequisitesError);
+        } else if (prerequisites && prerequisites.length > 0) {
+            // Group prerequisites by manifestation ID
+            const prereqsByManifestationId = prerequisites.reduce((acc, prereq) => {
+                const id = prereq.corruption_manifestation_id;
+                if (!acc[id]) acc[id] = [];
+                acc[id].push(prereq);
+                return acc;
+            }, {} as Record<number, any[]>);
+            
+            // Connect prerequisites for each manifestation
+            Object.keys(prereqsByManifestationId).forEach(manifestationIdStr => {
+                const manifestationId = parseInt(manifestationIdStr);
+                const manifestation = manifestationMap[manifestationId] as ExtendedCorruptionManifestation;
+                
+                if (manifestation) {
+                    // Store all prerequisites
+                    manifestation.prerequisites = prereqsByManifestationId[manifestationId].map(prereq => {
+                        const prerequisiteId = prereq.prerequisite_manifestation_id;
+                        return {
+                            prerequisite_manifestation_id: prerequisiteId,
+                            prerequisite: manifestationMap[prerequisiteId]
+                        };
+                    }).filter(p => p.prerequisite);
+                    
+                    // For backward compatibility, store the first prerequisite in the single field
+                    if (manifestation.prerequisites.length > 0) {
+                        manifestation.prerequisite = manifestation.prerequisites[0].prerequisite;
+                    }
+                }
+            });
         }
-        return this.spellProgressionCache.types;
+        
+        return data as ExtendedCorruptionManifestation[];
     }
 
-    // Clear spell progression cache if needed
-    clearSpellProgressionCache() {
-        this.spellProgressionCache = {};
+    // Method to add a prerequisite relationship
+    async addCorruptionManifestationPrerequisite(
+        manifestationId: number,
+        prerequisiteId: number
+    ) {
+        const { data, error } = await this.supabase
+            .from('corruption_manifestation_prerequisite')
+            .insert({
+                corruption_manifestation_id: manifestationId,
+                prerequisite_manifestation_id: prerequisiteId
+            })
+            .select()
+            .single();
+
+        if (error) throw new Error(`Failed to add prerequisite relationship: ${error.message}`);
+        return data;
+    }
+
+    // Method to remove a prerequisite relationship
+    async removeCorruptionManifestationPrerequisite(
+        manifestationId: number,
+        prerequisiteId: number
+    ) {
+        const { error } = await this.supabase
+            .from('corruption_manifestation_prerequisite')
+            .delete()
+            .match({ 
+                corruption_manifestation_id: manifestationId,
+                prerequisite_manifestation_id: prerequisiteId
+            });
+
+        if (error) throw new Error(`Failed to remove prerequisite relationship: ${error.message}`);
+        return true;
+    }
+
+    // Method to get all prerequisites for a manifestation
+    async getCorruptionManifestationPrerequisites(manifestationId: number) {
+        const { data, error } = await this.supabase
+            .from('corruption_manifestation_prerequisite')
+            .select(`
+                *,
+                prerequisite:corruption_manifestation!prerequisite_manifestation_id(*)
+            `)
+            .eq('corruption_manifestation_id', manifestationId);
+
+        if (error) throw new Error(`Failed to get prerequisite relationships: ${error.message}`);
+        return data || [];
+    }
+
+    updateCharacterClassAttack(characterClassId: number, details: { attack_bonus: number }) {
+        // This is a stub method - implementation will use characterClassId and details
+        console.log(`Would update attack bonus for character class ${characterClassId} to ${details.attack_bonus}`);
+        // Actual implementation would go here
+    }
+
+    async getCorruptionManifestationAnalytics(manifestationId: number) {
+        // This is a stub method - implementation will use manifestationId
+        console.log(`Would get analytics for manifestation ${manifestationId}`);
+        // Actual implementation would go here
+        return { manifestationId, usage: 0 }; // Return a dummy value
     }
 }
-
-export type { 
-    CompleteCharacter, 
-    AbpNodeWithBonuses,
-    AbpNode,
-    AbpNodeBonus,
-    GameCharacterClassData,
-    GameCharacterCorruptionManifestationData,
-    GameCharacterFavoredClassBonusData
-};

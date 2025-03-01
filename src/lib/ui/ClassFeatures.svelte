@@ -13,13 +13,45 @@
 	let featuresByLevel = $derived(() => {
 		if (!character?.processedClassFeatures) return new Map();
 		
+		// Group features by their feature_level (when they were gained)
 		const grouped = new Map<number, ProcessedFeature[]>();
+		
+		// Process each feature and add it to the corresponding level group
 		for (const feature of character.processedClassFeatures) {
-			if (!grouped.has(feature.level)) {
-				grouped.set(feature.level, []);
+			// Look through the game_character_class_feature array to find the actual feature_level
+			let featureLevel = feature.level; // Default to current level
+			
+			// First check if this is a class feature with a defined feature_level in class_feature_benefit
+			if (feature.class_feature_benefit && feature.class_feature_benefit.length > 0) {
+				for (const benefit of feature.class_feature_benefit) {
+					if (benefit.feature_level !== null) {
+						featureLevel = benefit.feature_level;
+						break;
+					}
+				}
+			} 
+			// If not in benefit, try to find it in the original class definition
+			else if (character.game_character_class_feature) {
+				const matchingFeature = character.game_character_class_feature.find(
+					(cf: any) => cf.class_feature && cf.class_feature.name === feature.name
+				);
+				
+				if (matchingFeature?.class_feature?.feature_level) {
+					featureLevel = matchingFeature.class_feature.feature_level;
+				}
 			}
-			grouped.get(feature.level)?.push(feature);
+			
+			if (!grouped.has(featureLevel)) {
+				grouped.set(featureLevel, []);
+			}
+			grouped.get(featureLevel)?.push(feature);
 		}
+		
+		// Sort features within each level group by name for consistent display
+		grouped.forEach(features => {
+			features.sort((a, b) => a.label.localeCompare(b.label));
+		});
+		
 		return grouped;
 	});
 
@@ -34,11 +66,19 @@
 
 	$effect(() => {
 		if (character) {
+			// Debug logging to examine all properties in a feature
+			console.log('First feature complete object:', JSON.stringify(character.processedClassFeatures[0], null, 2));
+			
+			// Debug logging to check feature levels
+			console.log('Features with levels:', character.processedClassFeatures.map((f: ProcessedFeature) => ({
+				label: f.label,
+				level: f.level,
+				type: typeof f.level
+			})));
+			
 			// Convert Map to a plain object for better console logging
-			// const groupedForLogging = Object.fromEntries(featuresByLevel());
-			// console.log('Character:', character);
-			// console.log('Processed Features:', character.processedClassFeatures);
-			// console.log('Grouped Features:', groupedForLogging);
+			const groupedForLogging = Object.fromEntries(featuresByLevel());
+			console.log('Grouped Features:', groupedForLogging);
 		}
 	});
 </script>
@@ -72,7 +112,7 @@
 		{:else}
 			<ScrollArea class="h-[calc(100vh-24rem)] min-h-[400px] max-h-[800px] pr-4">
 				<div class="space-y-4 sm:space-y-6">
-					{#each Array.from(featuresByLevel() as unknown as Map<number, ProcessedFeature[]>).sort((a, b) => a[0] - b[0]) as [level, features]}
+					{#each Array.from(featuresByLevel().entries()).sort((a, b) => a[0] - b[0]) as [level, features]}
 						<div class="feature-level-group">
 							<h3 class="text-base sm:text-lg font-semibold mb-2">Level {level}</h3>
 							<div class="space-y-2 sm:space-y-4">

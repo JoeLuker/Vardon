@@ -5249,7 +5249,6 @@ corruption_manifestation:
   label: 'Vampiric Grace'
   corruption_id: *corruption_vampirism_id
   min_manifestation_level: 1
-  prerequisite_manifestation: null
   description: |
     Gift: You gain Dodge as a bonus feat and a +2 racial bonus on Stealth checks. At manifestation level 6th, you can climb walls (as per spider climb) at will.
 
@@ -5261,7 +5260,6 @@ corruption_manifestation:
   label: 'Fangs'
   corruption_id: *corruption_vampirism_id
   min_manifestation_level: 2
-  prerequisite_manifestation: null
   description: |
     Gift: You can, as a swift action, grow fangs that grant you a bite attack. This is a primary natural attack that deals 1d6 points of piercing damage if your size is Medium (1d4 if Small). You can dismiss the fangs as a move action. You can drain blood with your bite from a helpless creature as a standard action, or a pinned creature as a free action once per round immediately after succeeding at a combat maneuver check to pin the creature or maintain your pin. Each time you drain blood, you deal 1 point of Constitution damage. This counts toward the feeding you must do to avoid your corruption progressing; you needn't entirely drain and kill the creature. Draining blood changes your alignment only if you feed on an unwilling innocent.
 
@@ -5272,7 +5270,6 @@ corruption_manifestation:
   label: 'Unlife'
   corruption_id: *corruption_vampirism_id
   min_manifestation_level: 3
-  prerequisite_manifestation: null
   description: |
     Gift: As a standard action a number of times per day equal to 1/2 your manifestation level, you can grant yourself fast healing 1 for 1 minute.
 
@@ -5283,7 +5280,6 @@ corruption_manifestation:
   label: 'Greater Unlife'
   corruption_id: *corruption_vampirism_id
   min_manifestation_level: 4
-  prerequisite_manifestation: 'Unlife'
   description: |
     Gift: When you use the ability of the unlife manifestation, you gain fast healing 3 instead of fast healing 1. While the fast healing lasts, you are immune to nonlethal damage, ability damage, and ability drain, although you retain any you already had.
 
@@ -5294,7 +5290,6 @@ corruption_manifestation:
   label: 'True Unlife'
   corruption_id: *corruption_vampirism_id
   min_manifestation_level: 5
-  prerequisite_manifestation: 'Greater Unlife'
   description: |
     Gift: When you're reduced to fewer than 0 hit points but not slain and you have a use of fast healing remaining, you immediately assume gaseous form, activate your fast healing, and remain conscious. Once you have more than 0 hit points, the effect ends. This delays the normal Will save against your corruption progressing until gaseous form ends.
 
@@ -5329,7 +5324,6 @@ corruption_manifestation:
   label: 'Dreadful Charm'
   corruption_id: *corruption_vampirism_id
   min_manifestation_level: 2
-  prerequisite_manifestation: 'allure'
   description: |
     Gift: Once/day if you succeed on a social check vs a creature, you can charm monster.
 
@@ -5345,6 +5339,17 @@ corruption_manifestation:
     Gift: Gain a slam that does 1d6 damage plus 1 temporary negative level on a crit.
 
     Stain: You are healed by negative energy and harmed by positive, like undead.
+
+corruption_manifestation_prerequisite:
+- id: &prerequisite_dreadful_charm_id 1
+  corruption_manifestation_id: *manifestation_dreadful_charm_id
+  prerequisite_manifestation_id: *manifestation_allure_id
+- id: &prerequisite_true_unlife_id 2
+  corruption_manifestation_id: *manifestation_true_unlife_id
+  prerequisite_manifestation_id: *manifestation_greater_unlife_id
+- id: &prerequisite_greater_unlife_id 3
+  corruption_manifestation_id: *manifestation_greater_unlife_id
+  prerequisite_manifestation_id: *manifestation_unlife_id
 
 discovery:
 - id: &discovery_precise_bombs_id 201
@@ -5699,6 +5704,9 @@ game_character_corruption_manifestation:
 - game_character_id: *game_character_killiq_said_id
   manifestation_id: *manifestation_true_unlife_id
   active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_dreadful_charm_id
+  active: true
 
 # Vardon's active manifestations
 - game_character_id: *game_character_vardon_salvador_id
@@ -5718,6 +5726,9 @@ game_character_corruption_manifestation:
   active: true
 - game_character_id: *game_character_vardon_salvador_id
   manifestation_id: *manifestation_true_unlife_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_allure_id
   active: true
 
 game_character_equipment:
