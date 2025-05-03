@@ -6,7 +6,7 @@ import type { Entity } from './EntityTypes';
 export interface Subsystem {
   id: string;
   version: string;
-  initialize?(): Promise<void>;
+  initialize?(entity: Entity): void;
   shutdown?(): Promise<void>;
 }
 
@@ -130,8 +130,8 @@ export interface BonusSubsystem extends Subsystem {
     entity: Entity, 
     target: string, 
     value: number, 
-    type?: string, 
-    source?: string
+    source: string, 
+    type?: string
   ): void;
   
   /**
@@ -157,7 +157,12 @@ export interface BonusSubsystem extends Subsystem {
   /**
    * Get all bonuses for an entity
    */
-  getAllBonuses(entity: Entity): Record<string, BonusBreakdown>;
+  getAllBonuses(entity: Entity): Record<string, any>;
+  
+  /**
+   * Get components of a bonus
+   */
+  getComponents(entity: Entity, target: string): Array<{ source: string; value: number; type?: string }>;
 }
 
 /**
@@ -245,7 +250,11 @@ export interface ACBreakdown {
   naturalArmor: number;
   deflectionBonus: number;
   dodgeBonus: number;
-  otherBonuses: BonusBreakdown;
+  otherBonuses: {
+    total: number;
+    base: number;
+    components: Array<{ source: string; value: number; type?: string }>;
+  };
   total: number;
   touch: number;
   flatFooted: number;
@@ -259,7 +268,11 @@ export interface AttackBreakdown {
   abilityModifier: number;
   abilityUsed: string;
   sizeModifier: number;
-  otherBonuses: BonusBreakdown;
+  otherBonuses: {
+    total: number;
+    base: number;
+    components: Array<{ source: string; value: number; type?: string }>;
+  };
   total: number;
 }
 
@@ -271,7 +284,11 @@ export interface SaveBreakdown {
   baseSave: number;
   abilityModifier: number;
   abilityUsed: string;
-  otherBonuses: BonusBreakdown;
+  otherBonuses: {
+    total: number;
+    base: number;
+    components: Array<{ source: string; value: number; type?: string }>;
+  };
   total: number;
 }
 

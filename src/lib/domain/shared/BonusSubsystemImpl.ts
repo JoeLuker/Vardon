@@ -11,6 +11,44 @@ export class BonusSubsystemImpl implements BonusSubsystem {
     'dodge', 'circumstance', 'morale', 'resistance', 'insight', 'sacred', 'profane'
   ];
   
+  /**
+   * Initialize bonus subsystem for entity
+   */
+  initialize(entity: Entity): void {
+    if (!entity.character) return;
+    
+    // Ensure bonuses structure exists
+    if (!entity.character.bonuses) {
+      entity.character.bonuses = {};
+    }
+    
+    // Process ancestry trait bonuses
+    if (entity.character.game_character_ancestry_trait) {
+      for (const charTrait of entity.character.game_character_ancestry_trait) {
+        if (!charTrait.ancestry_trait?.ancestry_trait_benefit) continue;
+        
+        for (const benefit of charTrait.ancestry_trait.ancestry_trait_benefit) {
+          if (!benefit.ancestry_trait_benefit_bonus) continue;
+          
+          for (const bonus of benefit.ancestry_trait_benefit_bonus) {
+            if (!bonus.target_specifier || !bonus.bonus_type) continue;
+            
+            this.addBonus(
+              entity,
+              bonus.target_specifier.name || '',
+              bonus.value || 0,
+              bonus.bonus_type.name || 'untyped',
+              charTrait.ancestry_trait.name || 'Ancestry Trait'
+            );
+          }
+        }
+      }
+    }
+    
+    // Process class feature bonuses in a similar way
+    // This is simplified for brevity
+  }
+  
   addBonus(entity: Entity, target: string, value: number, type = 'untyped', source = 'unknown'): void {
     if (!entity.character) entity.character = {};
     if (!entity.character.bonuses) entity.character.bonuses = {};
@@ -95,5 +133,44 @@ export class BonusSubsystemImpl implements BonusSubsystem {
       base,
       components
     };
+  }
+
+  /**
+   * Get the individual bonus components for a target
+   * This is useful for UI displays and tooltips
+   */
+  getComponents(entity: Entity, target: string): Array<{source: string, value: number, type?: string}> {
+    const breakdown = this.getBreakdown(entity, target);
+    return breakdown.components.map(component => ({
+      source: component.source,
+      value: component.value,
+      type: component.type
+    }));
+  }
+
+  /**
+   * Check if a specific bonus exists
+   */
+  hasBonus(entity: Entity, target: string, source: string): boolean {
+    if (!entity.character?.bonuses?.[target]) return false;
+    
+    return entity.character.bonuses[target].some(
+      (bonus: any) => bonus.source === source
+    );
+  }
+  
+  /**
+   * Get all bonuses for an entity
+   */
+  getAllBonuses(entity: Entity): Record<string, BonusBreakdown> {
+    if (!entity.character?.bonuses) return {};
+    
+    const result: Record<string, BonusBreakdown> = {};
+    
+    for (const target in entity.character.bonuses) {
+      result[target] = this.getBreakdown(entity, target);
+    }
+    
+    return result;
   }
 } 

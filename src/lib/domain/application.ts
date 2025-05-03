@@ -8,8 +8,9 @@ import { ConditionSubsystemImpl } from './shared/ConditionSubsystemImpl';
 import { SessionState } from './state/active/SessionState';
 import { LocalStorageDriver, CharacterStore } from './state/data/CharacterStore';
 import { CalculationExplainer } from './introspection/CalculationExplainer';
-import { GameAPI } from './core/GameAPI';
+import { GameRulesAPI } from './core/GameAPI';
 import { SampleCharacters } from './config/SampleCharacters';
+import { createClient } from '@supabase/supabase-js';
 
 // Features
 import { SkillFocusFeature } from './features/feats/SkillFocusFeature';
@@ -39,7 +40,8 @@ export function initializeApplication(gameData: any) {
   const abilitySubsystem = new AbilitySubsystemImpl(bonusSubsystem);
   engine.registerSubsystem('ability', abilitySubsystem);
   
-  const skillSubsystem = new SkillSubsystemImpl(gameData);
+  // Inject dependencies into skill subsystem
+  const skillSubsystem = new SkillSubsystemImpl(gameData, abilitySubsystem, bonusSubsystem);
   engine.registerSubsystem('skill', skillSubsystem);
   
   const combatSubsystem = new CombatSubsystemImpl(abilitySubsystem, bonusSubsystem);
@@ -63,14 +65,15 @@ export function initializeApplication(gameData: any) {
     combatSubsystem
   );
   
-  // Create the GameAPI for external systems
-  const gameAPI = new GameAPI(
-    engine,
-    featureRegistry,
-    sessionState,
-    characterStore,
-    calculationExplainer
-  );
+  // Get environment variables for Supabase
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  // Create Supabase client
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  // Create the GameRulesAPI for external systems
+  const gameAPI = new GameRulesAPI(supabase);
   
   // Register features
   featureRegistry.register(SkillFocusFeature);
@@ -94,18 +97,22 @@ export function initializeApplication(gameData: any) {
     engine.registerEntity(character);
     sessionState.addEntity(character);
     
-    // Try to apply some initial features based on character type
+    // Initialize all subsystems for this entity
     try {
+      // Call initialize on each subsystem
+      if (abilitySubsystem.initialize) abilitySubsystem.initialize(character);
+      if (skillSubsystem.initialize) skillSubsystem.initialize(character);
+      if (bonusSubsystem.initialize) bonusSubsystem.initialize(character);
+      if (combatSubsystem.initialize) combatSubsystem.initialize(character);
+      if (conditionSubsystem.initialize) conditionSubsystem.initialize(character);
+      
       // Apply Power Attack for fighter and barbarian
       if (character.character?.classes?.some(c => ['fighter', 'barbarian'].includes(c.id))) {
-        engine.activateFeature('feat.power_attack', character, { penalty: 1 });
-      }
-      
-      // Apply Weapon Focus for fighter
-      if (character.character?.classes?.some(c => c.id === 'fighter')) {
-        // Assuming the character already has Weapon Focus in their feats
-        const weaponType = character.character?.feats?.find(f => f.id === 'feat.weapon_focus')?.options?.weaponType || 'longsword';
-        engine.activateFeature('feat.weapon_focus', character, { weaponType });
+        // Only apply if character doesn't already have it
+        const hasPowerAttack = character.character?.feats?.some(f => f.id === 'feat.power_attack');
+        if (!hasPowerAttack) {
+          engine.activateFeature('feat.power_attack', character, { penalty: 1 });
+        }
       }
       
       console.log(`Character ${character.name} initialized successfully`);
