@@ -69,6 +69,7 @@ Our Unix-inspired structure organizes components by their role in the system:
 ### Kernel
 
 The kernel is the core of the system, responsible for:
+
 - Managing capabilities (device drivers)
 - Executing plugins (processes)
 - Tracking entities
@@ -77,6 +78,7 @@ The kernel is the core of the system, responsible for:
 ### Capabilities
 
 Capabilities are interfaces to system functionality, similar to Unix device drivers:
+
 - They expose a specific set of functionality (e.g., skill manipulation)
 - They hide implementation details
 - They enforce access controls
@@ -85,6 +87,7 @@ Capabilities are interfaces to system functionality, similar to Unix device driv
 ### Plugins
 
 Plugins are executable components that implement game features:
+
 - Each plugin does one thing well
 - Plugins declare their capability requirements
 - Plugins operate on entities via capabilities, not directly
@@ -93,6 +96,7 @@ Plugins are executable components that implement game features:
 ### Events
 
 Events allow loose coupling between components:
+
 - Components emit events when state changes
 - Other components can subscribe to relevant events
 - Similar to Unix signals
@@ -102,6 +106,7 @@ Events allow loose coupling between components:
 ### Writing a Capability
 
 A capability should:
+
 - Define a clear interface for a specific domain
 - Accept dependencies explicitly in its implementation
 - Provide controlled access to underlying functionality
@@ -110,6 +115,7 @@ A capability should:
 ### Writing a Plugin
 
 A plugin should:
+
 - Have a single, clear responsibility
 - Declare required capabilities explicitly
 - Operate through capability interfaces, never directly on engines
@@ -118,6 +124,7 @@ A plugin should:
 ### Extending the System
 
 To extend the system:
+
 1. **New rule or feature?** Write a plugin
 2. **New type of functionality?** Create a capability
 3. **Core system change?** Modify kernel components

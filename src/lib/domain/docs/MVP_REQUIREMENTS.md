@@ -63,12 +63,12 @@
 - All stat calculations should be explainable (provide source and value)
 - Support optimized updates for frequently changed values (HP, skill ranks)
 
-
 <think>The requirements you've provided for your Pathfinder character engine are comprehensive and cover most of the key aspects needed for a functional character management system. Let me analyze what's there and suggest modifications or additions based on your latest comment about homebrew rule support and other potential improvements.
 
 First, let's consider the addition of explicit homebrew support:
 
 1. Homebrew/Rule Override System
+
 - Need a way to explicitly override standard rules
 - Should be implemented as plugins
 - System should be aware when rules are being broken/overridden
@@ -77,39 +77,47 @@ First, let's consider the addition of explicit homebrew support:
 Other potential additions or modifications:
 
 2. Event System
+
 - The requirements don't explicitly mention an event system for changes
 - Important for UI updates and feature interactions
 
 3. Condition System
+
 - Pathfinder has many conditions (stunned, prone, etc.) that affect characters
 - Should track active conditions and their effects on calculations
 
 4. Multiclassing Support
+
 - Explicitly call out multiclassing support (it's implied but not stated)
 
 5. Plugin Dependency Management
+
 - How plugins interact and depend on each other could be more explicit
 
 6. Validation System
+
 - Character validation to ensure rules compliance
 - Warning system for potential rule violations
 
 7. API Documentation
+
 - Requirements for how the API should be documented
 
 8. Versioning and Migration
-- How to handle changing rules or system updates
 
+- How to handle changing rules or system updates
 
 ## Additional Core Features
 
 ### Homebrew and Rule Override System
+
 - **Plugin-Based Overrides**: Implement homebrew as explicit plugins that document rule changes
 - **Rule Violation Awareness**: System should log and display when standard rules are being overridden
 - **Selective Application**: Allow homebrew rules to be enabled/disabled individually
 - **Rules Inheritance**: Support for rule overrides that extend rather than replace base rules
 
 ### Development Tooling
+
 - **Feature Testing Tools**: Support for testing homebrew features in isolation
 - **Character Snapshots**: Save/load character state for testing and comparison
 - **Debugging Helpers**: Tools to trace bonus sources and calculation paths
@@ -121,7 +129,7 @@ Other potential additions or modifications:
 - **Modification History**: Track what modifications have been applied to a character and by which plugins
 - **Exportable Configurations**: Allow homebrew rule sets to be exported and shared
 
-
 ## Additional Reference Elements
+
 - **Condition Tracking**: Simple toggles for common conditions (fatigued, sickened, etc.) that auto-adjust relevant stats
 - **Resource Tracking**: Track consumable resources (spells per day, abilities with limited uses)
