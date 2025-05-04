@@ -1,14 +1,17 @@
 import type { GameEngine } from '../core/GameEngine';
-import type { CompleteCharacter } from '$lib/db/gameRules.api';
+import type { GameRulesAPI, CompleteCharacter } from '$lib/db/gameRules.api';
 import type { AssembledCharacter } from './characterTypes';
 import type { 
   AbilitySubsystem, 
   SkillSubsystem, 
   BonusSubsystem, 
   CombatSubsystem,
-  ConditionSubsystem
+  ConditionSubsystem,
+  SpellcastingSubsystem
 } from '../types/SubsystemTypes';
 import type { Entity } from '../types/EntityTypes';
+import type { FeatureRegistry } from '../config/FeatureRegistry';
+import { DatabaseFeatureInitializer } from '../core/DatabaseFeatureInitializer';
 
 /**
  * CharacterAssembler takes raw character data and transforms it into an enriched character
@@ -21,9 +24,77 @@ import type { Entity } from '../types/EntityTypes';
  */
 export class CharacterAssembler {
   private engine: GameEngine;
+  private gameRulesAPI?: GameRulesAPI;
+  private featureRegistry?: FeatureRegistry;
+  private databaseFeatureInitializer?: DatabaseFeatureInitializer;
   
-  constructor(engine: GameEngine) {
+  constructor(engine: GameEngine, gameRulesAPI?: GameRulesAPI, featureRegistry?: FeatureRegistry) {
+    console.log('CharacterAssembler constructor called', {
+      hasEngine: !!engine,
+      hasGameRulesAPI: !!gameRulesAPI,
+      hasFeatureRegistry: !!featureRegistry
+    });
+    
     this.engine = engine;
+    this.gameRulesAPI = gameRulesAPI;
+    this.featureRegistry = featureRegistry;
+    
+    // Create the database feature initializer if we have the required dependencies
+    if (gameRulesAPI && featureRegistry) {
+      try {
+        // Detailed logging before creating the initializer
+        console.log('Creating DatabaseFeatureInitializer with:', {
+          gameRulesAPI: {
+            exists: !!gameRulesAPI,
+            hasSupabase: !!gameRulesAPI.supabase,
+            hasMethods: typeof gameRulesAPI.getCompleteCharacterData === 'function'
+          },
+          engine: {
+            exists: !!engine,
+            hasEvents: !!engine.events,
+            hasSubsystems: Array.isArray(engine.getSubsystemNames()) && engine.getSubsystemNames().length > 0
+          },
+          featureRegistry: {
+            exists: !!featureRegistry,
+            hasRegisterMethod: typeof featureRegistry.register === 'function',
+            hasGetMethod: typeof featureRegistry.get === 'function'
+          }
+        });
+        
+        // Import check to ensure the class was properly imported
+        if (typeof DatabaseFeatureInitializer !== 'function') {
+          throw new Error('DatabaseFeatureInitializer is not a constructor function');
+        }
+        
+        this.databaseFeatureInitializer = new DatabaseFeatureInitializer(
+          gameRulesAPI,
+          engine,
+          featureRegistry
+        );
+        
+        // Verify the instance was created correctly
+        if (!this.databaseFeatureInitializer) {
+          throw new Error('DatabaseFeatureInitializer constructor returned null or undefined');
+        }
+        
+        // Check if initializer has the required methods
+        if (typeof this.databaseFeatureInitializer.initializeFeatures !== 'function') {
+          throw new Error('DatabaseFeatureInitializer missing required initializeFeatures method');
+        }
+        
+        console.log('DatabaseFeatureInitializer created successfully');
+      } catch (error) {
+        console.error('Failed to create DatabaseFeatureInitializer:', error);
+        // Continue without the database initializer - will use manual initialization
+      }
+    } else {
+      console.warn('Missing dependencies for DatabaseFeatureInitializer', {
+        hasGameRulesAPI: !!gameRulesAPI,
+        hasFeatureRegistry: !!featureRegistry
+      });
+    }
+    
+    console.log('CharacterAssembler initialized successfully');
   }
 
   /**
@@ -42,10 +113,22 @@ export class CharacterAssembler {
     const bonus = this.engine.getSubsystem<BonusSubsystem>('bonus');
     const combat = this.engine.getSubsystem<CombatSubsystem>('combat');
     const condition = this.engine.getSubsystem<ConditionSubsystem>('condition');
+    const spellcasting = this.engine.getSubsystem<SpellcastingSubsystem>('spellcasting');
     
-    if (!ability || !skill || !bonus || !combat) {
-      throw new Error('Required subsystems not available');
+    // Check for required subsystems, with more specific error messages
+    if (!ability) {
+      throw new Error('Required ability subsystem not available');
     }
+    if (!skill) {
+      throw new Error('Required skill subsystem not available');
+    }
+    if (!bonus) {
+      throw new Error('Required bonus subsystem not available');
+    }
+    if (!combat) {
+      throw new Error('Required combat subsystem not available');
+    }
+    // Note: spellcasting and condition subsystems are optional
     
     // Initialize all subsystems with entity data
     if (ability.initialize) ability.initialize(entity);
@@ -53,22 +136,29 @@ export class CharacterAssembler {
     if (bonus.initialize) bonus.initialize(entity);
     if (combat.initialize) combat.initialize(entity);
     if (condition && condition.initialize) condition.initialize(entity);
+    if (spellcasting && spellcasting.initialize) spellcasting.initialize(entity);
     
-    // Apply features in order:
-    // 1. Ancestry traits
-    this.applyAncestryTraits(entity, character);
-    
-    // 2. Class features
-    this.applyClassFeatures(entity, character);
-    
-    // 3. Feats
-    this.applyFeats(entity, character);
-    
-    // 4. Equipment
-    this.applyEquipment(entity, character);
-    
-    // 5. Corruptions/Manifestations
-    this.applyCorruptions(entity, character);
+    // If we have a database feature initializer, use it to apply all features
+    if (this.databaseFeatureInitializer) {
+      await this.databaseFeatureInitializer.initializeFeatures(entity, character.id);
+    } else {
+      // Fallback to manual feature application when not connected to the database
+      // Apply features in order:
+      // 1. Ancestry traits
+      await this.applyAncestryTraits(entity, character);
+      
+      // 2. Class features
+      await this.applyClassFeatures(entity, character);
+      
+      // 3. Feats
+      await this.applyFeats(entity, character);
+      
+      // 4. Equipment
+      await this.applyEquipment(entity, character);
+      
+      // 5. Corruptions/Manifestations
+      await this.applyCorruptions(entity, character);
+    }
     
     // Calculate total level
     const totalLevel = this.calculateTotalLevel(character);
@@ -82,6 +172,12 @@ export class CharacterAssembler {
       wisdom: ability.getAbilityBreakdown(entity, 'wisdom'),
       charisma: ability.getAbilityBreakdown(entity, 'charisma'),
     };
+    
+    // Get ABP node data if present
+    const abpNodes = character.game_character_abp_choice?.map(choice => choice.node) || [];
+    
+    // Get favored class bonus data if present
+    const favoredClassBonuses = character.game_character_favored_class_bonus || [];
     
     // Return the enriched character with all calculated values
     return {
@@ -160,12 +256,47 @@ export class CharacterAssembler {
       totalLevel,
       skillsWithRanks: this.generateSkillsWithRanks(character, skill, entity),
       processedClassFeatures: [],
-      spellSlots: {},
+      
+      // Spellcasting data
+      spellcastingClasses: entity.character?.spellcastingClasses || [],
+      preparedSpells: spellcasting && entity ? spellcasting.getAllPreparedSpells(entity) : {},
+      spellSlots: spellcasting && entity ? spellcasting.getAllSpellSlots(entity) : {},
       
       // Skill points - placeholder implementation
       skillPoints: {
         total: {},
         remaining: {}
+      },
+      
+      // ABP data for UI display
+      abpData: {
+        nodes: abpNodes,
+        appliedBonuses: entity.character.bonuses ? 
+          Object.entries(entity.character.bonuses)
+            .flatMap(([target, bonuses]) => 
+              (bonuses as Array<{value: number, type: string, source: string}>)
+                .filter(b => b.source.startsWith('ABP:'))
+                .map(b => ({
+                  target,
+                  ...b
+                }))
+            ) : []
+      },
+      
+      // Favored Class Bonus data for UI display
+      favoredClassData: {
+        bonuses: favoredClassBonuses,
+        appliedBonuses: entity.character.bonuses ? 
+          Object.entries(entity.character.bonuses)
+            .flatMap(([target, bonuses]) => 
+              (bonuses as Array<{value: number, type: string, source: string}>)
+                .filter(b => b.source.includes('Favored Class'))
+                .map(b => ({
+                  target,
+                  ...b
+                }))
+            ) : [],
+        skillRanks: entity.character.favoredClassBonuses?.skillRanks || 0
       }
     };
   }
@@ -251,7 +382,7 @@ export class CharacterAssembler {
   /**
    * Apply ancestry traits to the entity
    */
-  private applyAncestryTraits(entity: Entity, character: CompleteCharacter): void {
+  private async applyAncestryTraits(entity: Entity, character: CompleteCharacter): Promise<void> {
     if (!character.game_character_ancestry_trait) return;
     
     for (const charTrait of character.game_character_ancestry_trait) {
@@ -262,7 +393,7 @@ export class CharacterAssembler {
       
       try {
         // Try to activate the feature
-        this.engine.activateFeature(traitId, entity, {});
+        await this.engine.activateFeature(traitId, entity, {});
       } catch (err) {
         console.warn(`Failed to apply ancestry trait: ${traitId}`, err);
         
@@ -295,7 +426,7 @@ export class CharacterAssembler {
   /**
    * Apply class features to the entity
    */
-  private applyClassFeatures(entity: Entity, character: CompleteCharacter): void {
+  private async applyClassFeatures(entity: Entity, character: CompleteCharacter): Promise<void> {
     if (!character.game_character_class_feature) return;
     
     for (const charFeature of character.game_character_class_feature) {
@@ -306,7 +437,7 @@ export class CharacterAssembler {
       
       try {
         // Try to activate the feature
-        this.engine.activateFeature(featureId, entity, {});
+        await this.engine.activateFeature(featureId, entity, {});
       } catch (err) {
         console.warn(`Failed to apply class feature: ${featureId}`, err);
         
@@ -339,7 +470,7 @@ export class CharacterAssembler {
   /**
    * Apply feats to the entity
    */
-  private applyFeats(entity: Entity, character: CompleteCharacter): void {
+  private async applyFeats(entity: Entity, character: CompleteCharacter): Promise<void> {
     if (!character.game_character_feat) return;
     
     for (const charFeat of character.game_character_feat) {
@@ -350,7 +481,7 @@ export class CharacterAssembler {
       
       try {
         // Try to activate the feature
-        this.engine.activateFeature(featId, entity, {});
+        await this.engine.activateFeature(featId, entity, {});
       } catch (err) {
         console.warn(`Failed to apply feat: ${featId}`, err);
       }
@@ -360,7 +491,7 @@ export class CharacterAssembler {
   /**
    * Apply equipment effects to the entity
    */
-  private applyEquipment(entity: Entity, character: CompleteCharacter): void {
+  private async applyEquipment(entity: Entity, character: CompleteCharacter): Promise<void> {
     if (!character.game_character_armor) return;
     
     // Apply armor
@@ -394,7 +525,7 @@ export class CharacterAssembler {
   /**
    * Apply corruption effects to the entity
    */
-  private applyCorruptions(entity: Entity, character: CompleteCharacter): void {
+  private async applyCorruptions(entity: Entity, character: CompleteCharacter): Promise<void> {
     if (!character.game_character_corruption_manifestation) return;
     
     for (const charManifestation of character.game_character_corruption_manifestation) {
@@ -405,7 +536,7 @@ export class CharacterAssembler {
       
       try {
         // Try to activate the feature
-        this.engine.activateFeature(manifestationId, entity, {});
+        await this.engine.activateFeature(manifestationId, entity, {});
       } catch (err) {
         console.warn(`Failed to apply corruption manifestation: ${manifestationId}`, err);
       }
