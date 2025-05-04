@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+	import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';
 	import * as Card from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
@@ -10,7 +10,7 @@
 
 	// Props
 	let { character } = $props<{
-		character?: EnrichedCharacter | null;
+		character?: AssembledCharacter | null;
 	}>();
 
 	// Local state

@@ -1,46 +1,101 @@
 <script lang="ts">
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-	import type { ProcessedFeature } from '$lib/domain/characterCalculations';
+	import type { AssembledCharacter } from '$lib/domain/character/characterTypes';
+	import type { ProcessedClassFeature } from '$lib/db/gameRules.api';
 	import * as Card from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import * as Dialog from '$lib/components/ui/dialog';
 
 	let { character } = $props<{
-		character?: EnrichedCharacter | null;
+		character?: AssembledCharacter | null;
 	}>();
 
 	let featuresByLevel = $derived(() => {
 		if (!character?.processedClassFeatures) return new Map();
 		
+		console.log('Processing features for grouping by level');
+		
 		// Group features by their feature_level (when they were gained)
-		const grouped = new Map<number, ProcessedFeature[]>();
+		const grouped = new Map<number, ProcessedClassFeature[]>();
+		
+		// Check if features all have the same level (suggests incorrect data)
+		const allLevels = [...new Set(character.processedClassFeatures.map((f: ProcessedClassFeature) => f.level))];
+		const allSameLevel = allLevels.length === 1 && character.processedClassFeatures.length > 1;
+		const maxCharLevel = Math.max(...(character.game_character_class || []).map((c: any) => c.level || 0));
+		
+		console.log(`Feature levels detected: ${allLevels.join(', ')}`);
+		console.log(`All features have same level: ${allSameLevel}, Max character level: ${maxCharLevel}`);
+		
+		// If all features have the same level and it's the character's max level,
+		// we need to apply a fallback strategy
+		const needLevelFallback = allSameLevel && allLevels[0] === maxCharLevel && maxCharLevel > 1;
 		
 		// Process each feature and add it to the corresponding level group
 		for (const feature of character.processedClassFeatures) {
 			// Look through the game_character_class_feature array to find the actual feature_level
 			let featureLevel = feature.level; // Default to current level
 			
-			// First check if this is a class feature with a defined feature_level in class_feature_benefit
-			if (feature.class_feature_benefit && feature.class_feature_benefit.length > 0) {
-				for (const benefit of feature.class_feature_benefit) {
-					if (benefit.feature_level !== null) {
-						featureLevel = benefit.feature_level;
-						break;
-					}
-				}
-			} 
-			// If not in benefit, try to find it in the original class definition
-			else if (character.game_character_class_feature) {
-				const matchingFeature = character.game_character_class_feature.find(
-					(cf: any) => cf.class_feature && cf.class_feature.name === feature.name
-				);
+			// If we suspect level data is wrong, try harder to get correct levels
+			if (needLevelFallback) {
+				console.log(`Applying fallback level detection for feature: ${feature.name}`);
 				
-				if (matchingFeature?.class_feature?.feature_level) {
-					featureLevel = matchingFeature.class_feature.feature_level;
+				// First check if this is a class feature with a defined feature_level in class_feature_benefit
+				if (feature.class_feature_benefit && feature.class_feature_benefit.length > 0) {
+					for (const benefit of feature.class_feature_benefit) {
+						if (benefit.feature_level !== null && benefit.feature_level > 0) {
+							featureLevel = benefit.feature_level;
+							console.log(`Found level ${featureLevel} in benefit for ${feature.name}`);
+							break;
+						}
+					}
+				} 
+				// If not in benefit, try to find it in the original class definition
+				if (featureLevel === maxCharLevel && character.game_character_class_feature) {
+					const matchingFeature = character.game_character_class_feature.find(
+						(cf: any) => cf.class_feature && cf.class_feature.name === feature.name
+					);
+					
+					if (matchingFeature?.class_feature?.feature_level) {
+						featureLevel = matchingFeature.class_feature.feature_level;
+						console.log(`Found level ${featureLevel} in class feature for ${feature.name}`);
+					}
+					
+					// Also check level_obtained as fallback
+					else if (matchingFeature?.level_obtained) {
+						featureLevel = matchingFeature.level_obtained;
+						console.log(`Found level ${featureLevel} in level_obtained for ${feature.name}`);
+					}
+					
+					// If still at max level, use default levels for common features
+					else if (featureLevel === maxCharLevel) {
+						// Apply some known default levels
+						const defaultLevels: Record<string, number> = {
+							'Weapon and Armor Proficiency': 1,
+							'Alchemy': 1,
+							'Bomb': 1,
+							'Mutagen': 1,
+							'Throw Anything': 1,
+							'Poison Resistance': 2,
+							'Poison Use': 2,
+							'Swift Alchemy': 3,
+							'Swift Poisoning': 6,
+							'Instant Alchemy': 4,
+							'Persistent Mutagen': 10,
+							// Add any others you know about
+						};
+						
+						if (defaultLevels[feature.name]) {
+							featureLevel = defaultLevels[feature.name];
+							console.log(`Using default level ${featureLevel} for ${feature.name}`);
+						}
+					}
 				}
 			}
 			
+			// Ensure feature level is a number and at least 1
+			featureLevel = Number(featureLevel) || 1;
+			
+			// Add to appropriate level group
 			if (!grouped.has(featureLevel)) {
 				grouped.set(featureLevel, []);
 			}
@@ -52,6 +107,7 @@
 			features.sort((a, b) => a.label.localeCompare(b.label));
 		});
 		
+		console.log(`Grouped features into ${grouped.size} different levels`);
 		return grouped;
 	});
 
@@ -70,7 +126,7 @@
 			console.log('First feature complete object:', JSON.stringify(character.processedClassFeatures[0], null, 2));
 			
 			// Debug logging to check feature levels
-			console.log('Features with levels:', character.processedClassFeatures.map((f: ProcessedFeature) => ({
+			console.log('Features with levels:', character.processedClassFeatures.map((f: ProcessedClassFeature) => ({
 				label: f.label,
 				level: f.level,
 				type: typeof f.level

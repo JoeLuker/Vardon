@@ -1,13 +1,13 @@
 <script lang="ts">
 	/**
 	 * Props:
-	 *  - character: an EnrichedCharacter or null
+	 *  - character: an AssembledCharacter or null
 	 *  - onSelectValue: callback for clicking an AC breakdown
 	 */
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+	import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';
 	import { Shield } from 'lucide-svelte';
 
-	export let character: EnrichedCharacter | undefined = undefined;
+	export let character: AssembledCharacter | undefined = undefined;
 	export let onSelectValue: (value: { label: string; modifiers: Array<{ source: string; value: number }>; total: number }) => void;
 
 	// Helper function to format numbers with sign

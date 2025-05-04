@@ -10,5 +10,11 @@ export default defineConfig({
 			$lib: path.resolve('./src/lib')
 		},
 		extensions: ['.js', '.ts']
+	},
+	server: {
+		port: 5173,
+		strictPort: false, // Allow fallback to another port if 5173 is taken
+		host: true, // Listen on all addresses, including LAN and public addresses
+		open: false // Don't open the browser automatically
 	}
 });

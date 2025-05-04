@@ -42,8 +42,29 @@ export interface SpellSlotData {
 	total: number;
 }
 
+// Bonus information
+export interface AppliedBonus {
+	target: string;
+	value: number;
+	type: string;
+	source: string;
+}
+
+// ABP data
+export interface AbpData {
+	nodes: AbpNodeWithBonuses[];
+	appliedBonuses: AppliedBonus[];
+}
+
+// Favored Class Bonus data
+export interface FavoredClassData {
+	bonuses: any[]; // Character's favored class choices
+	appliedBonuses: AppliedBonus[]; // Applied bonuses from favored class
+	skillRanks: number; // Number of skill ranks from favored class
+}
+
 // Enriched character data
-export interface EnrichedCharacter extends GameRules.Complete.Character  {
+export interface AssembledCharacter extends GameRules.Complete.Character  {
 	// Ability scores with breakdown
 	strength: ValueWithBreakdown;
 	dexterity: ValueWithBreakdown;
@@ -99,7 +120,27 @@ export interface EnrichedCharacter extends GameRules.Complete.Character  {
 	totalLevel: number;
 	skillsWithRanks: SkillWithRanks[];
 	processedClassFeatures: ProcessedClassFeature[];
+	
+	// Spellcasting data
+	spellcastingClasses?: {
+		classId: number;
+		className: string;
+		spellcasting: {
+			type: string;
+			ability: string;
+			isSpontaneous: boolean;
+			progression: string;
+			maxSpellLevel: number;
+		}
+	}[];
+	preparedSpells: Record<number, Record<number, any[]>>;
 	spellSlots: Record<number, Record<number, SpellSlotData>>;
+	
+	// ABP data
+	abpData: AbpData;
+	
+	// Favored Class Bonus data
+	favoredClassData: FavoredClassData;
 }
 
 // Bonus entry

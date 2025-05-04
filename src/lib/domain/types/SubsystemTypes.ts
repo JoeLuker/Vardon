@@ -319,32 +319,132 @@ export interface ConditionEffect {
  */
 export interface SpellcastingSubsystem extends Subsystem {
   /**
-   * Get available spell slots for a level
+   * Get spell slots for a class and level
    */
-  getSpellSlots(entity: Entity, classId: string, level: number): number;
+  getSpellSlots(
+    entity: Entity, 
+    classId: number, 
+    spellLevel: number
+  ): { total: number; used: number; remaining: number };
   
   /**
-   * Get spell DC for a spell level
+   * Get all spell slots for an entity
    */
-  getSpellDC(entity: Entity, classId: string, level: number): number;
+  getAllSpellSlots(
+    entity: Entity
+  ): Record<number, Record<number, { total: number; used: number; remaining: number }>>;
   
   /**
-   * Get caster level
+   * Get prepared spells for a class and level
    */
-  getCasterLevel(entity: Entity, classId: string): number;
+  getPreparedSpells(entity: Entity, classId: number, spellLevel: number): any[];
   
   /**
-   * Add a spell to known spells
+   * Get all prepared spells for an entity
    */
-  addKnownSpell(entity: Entity, classId: string, level: number, spellId: string): void;
+  getAllPreparedSpells(entity: Entity): Record<number, Record<number, any[]>>;
   
   /**
    * Prepare a spell
    */
-  prepareSpell(entity: Entity, classId: string, level: number, spellId: string): void;
+  prepareSpell(entity: Entity, classId: number, spellId: number, spellLevel: number): boolean;
   
   /**
-   * Cast a spell (use a spell slot)
+   * Unprepare a spell
    */
-  castSpell(entity: Entity, classId: string, level: number, spellId: string): void;
+  unprepareSpell(entity: Entity, classId: number, spellId: number, spellLevel: number): boolean;
+  
+  /**
+   * Cast a spell
+   */
+  castSpell(entity: Entity, classId: number, spellId: number, spellLevel: number): boolean;
+  
+  /**
+   * Reset spell slots (e.g. after resting)
+   */
+  resetSpellSlots(entity: Entity, classId?: number): boolean;
+  
+  /**
+   * Reset prepared spells (e.g. after resting)
+   */
+  resetPreparedSpells(entity: Entity, classId?: number): boolean;
+  
+  /**
+   * Add a bonus spell slot
+   */
+  addBonusSpellSlot(entity: Entity, classId: number, spellLevel: number, count?: number): boolean;
+}
+
+/**
+ * Prerequisite subsystem interface
+ * 
+ * This subsystem handles checking if entities meet prerequisites for features, spells, etc.
+ * Prerequisites can be class features, character levels, ability scores, etc.
+ * 
+ * This follows the Unix philosophy by separating the concern of prerequisite checking
+ * from feature activation or validation.
+ */
+export interface PrerequisiteSubsystem extends Subsystem {
+  /**
+   * Check if an entity meets a specific prerequisite requirement
+   * @param entity The entity to check
+   * @param requirementId The ID of the prerequisite requirement
+   * @returns True if the prerequisite is met, false otherwise
+   */
+  checkRequirement(entity: Entity, requirementId: number): Promise<boolean>;
+  
+  /**
+   * Check if an entity meets all specified prerequisite requirements
+   * @param entity The entity to check
+   * @param requirementIds Array of prerequisite requirement IDs to check
+   * @returns True if all prerequisites are met, false otherwise
+   */
+  meetsAllRequirements(entity: Entity, requirementIds: number[]): Promise<boolean>;
+  
+  /**
+   * Get a list of requirements the entity doesn't meet
+   * @param entity The entity to check
+   * @param requirementIds The requirements to check
+   * @returns Array of requirement details that are not met
+   */
+  getMissingRequirements(
+    entity: Entity, 
+    requirementIds: number[]
+  ): Promise<Array<{id: number, type: string, description: string}>>;
+  
+  /**
+   * Register a custom prerequisite checker for a specific requirement type
+   * @param type The type of prerequisite requirement to check (e.g. 'ability_score', 'class_level')
+   * @param checker Function that checks if the requirement is met
+   */
+  registerRequirementChecker(
+    type: string, 
+    checker: (entity: Entity, requirementId: number) => Promise<boolean>
+  ): void;
+  
+  /**
+   * Check if an entity meets prerequisites for a feature
+   * @param entity The entity to check
+   * @param featureType The type of feature to check (e.g. 'feat', 'spell')
+   * @param featureId The ID of the feature to check
+   * @returns True if all prerequisites are met, false otherwise
+   */
+  canUseFeature(entity: Entity, featureType: string, featureId: number): Promise<boolean>;
+  
+  /**
+   * Get a detailed explanation of why a feature can or cannot be used
+   * @param entity The entity to check
+   * @param featureType The type of feature to check
+   * @param featureId The ID of the feature to check
+   * @returns Object with status and detailed explanation
+   */
+  explainFeatureRequirements(
+    entity: Entity, 
+    featureType: string, 
+    featureId: number
+  ): Promise<{
+    canUse: boolean,
+    metRequirements: Array<{id: number, type: string, description: string}>,
+    missingRequirements: Array<{id: number, type: string, description: string}>
+  }>;
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { EnrichedCharacter } from '$lib/domain/characterCalculations';    
+    import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';    
     import * as Card from '$lib/components/ui/card';
     import { Badge } from '$lib/components/ui/badge';
     import { ScrollArea } from '$lib/components/ui/scroll-area';
@@ -7,7 +7,7 @@
     import * as Tabs from '$lib/components/ui/tabs';
     import TreeNode from '$lib/components/TreeNode.svelte';
     
-    let { character } = $props<{ character: EnrichedCharacter }>();
+    let { character } = $props<{ character: AssembledCharacter }>();
     
     // Helper function to safely access manifestation
     function getManifestationFromEntry(entry: any): any {
@@ -132,7 +132,11 @@
             );
             
             return {
-                corruption: corruptionInfo,
+                corruption: {
+                    ...corruptionInfo,
+                    corruption_stage: corruption.corruption_stage,
+                    manifestation_level: corruption.manifestation_level
+                },
                 manifestations: corruptionManifestations
             };
         });
@@ -230,6 +234,7 @@
         isAvailable: boolean;
         isLast: boolean;
         path: string;
+        entry: any; // Add the manifestation entry to access in click handler
         children: TreeNodeData[];
     };
     
@@ -385,6 +390,7 @@
             isAvailable,
             isLast,
             path,
+            entry: node.entry, // Include the entry for click handler
             children: node.children.map((child: ManifestationNode, i: number) => 
                 renderTreeNode(
                     child, 
@@ -493,12 +499,6 @@
                                                                     Min Level: {manifestation?.min_manifestation_level || 1}
                                                                 </Badge>
                                                                 
-                                                                {#if !manifestationEntry.active}
-                                                                    <Badge variant="secondary" class="text-xs">Inactive</Badge>
-                                                                {:else}
-                                                                    <Badge variant="default" class="text-xs">Active</Badge>
-                                                                {/if}
-                                                                
                                                                 {#if manifestation?.prerequisite_manifestation_id}
                                                                     <Badge variant="outline" class="text-xs bg-amber-100 dark:bg-amber-950">
                                                                         Req: {manifestation?.prerequisite?.label || 
@@ -552,7 +552,10 @@
                                                     {/if}
                                                     <div class="tree-view font-sans">
                                                         {#each treeResult.nodes as nodeData}
-                                                            <TreeNode node={nodeData} />
+                                                            <TreeNode 
+                                                                node={nodeData} 
+                                                                onNodeclick={(entry) => showManifestationDetail(entry)} 
+                                                            />
                                                         {/each}
                                                     </div>
                                                 {:else}

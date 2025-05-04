@@ -35,7 +35,8 @@ temp-pf-output.txt
 _backup/
 
 
-.venv
+.venv/
+.vscode/
 
 data.yaml
 supabase-loader.py
@@ -43,3 +44,4 @@ supabase-loader.py
 supabase/migrations/2024-12-29_init.sql
 
 old/
+**/.claude/settings.local.json

@@ -1,12 +1,15 @@
 <script lang="ts">
-    import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-    import type { GameCharacterFeat, Feat } from '$lib/db/gameRules.types';
+    import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';
+    import type { GameRules } from '$lib/db/gameRules.api';
+    // Use the types from the GameRules namespace
+    type Feat = GameRules.Base.Row<'feat'>;
+    type GameCharacterFeat = GameRules.Base.Row<'game_character_feat'> & { feat: Feat };
     import * as Card from '$lib/components/ui/card';
     import { Badge } from '$lib/components/ui/badge';
     import { ScrollArea } from '$lib/components/ui/scroll-area';
     import * as Dialog from '$lib/components/ui/dialog';
     
-    let { character } = $props<{ character: EnrichedCharacter }>();
+    let { character } = $props<{ character: AssembledCharacter }>();
 
     // Group feats by level
     let featsByLevel = $derived(() => {

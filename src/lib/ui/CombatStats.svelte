@@ -5,17 +5,18 @@
 	import { Sword, Target, Bomb } from 'lucide-svelte';
 
 	// Domain
-	import type { ValueWithBreakdown } from '$lib/domain/characterCalculations';
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-	import type { ClassFeature } from '$lib/db/gameRules.types';
+	import type { ValueWithBreakdown, AssembledCharacter } from '$lib/ui/types/CharacterTypes';
+	import type { GameRules } from '$lib/db/gameRules.api';
+	// Use the type from the GameRules namespace
+	type ClassFeature = GameRules.Base.Row<'class_feature'>;
 
 	/**
 	 * Props:
-	 *  - character: a plain EnrichedCharacter or null
+	 *  - character: a plain AssembledCharacter or null
 	 *  - onSelectValue: callback for clicking an attack or damage breakdown
 	 */
 	let { character, onSelectValue = () => {} } = $props<{
-		character?: EnrichedCharacter | null;
+		character?: AssembledCharacter | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 	}>();
 

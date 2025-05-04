@@ -12,6 +12,16 @@ export class BonusSubsystemImpl implements BonusSubsystem {
   ];
   
   /**
+   * ABP bonus types that have special handling
+   * These are considered high-priority bonuses that should be applied last
+   * to ensure they take precedence over normal equipment bonuses
+   */
+  private readonly ABP_BONUS_TYPES = [
+    'abp_armor', 'abp_shield', 'abp_weapon', 'abp_resistance', 'abp_deflection', 
+    'abp_natural', 'abp_enhancement'
+  ];
+  
+  /**
    * Initialize bonus subsystem for entity
    */
   initialize(entity: Entity): void {
@@ -21,6 +31,10 @@ export class BonusSubsystemImpl implements BonusSubsystem {
     if (!entity.character.bonuses) {
       entity.character.bonuses = {};
     }
+    
+    // Process ABP bonuses if present
+    // The actual application of ABP bonuses is now handled in DatabaseFeatureInitializer.applyABPChoices()
+    // This is just an extra initialization hook in case we need specific ABP handling
     
     // Process ancestry trait bonuses
     if (entity.character.game_character_ancestry_trait) {
@@ -93,8 +107,11 @@ export class BonusSubsystemImpl implements BonusSubsystem {
     let total = base;
     const components: Array<{value: number, type: string, source: string}> = [];
     
-    // First add all typed bonuses (highest of each type)
+    // First process normal typed bonuses (highest of each type)
     for (const type of this.TYPED_BONUSES) {
+      // Skip ABP bonus types - they're processed separately
+      if (this.ABP_BONUS_TYPES.includes(type)) continue;
+      
       if (!byType[type] || byType[type].length === 0) continue;
       
       // Get highest value of this type
@@ -107,6 +124,38 @@ export class BonusSubsystemImpl implements BonusSubsystem {
       if (max > 0) { // Only add positive bonuses
         total += max;
         components.push({ value: max, type, source });
+      }
+    }
+    
+    // Process ABP bonus types separately (they take precedence over normal bonuses)
+    for (const abpType of this.ABP_BONUS_TYPES) {
+      if (!byType[abpType] || byType[abpType].length === 0) continue;
+      
+      // Get highest value of this ABP type
+      const values = byType[abpType];
+      const max = Math.max(...values);
+      
+      // Find the source of the max value
+      const source = bonuses.find(b => b.type === abpType && b.value === max)?.source || 'unknown';
+      
+      if (max > 0) { // Only add positive bonuses
+        total += max;
+        components.push({ value: max, type: abpType, source });
+        
+        // Remove equivalent non-ABP bonus types if they exist
+        // For example, abp_armor trumps armor
+        const normalType = abpType.replace('abp_', '');
+        if (this.TYPED_BONUSES.includes(normalType) && components.some(c => c.type === normalType)) {
+          // Find and remove the normal type bonus
+          const normalIndex = components.findIndex(c => c.type === normalType);
+          if (normalIndex >= 0) {
+            // Subtract the value from the total
+            total -= components[normalIndex].value;
+            // Remove the component
+            components.splice(normalIndex, 1);
+            console.log(`ABP bonus type ${abpType} replaced normal bonus type ${normalType}`);
+          }
+        }
       }
     }
     

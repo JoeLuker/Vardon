@@ -1,4 +1,4 @@
-import { Entity, CharacterData } from '../types/EntityTypes';
+import type { Entity, CharacterData } from '$lib/domain/types/EntityTypes';
 
 /**
  * Sample character factory for testing purposes

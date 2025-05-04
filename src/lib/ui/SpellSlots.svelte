@@ -1,11 +1,11 @@
 <script lang="ts">
     import * as Card from '$lib/components/ui/card';
     import { Button } from '$lib/components/ui/button';
-    import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+    import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';
 
     // Props
     let { character } = $props<{
-        character?: EnrichedCharacter;
+        character?: AssembledCharacter;
     }>();
 
     // State

@@ -1,133 +1,78 @@
 import { initializeApplication } from '../application';
 
-// Set up the engine with some basic game data
-const gameData = {
-  skills: [
-    { id: 1, name: 'Climb', ability: 'strength', trainedOnly: false },
-    { id: 2, name: 'Acrobatics', ability: 'dexterity', trainedOnly: false },
-    { id: 5, name: 'Intimidate', ability: 'strength', trainedOnly: false },
-    { id: 6, name: 'Knowledge (Religion)', ability: 'intelligence', trainedOnly: true },
-    { id: 7, name: 'Stealth', ability: 'dexterity', trainedOnly: false },
-    { id: 8, name: 'Knowledge (Local)', ability: 'intelligence', trainedOnly: true },
-    { id: 9, name: 'Sleight of Hand', ability: 'dexterity', trainedOnly: true },
-    { id: 10, name: 'Heal', ability: 'wisdom', trainedOnly: false },
-    { id: 11, name: 'Ride', ability: 'dexterity', trainedOnly: false },
-    { id: 12, name: 'Bluff', ability: 'charisma', trainedOnly: false },
-    { id: 16, name: 'Disable Device', ability: 'intelligence', trainedOnly: true },
-    { id: 17, name: 'Disguise', ability: 'intelligence', trainedOnly: false },
-    { id: 21, name: 'Perception', ability: 'wisdom', trainedOnly: false },
-    { id: 23, name: 'Survival', ability: 'constitution', trainedOnly: false }
-  ]
-};
+// Mock game data for initialization
+const gameData = { skills: {} };
 
-// Initialize the application with sample characters
-const { engine, sampleCharacters, calculationExplainer, gameAPI } = initializeApplication(gameData);
+// Initialize the application
+console.log('Initializing application...');
+const app = initializeApplication(gameData);
 
-function testCharacters() {
-  console.log('\n===== CHARACTER TESTING CONSOLE =====\n');
+// Extract components
+const { engine, sampleCharacters, gameAPI, calculationExplainer } = app;
+
+console.log('\n=== Available Sample Characters ===');
+Object.keys(sampleCharacters).forEach(key => {
+  console.log(`- ${key}: ${sampleCharacters[key].name} (ID: ${sampleCharacters[key].id})`);
+});
+
+// Test fighter abilities
+const fighter = sampleCharacters.fighter;
+console.log('\n=== Fighter Details ===');
+console.log(`Name: ${fighter.name}`);
+console.log(`Strength: ${fighter.character?.abilities?.strength}`);
+
+// Test Power Attack
+console.log('\n=== Testing Power Attack ===');
+try {
+  const result = engine.activateFeature('feat.power_attack', fighter, { penalty: 2 });
+  console.log('Power Attack activated with result:', result);
   
-  // Display all available characters
-  console.log('Available test characters:');
-  Object.entries(sampleCharacters).forEach(([key, character]) => {
-    console.log(`- ${key}: ${character.name} (ID: ${character.id})`);
-  });
-  
-  // Test fighter capabilities
-  console.log('\n===== TESTING FIGHTER =====');
-  const fighter = sampleCharacters.fighter;
-  
-  // Get ability scores with explanations
-  const str = calculationExplainer.explainAbility(fighter, 'strength');
-  console.log('Strength breakdown:', str);
-  
-  // Get AC calculation
-  const ac = calculationExplainer.explainAC(fighter);
-  console.log('Armor Class breakdown:', ac);
-  
-  // Test activating Power Attack
-  try {
-    const powerAttackResult = engine.activateFeature('feat.power_attack', fighter, { penalty: 2 });
-    console.log('Power Attack activated:', powerAttackResult);
-    
-    // Show attack bonus after Power Attack
-    const attackAfter = calculationExplainer.explainAttack(fighter, 'melee');
-    console.log('Melee attack after Power Attack:', attackAfter);
-  } catch (error) {
-    console.error('Error activating Power Attack:', error);
-  }
-  
-  // Test barbarian rage
-  console.log('\n===== TESTING BARBARIAN =====');
-  const barbarian = sampleCharacters.barbarian;
-  
-  // Get ability scores before rage
-  console.log('Constitution before rage:', calculationExplainer.explainAbility(barbarian, 'constitution'));
-  
-  // Activate rage
-  try {
-    const rageResult = engine.activateFeature('class.barbarian.rage', barbarian, {});
-    console.log('Rage activated:', rageResult);
-    
-    // Show ability scores during rage
-    console.log('Constitution during rage:', calculationExplainer.explainAbility(barbarian, 'constitution'));
-    console.log('Strength during rage:', calculationExplainer.explainAbility(barbarian, 'strength'));
-  } catch (error) {
-    console.error('Error activating Rage:', error);
-  }
-  
-  // Test cleric channel energy
-  console.log('\n===== TESTING CLERIC =====');
-  const cleric = sampleCharacters.cleric;
-  
-  // Check channel energy resources
-  const resources = cleric.character?.resources || {};
-  console.log('Channel Energy uses:', resources.channel_energy);
-  
-  // Use channel energy
-  try {
-    const channelResult = engine.activateFeature('class.cleric.channel_energy', cleric, {
-      type: 'positive',
-      healUndead: false
-    });
-    console.log('Channel Energy used:', channelResult);
-    
-    // Check remaining uses
-    console.log('Remaining uses:', cleric.character?.resources?.channel_energy);
-  } catch (error) {
-    console.error('Error using Channel Energy:', error);
-  }
-  
-  // Test rogue sneak attack
-  console.log('\n===== TESTING ROGUE =====');
-  const rogue = sampleCharacters.rogue;
-  
-  try {
-    const sneakResult = engine.activateFeature('class.rogue.sneak_attack', rogue, { apply: true });
-    console.log('Sneak Attack activated:', sneakResult);
-  } catch (error) {
-    console.error('Error activating Sneak Attack:', error);
-  }
-  
-  // Test multiclass character
-  console.log('\n===== TESTING MULTICLASS CHARACTER =====');
-  const multiclass = sampleCharacters.multiclass;
-  
-  // Get a detailed character report
-  const report = calculationExplainer.getCharacterReport(multiclass);
-  console.log('Multiclass character report summary:');
-  console.log('- Name:', report.name);
-  console.log('- Strength:', report.abilities.strength.total);
-  console.log('- Dexterity:', report.abilities.dexterity.total);
-  console.log('- Armor Class:', report.combat.armorClass.total);
-  console.log('- Saving Throws:', {
-    fortitude: report.saves.fortitude.total,
-    reflex: report.saves.reflex.total,
-    will: report.saves.will.total
-  });
-  console.log('- Features:', 
-    report.features.feats ? report.features.feats.map(f => f.name).join(', ') : 'None'
-  );
+  // Get fighter report after Power Attack
+  console.log('\n=== Fighter Report After Power Attack ===');
+  const report = calculationExplainer.getCharacterReport(fighter);
+  console.log(`Strength: ${report.abilities.strength.total} (Modifier: ${report.abilities.strength.modifier})`);
+  console.log(`Melee Attack: ${report.combat.meleeAttack.total}`);
+} catch (error) {
+  console.error('Error testing Power Attack:', error);
 }
 
-// Run the tests
-testCharacters(); 
+// Test barbarian with Rage
+const barbarian = sampleCharacters.barbarian;
+console.log('\n=== Testing Barbarian Rage ===');
+try {
+  const result = engine.activateFeature('class.barbarian.rage', barbarian, {});
+  console.log('Rage activated with result:', result);
+  
+  // Get barbarian report after Rage
+  console.log('\n=== Barbarian Report After Rage ===');
+  const report = calculationExplainer.getCharacterReport(barbarian);
+  console.log(`Strength: ${report.abilities.strength.total} (Modifier: ${report.abilities.strength.modifier})`);
+  console.log(`Constitution: ${report.abilities.constitution.total} (Modifier: ${report.abilities.constitution.modifier})`);
+} catch (error) {
+  console.error('Error testing Barbarian Rage:', error);
+}
+
+// Test rogue with Sneak Attack
+const rogue = sampleCharacters.rogue;
+console.log('\n=== Testing Rogue Sneak Attack ===');
+try {
+  const result = engine.activateFeature('class.rogue.sneak_attack', rogue, {});
+  console.log('Sneak Attack activated with result:', result);
+} catch (error) {
+  console.error('Error testing Sneak Attack:', error);
+}
+
+console.log('\n=== Testing Complete ===');
+
+// Export function to run database tests
+export function runDatabaseTestsFromConsole(): void {
+  // Import dynamically to avoid circular dependencies
+  import('./DatabaseTest').then(module => {
+    module.runDatabaseTest();
+  }).catch(error => {
+    console.error('Error running database tests:', error);
+  });
+}
+
+// Make it available globally for the console
+(window as any).runDatabaseTests = runDatabaseTestsFromConsole; 

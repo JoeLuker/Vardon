@@ -1,3 +1,4 @@
+<!-- Exact path must be: /Users/jluker/Vardon/src/routes/characters/[id]/+page.svelte -->
 <script lang="ts">
 	// Core imports
 	import { onMount } from 'svelte';
@@ -14,8 +15,8 @@
 	import type { FeatureRegistry } from '$lib/domain/config/FeatureRegistry';
 
 	// Game API
-import { GameRulesAPI } from '$lib/db/gameRules.api';
-import { supabase } from '$lib/db/supabaseClient';
+	import { GameRulesAPI } from '$lib/db/gameRules.api';
+	import { supabase } from '$lib/db/supabaseClient';
 	
 	// UI Components
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
@@ -55,7 +56,7 @@ import { supabase } from '$lib/db/supabaseClient';
 	// Game Engine Components
 	let engine = $state<GameEngine | null>(null);
 	let gameAPI = $state<GameRulesAPI | null>(null);
-	let featureRegistry = $state<FeatureRegistry | null>(null);
+	let featureRegistry = $state<FeatureRegistry | null>(null); 
 	let characterAssembler = $state<CharacterAssembler | null>(null);
 	
 	// Helper function for timestamps in logs
@@ -64,55 +65,39 @@ import { supabase } from '$lib/db/supabaseClient';
 		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
 	}
 	
-	// Initialize on component mount
+	// Initialize on component mount instead of using $effect
 	onMount(async () => {
 		console.log(`${getTimestamp()} - Character page mounted with ID: ${data?.id}`);
 		
-		// Initialize client-side GameRulesAPI
-		try {
-			console.log(`${getTimestamp()} - Initializing client-side GameRulesAPI`);
-			// Use either the server-provided API or create a new one
-			gameAPI = data?.gameAPI || new GameRulesAPI(supabase);
-			
-			if (!gameAPI) {
-				throw new Error('Failed to initialize GameRulesAPI');
-			}
-			
-			console.log(`${getTimestamp()} - GameRulesAPI initialized successfully`);
-		} catch (apiError) {
-			console.error(`${getTimestamp()} - Failed to initialize GameRulesAPI:`, apiError);
-			error = apiError instanceof Error ? 
-				`Failed to initialize GameRulesAPI: ${apiError.message}` : 
-				'Failed to initialize GameRulesAPI';
-			isLoading = false;
-			return;
-		}
+		// Initialize gameAPI
+		gameAPI = new GameRulesAPI(supabase);
+		
+		// Debug the server data received
+		console.log(`${getTimestamp()} - Server data:`, {
+			id: data?.id,
+			hasRawCharacter: !!data?.rawCharacter,
+			loadedAt: data?.loadedAt
+		});
 		
 		if (data?.rawCharacter) {
-			console.log(`${getTimestamp()} - Using raw character data from server:`, {
-				id: data.id,
-				dataReceived: !!data.rawCharacter,
-				dataSize: JSON.stringify(data.rawCharacter).length
-			});
-			
+			console.log(`${getTimestamp()} - Using raw character data from server`);
+			// Save the raw character data immediately
 			rawCharacter = data.rawCharacter;
 			
+			// Log character basics for debugging
+			console.log(`${getTimestamp()} - Character basics:`, {
+				id: rawCharacter.id,
+				name: rawCharacter.name,
+				classes: rawCharacter.game_character_class?.map(c => c.class?.name || 'Unknown Class'),
+				ancestry: rawCharacter.game_character_ancestry?.[0]?.ancestry?.name || 'Unknown Ancestry'
+			});
+			
+			// Load the character in a try/catch to handle errors
 			try {
 				await loadCharacter();
-				
-				// Log character basics after successful loading
-				if (character) {
-					console.log(`${getTimestamp()} - Character loaded successfully:`, {
-						id: character.id,
-						name: character.name,
-						classes: character.game_character_class?.map(c => c.class?.name) || [],
-						ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
-						level: character.totalLevel
-					});
-				}
-			} catch (loadError) {
-				console.error(`${getTimestamp()} - Failed to load character:`, loadError);
-				error = loadError instanceof Error ? loadError.message : 'Failed to load character data';
+			} catch (err) {
+				console.error(`${getTimestamp()} - Error in onMount loadCharacter:`, err);
+				error = err instanceof Error ? err.message : 'Failed to load character during mount';
 				isLoading = false;
 			}
 		} else {
@@ -159,13 +144,22 @@ import { supabase } from '$lib/db/supabaseClient';
 			if (!engine || !characterAssembler) {
 				console.log(`${getTimestamp()} - Initializing application and engine components`);
 				
-				// Pass the initialized gameAPI to avoid re-creating API clients
+				// Create GameAPI instance if not already done
+				if (!gameAPI) {
+					console.log(`${getTimestamp()} - Creating GameRulesAPI instance`);
+					gameAPI = new GameRulesAPI(supabase);
+				}
+				
+				// Pass the newly created GameAPI instance
 				const gameData = {
 					gameAPI: gameAPI
 				};
 				
+				console.log(`${getTimestamp()} - Calling initializeApplication with gameAPI:`, { 
+					hasGameAPI: !!gameData.gameAPI 
+				});
+				
 				try {
-					// Initialize the application
 					const app = await initializeApplication(gameData);
 					
 					// Verify application initialization results
@@ -173,20 +167,19 @@ import { supabase } from '$lib/db/supabaseClient';
 						throw new Error('Application initialization returned null or undefined');
 					}
 					
-					// Explicitly extract all components
 					engine = app.engine;
 					featureRegistry = app.featureRegistry;
-					
-					// Get characterAssembler from app (not app.assembler)
 					characterAssembler = app.characterAssembler;
 					
-					// Capture diagnostic info for debugging
 					diagnosticInfo = {
 						engineInitialized: !!engine,
 						characterAssemblerInitialized: !!characterAssembler,
 						featureRegistryInitialized: !!featureRegistry,
 						gameAPIInitialized: !!gameAPI,
-						hasAssembleMethod: characterAssembler && typeof characterAssembler.assembleCharacter === 'function'
+						hasCharacterAssemblerMethod: characterAssembler && typeof characterAssembler.assembleCharacter === 'function',
+						engineSubsystems: engine && typeof engine.getSubsystemNames === 'function' 
+							? engine.getSubsystemNames() 
+							: 'Unknown'
 					};
 					
 					console.log(`${getTimestamp()} - Application initialized successfully:`, diagnosticInfo);
@@ -228,14 +221,12 @@ import { supabase } from '$lib/db/supabaseClient';
 								name: character.name || 'Character',
 								totalLevel: 1,
 								// Add minimum required properties
-								abilityScores: {
-									strength: { total: 10, modifier: 0, label: 'Strength', modifiers: [] },
-									dexterity: { total: 10, modifier: 0, label: 'Dexterity', modifiers: [] },
-									constitution: { total: 10, modifier: 0, label: 'Constitution', modifiers: [] },
-									intelligence: { total: 10, modifier: 0, label: 'Intelligence', modifiers: [] },
-									wisdom: { total: 10, modifier: 0, label: 'Wisdom', modifiers: [] },
-									charisma: { total: 10, modifier: 0, label: 'Charisma', modifiers: [] }
-								},
+								strength: { total: 10, modifier: 0, label: 'Strength', modifiers: [] },
+								dexterity: { total: 10, modifier: 0, label: 'Dexterity', modifiers: [] },
+								constitution: { total: 10, modifier: 0, label: 'Constitution', modifiers: [] },
+								intelligence: { total: 10, modifier: 0, label: 'Intelligence', modifiers: [] },
+								wisdom: { total: 10, modifier: 0, label: 'Wisdom', modifiers: [] },
+								charisma: { total: 10, modifier: 0, label: 'Charisma', modifiers: [] },
 								skills: {},
 								saves: { 
 									fortitude: { total: 0, label: 'Fortitude', modifiers: [] }, 
@@ -294,7 +285,7 @@ import { supabase } from '$lib/db/supabaseClient';
 					id: character.id,
 					name: character.name, 
 					level: character.totalLevel,
-					abilityScores: character.abilityScores ? 'Present' : 'Missing',
+					abilityScores: character.strength ? 'Present' : 'Missing',
 					skills: character.skills ? 'Present' : 'Missing'
 				});
 			} catch (assemblyError) {
@@ -306,9 +297,7 @@ import { supabase } from '$lib/db/supabaseClient';
 			console.log(`${getTimestamp()} - Character loading completed successfully`);
 		} catch (err) {
 			console.error(`${getTimestamp()} - Error loading character:`, err);
-			
-			// Enhanced diagnostic info
-			const enhancedDiagnostics = {
+			console.error(`${getTimestamp()} - Diagnostic info:`, {
 				hasRawCharacter: !!rawCharacter,
 				rawCharacterId: rawCharacter?.id,
 				hasEngine: !!engine,
@@ -318,11 +307,7 @@ import { supabase } from '$lib/db/supabaseClient';
 				hasGameAPI: !!gameAPI,
 				hasFeatureRegistry: !!featureRegistry,
 				dataServerId: data?.id
-			};
-			
-			console.error(`${getTimestamp()} - Diagnostic info:`, enhancedDiagnostics);
-			diagnosticInfo = enhancedDiagnostics;
-			
+			});
 			isLoading = false;
 			error = err instanceof Error ? err.message : 'An unknown error occurred';
 		}
@@ -348,14 +333,10 @@ import { supabase } from '$lib/db/supabaseClient';
 		<p class="font-semibold">Error loading character</p>
 		<p>{error}</p>
 		
-		{#if Object.keys(diagnosticInfo).length > 0}
-		<details class="mt-4">
-			<summary class="cursor-pointer font-medium">Diagnostic Information</summary>
-			<pre class="mt-2 bg-red-50 p-2 rounded text-xs overflow-auto">
-{JSON.stringify(diagnosticInfo, null, 2)}
-			</pre>
+		<details class="mt-2 text-xs">
+			<summary class="cursor-pointer">Diagnostic Information</summary>
+			<pre class="whitespace-pre-wrap mt-2 p-2 bg-gray-800 text-gray-200 rounded overflow-auto max-h-60">{JSON.stringify(diagnosticInfo, null, 2)}</pre>
 		</details>
-		{/if}
 	</div>
 </div>
 {:else if character}

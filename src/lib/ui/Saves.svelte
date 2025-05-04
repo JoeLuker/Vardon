@@ -1,6 +1,6 @@
 <!-- FILE: src/lib/ui/Saves.svelte -->
 <script lang="ts">
-	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
+	import type { AssembledCharacter, ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
 
 	/**
 	 * Props:
@@ -8,7 +8,7 @@
 	 * - onSelectValue: callback that receives the breakdown of the selected save
 	 */
 	let { character, onSelectValue = () => {} } = $props<{
-		character?: EnrichedCharacter | null;
+		character?: AssembledCharacter | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 	}>();
 

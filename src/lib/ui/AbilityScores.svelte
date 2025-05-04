@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { EnrichedCharacter, ValueWithBreakdown } from '$lib/domain/characterCalculations';
+	import type { AssembledCharacter, ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
 	import { StretchHorizontal } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 
@@ -9,14 +9,14 @@
 		value: number;
 		mod: number;
 		scoreKey: keyof Pick<
-			EnrichedCharacter,
+			AssembledCharacter,
 			'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma'
 		>;
 	}
 
 	// Props with proper typing
 	let { character, onSelectValue = () => {} } = $props<{
-		character?: EnrichedCharacter | null;
+		character?: AssembledCharacter | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 	}>();
 

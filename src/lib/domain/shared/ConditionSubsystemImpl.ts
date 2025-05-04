@@ -108,7 +108,7 @@ export class ConditionSubsystemImpl implements ConditionSubsystem {
     },
     'stunned': {
       name: 'Stunned',
-      description: 'You drop everything held, can't take actions, and take an AC penalty.',
+      description: 'You drop everything held, can\'t take actions, and take an AC penalty.',
       effects: {
         ac: -2,
         // Cannot take actions - special handling required

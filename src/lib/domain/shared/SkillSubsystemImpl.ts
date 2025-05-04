@@ -10,8 +10,8 @@ export class SkillSubsystemImpl implements SkillSubsystem {
   private abilitySubsystem: any;
   private bonusSubsystem: any;
   
-  constructor(gameData: any, abilitySubsystem?: any, bonusSubsystem?: any) {
-    this.skillData = gameData.skills || [];
+  constructor(gameData: any = { skills: [] }, abilitySubsystem?: any, bonusSubsystem?: any) {
+    this.skillData = gameData?.skills || [];
     this.abilitySubsystem = abilitySubsystem;
     this.bonusSubsystem = bonusSubsystem;
   }
@@ -159,12 +159,55 @@ export class SkillSubsystemImpl implements SkillSubsystem {
   }
   
   getAvailableSkillPoints(entity: Entity, level: number): number {
-    // Placeholder implementation - would depend on character class, intelligence, etc.
-    return 0;
+    // Get base skill points from character class
+    let baseSkillPoints = 0;
+    
+    if (entity.character?.game_character_class) {
+      for (const charClass of entity.character.game_character_class) {
+        if (charClass.class && charClass.level === level) {
+          baseSkillPoints += charClass.class.skill_ranks_per_level || 0;
+        }
+      }
+    }
+    
+    // Add Intelligence modifier (if positive)
+    let intModifier = 0;
+    if (this.abilitySubsystem) {
+      intModifier = this.abilitySubsystem.getAbilityModifier(entity, 'intelligence');
+      intModifier = Math.max(0, intModifier); // Only use positive INT modifier
+    }
+    
+    // Add skill ranks from favored class bonuses
+    let fcbSkillRanks = 0;
+    if (entity.character?.favoredClassBonuses?.skillRanks) {
+      // Get favored class bonuses for this level
+      const fcbForLevel = entity.character.favoredClassChoices?.filter(
+        (fcb: any) => fcb.level === level && fcb.favored_class_choice?.name === 'skill'
+      ) || [];
+      
+      fcbSkillRanks = fcbForLevel.length;
+    }
+    
+    return baseSkillPoints + intModifier + fcbSkillRanks;
   }
   
   getInvestedSkillPoints(entity: Entity, level?: number): number {
-    // Placeholder implementation - would calculate total skill points spent
-    return 0;
+    // If level is provided, count ranks invested at that level
+    if (level !== undefined) {
+      const ranksAtLevel = entity.character?.game_character_skill_rank?.filter(
+        (rank: any) => rank.applied_at_level === level
+      ) || [];
+      
+      return ranksAtLevel.length;
+    }
+    
+    // Otherwise, count all ranks
+    let totalRanks = 0;
+    
+    for (const skill of this.skillData) {
+      totalRanks += this.getSkillRanks(entity, skill.id);
+    }
+    
+    return totalRanks;
   }
 }

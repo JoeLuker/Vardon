@@ -3,24 +3,24 @@
 	// UI
 	import { Button } from '$lib/components/ui/button';
 	import { Progress } from '$lib/components/ui/progress';
-	// Types
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
 
 	/**
 	 * Props:
-	 * - character: The character data (maybe null if loading)
-	 * - onUpdateDB: Callback that actually writes to the DB (like gameCharacterApi.updateRow)
+	 * - current_hp: Current hit points
+	 * - max_hp: Maximum hit points
+	 * - onUpdateHP: Callback to update the HP value
 	 */
-	let { character, onUpdateDB = async (_changes: Partial<EnrichedCharacter>) => {} } = $props<{
-		character?: EnrichedCharacter | null;
-		onUpdateDB?: (changes: Partial<EnrichedCharacter>) => Promise<void>;
+	let { current_hp = 0, max_hp = 0, onUpdateHP = async (_newHP: number) => {} } = $props<{
+		current_hp: number;
+		max_hp: number;
+		onUpdateHP?: (newHP: number) => Promise<void>;
 	}>();
 
 	/**
 	 * Svelte 5 local state
 	 */
 	let isSliding = $state(false);
-	let sliderValue = $state<number>(0);
+	let sliderValue = $state<number>(current_hp);
 
 	let updateStatus = $state<'idle' | 'syncing' | 'error'>('idle');
 	let errorMessage = $state<string | null>(null);
@@ -28,26 +28,20 @@
 	/**
 	 * Derived variables for HP
 	 */
-	let currentHp = $derived.by(() => {
-		return Number(character?.current_hp ?? 0);
-	});
-	let maxHp = $derived.by(() => {
-		return Number(character?.max_hp ?? 0);
-	});
 	let hpPercentage = $derived.by(() => {
-		if (maxHp === 0) return 0;
-		return Math.round((sliderValue / maxHp) * 100);
+		if (max_hp === 0) return 0;
+		return Math.round((sliderValue / max_hp) * 100);
 	});
 
 	/**
-	 * Only sync with database value if:
+	 * Only sync with passed in value if:
 	 * 1. We're not sliding
 	 * 2. There's no pending update
 	 * 3. We're not currently syncing with the DB
 	 */
 	$effect(() => {
 		if (!isSliding && pendingHP === null && updateStatus !== 'syncing') {
-			sliderValue = currentHp;
+			sliderValue = current_hp;
 		}
 	});
 
@@ -66,9 +60,7 @@
 	 * - schedules flush with setTimeout
 	 */
 	function queueHPUpdate(newHP: number) {
-		if (!character) return;
-
-		const boundedHP = Math.max(0, Math.min(maxHp, newHP));
+		const boundedHP = Math.max(0, Math.min(max_hp, newHP));
 		
 		// Save to pending
 		pendingHP = boundedHP;
@@ -87,11 +79,11 @@
 	 * flushPending: does the actual DB update
 	 */
 	async function flushPending() {
-		if (!character || pendingHP === null) return;
+		if (pendingHP === null) return;
 
 		try {
 			updateStatus = 'syncing';
-			await onUpdateDB({ current_hp: pendingHP });
+			await onUpdateHP(pendingHP);
 			updateStatus = 'idle';
 		} catch (err) {
 			console.error('Failed HP update:', err);
@@ -131,56 +123,50 @@
 </script>
 
 <!-- Template -->
-{#if !character}
-	<div class="card">
-		<p class="text-muted-foreground">Loading HP data...</p>
+<div class="card space-y-6" class:border-destructive={updateStatus === 'error'}>
+	<h2 class="section-title">Hit Points</h2>
+
+	<!-- HP bar + slider -->
+	<div class="relative h-4">
+		<Progress value={hpPercentage} class="h-full" />
+		<input
+			type="range"
+			class="absolute inset-0 w-full cursor-pointer opacity-0"
+			max={max_hp}
+			min={0}
+			value={sliderValue}
+			oninput={(e) => {
+				sliderValue = +(e.target as HTMLInputElement).value;
+				isSliding = true;
+			}}
+			onchange={handleSliderChange}
+		/>
 	</div>
-{:else}
-	<div class="card space-y-6" class:border-destructive={updateStatus === 'error'}>
-		<h2 class="section-title">Hit Points</h2>
 
-		<!-- HP bar + slider -->
-		<div class="relative h-4">
-			<Progress value={hpPercentage} class="h-full" />
-			<input
-				type="range"
-				class="absolute inset-0 w-full cursor-pointer opacity-0"
-				max={maxHp}
-				min={0}
-				value={sliderValue}
-				oninput={(e) => {
-					sliderValue = +(e.target as HTMLInputElement).value;
-					isSliding = true;
-				}}
-				onchange={handleSliderChange}
-			/>
-		</div>
-
-		<!-- Quick action buttons -->
-		<div class="grid grid-cols-4 gap-3">
-			{#each quickActions as { amount, label, variant }}
-				<Button
-					{variant}
-					size="sm"
-					disabled={amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp}
-					onclick={() => handleQuickAction(amount)}
-				>
-					{label}
-				</Button>
-			{/each}
-		</div>
-
-		<!-- HP readout -->
-		<div class="flex items-baseline justify-center gap-2">
-			<span class="text-4xl font-bold">{sliderValue}</span>
-			<span class="text-xl text-muted-foreground">/ {maxHp}</span>
-		</div>
-
-		<!-- Error message -->
-		{#if updateStatus === 'error' && errorMessage}
-			<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-				{errorMessage}
-			</div>
-		{/if}
+	<!-- Quick action buttons -->
+	<div class="grid grid-cols-4 gap-3">
+		{#each quickActions as { amount, label, variant }}
+			<Button
+				{variant}
+				size="sm"
+				disabled={amount < 0 ? sliderValue <= 0 : sliderValue >= max_hp}
+				onclick={() => handleQuickAction(amount)}
+			>
+				{label}
+			</Button>
+		{/each}
 	</div>
-{/if}
+
+	<!-- HP readout -->
+	<div class="flex items-baseline justify-center gap-2">
+		<span class="text-4xl font-bold">{sliderValue}</span>
+		<span class="text-xl text-muted-foreground">/ {max_hp}</span>
+	</div>
+
+	<!-- Error message -->
+	{#if updateStatus === 'error' && errorMessage}
+		<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+			{errorMessage}
+		</div>
+	{/if}
+</div>

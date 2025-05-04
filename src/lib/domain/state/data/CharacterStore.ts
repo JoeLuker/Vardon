@@ -1,4 +1,5 @@
 import type { Entity, CharacterData } from '../../types/EntityTypes';
+import type { GameRulesAPI } from '$lib/db/gameRules.api';
 
 /**
  * Interface for storage drivers
@@ -39,6 +40,74 @@ export class LocalStorageDriver implements StorageDriver {
       }
     }
     return keys;
+  }
+}
+
+/**
+ * Dual storage driver that saves to both local storage and database
+ * This provides both offline capability and cloud sync
+ */
+export class DualStorageDriver implements StorageDriver {
+  constructor(
+    private localDriver: StorageDriver,
+    private databaseDriver: StorageDriver
+  ) {}
+  
+  async save(id: string, data: any): Promise<void> {
+    // Save to both storages
+    await Promise.all([
+      this.localDriver.save(id, data),
+      this.databaseDriver.save(id, data).catch(err => {
+        console.warn('Database save failed, using local only:', err);
+      })
+    ]);
+  }
+  
+  async load(id: string): Promise<any | null> {
+    try {
+      // Try database first
+      const dbData = await this.databaseDriver.load(id);
+      if (dbData) {
+        // Update local copy if database load succeeded
+        await this.localDriver.save(id, dbData);
+        return dbData;
+      }
+    } catch (err) {
+      console.warn('Database load failed, using local only:', err);
+    }
+    
+    // Fall back to local storage
+    return this.localDriver.load(id);
+  }
+  
+  async delete(id: string): Promise<boolean> {
+    // Delete from both storages
+    const [localResult, dbResult] = await Promise.all([
+      this.localDriver.delete(id),
+      this.databaseDriver.delete(id).catch(err => {
+        console.warn('Database delete failed:', err);
+        return false;
+      })
+    ]);
+    
+    // Consider it successful if either deletion worked
+    return localResult || dbResult;
+  }
+  
+  async list(): Promise<string[]> {
+    try {
+      // Try to get list from database
+      const dbList = await this.databaseDriver.list();
+      
+      // Also get local list
+      const localList = await this.localDriver.list();
+      
+      // Combine and deduplicate
+      return [...new Set([...dbList, ...localList])];
+    } catch (err) {
+      console.warn('Database list failed, using local only:', err);
+      return this.localDriver.list();
+    }
   }
 }
 
@@ -292,4 +361,54 @@ export class CharacterStore {
       throw error;
     }
   }
+
+  /**
+   * Creates a Supabase database entity mapping for a client-side entity
+   * @param entity The client-side entity
+   * @returns A database entity mapping
+   */
+  createEntityMapping(entity: Entity): any {
+    return {
+      uuid: entity.id,
+      type: entity.type,
+      name: entity.name,
+      properties: entity.properties || {},
+      metadata: entity.metadata || {}
+    };
+  }
+}
+
+/**
+ * Factory function to create a CharacterStore with the appropriate storage driver
+ * @param gameRulesAPI Optional GameRulesAPI instance for database access
+ * @returns A CharacterStore instance
+ */
+export function createCharacterStore(gameRulesAPI?: GameRulesAPI): CharacterStore {
+  // Always create a local storage driver
+  const localDriver = new LocalStorageDriver();
+  
+  if (gameRulesAPI) {
+    // If we have a GameRulesAPI, use a SupabaseStorageDriver with DualStorageDriver
+    // We'll use lazy loading pattern instead of require to avoid browser issues
+    try {
+      // Dynamic import doesn't work in some environments, so we'll use a safer approach
+      // @ts-ignore - Accessing from window to avoid import issues
+      const { SupabaseStorageDriver } = window.VardonModules?.SupabaseDriver || {};
+      
+      if (SupabaseStorageDriver) {
+        const dbDriver = new SupabaseStorageDriver(gameRulesAPI);
+        const dualDriver = new DualStorageDriver(localDriver, dbDriver);
+        return new CharacterStore(dualDriver);
+      }
+    } catch (error) {
+      console.warn('Database integration not available:', error);
+    }
+    
+    // Fallback to local storage if there's any issue with the database driver
+    console.warn('Using local storage only (database integration unavailable)');
+    return new CharacterStore(localDriver);
+  }
+  
+  // Fall back to local storage only
+  return new CharacterStore(localDriver);
 }

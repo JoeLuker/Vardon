@@ -1,43 +1,65 @@
 <script lang="ts">
+    import { Button } from '$lib/components/ui/button';
+    import Self from './TreeNode.svelte';
     
-    export let node: {
-        name: string;
-        id: string | number;
-        level: number;
-        isActive: boolean;
-        isAvailable: boolean;
-        isLast: boolean;
-        path: string;
-        children: any[];
-    };
+    const { node, onNodeclick } = $props<{
+        node: {
+            name: string;
+            id: number | string;
+            level: number;
+            isActive: boolean;
+            isAvailable: boolean;
+            isLast: boolean;
+            path: string;
+            entry?: any;
+            children: any[];
+        },
+        onNodeclick?: (entry: any) => void
+    }>();
+    
+    function handleClick() {
+        if (node.entry && onNodeclick) {
+            onNodeclick(node.entry);
+        }
+    }
 </script>
 
-<div class="tree-node">
-    <div class="node-content flex items-center" 
-         class:font-medium={node.isActive}
-         class:opacity-60={!node.isAvailable}>
+<div class="tree-node py-1">
+    <div class="node-content flex items-center">
         <span class="node-connector" class:last={node.isLast}></span>
-        <div class="node-label py-1 px-2 rounded text-sm"
-             class:bg-success-10={node.isActive}
-             class:text-success={node.isActive}>
-            {node.name} 
-            <span class="text-muted-foreground text-xs">(ML {node.level})</span>
-        </div>
+        
+        <!-- Make the label clickable if there's an entry using shadcn Button -->
+        <Button
+            variant={node.isActive ? "outline" : "ghost"}
+            size="sm"
+            class={`h-auto py-2 px-3 text-left justify-start gap-1.5 whitespace-nowrap min-w-[180px]
+                   ${node.isActive ? 'font-medium border-success text-success' : ''} 
+                   ${!node.isAvailable ? 'opacity-60' : ''}`}
+            disabled={!node.entry || !node.isAvailable}
+            onclick={handleClick}
+        >
+            <span>{node.name}</span>
+            <span class="text-muted-foreground text-xs ml-1">(ML {node.level})</span>
+        </Button>
     </div>
     
-    {#if node.children.length > 0}
-        <div class="node-children pl-6 ml-2 border-l">
+    {#if node.children && node.children.length > 0}
+        <div class="node-children pl-8 ml-2 border-l mt-2">
             {#each node.children as child}
-                <svelte:self node={child} />
+                <Self node={child} onNodeclick={onNodeclick} />
             {/each}
         </div>
     {/if}
 </div>
 
 <style lang="postcss">
+    .tree-node {
+        margin-bottom: 0.25rem;
+    }
+    
     .node-connector {
         position: relative;
-        width: 18px;
+        width: 24px;
         height: 1px;
         display: inline-block;
     }
@@ -47,7 +69,7 @@
         position: absolute;
         top: 50%;
         left: 0;
-        width: 12px;
+        width: 16px;
         height: 1px;
         background-color: theme('colors.border');
     }
@@ -57,7 +79,7 @@
         position: absolute;
         top: 50%;
         left: 0;
-        height: 100%;
+        height: 150%;
         width: 1px;
         background-color: theme('colors.border');
     }
