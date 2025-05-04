@@ -1,0 +1,11 @@
+corruption_manifestation_prerequisite:
+- id: &prerequisite_dreadful_charm_id 1
+  corruption_manifestation_id: *manifestation_dreadful_charm_id
+  prerequisite_manifestation_id: *manifestation_allure_id
+- id: &prerequisite_true_unlife_id 2
+  corruption_manifestation_id: *manifestation_true_unlife_id
+  prerequisite_manifestation_id: *manifestation_greater_unlife_id
+- id: &prerequisite_greater_unlife_id 3
+  corruption_manifestation_id: *manifestation_greater_unlife_id
+  prerequisite_manifestation_id: *manifestation_unlife_id
+

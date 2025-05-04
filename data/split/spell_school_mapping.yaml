@@ -1,0 +1,4 @@
+spell_school_mapping:
+- spell_id: *spell_augury_id
+  spell_school_id: *spell_school_divination_id
+

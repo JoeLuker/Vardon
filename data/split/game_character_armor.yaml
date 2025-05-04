@@ -1,0 +1,6 @@
+game_character_armor:
+- game_character_id: *game_character_vardon_salvador_id
+  armor_id: *armor_mithral_chainshirt_id
+- game_character_id: *game_character_killiq_said_id
+  armor_id: *bracers_of_armor_id
+

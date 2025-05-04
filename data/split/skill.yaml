@@ -1,0 +1,216 @@
+skill:
+- id: &skill_acrobatics_id 28
+  name: 'acrobatics'
+  label: 'Acrobatics'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_appraise_id 29
+  name: 'appraise'
+  label: 'Appraise'
+  ability_id: *ability_int_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_bluff_id 30
+  name: 'bluff'
+  label: 'Bluff'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_climb_id 31
+  name: 'climb'
+  label: 'Climb'
+  ability_id: *ability_str_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_craft_alchemy_id 32
+  name: 'craft_alchemy'
+  label: 'Craft (Alchemy)'
+  ability_id: *ability_int_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_diplomacy_id 35
+  name: 'diplomacy'
+  label: 'Diplomacy'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_disable_device_id 36
+  name: 'disable_device'
+  label: 'Disable Device'
+  ability_id: *ability_dex_id
+  trained_only: true
+  armor_check_penalty: true
+- id: &skill_disguise_id 37
+  name: 'disguise'
+  label: 'Disguise'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_escape_artist_id 38
+  name: 'escape_artist'
+  label: 'Escape Artist'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_fly_id 39
+  name: 'fly'
+  label: 'Fly'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_handle_animal_id 40
+  name: 'handle_animal'
+  label: 'Handle Animal'
+  ability_id: *ability_cha_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_heal_id 41
+  name: 'heal'
+  label: 'Heal'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_intimidate_id 42
+  name: 'intimidate'
+  label: 'Intimidate'
+  ability_id: *ability_cha_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_knowledge_arcana_id 43
+  name: 'knowledge_arcana'
+  label: 'Knowledge (Arcana)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_dungeoneering_id 44
+  name: 'knowledge_dungeoneering'
+  label: 'Knowledge (Dungeoneering)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_engineering_id 45
+  name: 'knowledge_engineering'
+  label: 'Knowledge (Engineering)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_geography_id 46
+  name: 'knowledge_geography'
+  label: 'Knowledge (Geography)'
+  ability_id: *ability_int_id
+  trained_only: true
+  knowledge_skill: true
+  armor_check_penalty: false
+- id: &skill_knowledge_history_id 47
+  name: 'knowledge_history'
+  label: 'Knowledge (History)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_local_id 48
+  name: 'knowledge_local'
+  label: 'Knowledge (Local)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_nature_id 49
+  name: 'knowledge_nature'
+  label: 'Knowledge (Nature)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_nobility_id 50
+  name: 'knowledge_nobility'
+  label: 'Knowledge (Nobility)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_planes_id 51
+  name: 'knowledge_planes'
+  label: 'Knowledge (Planes)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_knowledge_religion_id 52
+  name: 'knowledge_religion'
+  label: 'Knowledge (Religion)'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+  knowledge_skill: true
+- id: &skill_linguistics_id 53
+  name: 'linguistics'
+  label: 'Linguistics'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_perception_id 54
+  name: 'perception'
+  label: 'Perception'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_profession_id 55
+  name: 'profession'
+  label: 'Profession'
+  ability_id: *ability_wis_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_ride_id 56
+  name: 'ride'
+  label: 'Ride'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_sense_motive_id 57
+  name: 'sense_motive'
+  label: 'Sense Motive'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_sleight_of_hand_id 58
+  name: 'sleight_of_hand'
+  label: 'Sleight of Hand'
+  ability_id: *ability_dex_id
+  trained_only: true
+  armor_check_penalty: true
+- id: &skill_spellcraft_id 59
+  name: 'spellcraft'
+  label: 'Spellcraft'
+  ability_id: *ability_int_id
+  trained_only: true
+  armor_check_penalty: false
+- id: &skill_stealth_id 60
+  name: 'stealth'
+  label: 'Stealth'
+  ability_id: *ability_dex_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_survival_id 61
+  name: 'survival'
+  label: 'Survival'
+  ability_id: *ability_wis_id
+  trained_only: false
+  armor_check_penalty: false
+- id: &skill_swim_id 62
+  name: 'swim'
+  label: 'Swim'
+  ability_id: *ability_str_id
+  trained_only: false
+  armor_check_penalty: true
+- id: &skill_use_magic_device_id 63
+  name: 'use_magic_device'
+  label: 'Use Magic Device'
+  ability_id: *ability_cha_id
+  trained_only: true
+  armor_check_penalty: false
+

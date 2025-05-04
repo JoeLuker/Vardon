@@ -1,0 +1,28 @@
+game_character_spell:
+# Vardons Extracts
+- game_character_id: *game_character_vardon_salvador_id
+  spell_id: *spell_shield_id
+  level: 1
+  prepared: 2
+  used: 0
+- game_character_id: *game_character_vardon_salvador_id
+  spell_id: *spell_cure_light_wounds_id
+  level: 1
+  prepared: 1
+  used: 0
+- game_character_id: *game_character_vardon_salvador_id
+  spell_id: *spell_enlarge_person_id
+  level: 1
+  prepared: 1
+  used: 0
+- game_character_id: *game_character_vardon_salvador_id
+  spell_id: *spell_invisibility_id
+  level: 2
+  prepared: 1
+  used: 0
+- game_character_id: *game_character_vardon_salvador_id
+  spell_id: *spell_bull_s_strength_id
+  level: 2
+  prepared: 1
+  used: 0
+

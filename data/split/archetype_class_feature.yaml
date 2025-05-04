@@ -1,0 +1,66 @@
+archetype_class_feature:
+- id: &archetype_class_feature_mindchemist_cognatogen_id 1
+  archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_cognatogen_id
+  feature_level: 1
+- id: &archetype_class_feature_mindchemist_bonus_feat_id 2
+  archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_mindchemist_bonus_feat_id
+  feature_level: 2
+- id: &archetype_class_feature_mindchemist_perfect_recall_id 3
+  archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_perfect_recall_id
+  feature_level: 2
+- id: &archetype_class_feature_mindchemist_languages_id 4
+  archetype_id: *archetype_mindchemist_id
+  class_id: *class_alchemist_id
+  feature_id: *class_feature_mindchemist_languages_id
+  feature_level: 2
+  # - archetype_id: *archetype_hungry_ghost_monk_id
+  #   class_id: *class_monk_unchained_id
+  #   feature_id: *class_feature_punishing_kick_id
+  #   level_obtained: 1
+  # - archetype_id: *archetype_hungry_ghost_monk_id
+  #   class_id: *class_monk_unchained_id
+  #   feature_id: *class_feature_steal_ki_id
+  #   level_obtained: 5
+  # - archetype_id: *archetype_hungry_ghost_monk_id
+  #   class_id: *class_monk_unchained_id
+  #   feature_id: *class_feature_life_funnel_id
+  #   level_obtained: 7
+  # - archetype_id: *archetype_hungry_ghost_monk_id
+  #   class_id: *class_monk_unchained_id
+  #   feature_id: *class_feature_life_from_stone_id
+  #   level_obtained: 11
+  # - archetype_id: *archetype_hungry_ghost_monk_id
+  #   class_id: *class_monk_unchained_id
+  #   feature_id: *class_feature_sipping_demon_id
+  # level_obtained: 13
+  # - archetype_id: *archetype_extra_bombs_id
+  #   class_id: *class_alchemist_id
+  #   feature_id: *class_feature_extra_bombs_id
+  #   level_obtained: 1
+- id: &archetype_class_feature_elemental_ascetic_elemental_flurry_id 5
+  archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_elemental_flurry_id
+  feature_level: 1
+- id: &archetype_class_feature_elemental_ascetic_elemental_wisdom_id 6
+  archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_elemental_wisdom_id
+  feature_level: 1
+- id: &archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id 7
+  archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_ac_bonus_ascetic_id
+  feature_level: 2
+- id: &archetype_class_feature_elemental_ascetic_powerful_fist_id 8
+  archetype_id: *archetype_elemental_ascetic_id
+  class_id: *class_kineticist_id
+  feature_id: *class_feature_powerful_fist_id
+  feature_level: 5
+

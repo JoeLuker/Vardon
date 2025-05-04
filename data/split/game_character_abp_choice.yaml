@@ -1,0 +1,23 @@
+game_character_abp_choice:
+# Mental Prowess Choices
+- id: 1400
+  game_character_id: *game_character_vardon_salvador_id
+  group_id: *group_level_6_id
+  node_id: *mental_prowess_int_node_id
+
+- id: 1401
+  game_character_id: *game_character_killiq_said_id
+  group_id: *group_level_6_id
+  node_id: *mental_prowess_wis_node_id
+
+# Physical Prowess Choices
+- id: 1402
+  game_character_id: *game_character_vardon_salvador_id
+  group_id: *group_level_7_id
+  node_id: *physical_prowess_dex_node_id
+
+- id: 1403
+  game_character_id: *game_character_killiq_said_id
+  group_id: *group_level_7_id
+  node_id: *physical_prowess_str_node_id
+

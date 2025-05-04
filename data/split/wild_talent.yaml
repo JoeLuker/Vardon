@@ -1,0 +1,37 @@
+wild_talent:
+- id: &wild_talent_stylish_infusion_id 1
+  name: 'stylish_infusion'
+  label: 'Stylish Infusion'
+  class_id: *class_kineticist_id
+  wild_talent_type_id: *wild_talent_type_substance_infusion_id
+  level: 3
+  burn: 2
+  associated_blasts: 'any'
+  saving_throw: 'none'
+  description: |
+    When you learn this infusion, select an unchained monk style strike. You can use that style strike during a flurry of blows with your infused blast, though you must still follow the limitation of one style strike per flurry of blows (or two if you are a 15th-level unchained monk). If you select flying kick, the distance is equal to your elemental overflow bonus on attack rolls × 10 feet. You can use this infusion only while also using the kinetic fist form infusion.
+
+    Special: You can select this infusion multiple times. Each time, you must select a different style strike.
+
+- id: &wild_talent_kinetic_fist_id 2
+  name: 'kinetic_fist'
+  label: 'Kinetic Fist'
+  class_id: *class_kineticist_id
+  wild_talent_type_id: *wild_talent_type_form_infusion_id
+  level: 1
+  burn: 1
+  associated_blasts: 'any'
+  saving_throw: 'none'
+  description: |
+    You surround your body with energy or elemental matter from your kinetic abilities. You can use this form infusion as part of an attack action, a charge action, or a full-attack action to add damage to each of your natural attacks and unarmed strikes until the beginning of your next turn. Since kinetic fist is part of another action, using this wild talent doesn't provoke any additional attack of opportunity. You deal an additional 1d6 points of damage per 3 dice of your kinetic blast's damage (minimum 1d6), and this damage is of the same type as your kinetic blast's damage. This extra damage ignores spell resistance and doesn't apply any modifiers to your kinetic blast's damage, such as your Constitution modifier.
+
+- id: &wild_talent_basic_geokinesis_id 300
+  name: 'basic_geokinesis'
+  label: 'Basic Geokinesis'
+- id: &wild_talent_earth_walk_id 302
+  name: 'earth_walk'
+  label: 'Earth Walk'
+- id: &wild_talent_tremorsense_id 303
+  name: 'tremorsense'
+  label: 'Tremorsense'
+

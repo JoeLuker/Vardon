@@ -1,0 +1,97 @@
+corruption_manifestation:
+- id: &manifestation_vampiric_grace_id 114
+  name: 'vampiric_grace'
+  label: 'Vampiric Grace'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 1
+  description: |
+    Gift: You gain Dodge as a bonus feat and a +2 racial bonus on Stealth checks. At manifestation level 6th, you can climb walls (as per spider climb) at will.
+
+    Stain: You can enter a private dwelling only if invited in by someone with the authority to do so, unless you succeed at a DC 30 Will save.
+    If you fail, you can never retry the save, but you can enter if you're later invited inside.
+
+- id: &manifestation_fangs_id 115
+  name: 'fangs'
+  label: 'Fangs'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 2
+  description: |
+    Gift: You can, as a swift action, grow fangs that grant you a bite attack. This is a primary natural attack that deals 1d6 points of piercing damage if your size is Medium (1d4 if Small). You can dismiss the fangs as a move action. You can drain blood with your bite from a helpless creature as a standard action, or a pinned creature as a free action once per round immediately after succeeding at a combat maneuver check to pin the creature or maintain your pin. Each time you drain blood, you deal 1 point of Constitution damage. This counts toward the feeding you must do to avoid your corruption progressing; you needn't entirely drain and kill the creature. Draining blood changes your alignment only if you feed on an unwilling innocent.
+
+    Stain: To avoid a saving throw against your corruption progressing, you must drink the requisite amount of blood each day instead of each week.
+
+- id: &manifestation_unlife_id 116
+  name: 'unlife'
+  label: 'Unlife'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 3
+  description: |
+    Gift: As a standard action a number of times per day equal to 1/2 your manifestation level, you can grant yourself fast healing 1 for 1 minute.
+
+    Stain: While you're in direct sunlight, you become shaken. Nothing can remove this condition, nor does immunity to fear prevent it, but it ends as soon as you are no longer in sunlight.
+
+- id: &manifestation_greater_unlife_id 117
+  name: 'greater_unlife'
+  label: 'Greater Unlife'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 4
+  description: |
+    Gift: When you use the ability of the unlife manifestation, you gain fast healing 3 instead of fast healing 1. While the fast healing lasts, you are immune to nonlethal damage, ability damage, and ability drain, although you retain any you already had.
+
+    Stain: Whenever you're in direct sunlight, you're staggered instead of shaken. Nothing can remove or prevent this condition, but it ends once you're out of direct sunlight.
+
+- id: &manifestation_true_unlife_id 118
+  name: 'true_unlife'
+  label: 'True Unlife'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 5
+  description: |
+    Gift: When you're reduced to fewer than 0 hit points but not slain and you have a use of fast healing remaining, you immediately assume gaseous form, activate your fast healing, and remain conscious. Once you have more than 0 hit points, the effect ends. This delays the normal Will save against your corruption progressing until gaseous form ends.
+
+    Stain: If you remain in direct sunlight, at the end of your second turn you burst into flame, taking 1d6 points of fire damage per manifestation level you have each round. This fire damage bypasses resistance or immunity and can't be prevented. The fire damage and staggered condition end as soon as you get out of direct sunlight. If you are reduced to fewer than 0 hit points while in direct sunlight, you are slain and can't be brought back to life without true resurrection.
+
+# ========== ALLURE ==========
+- id: &manifestation_allure_id 501
+  name: 'allure'
+  label: 'Allure'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 1
+  description: |
+    Gift: +2 (or +4 at ML 3) racial bonus on Bluff, Diplomacy, Intimidate.
+
+    Stain: No reflection; severe penalty with mirrors, etc.
+
+# ========== CHILDREN OF THE NIGHT ==========
+- id: &manifestation_children_of_the_night_id 502
+  name: 'children_of_the_night'
+  label: 'Children of the Night'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 1
+  description: |
+    Gift: Summon rat swarm or wolf (like summon nature's ally II) for 10 mins.
+    Gains more uses at higher levels.
+
+    Stain: -3 on Handle Animal & Ride vs normal animals, eventually unnatural aura.
+
+# ========== DREADFUL CHARM ==========
+- id: &manifestation_dreadful_charm_id 503
+  name: 'dreadful_charm'
+  label: 'Dreadful Charm'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 2
+  description: |
+    Gift: Once/day if you succeed on a social check vs a creature, you can charm monster.
+
+    Stain: No shadow, and you become sickened by garlic (Fort DC 20).
+
+# ========== LIFE DRAIN ==========
+- id: &manifestation_life_drain_id 504
+  name: 'life_drain'
+  label: 'Life Drain'
+  corruption_id: *corruption_vampirism_id
+  min_manifestation_level: 2
+  description: |
+    Gift: Gain a slam that does 1d6 damage plus 1 temporary negative level on a crit.
+
+    Stain: You are healed by negative energy and harmed by positive, like undead.
+

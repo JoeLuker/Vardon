@@ -1,0 +1,8 @@
+equipment:
+- id: &equipment_alchemist_kit_id 603
+  name: 'alchemist_kit'
+  label: 'Alchemist Kit'
+  equippable: true
+  slot: 'other'
+  bonus: 2
+  bonus_type_id: *bonus_circumstance_id

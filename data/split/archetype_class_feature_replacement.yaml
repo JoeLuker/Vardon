@@ -1,0 +1,17 @@
+archetype_class_feature_replacement:
+- id: &archetype_replacement_mindchemist_mutagen_id 1
+  replaced_class_feature_id: *class_feature_mutagen_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_cognatogen_id
+
+- id: &archetype_replacement_mindchemist_poison_use_id 2
+  replaced_class_feature_id: *class_feature_poison_use_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_perfect_recall_id
+
+- id: &archetype_replacement_elemental_ascetic_elemental_overflow_id 3
+  replaced_class_feature_id: *class_feature_elemental_overflow_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_elemental_flurry_id
+
+- id: &archetype_replacement_elemental_ascetic_elemental_defense_id 4
+  replaced_class_feature_id: *class_feature_elemental_defense_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id
+

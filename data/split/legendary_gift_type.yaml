@@ -1,0 +1,25 @@
+legendary_gift_type:
+- id: &legendary_gift_ability_id 1300
+  name: 'ability'
+  label: 'Ability Score'
+
+- id: &legendary_gift_armor_id 1301
+  name: 'armor'
+  label: 'Armor'
+
+- id: &legendary_gift_body_id 1302
+  name: 'body'
+  label: 'Physical Abilities'
+
+- id: &legendary_gift_mind_id 1303
+  name: 'mind'
+  label: 'Mental Abilities'
+
+- id: &legendary_gift_shield_id 1304
+  name: 'shield'
+  label: 'Shield'
+
+- id: &legendary_gift_weapons_id 1305
+  name: 'weapons'
+  label: 'Weapons'
+

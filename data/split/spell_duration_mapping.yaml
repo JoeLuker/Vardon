@@ -1,0 +1,4 @@
+spell_duration_mapping:
+- spell_id: *spell_augury_id
+  spell_duration_id: *spell_duration_instantaneous_id
+

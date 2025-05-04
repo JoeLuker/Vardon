@@ -1,0 +1,28 @@
+spell_list_class_feature_benefit_mapping:
+- spell_list_id: *spell_list_cleric_id
+  class_feature_benefit_id: *class_feature_benefit_cleric_spellcasting_id
+
+- spell_list_id: *spell_list_medium_id
+  class_feature_benefit_id: *class_feature_benefit_medium_spellcasting_id
+
+- spell_list_id: *spell_list_occultist_divination_id
+  class_feature_benefit_id: *class_feature_benefit_occultist_divination_spellcasting_id
+
+- spell_list_id: *spell_list_oracle_id
+  class_feature_benefit_id: *class_feature_benefit_oracle_spellcasting_id
+
+- spell_list_id: *spell_list_psychic_id
+  class_feature_benefit_id: *class_feature_benefit_psychic_spellcasting_id
+
+- spell_list_id: *spell_list_shaman_id
+  class_feature_benefit_id: *class_feature_benefit_shaman_spellcasting_id
+
+- spell_list_id: *spell_list_warpriest_id
+  class_feature_benefit_id: *class_feature_benefit_warpriest_spellcasting_id
+
+- spell_list_id: *spell_list_witch_id
+  class_feature_benefit_id: *class_feature_benefit_witch_spellcasting_id
+
+- spell_list_id: *spell_list_spiritualist_id
+  class_feature_benefit_id: *class_feature_benefit_spiritualist_spellcasting_id
+

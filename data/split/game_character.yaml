@@ -1,0 +1,16 @@
+game_character:
+- id: &game_character_vardon_salvador_id 1
+  name: 'vardon_salvador'
+  label: 'Vardón Salvador'
+  user_id: *user_id
+  current_hp: 46
+  max_hp: 46
+  is_offline: false
+- id: &game_character_killiq_said_id 2
+  name: 'killiq_said'
+  label: "Killiq Sa'id"
+  user_id: *user_id
+  current_hp: 71
+  max_hp: 71
+  is_offline: false
+# Bridging Tables

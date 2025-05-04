@@ -1,0 +1,8 @@
+sorcerer_bloodline:
+- id: &sorcerer_bloodline_dreamspun_id 1
+  name: 'dreamspun'
+  label: 'Dreamspun'
+- id: &sorcerer_bloodline_harrow_id 2
+  name: 'harrow'
+  label: 'Harrow'
+

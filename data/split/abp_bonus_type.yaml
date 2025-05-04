@@ -1,0 +1,60 @@
+abp_bonus_type:
+- id: &abp_resistance_id 16
+  name: 'resistance'
+  label: 'Resistance'
+- id: &abp_armor_attunement_id 17
+  name: 'armor_attunement'
+  label: 'Armor Attunement'
+- id: &abp_weapon_attunement_id 18
+  name: 'weapon_attunement'
+  label: 'Weapon Attunement'
+- id: &abp_deflection_id 19
+  name: 'deflection'
+  label: 'Deflection'
+- id: &abp_mental_prowess_int_id 20
+  name: 'mental_prowess_int'
+  label: 'Mental Prowess (Int)'
+- id: &abp_mental_prowess_wis_id 21
+  name: 'mental_prowess_wis'
+  label: 'Mental Prowess (Wis)'
+- id: &abp_mental_prowess_cha_id 22
+  name: 'mental_prowess_cha'
+  label: 'Mental Prowess (Cha)'
+- id: &abp_physical_prowess_str_id 23
+  name: 'physical_prowess_str'
+  label: 'Physical Prowess (Str)'
+- id: &abp_physical_prowess_dex_id 24
+  name: 'physical_prowess_dex'
+  label: 'Physical Prowess (Dex)'
+- id: &abp_physical_prowess_con_id 25
+  name: 'physical_prowess_con'
+  label: 'Physical Prowess (Con)'
+- id: &abp_toughening_id 26
+  name: 'toughening'
+  label: 'Toughening'
+
+# Add the legendary gift bonus types here
+- id: &legendary_gift_ability_bonus_id 1300
+  name: 'ability_bonus'
+  label: 'Legendary Gift (Ability)'
+
+- id: &legendary_gift_armor_bonus_id 1301
+  name: 'armor_bonus'
+  label: 'Legendary Gift (Armor)'
+
+- id: &legendary_gift_body_bonus_id 1302
+  name: 'body_bonus'
+  label: 'Legendary Gift (Body)'
+
+- id: &legendary_gift_mind_bonus_id 1303
+  name: 'mind_bonus'
+  label: 'Legendary Gift (Mind)'
+
+- id: &legendary_gift_shield_bonus_id 1304
+  name: 'shield_bonus'
+  label: 'Legendary Gift (Shield)'
+
+- id: &legendary_gift_weapons_bonus_id 1305
+  name: 'weapons_bonus'
+  label: 'Legendary Gift (Weapons)'
+# Level-based progression groups

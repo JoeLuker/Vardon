@@ -1,0 +1,17 @@
+spell_component:
+- id: &spell_component_V_id 1
+  type_id: *spell_component_type_V_id
+
+- id: &spell_component_S_id 2
+  type_id: *spell_component_type_S_id
+
+- id: &spell_component_incense_id 3
+  type_id: *spell_component_type_M_id
+  description: 'incense worth at least 25 gp'
+  cost: 25
+
+- id: &spell_component_bones_id 4
+  type_id: *spell_component_type_F_id
+  description: 'a set of marked sticks or bones worth at least 25 gp'
+  cost: 25
+

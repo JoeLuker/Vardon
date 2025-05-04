@@ -1,0 +1,20 @@
+armor:
+- id: &armor_mithral_chainshirt_id 800
+  name: 'mithral_chainshirt'
+  label: 'Mithral Chainshirt'
+  armor_type: 'light'
+  armor_bonus: 4
+  max_dex: 6
+  arcane_spell_failure_chance: 0
+  armor_check_penalty: 0
+  weight: 10
+  price: 1000
+
+- id: &bracers_of_armor_id 801
+  name: 'bracers_of_armor'
+  label: 'Bracers of Armor'
+  armor_type: 'none'
+  armor_bonus: 0
+  max_dex: 6
+  armor_check_penalty: 0
+

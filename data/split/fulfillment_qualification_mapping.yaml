@@ -1,0 +1,51 @@
+fulfillment_qualification_mapping:
+# ANY qualification will work for a fulfillment
+
+- fulfillment_id: *fulfillment_flurry_id
+  qualification_type_id: *qualification_type_fulfillment_id
+  qualification_id: *fulfillment_monk_flurry_of_blows_id
+
+- fulfillment_id: *fulfillment_monk_flurry_of_blows_id
+  qualification_type_id: *qualification_type_class_feature_id
+  qualification_id: *class_feature_monk_core_flurry_of_blows_id
+
+- fulfillment_id: *fulfillment_flurry_id
+  qualification_type_id: *qualification_type_class_feature_id
+  qualification_id: *class_feature_monk_unchained_flurry_of_blows_id
+
+- fulfillment_id: *fulfillment_flurry_id
+  qualification_type_id: *qualification_type_class_feature_id
+  qualification_id: *class_feature_brawlers_flurry_id
+
+- fulfillment_id: *fulfillment_kinetic_fist_id
+  qualification_type_id: *qualification_type_wild_talent_id
+  qualification_id: *wild_talent_kinetic_fist_id
+
+- fulfillment_id: *fulfillment_elemental_fury_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_elemental_fury_id
+
+- fulfillment_id: *fulfillment_diamond_body_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_diamond_body_id
+
+- fulfillment_id: *fulfillment_sudden_speed_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_sudden_speed_id
+
+- fulfillment_id: *fulfillment_diamond_soul_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_diamond_soul_id
+
+- fulfillment_id: *fulfillment_feather_balance_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_feather_balance_id
+
+- fulfillment_id: *fulfillment_high_jump_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_high_jump_id
+
+- fulfillment_id: *fulfillment_ki_metabolism_id
+  qualification_type_id: *qualification_type_monk_unchained_ki_power_id
+  qualification_id: *monk_unchained_ki_power_ki_metabolism_id
+

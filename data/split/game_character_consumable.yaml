@@ -1,0 +1,11 @@
+game_character_consumable:
+# Vardon's Consumables
+- game_character_id: *game_character_vardon_salvador_id
+  consumable_id: *consumable_alchemist_fire_id
+  quantity: 3
+- game_character_id: *game_character_vardon_salvador_id
+  consumable_id: *consumable_acid_id
+  quantity: 3
+- game_character_id: *game_character_vardon_salvador_id
+  consumable_id: *consumable_tanglefoot_bag_id
+  quantity: 3

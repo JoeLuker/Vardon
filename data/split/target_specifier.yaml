@@ -1,0 +1,30 @@
+target_specifier:
+- id: &target_specifier_ac_id 1 # only specify the most common target specifier, so if it targets all AC's, just specify AC
+  name: 'ac'
+  label: 'AC'
+- id: &target_specifier_touch_ac_id 2
+  name: 'touch_ac'
+  label: 'Touch AC'
+- id: &target_specifier_flat_footed_ac_id 3
+  name: 'flat_footed_ac'
+  label: 'Flat-footed AC'
+
+- id: &target_specifier_strength_id 4
+  name: 'strength'
+  label: 'Strength'
+- id: &target_specifier_dexterity_id 5
+  name: 'dexterity'
+  label: 'Dexterity'
+- id: &target_specifier_constitution_id 6
+  name: 'constitution'
+  label: 'Constitution'
+- id: &target_specifier_intelligence_id 7
+  name: 'intelligence'
+  label: 'Intelligence'
+- id: &target_specifier_wisdom_id 8
+  name: 'wisdom'
+  label: 'Wisdom'
+- id: &target_specifier_charisma_id 9
+  name: 'charisma'
+  label: 'Charisma'
+

@@ -1,0 +1,203 @@
+class:
+- id: &class_alchemist_id 1
+  name: 'alchemist'
+  label: 'Alchemist'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 6 # it's actually 4, but I'm giving 6 for my player
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+  description: |
+    Whether secreted away in a smoky basement laboratory or gleefully experimenting in a well-respected school of magic, the alchemist is often regarded as being just as unstable, unpredictable, and dangerous as the concoctions he brews. While some creators of alchemical items content themselves with sedentary lives as merchants, providing tindertwigs and smokesticks, the true alchemist answers a deeper calling. Rather than cast magic like a spellcaster, the alchemist captures his own magic potential within liquids and extracts he creates, infusing his chemicals with virulent power to grant him impressive skill with poisons, explosives, and all manner of self-transformative magic.
+
+    Role: The alchemist's reputation is not softened by his exuberance (some would say dangerous recklessness) in perfecting his magical extracts and potion-like creations, infusing these substances with magic siphoned from his aura and using his own body as experimental stock. Nor is it mollified by the alchemist's almost gleeful passion for building explosive bombs and discovering strange new poisons and methods for their use. These traits, while making him a liability and risk for most civilized organizations and institutions of higher learning, seem to fit quite well with most adventuring groups.
+
+- id: &class_kineticist_id 2
+  name: 'kineticist'
+  label: 'Kineticist'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_full_id # it's actually three-quarters, but I'm giving full for my player
+  skill_ranks_per_level: 6 # it's actually 4, but I'm giving 6 for my player
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+  description: |
+    Kineticists are living channels for elemental matter and energy, manipulating the world around them by drawing upon inner reserves from their own bodies. Kineticists often awaken to their kinetic abilities during a violent or traumatic experience, releasing their power involuntarily. As kinetic power is seldom inherited, kineticists are rarely able to find mentors to guide them, so they must delve into these mysteries on their own to learn to control their gifts.
+
+    Role: Kineticists generally use their powers to assail their foes from range, but based on the way their talents develop, they can channel their kinetic abilities for a variety of situations. Kineticists are usually quite different from their families and friends, so they often strike out on their own or alongside others with extraordinary talents.
+
+- id: &class_monk_unchained_id 3
+  name: 'monk_unchained'
+  label: 'Monk (Unchained)'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+  description: |
+    Physical and mental perfection—that is the life goal of every monk. For these skilled warriors, martial prowess and mental clarity are one and the same. Capable of pummeling foes with both fist and weapon, monks are among the more versatile combatants on the battlefield. Monks are also able to harness their ki, a spiritual life force that resides within, allowing them to perform amazing acts of acrobatics and mystical skill. All of this depends on incredible discipline and focus, and monks spend their entire lives perfecting these arts.
+
+    Ex-Monks: A monk who becomes nonlawful cannot gain new levels as a monk but retains all monk abilities.
+
+- id: &class_monk_core_id 4
+  name: 'monk_core'
+  label: 'Monk (Core)'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'good'
+  description: |
+    For the truly exemplary, martial skill transcends the battlefield—it is a lifestyle, a doctrine, a state of mind. These warrior-artists search out methods of battle beyond swords and shields, finding weapons within themselves just as capable of crippling or killing as any blade. These monks (so called since they adhere to ancient philosophies and strict martial disciplines) elevate their bodies to become weapons of war, from battle-minded ascetics to self-taught brawlers. Monks tread the path of discipline, and those with the will to endure that path discover within themselves not what they are, but what they are meant to be.
+
+    Role: Monks excel at overcoming even the most daunting perils, striking where it's least expected, and taking advantage of enemy vulnerabilities. Fleet of foot and skilled in combat, monks can navigate any battlefield with ease, aiding allies wherever they are needed most.
+
+    Ex-Monks: A monk who becomes nonlawful cannot gain new levels as a monk but retains all monk abilities.
+
+- id: &class_cleric_core_id 5
+  name: 'cleric_core'
+  label: 'Cleric (Core)'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 2
+  fortitude: 'good'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    In faith and the miracles of the divine, many find a greater purpose. Called to serve powers beyond most mortal understanding, all priests preach wonders and provide for the spiritual needs of their people. Clerics are more than mere priests, though; these emissaries of the divine work the will of their deities through strength of arms and the magic of their gods. Devoted to the tenets of the religions and philosophies that inspire them, these ecclesiastics quest to spread the knowledge and influence of their faith. Yet while they might share similar abilities, clerics prove as different from one another as the divinities they serve, with some offering healing and redemption, others judging law and truth, and still others spreading conflict and corruption. The ways of the cleric are varied, yet all who tread these paths walk with the mightiest of allies and bear the arms of the gods themselves.
+
+    Role: More than capable of upholding the honor of their deities in battle, clerics often prove stalwart and capable combatants. Their true strength lies in their capability to draw upon the power of their deities, whether to increase their own and their allies' prowess in battle, to vex their foes with divine magic, or to lend healing to companions in need.
+
+    As their powers are influenced by their faith, all clerics must focus their worship upon a divine source. While the vast majority of clerics revere a specific deity, a small number dedicate themselves to a divine concept worthy of devotion—such as battle, death, justice, or knowledge—free of a deific abstraction. (Work with your GM if you prefer this path to selecting a specific deity.)
+
+- id: &class_medium_id 6
+  name: 'medium'
+  label: 'Medium'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'poor'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    Mediums channel spirits into themselves, using their own bodies as vessels for astral entities spawned from myths and legends. A medium balances his need for the spirits' power with the danger of allowing such beings influence over his mind. A medium may not perform actions that would allow a spirit to attain 5 or more points of influence over him. A reanimated medium disregards this limit.
+
+    Role: Mediums are very versatile, filling whatever role the party needs at the moment by channeling the right spirit.
+
+- id: &class_occultist_id 7
+  name: 'occultist'
+  label: 'Occultist'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'good'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    The occultist focuses on the world around him, grounded in the powers that flow throughout his environment. He studies the magic that infuses everything, from psychic resonances left in everyday items to powerful incantations that fuel the mightiest spells.
+
+    The occultist channels his psychic might through implements-items that allow him to focus his power and produce incredible effects. For him, implements are more than simple tools. They are a repository of history and a tie to the events of the past. The occultist uses these implements to influence and change the present, adding his legend to theirs. Though some of these implements might be magic items in their own right, most of them are merely of historical or personal significance to the occultist.
+
+    Role: Occultists are always eager to travel in the company of adventurers, explorers, and archaeologists, as those three groups of people have a knack for finding items with rich histories and great significance.
+
+- id: &class_oracle_id 8
+  name: 'oracle'
+  label: 'Oracle'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'poor'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    Although the gods work through many agents, perhaps none is more mysterious than the oracle. These divine vessels are granted power without their choice, selected by providence to wield powers that even they do not fully understand. Unlike a cleric, who draws her magic through devotion to a deity, oracles garner strength and power from many sources, namely those patron deities who support their ideals. Instead of worshiping a single source, oracles tend to venerate all of the gods that share their beliefs. While some see the powers of the oracle as a gift, others view them as a curse, changing the life of the chosen in unforeseen ways.
+
+    Role: Oracles do not usually associate with any one church or temple, instead preferring to strike out on their own, or with a small group of like-minded individuals. Oracles typically use their spells and revelations to further their understanding of their mystery, be it through fighting mighty battles or tending to the poor and sick.
+
+- id: &class_psychic_id 9
+  name: 'psychic'
+  label: 'Psychic'
+  hit_die: 6
+  base_attack_bonus_progression: *bonus_attack_progression_half_id
+  skill_ranks_per_level: 2
+  fortitude: 'poor'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    Within the mind of any sentient being lies power to rival that of the greatest magical artifact or holy site. By accessing these staggering vaults of mental energy, the psychic can shape the world around her, the minds of others, and pathways across the planes. No place or idea is too secret or remote for a psychic to access, and she can pull from every type of psychic magic. Many methods allow psychics to tap into their mental abilities, and the disciplines they follow affect their abilities.
+
+    Role: With a large suite of spells, psychics can handle many situations, but they excel at moving and manipulating objects, as well as reading and influencing thoughts.
+
+- id: &class_shaman_id 10
+  name: 'shaman'
+  label: 'Shaman'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'poor'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    While some heroes speak to gods or consort with otherworldly muses, shamans commune with the spirits of the world and the energies that exist in every living thing. These divine adventurers draw upon their power to shape the world and expand the influence of their spiritual patrons. Shamans have strong ties to natural spirits. They form powerful bonds with particular spirits, and as their power grows they learn to call upon other spirits in times of need.
+
+    Role: Shamans make for potent divine spellcasters, capable of using divine spells and the power of their spirits to aid their allies and destroy their foes. While they aren't the healers that clerics are, they can still fill that role when needed.
+
+- id: &class_spiritualist_id 11
+  name: 'spiritualist'
+  label: 'Spiritualist'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 4
+  fortitude: 'good'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    Becoming a spiritualist is not a calling—it's a phenomenon. When a creature dies, its spirit flees its body and begins the next stage of its existence. Debilitating emotional attachments during life and other psychic corruptions cause some spirits to drift into the Ethereal Plane and descend toward the Negative Energy Plane. Some of these spirits are able to escape the pull of undeath and make their way back to the Material Plane, seeking refuge in a psychically attuned mind. Such a fusing of consciousnesses creates a spiritualist—the master of a single powerful phantom whom the spiritualist can manifest to do her bidding.
+
+    Role: The spiritualist seeks the occult and esoteric truth about life, death, and the passage beyond, using her phantom as a guide and tool. The connection with her phantom allows her to harness the powers of life and death, thought and nightmare, shadow and revelation.
+
+- id: &class_warpriest_id 12
+  name: 'warpriest'
+  label: 'Warpriest'
+  hit_die: 8
+  base_attack_bonus_progression: *bonus_attack_progression_three_quarters_id
+  skill_ranks_per_level: 2
+  fortitude: 'good'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    Capable of calling upon the power of the gods in the form of blessings and spells, warpriests blend divine magic with martial skill. They are unflinching bastions of their faith, shouting gospel as they pummel foes into submission, and never shy away from a challenge to their beliefs. While clerics might be subtle and use diplomacy to accomplish their aims, warpriests aren't above using violence whenever the situation warrants it. In many faiths, warpriests form the core of the church's martial forces—reclaiming lost relics, rescuing captured clergy, and defending the church's tenets from all challenges.
+
+    Role: Warpriests can serve as capable healers or spellcasters, calling upon their divine powers from the center of the fight, where their armor and martial skills are put to the test.
+
+- id: &class_witch_id 13
+  name: 'witch'
+  label: 'Witch'
+  hit_die: 6
+  base_attack_bonus_progression: *bonus_attack_progression_half_id
+  skill_ranks_per_level: 2
+  fortitude: 'poor'
+  reflex: 'poor'
+  will: 'good'
+  description: |
+    Some gain power through study, some through devotion, others through blood, but the witch gains power from her communion with the unknown. Generally feared and misunderstood, the witch draws her magic from a pact made with an otherworldly power. Communing with that source, using her familiar as a conduit, the witch gains not only a host of spells, but a number of strange abilities known as hexes. As a witch grows in power, she might learn about the source of her magic, but some remain blissfully unaware. Some are even afraid of that source, fearful of what it might be or where its true purposes lie.
+
+    Role: While many witches are recluses, living on the edge of civilization, some live within society, openly or in hiding. The blend of witches' spells makes them adept at filling a number of different roles, from seer to healer, and their hexes grant them a number of abilities that are useful in a fight. Some witches travel about, seeking greater knowledge and better understanding of the mysterious powers that guide them.
+
+- id: &class_brawler_id 14
+  name: 'brawler'
+  label: 'Brawler'
+  hit_die: 10
+  base_attack_bonus_progression: *bonus_attack_progression_full_id
+  skill_ranks_per_level: 4
+  fortitude: 'good'
+  reflex: 'good'
+  will: 'poor'
+  description: |
+    Deadly even with nothing in her hands, a brawler eschews using the fighter's heavy armor and the monk's mysticism, focusing instead on perfecting many styles of brutal unarmed combat. Versatile, agile, and able to adapt to most enemy attacks, a brawler's body is a powerful weapon.
+
+    Role: Brawlers are maneuverable and well suited for creating flanking situations or dealing with lightly armored enemies, as well as quickly adapting to a rapidly changing battlefield.
+

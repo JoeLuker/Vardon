@@ -1,0 +1,11 @@
+game_character_discovery:
+- game_character_id: *game_character_vardon_salvador_id
+  discovery_id: *discovery_precise_bombs_id
+  level_obtained: 2
+- game_character_id: *game_character_vardon_salvador_id
+  discovery_id: *discovery_mutagen_id
+  level_obtained: 1
+- game_character_id: *game_character_vardon_salvador_id
+  discovery_id: *discovery_explosive_bomb_id
+  level_obtained: 4
+

@@ -1,0 +1,11 @@
+discovery:
+- id: &discovery_precise_bombs_id 201
+  label: 'precise_bombs'
+  name: 'Precise Bombs'
+- id: &discovery_mutagen_id 202
+  label: 'mutagen'
+  name: 'Mutagen'
+- id: &discovery_explosive_bomb_id 203
+  label: 'explosive_bomb'
+  name: 'Explosive Bomb'
+

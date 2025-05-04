@@ -1,0 +1,61 @@
+spellcasting_class_feature:
+- id: &spellcasting_class_feature_cleric_id 1
+  class_feature_id: *class_feature_cleric_spellcasting_id
+  progression_type_id: *spell_progression_type_prepared_9_id
+  spellcasting_type_id: *spellcasting_type_divine_id
+  ability_id: *ability_wis_id
+
+- id: &spellcasting_class_feature_witch_id 2
+  class_feature_id: *class_feature_witch_spellcasting_id
+  progression_type_id: *spell_progression_type_prepared_9_id
+  spellcasting_type_id: *spellcasting_type_arcane_id
+  ability_id: *ability_int_id
+
+- id: &spellcasting_class_feature_warpriest_id 3
+  class_feature_id: *class_feature_warpriest_spellcasting_id
+  progression_type_id: *spell_progression_type_prepared_6_id
+  spellcasting_type_id: *spellcasting_type_divine_id
+  ability_id: *ability_wis_id
+
+- id: &spellcasting_class_feature_spiritualist_id 4
+  class_feature_id: *class_feature_spiritualist_spellcasting_id
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
+  ability_id: *ability_wis_id
+
+- id: &spellcasting_class_feature_shaman_id 5
+  class_feature_id: *class_feature_shaman_spellcasting_id
+  progression_type_id: *spell_progression_type_prepared_9_id
+  spellcasting_type_id: *spellcasting_type_divine_id
+  ability_id: *ability_wis_id
+
+- id: &spellcasting_class_feature_psychic_id 6
+  class_feature_id: *class_feature_psychic_spellcasting_id
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
+  ability_id: *ability_int_id
+
+- id: &spellcasting_class_feature_medium_id 7
+  class_feature_id: *class_feature_medium_spellcasting_id
+  progression_type_id: *spell_progression_type_spontaneous_4_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
+  ability_id: *ability_cha_id
+
+- id: &spellcasting_class_feature_oracle_id 8
+  class_feature_id: *class_feature_oracle_spellcasting_id
+  progression_type_id: *spell_progression_type_spontaneous_9_id
+  spellcasting_type_id: *spellcasting_type_divine_id
+  ability_id: *ability_cha_id
+
+- id: &spellcasting_class_feature_occultist_id 9
+  class_feature_id: *class_feature_occultist_spellcasting_id
+  progression_type_id: *spell_progression_type_spontaneous_6_id
+  spellcasting_type_id: *spellcasting_type_psychic_id
+  ability_id: *ability_int_id
+
+- id: &spellcasting_class_feature_alchemist_id 10
+  class_feature_id: *class_feature_alchemy_id
+  progression_type_id: *spell_progression_type_prepared_6_id
+  spellcasting_type_id: *spellcasting_type_arcane_id
+  ability_id: *ability_int_id
+

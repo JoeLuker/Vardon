@@ -1,0 +1,57 @@
+feat_benefit:
+- id: &feat_benefit_spell_focus_abjuration_id 1
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_abjuration'
+  label: 'Spell Focus (Abjuration)'
+  benefit: '+1 DC to Abjuration spells'
+  school_id: *spell_school_abjuration_id
+
+- id: &feat_benefit_spell_focus_conjuration_id 2
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_conjuration'
+  label: 'Spell Focus (Conjuration)'
+  benefit: '+1 DC to Conjuration spells'
+  school_id: *spell_school_conjuration_id
+
+- id: &feat_benefit_spell_focus_divination_id 3
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_divination'
+  label: 'Spell Focus (Divination)'
+  benefit: '+1 DC to Divination spells'
+  school_id: *spell_school_divination_id
+
+- id: &feat_benefit_spell_focus_enchantment_id 4
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_enchantment'
+  label: 'Spell Focus (Enchantment)'
+  benefit: '+1 DC to Enchantment spells'
+  school_id: *spell_school_enchantment_id
+
+- id: &feat_benefit_spell_focus_evocation_id 5
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_evocation'
+  label: 'Spell Focus (Evocation)'
+  benefit: '+1 DC to Evocation spells'
+  school_id: *spell_school_evocation_id
+
+- id: &feat_benefit_spell_focus_illusion_id 6
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_illusion'
+  label: 'Spell Focus (Illusion)'
+  benefit: '+1 DC to Illusion spells'
+  school_id: *spell_school_illusion_id
+
+- id: &feat_benefit_spell_focus_necromancy_id 7
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_necromancy'
+  label: 'Spell Focus (Necromancy)'
+  benefit: '+1 DC to Necromancy spells'
+  school_id: *spell_school_necromancy_id
+
+- id: &feat_benefit_spell_focus_transmutation_id 8
+  feat_id: *feat_spell_focus_id
+  name: 'spell_focus_transmutation'
+  label: 'Spell Focus (Transmutation)'
+  benefit: '+1 DC to Transmutation spells'
+  school_id: *spell_school_transmutation_id
+
