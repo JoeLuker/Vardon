@@ -4,7 +4,7 @@
  * This module demonstrates how to migrate existing features to the new plugin system.
  */
 
-import { Entity } from '../kernel/types';
+import type { Entity } from '../kernel/types';
 import { BonusCapabilityProvider } from '../capabilities/bonus/BonusCapabilityProvider';
 import { PluginManager } from '../plugins/PluginManager';
 import { FeatureToPluginMigrator } from '../plugins/migration/FeatureToPluginMigrator';

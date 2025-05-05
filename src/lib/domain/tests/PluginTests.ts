@@ -5,7 +5,7 @@
  * It shows how plugins can be registered, loaded and applied to entities.
  */
 
-import { Entity } from '../kernel/types';
+import type { Entity } from '../kernel/types';
 import { BonusCapabilityProvider } from '../capabilities/bonus/BonusCapabilityProvider';
 import { AbilityCapabilityProvider } from '../capabilities/ability/AbilityCapabilityProvider';
 import { SkillCapabilityProvider } from '../capabilities/skill/SkillCapabilityProvider';
@@ -74,6 +74,11 @@ export async function runPluginTest() {
   
   // Skill Focus plugin
   const skillFocusPlugin = new SkillFocusPlugin({
+    name: 'Skill Focus',
+    description: 'You are particularly adept at a specific skill.',
+    prerequisites: 'None.',
+    benefit: 'You get a +3 bonus on all checks involving the chosen skill. If you have 10 or more ranks in that skill, this bonus increases to +6.',
+    isRepeatable: true,
     debug: true
   });
   pluginManager.registerPlugin(skillFocusPlugin);
@@ -121,13 +126,14 @@ export async function runPluginTest() {
     
     // Now apply Skill Focus to a different skill since it's repeatable
     console.log('\nApplying Skill Focus to Knowledge (Arcana)...');
-    const result2 = pluginManager.applyPlugin(entity, 'skill-focus', { skillId: 3 }); // Knowledge (Arcana)
+    const knowledgeSkillId = 3; // Knowledge (Arcana)
+    const result2 = pluginManager.applyPlugin(entity, 'skill-focus', { skillId: knowledgeSkillId });
     console.log('Apply result:', result2);
     
     // Get all skills to see multiple Skill Focus feats in action
     const allSkills = skillCapability.getAllSkills(entity);
     console.log('\nAll skills after applying Skill Focus to multiple skills:');
-    for (const [skillId, skill] of Object.entries(allSkills)) {
+    for (const [_, skill] of Object.entries(allSkills)) {
       console.log(`${skill.skillName}: Ranks ${skill.ranks}, Total ${skill.total}`);
       if (skill.otherBonuses.components.length > 0) {
         console.log(`  Bonuses: ${JSON.stringify(skill.otherBonuses.components)}`);

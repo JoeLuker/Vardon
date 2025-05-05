@@ -25,10 +25,10 @@ export interface Entity {
  */
 export interface Capability {
   /** Unique identifier for this capability */
-  id: string;
+  readonly id: string;
   
   /** Semantic version of this capability implementation */
-  version: string;
+  readonly version: string;
   
   /** 
    * Initialize the capability for the given entity
@@ -78,6 +78,17 @@ export interface Plugin {
   apply(
     entity: Entity, 
     options: Record<string, any>, 
+    capabilities: Record<string, Capability>
+  ): any;
+  
+  /**
+   * Remove this plugin from an entity
+   * @param entity The entity to remove the plugin from
+   * @param capabilities The capabilities available to this plugin
+   * @returns Result of removing the plugin
+   */
+  remove?(
+    entity: Entity,
     capabilities: Record<string, Capability>
   ): any;
 }

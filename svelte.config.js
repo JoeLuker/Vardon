@@ -12,6 +12,11 @@ const config = {
 		// Set paths relative to the base path
 		paths: {
 			base: ''
+		},
+		
+		// Define path aliases (replacing the baseUrl and paths in tsconfig.json)
+		alias: {
+			'$lib': './src/lib'
 		}
 	}
 };
