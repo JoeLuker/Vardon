@@ -5,8 +5,9 @@
  * Feats are special abilities that characters can acquire.
  */
 
-import { Entity, Capability } from '../../kernel/types';
-import { BasePlugin, BasePluginOptions } from '../BasePlugin';
+import type { Entity, Capability } from '../../kernel/types';
+import { BasePlugin } from '../BasePlugin';
+import type { BasePluginOptions } from '../BasePlugin';
 
 /**
  * Feat plugin options

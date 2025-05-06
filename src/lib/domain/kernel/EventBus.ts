@@ -1,4 +1,4 @@
-import { EventEmitter, EventListener, EventSubscription } from './types';
+import type { EventEmitter, EventListener, EventSubscription } from './types';
 
 /**
  * EventBus implements a simple pub/sub event system

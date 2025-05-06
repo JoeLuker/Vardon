@@ -1,10 +1,61 @@
 /**
  * Core type definitions for the kernel module
- * Following Unix philosophy of small, focused components with explicit interfaces
+ * Following actual Unix kernel and filesystem design principles
  */
 
 /**
+ * File open modes like in Unix
+ */
+export enum OpenMode {
+  /** Read only access */
+  READ = 'r',
+  
+  /** Write only access */
+  WRITE = 'w',
+  
+  /** Read and write access */
+  READ_WRITE = 'rw'
+}
+
+/**
+ * File descriptor for accessing resources
+ * In Unix, processes access resources through file descriptors
+ */
+export interface FileDescriptor {
+  /** Unique numeric identifier for this file descriptor */
+  fd: number;
+  
+  /** Path to the resource this descriptor references */
+  path: string;
+  
+  /** Mode the file was opened with */
+  mode: OpenMode;
+  
+  /** When the file was opened */
+  openedAt: number;
+}
+
+/**
+ * Inode representing a file or resource
+ * In Unix, inodes store file metadata and data
+ */
+export interface Inode {
+  /** Path to this resource */
+  path: string;
+  
+  /** Resource data */
+  data: any;
+  
+  /** Creation time */
+  createdAt: number;
+  
+  /** Last modified time */
+  modifiedAt: number;
+}
+
+/**
  * Entity is the base unit of gameplay. It could be a character, item, etc.
+ * In the Unix model, entities are essentially files in the filesystem
  */
 export interface Entity {
   id: string;
@@ -20,35 +71,58 @@ export interface Entity {
 
 /**
  * Capability is the interface for accessing system functionality
- * Similar to Unix device drivers, capabilities expose specific functionality
- * while hiding implementation details
+ * In Unix, capabilities are device drivers that get mounted in the /dev directory
  */
 export interface Capability {
-  /** Unique identifier for this capability */
+  /** Unique identifier for this capability (like a device name) */
   readonly id: string;
   
   /** Semantic version of this capability implementation */
   readonly version: string;
   
   /** 
-   * Initialize the capability for the given entity
-   * Optional: Not all capabilities need initialization
+   * Called when the device is mounted
+   * Initialization happens here, once, at mount time
    */
-  initialize?(entity: Entity): void;
+  onMount?(kernel: any): void;
   
   /**
-   * Clean up resources when shutting down
-   * Optional: Not all capabilities need cleanup
+   * Read from the device (like a read() system call)
+   * @param fd File descriptor to read from
+   * @param buffer Buffer to read into
+   * @returns 0 on success, error code on failure
+   */
+  read?(fd: number, buffer: any): number;
+  
+  /**
+   * Write to the device (like a write() system call)
+   * @param fd File descriptor to write to
+   * @param buffer Data to write
+   * @returns 0 on success, error code on failure
+   */
+  write?(fd: number, buffer: any): number;
+  
+  /**
+   * Control device (like an ioctl() system call)
+   * @param fd File descriptor to control
+   * @param request Control code
+   * @param arg Control argument
+   * @returns 0 on success, error code on failure
+   */
+  ioctl?(fd: number, request: number, arg: any): number;
+  
+  /**
+   * Clean up resources when shutting down or unmounting
    */
   shutdown?(): Promise<void>;
 }
 
 /**
  * Plugin is the interface for components that implement game features
- * Similar to Unix processes, plugins operate through capabilities
+ * In Unix, plugins would be like processes that open files and devices
  */
 export interface Plugin {
-  /** Unique identifier for this plugin */
+  /** Unique identifier for this plugin (like a process name) */
   id: string;
   
   /** Human-readable name of this plugin */
@@ -57,51 +131,53 @@ export interface Plugin {
   /** Description of what this plugin does */
   description?: string;
   
-  /** List of capability IDs this plugin requires */
-  requiredCapabilities: string[];
+  /** List of device paths this plugin requires access to */
+  requiredDevices: string[];
   
   /**
-   * Optional method to validate if the plugin can be applied
-   * @param entity The entity to validate against
-   * @param capabilities The capabilities available to this plugin
-   * @returns Validation result with status and optional reason
+   * Execute the plugin (like a process running)
+   * @param kernel Kernel to use for file operations
+   * @param entityPath Path to the entity to operate on
+   * @param options Execution options
+   * @returns Exit code (0 for success, non-zero for error)
    */
-  canApply?(entity: Entity, capabilities: Record<string, Capability>): PluginValidationResult;
+  execute(kernel: any, entityPath: string, options?: Record<string, any>): number | Promise<number>;
   
   /**
-   * Apply this plugin to an entity
-   * @param entity The entity to apply the plugin to
-   * @param options Options for how to apply the plugin
-   * @param capabilities The capabilities available to this plugin
-   * @returns Result of applying the plugin
+   * Signal handler for when the plugin is interrupted
+   * @param signal Signal number
+   * @returns Whether the signal was handled
    */
-  apply(
-    entity: Entity, 
-    options: Record<string, any>, 
-    capabilities: Record<string, Capability>
-  ): any;
-  
-  /**
-   * Remove this plugin from an entity
-   * @param entity The entity to remove the plugin from
-   * @param capabilities The capabilities available to this plugin
-   * @returns Result of removing the plugin
-   */
-  remove?(
-    entity: Entity,
-    capabilities: Record<string, Capability>
-  ): any;
+  signal?(signal: number): boolean;
 }
 
 /**
- * Result of validating a plugin
+ * Error codes like in Unix errno.h
  */
-export interface PluginValidationResult {
-  /** Whether the plugin can be applied */
-  valid: boolean;
+export enum ErrorCode {
+  /** Success */
+  SUCCESS = 0,
   
-  /** If not valid, reason why */
-  reason?: string;
+  /** Operation not permitted */
+  EPERM = 1,
+  
+  /** No such file or directory */
+  ENOENT = 2,
+  
+  /** No such process */
+  ESRCH = 3,
+  
+  /** Bad file descriptor */
+  EBADF = 9,
+  
+  /** Permission denied */
+  EACCES = 13,
+  
+  /** Device or resource busy */
+  EBUSY = 16,
+  
+  /** Invalid argument */
+  EINVAL = 22
 }
 
 /**
@@ -163,4 +239,58 @@ export interface KernelOptions {
   
   /** Custom event emitter implementation */
   eventEmitter?: EventEmitter;
+}
+
+/**
+ * Mount options for mounting devices
+ */
+export interface MountOptions {
+  /** Whether to mount read-only */
+  readonly?: boolean;
+  
+  /** Additional mount options */
+  options?: Record<string, any>;
+}
+
+/**
+ * Path operation result
+ */
+export interface PathResult {
+  /** Success status */
+  success: boolean;
+  
+  /** Error code if operation failed */
+  errorCode?: ErrorCode;
+  
+  /** Error message if operation failed */
+  errorMessage?: string;
+  
+  /** Path that was operated on */
+  path: string;
+}
+
+/**
+ * Filesystem stats like from stat() system call
+ */
+export interface Stats {
+  /** Whether this is a file */
+  isFile: boolean;
+  
+  /** Whether this is a directory */
+  isDirectory: boolean;
+  
+  /** Whether this is a device */
+  isDevice: boolean;
+  
+  /** Size in bytes */
+  size: number;
+  
+  /** Created time */
+  createdAt: number;
+  
+  /** Modified time */
+  modifiedAt: number;
+  
+  /** Last accessed time */
+  accessedAt: number;
 }

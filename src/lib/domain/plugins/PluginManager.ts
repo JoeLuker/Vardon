@@ -1,17 +1,25 @@
 /**
  * Plugin Manager
  * 
- * This module implements the plugin manager, which is responsible for
- * registering, loading, and executing plugins.
+ * This module implements the plugin manager, which manages processes (plugins)
+ * in our Unix-like system. It is responsible for:
  * 
- * It follows Unix philosophy by:
- * 1. Keeping a clean interface to plugins
- * 2. Managing dependencies between plugins and capabilities
- * 3. Providing a standard way to register and execute plugins
+ * 1. Registering executable plugins (like /bin directory in Unix)
+ * 2. Orchestrating plugin execution (like init/systemd in Unix)
+ * 3. Managing plugin dependencies on devices (like checking device availability)
+ * 
+ * The plugin manager delegates actual file access to the kernel.
  */
 
-import { Entity, Plugin, Capability, PluginValidationResult } from '../kernel/types';
-import { PluginMetadata } from './types';
+import type { 
+  Entity, 
+  Plugin, 
+  Capability, 
+  OpenMode,
+  ErrorCode
+} from '../kernel/types';
+import type { PluginMetadata } from './types';
+import { GameKernel } from '../kernel/GameKernel';
 
 /**
  * Options for the plugin manager
@@ -19,23 +27,35 @@ import { PluginMetadata } from './types';
 export interface PluginManagerOptions {
   /** Whether to enable debug logging */
   debug?: boolean;
+  
+  /** Required reference to the GameKernel */
+  kernel: GameKernel;
 }
 
 /**
- * Implementation of the plugin manager
+ * Implementation of the plugin manager (similar to Unix process manager)
  */
 export class PluginManager {
   /** Whether debug logging is enabled */
   private readonly debug: boolean;
   
-  /** Map of registered plugins by ID */
+  /** Map of registered plugins by ID (like executables in /bin) */
   private readonly plugins: Map<string, Plugin> = new Map();
   
-  /** Map of registered capabilities by ID */
-  private readonly capabilities: Map<string, Capability> = new Map();
+  /** Reference to the kernel for file operations */
+  private readonly kernel: GameKernel;
   
-  constructor(options: PluginManagerOptions = {}) {
+  /** Map of open file descriptors by path */
+  private readonly openFiles: Map<string, number> = new Map();
+  
+  constructor(options: PluginManagerOptions) {
     this.debug = options.debug || false;
+    
+    if (!options.kernel) {
+      throw new Error('PluginManager requires a GameKernel instance');
+    }
+    
+    this.kernel = options.kernel;
   }
   
   /**
@@ -53,35 +73,12 @@ export class PluginManager {
   }
   
   /**
-   * Register a capability
-   * @param capability Capability to register
-   */
-  registerCapability(capability: Capability): void {
-    if (this.capabilities.has(capability.id)) {
-      this.error(`Capability with ID ${capability.id} is already registered`);
-      return;
-    }
-    
-    this.capabilities.set(capability.id, capability);
-    this.log(`Registered capability: ${capability.id} (${capability.version})`);
-  }
-  
-  /**
    * Get a plugin by ID
    * @param pluginId Plugin ID
    * @returns Plugin instance or undefined if not found
    */
   getPlugin(pluginId: string): Plugin | undefined {
     return this.plugins.get(pluginId);
-  }
-  
-  /**
-   * Get a capability by ID
-   * @param capabilityId Capability ID
-   * @returns Capability instance or undefined if not found
-   */
-  getCapability(capabilityId: string): Capability | undefined {
-    return this.capabilities.get(capabilityId);
   }
   
   /**
@@ -94,12 +91,12 @@ export class PluginManager {
   }
   
   /**
-   * Check if a capability is registered
-   * @param capabilityId Capability ID
-   * @returns Whether the capability is registered
+   * Check if a device (capability) is mounted at the specified path
+   * @param devicePath Device path
+   * @returns Whether the device exists
    */
-  hasCapability(capabilityId: string): boolean {
-    return this.capabilities.has(capabilityId);
+  hasDevice(devicePath: string): boolean {
+    return this.kernel.exists(devicePath);
   }
   
   /**
@@ -111,7 +108,7 @@ export class PluginManager {
       id: plugin.id,
       name: plugin.name,
       description: plugin.description,
-      requiredCapabilities: plugin.requiredCapabilities,
+      requiredDevices: plugin.requiredDevices,
       version: (plugin as any).version || '1.0.0',
       author: (plugin as any).author
     }));
@@ -126,136 +123,163 @@ export class PluginManager {
   }
   
   /**
-   * Get all registered capabilities
-   * @returns Array of all registered capabilities
+   * Get all mounted devices (capabilities)
+   * @returns Array of device paths
    */
-  getAllCapabilities(): Capability[] {
-    return Array.from(this.capabilities.values());
+  getAllDevicePaths(): string[] {
+    // Get all paths in /dev directory
+    return this.kernel.getCapabilityIds().map(id => `/dev/${id}`);
   }
   
   /**
-   * Get plugins that require a capability
-   * @param capabilityId Capability ID
-   * @returns Array of plugins that require this capability
+   * Get plugins that require a specific device
+   * @param devicePath Device path
+   * @returns Array of plugins that require this device
    */
-  getPluginsByCapability(capabilityId: string): Plugin[] {
+  getPluginsByDevice(devicePath: string): Plugin[] {
     return this.getAllPlugins().filter(plugin => 
-      plugin.requiredCapabilities.includes(capabilityId)
+      plugin.requiredDevices.includes(devicePath)
     );
   }
   
   /**
-   * Initialize an entity with all capabilities
-   * @param entity Entity to initialize
-   */
-  initializeEntity(entity: Entity): void {
-    for (const capability of this.capabilities.values()) {
-      try {
-        capability.initialize?.(entity);
-      } catch (error) {
-        this.error(`Error initializing capability ${capability.id} for entity ${entity.id}`, error);
-      }
-    }
-    
-    this.log(`Initialized entity: ${entity.id}`);
-  }
-  
-  /**
-   * Check if a plugin can be applied to an entity
-   * @param entity Entity to check
+   * Check required devices for a plugin
    * @param pluginId Plugin ID
-   * @returns Validation result
+   * @returns Array of missing device paths, empty if all available
    */
-  canApplyPlugin(entity: Entity, pluginId: string): PluginValidationResult {
+  checkRequiredDevices(pluginId: string): string[] {
     const plugin = this.getPlugin(pluginId);
     if (!plugin) {
-      return { valid: false, reason: `Plugin not found: ${pluginId}` };
+      return [`Plugin not found: ${pluginId}`];
     }
     
-    // Check if required capabilities are available
-    for (const capabilityId of plugin.requiredCapabilities) {
-      if (!this.hasCapability(capabilityId)) {
-        return { 
-          valid: false,
-          reason: `Missing required capability: ${capabilityId}`
-        };
+    // Check if required devices are available
+    const missingDevices: string[] = [];
+    for (const devicePath of plugin.requiredDevices) {
+      if (!this.hasDevice(devicePath)) {
+        missingDevices.push(devicePath);
       }
     }
     
-    // Get required capabilities
-    const requiredCapabilities: Record<string, Capability> = {};
-    for (const capabilityId of plugin.requiredCapabilities) {
-      const capability = this.getCapability(capabilityId);
-      if (capability) {
-        requiredCapabilities[capabilityId] = capability;
-      }
-    }
-    
-    // Ask plugin if it can be applied
-    if (plugin.canApply) {
-      return plugin.canApply(entity, requiredCapabilities);
-    }
-    
-    // By default, plugins can be applied if all required capabilities are available
-    return { valid: true };
+    return missingDevices;
   }
   
   /**
-   * Apply a plugin to an entity
-   * @param entity Entity to apply the plugin to
+   * Execute a plugin on an entity
+   * @param entityId Entity ID
    * @param pluginId Plugin ID
-   * @param options Options for how to apply the plugin
-   * @returns Result of applying the plugin
+   * @param options Options for plugin execution
+   * @returns Result of execution
    */
-  applyPlugin(entity: Entity, pluginId: string, options: Record<string, any> = {}): any {
+  async executePlugin(entityId: string, pluginId: string, options: Record<string, any> = {}): Promise<any> {
     const plugin = this.getPlugin(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
     
-    // Validate if plugin can be applied
-    const validation = this.canApplyPlugin(entity, pluginId);
-    if (!validation.valid) {
-      throw new Error(`Cannot apply plugin ${pluginId}: ${validation.reason}`);
+    // Check required devices
+    const missingDevices = this.checkRequiredDevices(pluginId);
+    if (missingDevices.length > 0) {
+      throw new Error(`Missing required devices for plugin ${pluginId}: ${missingDevices.join(', ')}`);
     }
     
-    // Get required capabilities
-    const requiredCapabilities: Record<string, Capability> = {};
-    for (const capabilityId of plugin.requiredCapabilities) {
-      const capability = this.getCapability(capabilityId);
-      if (capability) {
-        requiredCapabilities[capabilityId] = capability;
-      }
+    // Full path to entity file
+    const entityPath = `/entity/${entityId}`;
+    
+    // Check if entity exists
+    if (!this.kernel.exists(entityPath)) {
+      throw new Error(`Entity not found: ${entityId}`);
     }
     
-    // Apply the plugin
-    this.log(`Applying plugin ${pluginId} to entity ${entity.id}`);
+    this.log(`Executing plugin ${pluginId} on entity ${entityId}`);
+    
     try {
-      const result = plugin.apply(entity, options, requiredCapabilities);
+      // Execute the plugin
+      const exitCode = await plugin.execute(this.kernel, entityPath, options);
       
-      // Update entity timestamp
-      entity.metadata.updatedAt = Date.now();
+      if (exitCode !== 0) {
+        throw new Error(`Plugin exited with code: ${exitCode}`);
+      }
       
-      return result;
+      // Get updated entity by opening and reading file
+      const fd = this.kernel.open(entityPath, OpenMode.READ);
+      if (fd < 0) {
+        throw new Error(`Failed to open entity file: ${entityPath}`);
+      }
+      
+      try {
+        // Read entity data
+        const entityData = {};
+        const result = this.kernel.read(fd, entityData);
+        
+        if (result !== 0) {
+          throw new Error(`Failed to read entity data: ${result}`);
+        }
+        
+        return entityData;
+      } finally {
+        // Always close the file descriptor
+        this.kernel.close(fd);
+      }
     } catch (error) {
-      this.error(`Error applying plugin ${pluginId} to entity ${entity.id}`, error);
+      this.error(`Error executing plugin ${pluginId} on entity ${entityId}`, error);
       throw error;
     }
   }
   
   /**
-   * Shutdown all capabilities
+   * Shutdown the plugin manager
    */
   async shutdown(): Promise<void> {
-    for (const capability of this.capabilities.values()) {
+    this.log('Shutting down PluginManager');
+    
+    // Close any open files
+    for (const [path, fd] of this.openFiles.entries()) {
       try {
-        await capability.shutdown?.();
+        this.kernel.close(fd);
+        this.log(`Closed file: ${path}`);
       } catch (error) {
-        this.error(`Error shutting down capability ${capability.id}`, error);
+        this.error(`Error closing file ${path}`, error);
       }
     }
     
+    // Clear file tracking
+    this.openFiles.clear();
+    
+    // Note: Kernel is responsible for shutting down devices
+    
     this.log('Plugin manager shut down');
+  }
+  
+  /**
+   * Helper method to get an entity by path
+   * Opens, reads, and immediately closes the file
+   * @param entityPath Path to entity file
+   * @returns Entity data or null if error
+   */
+  getEntityData(entityPath: string): Entity | null {
+    // Open the file
+    const fd = this.kernel.open(entityPath, OpenMode.READ);
+    if (fd < 0) {
+      this.error(`Failed to open entity file: ${entityPath}`);
+      return null;
+    }
+    
+    try {
+      // Read entity data
+      const entityData = {};
+      const result = this.kernel.read(fd, entityData);
+      
+      if (result !== 0) {
+        this.error(`Failed to read entity data: ${result}`);
+        return null;
+      }
+      
+      return entityData as Entity;
+    } finally {
+      // Always close the file descriptor
+      this.kernel.close(fd);
+    }
   }
   
   /**

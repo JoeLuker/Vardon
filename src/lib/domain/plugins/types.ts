@@ -5,7 +5,7 @@
  * Plugins are the primary way to implement game features.
  */
 
-import { Plugin } from '../kernel/types';
+import type { Plugin } from '../kernel/types';
 
 /**
  * Plugin metadata for registration

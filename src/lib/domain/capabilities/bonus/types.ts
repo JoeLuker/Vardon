@@ -5,9 +5,9 @@
  * which provides a generic system for applying and calculating bonuses.
  */
 
-import { Entity } from '../../kernel/types';
-import { BaseCapability, CapabilityOptions } from '../types';
-import { BonusBreakdown } from '../ability/types';
+import type { Entity, Capability } from '../../kernel/types';
+import type { CapabilityOptions } from '../BaseCapability';
+import type { BonusBreakdown } from '../ability/types';
 
 /**
  * Bonus capability options
@@ -20,9 +20,18 @@ export interface BonusCapabilityOptions extends CapabilityOptions {
 /**
  * Bonus capability interface
  */
-export interface BonusCapability extends BaseCapability {
+export interface BonusCapability {
   /** Unique identifier for this capability */
   readonly id: string;
+  
+  /** Semantic version of this capability implementation */
+  readonly version: string;
+  
+  /** Initialize an entity */
+  initialize?(entity: Entity): void;
+  
+  /** Clean up resources */
+  shutdown?(): Promise<void>;
   
   /**
    * Add a bonus to a specific target

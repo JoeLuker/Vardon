@@ -5,9 +5,9 @@
  * It demonstrates proper capability usage following Unix philosophy.
  */
 
-import { Entity, Capability } from '../../kernel/types';
+import type { Entity, Capability } from '../../kernel/types';
 import { FeatPlugin, FeatPluginOptions } from './FeatPlugin';
-import { SkillCapability } from '../../capabilities/skill/types';
+import type { SkillCapability } from '../../capabilities/skill/types';
 
 /**
  * Skill Focus options

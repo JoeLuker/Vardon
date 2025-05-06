@@ -5,10 +5,10 @@
  * access to ability score calculations.
  */
 
-import { Entity } from '../../kernel/types';
-import { BaseCapability } from '../types';
-import { AbilityCapability, AbilityCapabilityOptions, AbilityBreakdown } from './types';
-import { BonusCapability } from '../bonus';
+import type { Entity } from '../../kernel/types';
+import { BaseCapability } from '../BaseCapability';
+import type { AbilityCapability, AbilityCapabilityOptions, AbilityBreakdown } from './types';
+import type { BonusCapability } from '../bonus';
 
 /**
  * Standard abilities in Pathfinder
@@ -49,17 +49,11 @@ export class AbilityCapabilityProvider extends BaseCapability implements Ability
    * @param entity Entity to initialize abilities for
    */
   initialize(entity: Entity): void {
-    // Ensure the abilities property exists
-    if (!entity.properties.abilities) {
-      entity.properties.abilities = {};
-    }
-    
-    // Initialize default abilities
-    for (const ability of this.defaultAbilities) {
-      if (!entity.properties.abilities[ability]) {
-        entity.properties.abilities[ability] = 10; // Default score
-      }
-    }
+    // Ensure the abilities property exists and set defaults in one step
+    entity.properties.abilities = {
+      ...Object.fromEntries(this.defaultAbilities.map(ability => [ability, 10])),
+      ...entity.properties.abilities || {}
+    };
     
     this.log(`Initialized ability scores for entity: ${entity.id}`);
   }

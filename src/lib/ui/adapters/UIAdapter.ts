@@ -26,10 +26,10 @@ export class UIAdapter {
   
   /**
    * Initialize the UI Adapter
-   * @param gameData Optional game data to pass to the application
+   * @param options Initialization options
    * @returns Whether initialization was successful
    */
-  async initialize(gameData?: any): Promise<boolean> {
+  async initialize(options?: { gameData?: any, debug?: boolean }): Promise<boolean> {
     if (this.initialized) {
       return true;
     }
@@ -52,8 +52,7 @@ export class UIAdapter {
       console.log('[UIAdapter] Initializing...');
       
       // Initialize the application
-      const appResult = await initializeApplication(gameData);
-      this.app = appResult;
+      this.app = await initializeApplication(options);
       
       // Verify initialization
       if (!this.app || !this.app.kernel || !this.app.pluginManager) {
@@ -108,8 +107,16 @@ export class UIAdapter {
         throw new Error(`Character not found: ${characterId}`);
       }
       
-      // Load the character entity 
-      const entity = await this.app.gameAPI.loadCharacter(characterId);
+      // Load the character entity using the application's character loader
+      let entity: Entity | null;
+      
+      if (this.app.loadCharacter) {
+        // Use the new loadCharacter method if available
+        entity = await this.app.loadCharacter(characterId);
+      } else {
+        // Fall back to gameAPI if needed
+        entity = await this.app.gameAPI.loadCharacter(characterId);
+      }
       
       if (!entity) {
         throw new Error(`Failed to load character entity: ${characterId}`);
@@ -160,7 +167,11 @@ export class UIAdapter {
       
       // Load entity if not cached
       if (!entity) {
-        entity = await this.app.gameAPI.loadCharacter(characterId);
+        if (this.app.loadCharacter) {
+          entity = await this.app.loadCharacter(characterId);
+        } else {
+          entity = await this.app.gameAPI.loadCharacter(characterId);
+        }
         
         if (!entity) {
           throw new Error(`Entity not found: ${entityId}`);
@@ -172,8 +183,8 @@ export class UIAdapter {
       // Convert feature ID to plugin ID
       const pluginId = featureId.replace(/^(feat|class|spell|corruption)\./, '');
       
-      // Apply the plugin
-      const result = await this.app.pluginManager.applyPlugin(entity, pluginId, options);
+      // Apply the plugin using executePlugin
+      const result = await this.app.kernel.executePlugin(pluginId, entityId, options);
       
       // Invalidate character cache
       this.characterCache.delete(characterId);
@@ -210,7 +221,11 @@ export class UIAdapter {
       
       // Load entity if not cached
       if (!entity) {
-        entity = await this.app.gameAPI.loadCharacter(characterId);
+        if (this.app.loadCharacter) {
+          entity = await this.app.loadCharacter(characterId);
+        } else {
+          entity = await this.app.gameAPI.loadCharacter(characterId);
+        }
         
         if (!entity) {
           throw new Error(`Entity not found: ${entityId}`);
@@ -222,10 +237,17 @@ export class UIAdapter {
       // Update the property
       entity.properties[property] = value;
       
-      // Update entity in kernel
-      this.app.kernel.updateEntity(entityId, {
-        properties: entity.properties
-      });
+      // Update entity in kernel using file operations
+      const entityPath = `/entity/${entityId}`;
+      const OpenMode = this.app.kernel.constructor.OpenMode || { READ_WRITE: 'rw' };
+      const fd = this.app.kernel.open(entityPath, OpenMode.READ_WRITE);
+      if (fd >= 0) {
+        try {
+          this.app.kernel.write(fd, entity);
+        } finally {
+          this.app.kernel.close(fd);
+        }
+      }
       
       // Invalidate character cache
       this.characterCache.delete(characterId);
@@ -240,6 +262,26 @@ export class UIAdapter {
     } catch (error) {
       console.error(`[UIAdapter] Error updating character ${characterId} property ${property}:`, error);
       return false;
+    }
+  }
+  
+  /**
+   * Shutdown application and release resources
+   */
+  async shutdown(): Promise<void> {
+    try {
+      if (this.app && this.app.shutdown) {
+        await this.app.shutdown();
+      }
+      
+      // Clear caches
+      this.characterCache.clear();
+      this.entityCache.clear();
+      
+      this.initialized = false;
+      console.log('[UIAdapter] Shutdown complete');
+    } catch (error) {
+      console.error('[UIAdapter] Error during shutdown:', error);
     }
   }
   

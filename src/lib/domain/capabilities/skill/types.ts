@@ -5,8 +5,8 @@
  * which provides access to skill calculations.
  */
 
-import { Entity } from '../../kernel/types';
-import { BaseCapability, CapabilityOptions } from '../types';
+import type { Entity, Capability } from '../../kernel/types';
+import type { CapabilityOptions } from '../BaseCapability';
 
 /**
  * Skill bonus calculation breakdown
@@ -70,9 +70,18 @@ export interface SkillCapabilityOptions extends CapabilityOptions {
 /**
  * Skill capability interface
  */
-export interface SkillCapability extends BaseCapability {
+export interface SkillCapability {
   /** Unique identifier for this capability */
   readonly id: string;
+  
+  /** Semantic version of this capability implementation */
+  readonly version: string;
+  
+  /** Initialize an entity */
+  initialize?(entity: Entity): void;
+  
+  /** Clean up resources */
+  shutdown?(): Promise<void>;
   
   /**
    * Get the skill ranks invested

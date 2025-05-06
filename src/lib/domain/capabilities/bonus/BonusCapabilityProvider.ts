@@ -5,9 +5,9 @@
  * a generic system for applying and calculating bonuses.
  */
 
-import { Entity } from '../../kernel/types';
-import { BaseCapability, CapabilityOptions } from '../types';
-import { BonusCapability, BonusCapabilityOptions, BonusBreakdown } from './types';
+import type { Entity } from '../../kernel/types';
+import { BaseCapability } from '../BaseCapability';
+import type { BonusCapability, BonusCapabilityOptions, BonusBreakdown } from './types';
 
 /**
  * Private type for bonus component storage

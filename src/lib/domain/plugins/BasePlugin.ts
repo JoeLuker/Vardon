@@ -5,7 +5,7 @@
  * It handles common functionality like logging and basic validation.
  */
 
-import { Entity, Plugin, Capability, PluginValidationResult } from '../kernel/types';
+import type { Entity, Plugin, Capability, PluginValidationResult } from '../kernel/types';
 
 /**
  * Base plugin options

@@ -5,8 +5,8 @@
  * which provides access to ability score calculations.
  */
 
-import { Entity } from '../../kernel/types';
-import { BaseCapability, CapabilityOptions } from '../types';
+import type { Entity, Capability } from '../../kernel/types';
+import type { CapabilityOptions } from '../BaseCapability';
 
 /**
  * Ability score calculation breakdown
@@ -62,9 +62,18 @@ export interface AbilityCapabilityOptions extends CapabilityOptions {
 /**
  * Ability capability interface
  */
-export interface AbilityCapability extends BaseCapability {
+export interface AbilityCapability {
   /** Unique identifier for this capability */
   readonly id: string;
+  
+  /** Semantic version of this capability implementation */
+  readonly version: string;
+  
+  /** Initialize an entity */
+  initialize?(entity: Entity): void;
+  
+  /** Clean up resources */
+  shutdown?(): Promise<void>;
   
   /**
    * Get the total ability score including all bonuses

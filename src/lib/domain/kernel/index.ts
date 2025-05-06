@@ -7,7 +7,25 @@
  */
 
 // Export core types
-export * from './types';
+export type { 
+  Entity, 
+  Capability, 
+  Plugin, 
+  EventListener, 
+  EventSubscription, 
+  EventEmitter, 
+  KernelOptions, 
+  PluginValidationResult,
+  EntityRequest,
+  EntityAccessResult,
+  OpenMode,
+  FileDescriptor,
+  Inode,
+  MountOptions,
+  PathResult,
+  Stats,
+  ErrorCode
+} from './types';
 
 // Export EventBus implementation
 export { EventBus } from './EventBus';

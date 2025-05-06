@@ -1,23 +1,31 @@
-import { GameEngine } from './core/GameEngine';
-import { FeatureRegistry } from './config/FeatureRegistry';
-import { AbilitySubsystemImpl } from './shared/AbilitySubsystemImpl';
-import { SkillSubsystemImpl } from './shared/SkillSubsystemImpl';
-import { BonusSubsystemImpl } from './shared/BonusSubsystemImpl';
-import { CombatSubsystemImpl } from './shared/CombatSubsystemImpl';
-import { ConditionSubsystemImpl } from './shared/ConditionSubsystemImpl';
-import { PrerequisiteSubsystemImpl } from './shared/PrerequisiteSubsystemImpl';
-import { SpellcastingSubsystemImpl } from './shared/SpellcastingSubsystemImpl';
-import { SessionState } from './state/active/SessionState';
-import { createCharacterStore } from './state/data/CharacterStore';
-import { CalculationExplainer } from './introspection/CalculationExplainer';
+/**
+ * Application Initializer
+ * 
+ * This file provides the entry point for initializing the application following Unix principles:
+ * - Resources are managed through a filesystem
+ * - Capabilities are mounted as devices
+ * - Components access resources through file descriptors
+ * - Explicit initialization of resources at mount time
+ */
+
+import { GameKernel } from './kernel/GameKernel';
+import { BonusCapabilityProvider } from './capabilities/bonus/BonusCapabilityProvider';
+import { AbilityCapabilityProvider } from './capabilities/ability/AbilityCapabilityProvider';
+import { SkillCapabilityProvider } from './capabilities/skill/SkillCapabilityProvider';
+import { CombatCapabilityProvider } from './capabilities/combat/CombatCapabilityProvider';
+import { ConditionCapabilityProvider } from './capabilities/condition/ConditionCapabilityProvider';
+import { EventBus } from './kernel/EventBus';
 import { SampleCharacters } from './config/SampleCharacters';
 import { supabase } from '$lib/db/supabaseClient';
 import { GameRulesAPI } from '$lib/db/gameRules.api';
-import { CharacterAssembler } from './character/CharacterAssembler';
-import { FeatureOrchestrator } from './core/FeatureOrchestrator';
-import './state/data/ModuleInit';
+import type { Capability, Entity, OpenMode, ErrorCode } from './kernel/types';
+import { CharacterStore } from './state/data/CharacterStore';
+import { CalculationExplainer } from './introspection/CalculationExplainer';
+import { PluginManager } from './plugins/PluginManager';
+import { FeatureToPluginMigrator } from './plugins/migration/FeatureToPluginMigrator';
+import { GameAPI } from './core/GameAPI';
 
-// Features
+// Feature imports for migration
 import { SkillFocusFeature } from './features/feats/SkillFocusFeature';
 import { PowerAttackFeature } from './features/feats/PowerAttackFeature';
 import { WeaponFocusFeature } from './features/feats/WeaponFocusFeature';
@@ -30,252 +38,354 @@ import { SneakAttackFeature } from './features/classes/SneakAttackFeature';
 import { KineticBlastFeature } from './features/classes/KineticBlastFeature';
 import { AllureFeature } from './features/corruptions/AllureFeature';
 
+// Application configuration
+const APP_CONFIG = {
+  debug: true,
+  loadAdditionalCapabilities: true,
+  useFeatureMigration: true
+};
+
 /**
- * Initialize the application with game engine and subsystems
- * @param gameData Optional game data for initialization
+ * Application interface
+ */
+export interface Application {
+  kernel: GameKernel;
+  pluginManager: PluginManager;
+  gameAPI: GameAPI;
+  dbAPI: GameRulesAPI;
+  calculationExplainer: CalculationExplainer;
+  characterStore: CharacterStore;
+  migrator: FeatureToPluginMigrator;
+  capabilities: Map<string, Capability>;
+  loadCharacter?: (characterId: number) => Promise<Entity | null>;
+  shutdown?: () => Promise<void>;
+}
+
+/**
+ * Initialize the application
+ * @param options Initialization options
  * @returns The initialized application components
  */
-export async function initializeApplication(gameData?: any) {
-  // Create feature registry first
-  const featureRegistry = new FeatureRegistry();
+export async function initializeApplication(options: { gameData?: any, debug?: boolean } = {}): Promise<Application> {
+  console.log('Initializing application...');
   
-  // Create game engine with feature registry
-  const engine = new GameEngine(featureRegistry);
+  // Enable debug logging by default in development
+  const debug = options.debug ?? APP_CONFIG.debug;
+  const gameData = options.gameData;
   
-  // Create event bus reference
-  const events = engine.events;
+  // Create event bus
+  const eventBus = new EventBus(debug);
   
-  // Use existing gameAPI if passed from outside or create a new one
-  const gameAPI = gameData?.gameAPI || new GameRulesAPI(supabase);
+  // Create kernel with event bus
+  const kernel = new GameKernel({ 
+    eventEmitter: eventBus,
+    debug
+  });
   
-  // Create the FeatureOrchestrator for dynamic feature creation
-  const featureOrchestrator = new FeatureOrchestrator(engine, featureRegistry, gameAPI);
+  // Create DB API
+  const dbAPI = gameData?.gameAPI || new GameRulesAPI(supabase);
   
-  // Set the orchestrator in the engine
-  engine.setFeatureOrchestrator(featureOrchestrator);
+  // Track capabilities for easier access
+  const capabilities = new Map<string, Capability>();
   
-  // Register subsystems in the correct order for dependency resolution
-  const bonusSubsystem = new BonusSubsystemImpl();
-  engine.registerSubsystem('bonus', bonusSubsystem);
+  // Mount capabilities as device drivers in the filesystem
   
-  const abilitySubsystem = new AbilitySubsystemImpl(bonusSubsystem);
-  engine.registerSubsystem('ability', abilitySubsystem);
+  // 1. Bonus capability is a core capability with no dependencies
+  const bonusCapability = new BonusCapabilityProvider({ debug });
+  const bonusDevicePath = `/dev/${bonusCapability.id}`;
+  kernel.mount(bonusDevicePath, bonusCapability);
+  capabilities.set(bonusCapability.id, bonusCapability);
   
-  // Inject dependencies into skill subsystem
-  const skillSubsystem = new SkillSubsystemImpl({ skills: [] }, abilitySubsystem, bonusSubsystem);
-  engine.registerSubsystem('skill', skillSubsystem);
+  // 2. Ability capability depends on Bonus
+  const abilityCapability = new AbilityCapabilityProvider(bonusCapability, { debug });
+  const abilityDevicePath = `/dev/${abilityCapability.id}`;
+  kernel.mount(abilityDevicePath, abilityCapability);
+  capabilities.set(abilityCapability.id, abilityCapability);
   
-  const combatSubsystem = new CombatSubsystemImpl(abilitySubsystem, bonusSubsystem);
-  engine.registerSubsystem('combat', combatSubsystem);
+  // 3. Skill capability depends on Ability and Bonus
+  const skillCapability = new SkillCapabilityProvider(abilityCapability, bonusCapability, { 
+    skills: gameData?.skills || [],
+    debug 
+  });
+  const skillDevicePath = `/dev/${skillCapability.id}`;
+  kernel.mount(skillDevicePath, skillCapability);
+  capabilities.set(skillCapability.id, skillCapability);
   
-  const conditionSubsystem = new ConditionSubsystemImpl(bonusSubsystem);
-  engine.registerSubsystem('condition', conditionSubsystem);
+  // 4. Combat capability depends on Ability and Bonus
+  const combatCapability = new CombatCapabilityProvider(abilityCapability, bonusCapability, { debug });
+  const combatDevicePath = `/dev/${combatCapability.id}`;
+  kernel.mount(combatDevicePath, combatCapability);
+  capabilities.set(combatCapability.id, combatCapability);
   
-  // Register the spellcasting subsystem
-  const spellcastingSubsystem = new SpellcastingSubsystemImpl(gameAPI);
-  engine.registerSubsystem('spellcasting', spellcastingSubsystem);
+  // 5. Condition capability depends on Bonus
+  const conditionCapability = new ConditionCapabilityProvider(bonusCapability, { debug });
+  const conditionDevicePath = `/dev/${conditionCapability.id}`;
+  kernel.mount(conditionDevicePath, conditionCapability);
+  capabilities.set(conditionCapability.id, conditionCapability);
   
-  // Register the prerequisite subsystem
-  const prerequisiteSubsystem = new PrerequisiteSubsystemImpl(gameAPI);
-  engine.registerSubsystem('prerequisite', prerequisiteSubsystem);
+  // TODO: Add more capabilities
+  // - Spellcasting capability
+  // - Prerequisite capability
   
-  // Create session state
-  const sessionState = new SessionState(events);
+  // Create a feature migrator to convert features to plugins
+  const migrator = new FeatureToPluginMigrator({ debug });
+  
+  // Create plugin manager (like process manager in Unix)
+  const pluginManager = new PluginManager({ debug, kernel });
   
   // Create character store with database integration
-  const characterStore = createCharacterStore(gameAPI);
+  const characterStore = new CharacterStore(dbAPI);
   
   // Create calculation explainer
   const calculationExplainer = new CalculationExplainer(
-    abilitySubsystem,
-    skillSubsystem,
-    bonusSubsystem,
-    combatSubsystem
+    null as any, // abilitySubsystem
+    null as any, // skillSubsystem
+    null as any, // bonusSubsystem
+    null as any  // combatSubsystem
   );
   
-  // Phase 1: Register explicitly imported features for backward compatibility
-  // These will eventually be loaded dynamically via the filesystem
-  featureRegistry.register(SkillFocusFeature);
-  featureRegistry.register(PowerAttackFeature);
-  featureRegistry.register(WeaponFocusFeature);
-  featureRegistry.register(DodgeFeature);
-  featureRegistry.register(ToughnessFeature);
-  featureRegistry.register(ImprovedUnarmedStrikeFeature);
-  featureRegistry.register(BarbarianRageFeature);
-  featureRegistry.register(ChannelEnergyFeature);
-  featureRegistry.register(SneakAttackFeature);
-  featureRegistry.register(KineticBlastFeature);
-  featureRegistry.register(AllureFeature);
+  // Create the Game API
+  const gameAPI = new GameAPI(kernel, pluginManager, dbAPI, { debug });
   
-  // Phase 2: Preload commonly used features from the filesystem
-  // This helps avoid repeated dynamic imports during gameplay
-  await featureRegistry.preloadFeatures([
-    'feat.power_attack',
-    'feat.weapon_focus_unarmed_strike',
-    'feat.dodge',
-    'feat.toughness',
-    'class.elemental_focus',
-    'class.burn',
-    'class.gather_power',
-    'corruption.vampiric_grace',
-    'corruption.fangs'
-  ]);
+  // Migrate features to plugins
+  const features = [
+    SkillFocusFeature,
+    PowerAttackFeature,
+    WeaponFocusFeature,
+    DodgeFeature,
+    ToughnessFeature,
+    ImprovedUnarmedStrikeFeature,
+    BarbarianRageFeature,
+    ChannelEnergyFeature,
+    SneakAttackFeature,
+    KineticBlastFeature,
+    AllureFeature
+  ];
   
-  // Load sample characters for testing
-  const sampleCharacters = {
-    fighter: SampleCharacters.getFighter(),
-    rogue: SampleCharacters.getRogue(),
-    barbarian: SampleCharacters.getBarbarian(),
-    cleric: SampleCharacters.getCleric(),
-    multiclass: SampleCharacters.getMulticlass()
-  };
-  
-  // Register all sample characters
-  for (const character of Object.values(sampleCharacters)) {
-    engine.registerEntity(character);
-    sessionState.addEntity(character);
-    
-    // Initialize all subsystems for this entity
+  // Register migrated plugins with the kernel's process management
+  for (const feature of features) {
     try {
-      // Call initialize on each subsystem
-      if (abilitySubsystem.initialize) abilitySubsystem.initialize(character);
-      if (skillSubsystem.initialize) skillSubsystem.initialize(character);
-      if (bonusSubsystem.initialize) bonusSubsystem.initialize(character);
-      if (combatSubsystem.initialize) combatSubsystem.initialize(character);
-      if (conditionSubsystem.initialize) conditionSubsystem.initialize(character);
-      if (spellcastingSubsystem.initialize) spellcastingSubsystem.initialize(character);
-      if (prerequisiteSubsystem.initialize) prerequisiteSubsystem.initialize(character);
+      const plugin = migrator.migrateFeature(feature);
+      kernel.registerPlugin(plugin);
       
-      // Apply Power Attack for fighter and barbarian
-      if (character.character?.classes?.some(c => ['fighter', 'barbarian'].includes(c.id))) {
-        // Only apply if character doesn't already have it
-        const hasPowerAttack = character.character?.feats?.some(f => f.id === 'feat.power_attack');
-        if (!hasPowerAttack) {
-          try {
-            await engine.activateFeature('feat.power_attack', character, { penalty: 1 });
-          } catch (error) {
-            console.warn(`Failed to apply Power Attack to ${character.name}:`, error);
-          }
-        }
+      if (debug) {
+        console.log(`Migrated feature ${feature.id} to plugin ${plugin.id}`);
       }
-      
-      console.log(`Character ${character.name} initialized successfully`);
     } catch (error) {
-      console.error(`Error initializing character ${character.name}:`, error);
+      console.error(`Failed to migrate feature ${feature.id}:`, error);
     }
   }
   
-  console.log('Loaded sample characters:', Object.keys(sampleCharacters));
+  // No sample characters are automatically loaded in production mode
+  // Use SampleCharacters.getXXX() methods directly if sample data is needed
+  const sampleCharacters: Record<string, Entity> = {};
   
-  // Create character assembler with database support
-  console.log('Creating CharacterAssembler with:', {
-    hasEngine: !!engine,
-    hasGameAPI: !!gameAPI,
-    hasFeatureRegistry: !!featureRegistry
-  });
-  
-  let characterAssembler;
-  try {
-    if (!engine) {
-      throw new Error('Cannot create CharacterAssembler: engine is null or undefined');
-    }
-    
-    // Always log the engine and gameAPI details for debugging
-    console.log('Engine details:', {
-      hasEvents: !!engine.events,
-      hasSubsystems: engine.getSubsystemNames().length > 0,
-      subsystems: engine.getSubsystemNames()
-    });
-    
-    if (gameAPI) {
-      console.log('GameAPI available:', {
-        hasSupabase: !!gameAPI.supabase,
-        methods: Object.keys(gameAPI).filter(k => typeof gameAPI[k] === 'function')
-      });
-    }
-    
-    // Verify necessary parameters are correctly passed
-    characterAssembler = new CharacterAssembler(engine, gameAPI, featureRegistry);
-    
-    // Verify characterAssembler was properly created
-    if (!characterAssembler) {
-      throw new Error('CharacterAssembler constructor returned null or undefined');
-    }
-    
-    // Check if assembleCharacter method exists
-    if (typeof characterAssembler.assembleCharacter !== 'function') {
-      throw new Error('CharacterAssembler missing required assembleCharacter method');
-    }
-    
-    console.log('CharacterAssembler created successfully');
-  } catch (error) {
-    console.error('Failed to create CharacterAssembler:', error);
-    
-    // Create a minimal version as fallback with explicit error handling
-    console.warn('Creating fallback CharacterAssembler with just engine');
+  /**
+   * Load a character from the database using Unix filesystem approach
+   * @param characterId Character ID
+   * @returns Loaded character entity
+   */
+  async function loadCharacter(characterId: number): Promise<Entity | null> {
     try {
-      if (!engine) {
-        throw new Error('Cannot create fallback CharacterAssembler: engine is null or undefined');
+      if (debug) {
+        console.log(`Loading character: ${characterId}`);
+      }
+
+      // Create entity ID for the character
+      const entityId = `character-${characterId}`;
+      const entityPath = `/entity/${entityId}`;
+      
+      // Check if entity already exists
+      if (kernel.exists(entityPath)) {
+        if (debug) {
+          console.log(`Character ${characterId} already exists, opening...`);
+        }
+        
+        // Open the entity file
+        const fd = kernel.open(entityPath, OpenMode.READ);
+        if (fd < 0) {
+          console.error(`Failed to open entity file: ${entityPath}`);
+          return null;
+        }
+        
+        // Read entity data
+        const entity = {} as Entity;
+        const result = kernel.read(fd, entity);
+        
+        // Close file descriptor
+        kernel.close(fd);
+        
+        if (result === 0) {
+          if (debug) {
+            console.log(`Successfully read entity: ${entity.name}`);
+          }
+          return entity;
+        } else {
+          console.error(`Failed to read entity: ${entityPath}, error code: ${result}`);
+          return null;
+        }
       }
       
-      characterAssembler = new CharacterAssembler(engine);
+      // Entity doesn't exist, load from database
+      const rawCharacter = await dbAPI.getCompleteCharacterData(characterId);
       
-      // Verify the fallback was created
-      if (!characterAssembler) {
-        throw new Error('Fallback CharacterAssembler constructor returned null or undefined');
+      if (!rawCharacter) {
+        console.error(`Character not found in database: ${characterId}`);
+        return null;
       }
       
-      console.log('Fallback CharacterAssembler created successfully');
-    } catch (fallbackError) {
-      console.error('Critical error: Failed to create fallback CharacterAssembler:', fallbackError);
-      // Create an emergency placeholder object with the minimum required interface
-      console.warn('Creating emergency placeholder CharacterAssembler');
-      characterAssembler = {
-        assembleCharacter: async (character) => {
-          console.warn('Using emergency placeholder CharacterAssembler');
-          return {
-            ...character,
-            id: character.id,
-            name: character.name || 'Character',
-            totalLevel: 1,
-            // Add minimum required properties
-            strength: { total: 10, modifier: 0, label: 'Strength', modifiers: [] },
-            dexterity: { total: 10, modifier: 0, label: 'Dexterity', modifiers: [] },
-            constitution: { total: 10, modifier: 0, label: 'Constitution', modifiers: [] },
-            intelligence: { total: 10, modifier: 0, label: 'Intelligence', modifiers: [] },
-            wisdom: { total: 10, modifier: 0, label: 'Wisdom', modifiers: [] },
-            charisma: { total: 10, modifier: 0, label: 'Charisma', modifiers: [] },
-            skills: {},
-            saves: { fortitude: { total: 0, label: 'Fortitude', modifiers: [] }, 
-                     reflex: { total: 0, label: 'Reflex', modifiers: [] }, 
-                     will: { total: 0, label: 'Will', modifiers: [] } },
-            ac: { total: 10, label: 'AC', modifiers: [] },
-            touch_ac: { total: 10, label: 'Touch AC', modifiers: [] },
-            flat_footed_ac: { total: 10, label: 'Flat-footed AC', modifiers: [] }
-          };
+      // Create entity from raw character data
+      const entity: Entity = {
+        id: entityId,
+        type: 'character',
+        name: rawCharacter.name || `Character ${characterId}`,
+        properties: {
+          // Basic properties
+          id: rawCharacter.id,
+          name: rawCharacter.name,
+          max_hp: rawCharacter.max_hp,
+          current_hp: rawCharacter.current_hp,
+          
+          // Character-specific data
+          rawData: rawCharacter,
+          abilities: {}, // Will be populated by the ability capability
+          skills: {}, // Will be populated by the skill capability
+          
+          // Class and ancestry
+          classes: rawCharacter.game_character_class?.map(cls => ({
+            id: cls.class_id,
+            name: cls.class?.name,
+            level: cls.level
+          })) || [],
+          
+          ancestry: rawCharacter.game_character_ancestry?.[0]?.ancestry?.name || 'Unknown',
+          
+          // Features, feats, etc.
+          classFeatures: rawCharacter.game_character_class_feature || [],
+          feats: rawCharacter.game_character_feat || [],
+          spells: rawCharacter.game_character_spell || [],
+          corruptions: rawCharacter.game_character_corruption || [],
+          
+          // Calculated later
+          ac: 10,
+          bab: 0
+        },
+        metadata: {
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          version: 1
         }
       };
-      console.log('Emergency placeholder CharacterAssembler created');
+      
+      // Create entity file in the filesystem
+      const createResult = kernel.create(entityPath, entity);
+      if (!createResult.success) {
+        console.error(`Failed to create entity file: ${entityPath}, error: ${createResult.errorMessage}`);
+        return null;
+      }
+      
+      // Initialize character by running necessary plugins
+      await initializeCharacterWithPlugins(entityId);
+      
+      // Read the final entity after initialization
+      const fd = kernel.open(entityPath, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`Failed to open entity file after initialization: ${entityPath}`);
+        return null;
+      }
+      
+      // Read entity data after initialization
+      const updatedEntity = {} as Entity;
+      const result = kernel.read(fd, updatedEntity);
+      
+      // Close file descriptor
+      kernel.close(fd);
+      
+      if (result === 0) {
+        if (debug) {
+          console.log(`Character ${characterId} loaded successfully: ${updatedEntity.name}`);
+        }
+        return updatedEntity;
+      } else {
+        console.error(`Failed to read entity after initialization: ${entityPath}, error code: ${result}`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Failed to load character ${characterId}:`, error);
+      return null;
     }
   }
   
-  // Generate a detailed report for the fighter as an example
-  try {
-    const fighterReport = calculationExplainer.getCharacterReport(sampleCharacters.fighter);
-    console.log('Fighter character report:', fighterReport);
-  } catch (error) {
-    console.error('Error generating fighter report:', error);
+  /**
+   * Initialize character by running initialization plugins
+   * @param entityId Character entity ID
+   */
+  async function initializeCharacterWithPlugins(entityId: string): Promise<void> {
+    if (debug) {
+      console.log(`Initializing character: ${entityId}`);
+    }
+    
+    try {
+      // Execute initialization plugins
+      // 1. Initialize ability scores
+      await kernel.executePlugin('initialize-abilities', entityId);
+      
+      // 2. Initialize skills
+      await kernel.executePlugin('initialize-skills', entityId);
+      
+      // 3. Initialize combat stats
+      await kernel.executePlugin('initialize-combat', entityId);
+      
+      // 4. Apply feats and class features
+      await kernel.executePlugin('apply-feats', entityId);
+      await kernel.executePlugin('apply-class-features', entityId);
+      
+      if (debug) {
+        console.log(`Character initialization completed: ${entityId}`);
+      }
+    } catch (error) {
+      console.error(`Error initializing character ${entityId}:`, error);
+      throw error;
+    }
   }
   
+  /**
+   * Shut down the application and clean up resources
+   * Using proper Unix-style resource cleanup
+   */
+  async function shutdown() {
+    console.log('Shutting down application...');
+    
+    try {
+      // Shutdown plugin manager first (it depends on kernel)
+      await pluginManager.shutdown();
+      
+      // Shutdown kernel - this will:
+      // 1. Close all open file descriptors
+      // 2. Unmount all device drivers (capabilities)
+      // 3. Clean up the filesystem
+      await kernel.shutdown();
+      
+      // Any other cleanup tasks can go here
+    } catch (error) {
+      console.error('Error during shutdown:', error);
+    }
+    
+    console.log('Application shut down');
+  }
+  
+  console.log('Application initialized successfully');
+  
   return {
-    engine,
-    featureRegistry,
-    sessionState,
-    characterStore,
-    calculationExplainer,
+    kernel,
+    pluginManager,
     gameAPI,
-    sampleCharacters,
-    characterAssembler,
-    featureOrchestrator
+    dbAPI,
+    calculationExplainer,
+    characterStore,
+    migrator,
+    capabilities,
+    loadCharacter,
+    shutdown
   };
-} 
+}

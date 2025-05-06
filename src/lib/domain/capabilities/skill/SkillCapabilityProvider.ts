@@ -10,11 +10,11 @@
  * 3. Using standard interfaces for interoperability
  */
 
-import { Entity } from '../../kernel/types';
-import { BaseCapability } from '../types';
-import { SkillCapability, SkillCapabilityOptions, SkillBreakdown } from './types';
-import { AbilityCapability } from '../ability/types';
-import { BonusCapability } from '../bonus/types';
+import type { Entity } from '../../kernel/types';
+import { BaseCapability } from '../BaseCapability';
+import type { SkillCapability, SkillCapabilityOptions, SkillBreakdown } from './types';
+import type { AbilityCapability } from '../ability/types';
+import type { BonusCapability } from '../bonus/types';
 
 /**
  * Implementation of the skill capability
