@@ -4,14 +4,13 @@ import type {
   Plugin, 
   EventEmitter, 
   KernelOptions,
-  OpenMode,
   FileDescriptor,
   Inode,
   MountOptions,
   PathResult,
-  Stats,
-  ErrorCode
+  Stats
 } from './types';
+import { OpenMode, ErrorCode } from './types';
 import { EventBus } from './EventBus';
 
 /**
