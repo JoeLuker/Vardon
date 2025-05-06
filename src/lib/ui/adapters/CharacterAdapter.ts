@@ -18,12 +18,14 @@ import type { CombatCapability } from '$lib/domain/capabilities/combat/types';
 export function adaptEntityToAssembledCharacter(
   entity: Entity,
   pluginManager: PluginManager,
-  rawCharacter: CompleteCharacter
+  rawCharacter: CompleteCharacter,
+  capabilities?: Map<string, any>
 ): AssembledCharacter {
-  // Get required capabilities
-  const abilityCapability = pluginManager.getCapability('ability');
-  const skillCapability = pluginManager.getCapability('skill');
-  const combatCapability = pluginManager.getCapability('combat');
+  // Get required capabilities from the capabilities map (Unix architecture)
+  // In Unix architecture, capabilities are mounted as devices and accessed via the capabilities map
+  const abilityCapability = capabilities?.get('ability');
+  const skillCapability = capabilities?.get('skill');
+  const combatCapability = capabilities?.get('combat');
 
   if (!abilityCapability) {
     throw new Error('Ability capability not available');

@@ -126,10 +126,12 @@ export class UIAdapter {
       this.entityCache.set(entity.id, entity);
       
       // Adapt entity to assembled character format
+      // Pass capabilities map from the Unix architecture app
       const assembledCharacter = adaptEntityToAssembledCharacter(
         entity,
         this.app.pluginManager,
-        rawCharacter
+        rawCharacter,
+        this.app.capabilities
       );
       
       // Cache the assembled character
