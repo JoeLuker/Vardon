@@ -1,6 +1,6 @@
 import type { Entity } from '../../types/EntityTypes';
 import type { Feature, ValidationResult } from '../../types/FeatureTypes';
-import type { BonusSubsystem } from '../../types/SubsystemTypes';
+import type { BonusSubsystem, Subsystem } from '../../types/SubsystemTypes';
 
 export const PowerAttackFeature: Feature = {
   id: 'feat.power_attack',
@@ -11,12 +11,12 @@ export const PowerAttackFeature: Feature = {
   category: 'combat',
   persistent: false, // Power Attack can be toggled on/off
   
-  apply(entity: Entity, options: { penalty?: number }, subsystems: { bonus: BonusSubsystem }) {
+  apply(entity: Entity, _options: { penalty?: number }, subsystems: { bonus: BonusSubsystem }) {
     const { bonus } = subsystems;
     
     // The penalty cannot exceed BAB and cannot be negative
     const baseAttackBonus = entity.character?.baseAttackBonus || 0;
-    let attackPenalty = options.penalty || 1;
+    let attackPenalty = _options.penalty || 1;
     
     // Make sure the penalty doesn't exceed the maximum allowed
     attackPenalty = Math.max(1, Math.min(attackPenalty, baseAttackBonus));
@@ -94,7 +94,7 @@ export const PowerAttackFeature: Feature = {
     };
   },
   
-  canApply(entity: Entity, subsystems: Record<string, Subsystem>): ValidationResult {
+  canApply(entity: Entity, _subsystems: Record<string, Subsystem>): ValidationResult {
     // Check Strength 13 prerequisite
     const strength = entity.character?.abilities?.strength || 0;
     if (strength < 13) {

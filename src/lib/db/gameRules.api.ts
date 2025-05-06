@@ -1121,12 +1121,59 @@ export class GameRulesAPI {
   /**
    * Gets analytics data for a corruption manifestation
    * @param manifestationId The ID of the manifestation
-   * @returns Analytics data for the manifestation
-   * @todo Implement real analytics
+   * @returns Analytics data for the manifestation including usage statistics
    */
-  async getCorruptionManifestationAnalytics(manifestationId: number): Promise<any> {
-    console.warn(`Method not fully implemented: getCorruptionManifestationAnalytics for ${manifestationId}`);
-    return { manifestationId, usage: 0 }; // Return a dummy value
+  async getCorruptionManifestationAnalytics(manifestationId: number): Promise<{
+    manifestationId: number;
+    usage: number;
+    usedByCharacters: number[];
+    prerequisites: number[];
+    dependents: number[];
+  }> {
+    try {
+      // 1. Get characters using this manifestation
+      const { data: characterData, error: characterError } = await this.supabase
+        .from('game_character_corruption_manifestation')
+        .select('game_character_id')
+        .eq('manifestation_id', manifestationId);
+        
+      if (characterError) throw characterError;
+      
+      // 2. Get prerequisites for this manifestation
+      const { data: prerequisiteData, error: prerequisiteError } = await this.supabase
+        .from('corruption_manifestation_prerequisite')
+        .select('prerequisite_manifestation_id')
+        .eq('corruption_manifestation_id', manifestationId);
+        
+      if (prerequisiteError) throw prerequisiteError;
+      
+      // 3. Get manifestations that require this one as a prerequisite
+      const { data: dependentData, error: dependentError } = await this.supabase
+        .from('corruption_manifestation_prerequisite')
+        .select('corruption_manifestation_id')
+        .eq('prerequisite_manifestation_id', manifestationId);
+        
+      if (dependentError) throw dependentError;
+      
+      // Compile the analytics data
+      return {
+        manifestationId,
+        usage: characterData?.length || 0,
+        usedByCharacters: characterData?.map(item => item.game_character_id) || [],
+        prerequisites: prerequisiteData?.map(item => item.prerequisite_manifestation_id) || [],
+        dependents: dependentData?.map(item => item.corruption_manifestation_id) || []
+      };
+    } catch (error) {
+      console.error(`Error getting analytics for manifestation ${manifestationId}:`, error);
+      // Return fallback data in case of error
+      return { 
+        manifestationId, 
+        usage: 0, 
+        usedByCharacters: [],
+        prerequisites: [],
+        dependents: []
+      };
+    }
   }
 
   /**
@@ -1362,14 +1409,105 @@ export class GameRulesAPI {
    * Updates the attack bonus for a character class
    * @param characterClassId The ID of the character class
    * @param details The attack bonus details
-   * @todo Implement this method
+   * @returns Whether the update was successful
    */
-  updateCharacterClassAttack(characterClassId: number, details: { attack_bonus: number }): void {
-    console.warn(`Method not fully implemented: updateCharacterClassAttack for class ${characterClassId} with bonus ${details.attack_bonus}`);
-    // Actual implementation would go here
+  async updateCharacterClassAttack(characterClassId: number, details: { attack_bonus: number }): Promise<boolean> {
+    try {
+      // Validate input
+      if (characterClassId <= 0) {
+        throw new Error('Invalid character class ID');
+      }
+      
+      // Update the attack bonus in the database
+      const { error } = await this.supabase
+        .from('game_character_class')
+        .update({ attack_bonus: details.attack_bonus })
+        .eq('id', characterClassId);
+        
+      if (error) throw error;
+      
+      return true;
+    } catch (err) {
+      console.error(`Failed to update attack bonus for character class ${characterClassId}:`, err);
+      return false;
+    }
   }
 
-  // More methods to be added in subsequent updates...
+  /**
+   * Get the Supabase client for advanced operations
+   * This provides controlled access to the Supabase client while maintaining
+   * encapsulation of the internal implementation details.
+   * 
+   * @returns The Supabase client instance
+   */
+  getSupabaseClient(): SupabaseClient<Database> {
+    return this.supabase;
+  }
+
+  /**
+   * Creates a watcher for a specific character's core data
+   * @param characterId Character ID to watch
+   * @param callback Callback to execute when the character changes
+   * @returns Subscription channel
+   */
+  watchCharacterCore(characterId: number, callback: RealtimeCallback<'game_character'>): ReturnType<SupabaseClient['channel']> {
+    return this.supabase
+      .channel(`character_${characterId}_core_changes`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'game_character',
+        filter: `id=eq.${characterId}`
+      }, (payload: RealtimePostgresChangesPayload<Row<'game_character'>>) => {
+        const type = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
+        const row = type === 'DELETE' ? payload.old as Row<'game_character'> : payload.new as Row<'game_character'>;
+        callback(type, row);
+      })
+      .subscribe();
+  }
+
+  /**
+   * Creates a watcher for a specific character's skill ranks
+   * @param characterId Character ID to watch
+   * @param callback Callback to execute when the skill ranks change
+   * @returns Subscription channel
+   */
+  watchCharacterSkillRanks(characterId: number, callback: RealtimeCallback<'game_character_skill_rank'>): ReturnType<SupabaseClient['channel']> {
+    return this.supabase
+      .channel(`character_${characterId}_skill_ranks_changes`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'game_character_skill_rank',
+        filter: `game_character_id=eq.${characterId}`
+      }, (payload: RealtimePostgresChangesPayload<Row<'game_character_skill_rank'>>) => {
+        const type = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
+        const row = type === 'DELETE' ? payload.old as Row<'game_character_skill_rank'> : payload.new as Row<'game_character_skill_rank'>;
+        callback(type, row);
+      })
+      .subscribe();
+  }
+
+  /**
+   * Updates a character's HP
+   * @param characterId Character ID
+   * @param currentHp Current HP value
+   * @returns Whether the update was successful
+   */
+  async updateCharacterHP(characterId: number, currentHp: number): Promise<boolean> {
+    try {
+      const { error } = await this.supabase
+        .from('game_character')
+        .update({ current_hp: currentHp })
+        .eq('id', characterId);
+        
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error(`Failed to update character HP: ${err}`);
+      return false;
+    }
+  }
 }
 
 // Direct exports of types for easier importing

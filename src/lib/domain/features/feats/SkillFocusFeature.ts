@@ -2,6 +2,16 @@ import type { Entity } from '../../types/EntityTypes';
 import type { Feature } from '../../types/FeatureTypes';
 import type { SkillSubsystem, BonusSubsystem } from '../../types/SubsystemTypes';
 
+// Helper function to check if character already has Skill Focus for a specific skill
+function hasSkillFocusForSkill(entity: Entity, skillId: number, featureId: string): boolean {
+  if (!entity.character?.feats) return false;
+  
+  return entity.character.feats.some(feat => 
+    feat.id === featureId && 
+    feat.options?.skillId === skillId
+  );
+}
+
 export const SkillFocusFeature: Feature = {
   id: 'feat.skill_focus',
   name: 'Skill Focus',
@@ -19,8 +29,8 @@ export const SkillFocusFeature: Feature = {
       throw new Error('Skill Focus feat requires a skill selection');
     }
     
-    // Check for duplicate feat
-    if (this.hasSkillFocusForSkill(entity, skillId)) {
+    // Check for duplicate feat using a locally-defined helper
+    if (hasSkillFocusForSkill(entity, skillId, this.id)) {
       throw new Error(`Character already has Skill Focus for skill ID ${skillId}`);
     }
     
@@ -67,15 +77,5 @@ export const SkillFocusFeature: Feature = {
     return {
       success: true
     };
-  },
-  
-  // Helper to check if character already has Skill Focus for this skill
-  hasSkillFocusForSkill(entity: Entity, skillId: number): boolean {
-    if (!entity.character?.feats) return false;
-    
-    return entity.character.feats.some(feat => 
-      feat.id === this.id && 
-      feat.options?.skillId === skillId
-    );
   }
 };

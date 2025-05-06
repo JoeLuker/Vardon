@@ -66,7 +66,7 @@ export const BarbarianRageFeature: Feature = {
   
   unapply(
     entity: Entity, 
-    options: {}, 
+    _options: {}, 
     subsystems: { 
       bonus: BonusSubsystem 
     }

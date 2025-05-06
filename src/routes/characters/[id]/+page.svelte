@@ -5,17 +5,14 @@
 	// Types
 	import type { PageData } from './$types';
 	import type { AssembledCharacter } from '$lib/domain/character/characterTypes';
-	import type { CompleteCharacter } from '$lib/db/gameRules.api';
 	
-	// Game Engine and Assembler
-	import { initializeApplication } from '$lib/domain/application';
-	import { CharacterAssembler } from '$lib/domain/character/CharacterAssembler';
-	import type { GameEngine } from '$lib/domain/core/GameEngine';
-	import type { FeatureRegistry } from '$lib/domain/config/FeatureRegistry';
-
+	// Character Loader and Adapters
+	import CharacterLoader from '$lib/ui/CharacterLoader.svelte';
+	import { UIAdapter } from '$lib/ui/adapters/UIAdapter';
+	
 	// Game API
-import { GameRulesAPI } from '$lib/db/gameRules.api';
-import { supabase } from '$lib/db/supabaseClient';
+	import { GameRulesAPI } from '$lib/db/gameRules.api';
+	import { supabase } from '$lib/db/supabaseClient';
 	
 	// UI Components
 	import CharacterHeader from '$lib/ui/CharacterHeader.svelte';
@@ -46,17 +43,9 @@ import { supabase } from '$lib/db/supabaseClient';
 	let { data } = $props<{ data: PageData }>();
 	
 	// State
-	let rawCharacter = $state<CompleteCharacter | null>(null);
 	let character = $state<AssembledCharacter | null>(null);
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
-	let diagnosticInfo = $state<Record<string, any>>({});
-	
-	// Game Engine Components
-	let engine = $state<GameEngine | null>(null);
-	let gameAPI = $state<GameRulesAPI | null>(null);
-	let featureRegistry = $state<FeatureRegistry | null>(null);
-	let characterAssembler = $state<CharacterAssembler | null>(null);
 	
 	// Helper function for timestamps in logs
 	function getTimestamp() {
@@ -64,267 +53,75 @@ import { supabase } from '$lib/db/supabaseClient';
 		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
 	}
 	
-	// Initialize on component mount
-	onMount(async () => {
-		console.log(`${getTimestamp()} - Character page mounted with ID: ${data?.id}`);
+	// Handle character loading events
+	function handleCharacterLoaded(event: CustomEvent<AssembledCharacter>) {
+		character = event.detail;
+		isLoading = false;
+		error = null;
 		
-		// Initialize client-side GameRulesAPI
-		try {
-			console.log(`${getTimestamp()} - Initializing client-side GameRulesAPI`);
-			// Use either the server-provided API or create a new one
-			gameAPI = data?.gameAPI || new GameRulesAPI(supabase);
-			
-			if (!gameAPI) {
-				throw new Error('Failed to initialize GameRulesAPI');
-			}
-			
-			console.log(`${getTimestamp()} - GameRulesAPI initialized successfully`);
-		} catch (apiError) {
-			console.error(`${getTimestamp()} - Failed to initialize GameRulesAPI:`, apiError);
-			error = apiError instanceof Error ? 
-				`Failed to initialize GameRulesAPI: ${apiError.message}` : 
-				'Failed to initialize GameRulesAPI';
-			isLoading = false;
-			return;
-		}
-		
-		if (data?.rawCharacter) {
-			console.log(`${getTimestamp()} - Using raw character data from server:`, {
-				id: data.id,
-				dataReceived: !!data.rawCharacter,
-				dataSize: JSON.stringify(data.rawCharacter).length
-			});
-			
-			rawCharacter = data.rawCharacter;
-			
-			try {
-				await loadCharacter();
-				
-				// Log character basics after successful loading
-				if (character) {
-					console.log(`${getTimestamp()} - Character loaded successfully:`, {
-						id: character.id,
-						name: character.name,
-						classes: character.game_character_class?.map(c => c.class?.name) || [],
-						ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
-						level: character.totalLevel
-					});
-				}
-			} catch (loadError) {
-				console.error(`${getTimestamp()} - Failed to load character:`, loadError);
-				error = loadError instanceof Error ? loadError.message : 'Failed to load character data';
-				isLoading = false;
-			}
-		} else {
-			console.warn(`${getTimestamp()} - No character data received from server`);
-			error = 'No character data received from server';
-			isLoading = false;
-		}
-
-		// Return cleanup function
-		return () => {
-			if (engine) {
-				console.log(`${getTimestamp()} - Shutting down engine`);
-				engine.shutdown();
-				engine = null;
-				characterAssembler = null;
-			}
-		};
-	});
+		console.log(`${getTimestamp()} - Character loaded successfully:`, {
+			id: character.id,
+			name: character.name,
+			classes: character.game_character_class?.map(c => c.class?.name) || [],
+			ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
+			level: character.totalLevel
+		});
+	}
 	
-	async function loadCharacter() {
-		// Skip if already loaded and not loading
-		if (character && !isLoading) {
-			console.log(`${getTimestamp()} - Character already loaded, skipping initialization`);
-			return;
-		}
-		
-		// Set loading state once
-		if (!isLoading) {
-			console.log(`${getTimestamp()} - Starting character loading process`);
-			isLoading = true;
-			error = null;
-		}
+	function handleCharacterError(event: CustomEvent<string>) {
+		error = event.detail;
+		isLoading = false;
+		console.error(`${getTimestamp()} - Error loading character:`, error);
+	}
+	
+	// Handle HP update
+	async function handleHPUpdate(event: CustomEvent<number>) {
+		if (!character) return;
 		
 		try {
-			// Verify raw character data exists
-			if (!rawCharacter) {
-				console.error(`${getTimestamp()} - Raw character data is missing`);
-				throw new Error('Missing character data: rawCharacter is null or undefined');
-			}
+			console.log(`${getTimestamp()} - Updating HP to: ${event.detail}`);
 			
-			console.log(`${getTimestamp()} - Raw character data verified, ID: ${rawCharacter.id}`);
+			// Get the UI adapter
+			const uiAdapter = UIAdapter.getInstance();
 			
-			// Initialize the application if not already done (lazy init)
-			if (!engine || !characterAssembler) {
-				console.log(`${getTimestamp()} - Initializing application and engine components`);
-				
-				// Pass the initialized gameAPI to avoid re-creating API clients
-				const gameData = {
-					gameAPI: gameAPI
-				};
-				
-				try {
-					// Initialize the application
-					const app = await initializeApplication(gameData);
-					
-					// Verify application initialization results
-					if (!app) {
-						throw new Error('Application initialization returned null or undefined');
-					}
-					
-					// Explicitly extract all components
-					engine = app.engine;
-					featureRegistry = app.featureRegistry;
-					
-					// Get characterAssembler from app (not app.assembler)
-					characterAssembler = app.characterAssembler;
-					
-					// Capture diagnostic info for debugging
-					diagnosticInfo = {
-						engineInitialized: !!engine,
-						characterAssemblerInitialized: !!characterAssembler,
-						featureRegistryInitialized: !!featureRegistry,
-						gameAPIInitialized: !!gameAPI,
-						hasAssembleMethod: characterAssembler && typeof characterAssembler.assembleCharacter === 'function'
-					};
-					
-					console.log(`${getTimestamp()} - Application initialized successfully:`, diagnosticInfo);
-				} catch (initError) {
-					console.error(`${getTimestamp()} - Failed to initialize application:`, initError);
-					throw new Error(`Application initialization failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
-				}
-			}
+			// Update character HP
+			const newHP = event.detail;
+			await uiAdapter.updateCharacterProperty(character.id, 'current_hp', newHP);
 			
-			// Create direct CharacterAssembler fallback if needed
-			if (!characterAssembler && engine) {
-				console.warn(`${getTimestamp()} - No characterAssembler from app, creating direct fallback`);
-				try {
-					// Try to create the assembler directly with available components
-					characterAssembler = new CharacterAssembler(engine, gameAPI, featureRegistry);
-					
-					// Verify the fallback was created
-					if (!characterAssembler) {
-						throw new Error('Fallback CharacterAssembler constructor returned null or undefined');
-					}
-					
-					// Check that the required method exists
-					if (typeof characterAssembler.assembleCharacter !== 'function') {
-						throw new Error('Fallback CharacterAssembler missing required assembleCharacter method');
-					}
-					
-					console.log(`${getTimestamp()} - Fallback CharacterAssembler created successfully`);
-				} catch (fallbackError) {
-					console.error(`${getTimestamp()} - Failed to create fallback CharacterAssembler:`, fallbackError);
-					
-					// Last resort emergency fallback
-					console.warn(`${getTimestamp()} - Creating emergency minimal CharacterAssembler`);
-					characterAssembler = {
-						assembleCharacter: async (character) => {
-							console.warn(`${getTimestamp()} - Using emergency minimal CharacterAssembler`);
-							return {
-								...character,
-								id: character.id,
-								name: character.name || 'Character',
-								totalLevel: 1,
-								// Add minimum required properties
-								abilityScores: {
-									strength: { total: 10, modifier: 0, label: 'Strength', modifiers: [] },
-									dexterity: { total: 10, modifier: 0, label: 'Dexterity', modifiers: [] },
-									constitution: { total: 10, modifier: 0, label: 'Constitution', modifiers: [] },
-									intelligence: { total: 10, modifier: 0, label: 'Intelligence', modifiers: [] },
-									wisdom: { total: 10, modifier: 0, label: 'Wisdom', modifiers: [] },
-									charisma: { total: 10, modifier: 0, label: 'Charisma', modifiers: [] }
-								},
-								skills: {},
-								saves: { 
-									fortitude: { total: 0, label: 'Fortitude', modifiers: [] }, 
-									reflex: { total: 0, label: 'Reflex', modifiers: [] }, 
-									will: { total: 0, label: 'Will', modifiers: [] } 
-								},
-								ac: { total: 10, label: 'AC', modifiers: [] },
-								touch_ac: { total: 10, label: 'Touch AC', modifiers: [] },
-								flat_footed_ac: { total: 10, label: 'Flat-footed AC', modifiers: [] }
-							};
-						}
-					};
-					console.log(`${getTimestamp()} - Emergency minimal CharacterAssembler created`);
-				}
-			}
+			// Update local state
+			character.current_hp = newHP;
 			
-			// Perform comprehensive verification of required components
-			if (!engine) {
-				console.error(`${getTimestamp()} - Game engine is missing after initialization`);
-				throw new Error('Failed to initialize game engine');
-			}
+			console.log(`${getTimestamp()} - HP updated successfully`);
+		} catch (error) {
+			console.error(`${getTimestamp()} - Failed to update HP:`, error);
+			// Could show a notification here
+		}
+	}
+	
+	// Handle feature activation
+	async function handleFeatureActivation(event: CustomEvent<{ featureId: string, options: any }>) {
+		if (!character) return;
+		
+		try {
+			console.log(`${getTimestamp()} - Applying feature: ${event.detail.featureId}`);
 			
-			if (!characterAssembler) {
-				console.error(`${getTimestamp()} - Character assembler is missing after initialization`);
-				throw new Error('Failed to initialize character assembler');
-			}
+			// Get the UI adapter
+			const uiAdapter = UIAdapter.getInstance();
 			
-			if (!rawCharacter.id) {
-				console.error(`${getTimestamp()} - Raw character data is missing ID property`);
-				throw new Error('Invalid character data: missing ID');
-			}
+			// Apply feature
+			const result = await uiAdapter.applyFeature(
+				character.id,
+				event.detail.featureId,
+				event.detail.options
+			);
 			
-			console.log(`${getTimestamp()} - Starting character assembly with ID: ${rawCharacter.id}`);
-			console.log(`${getTimestamp()} - Character data preview:`, {
-				id: rawCharacter.id,
-				name: rawCharacter.name,
-				ancestry: rawCharacter.game_character_ancestry?.length > 0 ? 'Present' : 'Missing',
-				classes: rawCharacter.game_character_class?.length > 0 ? 'Present' : 'Missing'
-			});
+			// Reload character to reflect changes
+			character = await uiAdapter.loadCharacter(character.id, true);
 			
-			// Assemble character data with safeguards
-			try {
-				// Verify assembler method exists (final check)
-				if (typeof characterAssembler.assembleCharacter !== 'function') {
-					throw new Error('Character assembler missing required assembleCharacter method');
-				}
-				
-				character = await characterAssembler.assembleCharacter(rawCharacter);
-				
-				// Verify assembly results
-				if (!character) {
-					throw new Error('Character assembly returned null or undefined result');
-				}
-				
-				console.log(`${getTimestamp()} - Character assembled successfully:`, { 
-					id: character.id,
-					name: character.name, 
-					level: character.totalLevel,
-					abilityScores: character.abilityScores ? 'Present' : 'Missing',
-					skills: character.skills ? 'Present' : 'Missing'
-				});
-			} catch (assemblyError) {
-				console.error(`${getTimestamp()} - Error during character assembly:`, assemblyError);
-				throw new Error(`Character assembly failed: ${assemblyError instanceof Error ? assemblyError.message : 'Unknown error'}`);
-			}
-			
-			isLoading = false;
-			console.log(`${getTimestamp()} - Character loading completed successfully`);
-		} catch (err) {
-			console.error(`${getTimestamp()} - Error loading character:`, err);
-			
-			// Enhanced diagnostic info
-			const enhancedDiagnostics = {
-				hasRawCharacter: !!rawCharacter,
-				rawCharacterId: rawCharacter?.id,
-				hasEngine: !!engine,
-				hasCharacterAssembler: !!characterAssembler,
-				characterAssemblerMethods: characterAssembler ? Object.keys(characterAssembler).join(', ') : 'none',
-				assembleMethodExists: characterAssembler && typeof characterAssembler.assembleCharacter === 'function',
-				hasGameAPI: !!gameAPI,
-				hasFeatureRegistry: !!featureRegistry,
-				dataServerId: data?.id
-			};
-			
-			console.error(`${getTimestamp()} - Diagnostic info:`, enhancedDiagnostics);
-			diagnosticInfo = enhancedDiagnostics;
-			
-			isLoading = false;
-			error = err instanceof Error ? err.message : 'An unknown error occurred';
+			console.log(`${getTimestamp()} - Feature applied successfully:`, result);
+		} catch (error) {
+			console.error(`${getTimestamp()} - Failed to apply feature:`, error);
+			// Could show a notification here
 		}
 	}
 	
@@ -332,105 +129,91 @@ import { supabase } from '$lib/db/supabaseClient';
 	function handleSelectValue(e: CustomEvent<{ path: string, value: any }>) {
 		console.log(`Selected value: ${e.detail.path} = ${e.detail.value}`);
 	}
-	
-	// Cleanup handled in the onMount return function
 </script>
 
-{#if isLoading}
-<div class="flex items-center justify-center h-screen">
-	<div class="text-center">
-		<p class="text-lg">Loading character...</p>
-	</div>
-</div>
-{:else if error}
-<div class="p-4">
-	<div class="bg-red-100 text-red-800 p-4 rounded-md">
-		<p class="font-semibold">Error loading character</p>
-		<p>{error}</p>
-		
-		{#if Object.keys(diagnosticInfo).length > 0}
-		<details class="mt-4">
-			<summary class="cursor-pointer font-medium">Diagnostic Information</summary>
-			<pre class="mt-2 bg-red-50 p-2 rounded text-xs overflow-auto">
-{JSON.stringify(diagnosticInfo, null, 2)}
-			</pre>
-		</details>
-		{/if}
-	</div>
-</div>
-{:else if character}
-<div class="p-4 space-y-4">
-	<div class="grid gap-4 md:grid-cols-2">
-		<CharacterHeader 
-			name={character.name} 
-			race={character.game_character_ancestry?.[0]?.ancestry?.name} 
-			class={character.game_character_class?.[0]?.class?.name}
-			level={character.totalLevel}
-		/>
-		<HPTracker 
-			maxHP={character.max_hp} 
-			currentHP={character.current_hp}
-		/>
-	</div>
-	
-	<Tabs.Root value="stats" class="w-full">
-		<Tabs.List class="w-full">
-			<Tabs.Trigger value="stats">Stats</Tabs.Trigger>
-			<Tabs.Trigger value="skills">Skills</Tabs.Trigger>
-			<Tabs.Trigger value="combat">Combat</Tabs.Trigger>
-			<Tabs.Trigger value="feats">Feats & Features</Tabs.Trigger>
-			<Tabs.Trigger value="spells">Spells</Tabs.Trigger>
-			<Tabs.Trigger value="items">Items</Tabs.Trigger>
-		</Tabs.List>
-		
-		<div class="mt-4">
-			<Tabs.Content value="stats" class="space-y-4">
-				<div class="grid gap-4 md:grid-cols-2">
-					<AbilityScores character={character} onSelectValue={handleSelectValue} />
-					<Saves character={character} onSelectValue={handleSelectValue} />
+<CharacterLoader {data} 
+	on:loaded={handleCharacterLoaded}
+	on:error={handleCharacterError}
+>
+	{#if character}
+		<div class="p-4 space-y-4">
+			<div class="grid gap-4 md:grid-cols-2">
+				<CharacterHeader 
+					name={character.name} 
+					race={character.game_character_ancestry?.[0]?.ancestry?.name} 
+					class={character.game_character_class?.[0]?.class?.name}
+					level={character.totalLevel}
+				/>
+				<HPTracker 
+					maxHP={character.max_hp} 
+					currentHP={character.current_hp}
+					on:update={handleHPUpdate}
+				/>
+			</div>
+			
+			<Tabs.Root value="stats" class="w-full">
+				<Tabs.List class="w-full">
+					<Tabs.Trigger value="stats">Stats</Tabs.Trigger>
+					<Tabs.Trigger value="skills">Skills</Tabs.Trigger>
+					<Tabs.Trigger value="combat">Combat</Tabs.Trigger>
+					<Tabs.Trigger value="feats">Feats & Features</Tabs.Trigger>
+					<Tabs.Trigger value="spells">Spells</Tabs.Trigger>
+					<Tabs.Trigger value="items">Items</Tabs.Trigger>
+				</Tabs.List>
+				
+				<div class="mt-4">
+					<Tabs.Content value="stats" class="space-y-4">
+						<div class="grid gap-4 md:grid-cols-2">
+							<AbilityScores {character} onSelectValue={handleSelectValue} />
+							<Saves {character} onSelectValue={handleSelectValue} />
+						</div>
+					</Tabs.Content>
+					
+					<Tabs.Content value="skills">
+						<Skills {character} />
+					</Tabs.Content>
+					
+					<Tabs.Content value="combat" class="space-y-4">
+						<div class="grid gap-4 md:grid-cols-2">
+							<ACStats {character} onSelectValue={handleSelectValue} />
+							<CombatStats {character} onSelectValue={handleSelectValue} />
+						</div>
+					</Tabs.Content>
+					
+					<Tabs.Content value="feats" class="space-y-4">
+						<AncestryTraits {character} />
+						<ClassFeatures 
+							{character} 
+							on:activateFeature={handleFeatureActivation}
+						/>
+						<Archetypes {character} />
+						<Discoveries {character} />
+						<WildTalents {character} />
+						<KiPowers {character} />
+						<Bloodlines {character} />
+						<Feats 
+							{character} 
+							on:activateFeature={handleFeatureActivation}
+						/>
+						<Corruptions 
+							{character} 
+							on:activateFeature={handleFeatureActivation}
+						/>
+						<!-- Prerequisites component temporarily disabled -->
+						<!-- <Prerequisites {character} /> -->
+					</Tabs.Content>
+					
+					<Tabs.Content value="spells" class="space-y-4">
+						<SpellSlots {character} />
+						<Spells {character} />
+					</Tabs.Content>
+					
+					<Tabs.Content value="items" class="space-y-4">
+						<Enhancements {character} />
+						<p>Additional item management coming soon</p>
+					</Tabs.Content>
 				</div>
-			</Tabs.Content>
-			
-			<Tabs.Content value="skills">
-				<Skills character={character} />
-			</Tabs.Content>
-			
-			<Tabs.Content value="combat" class="space-y-4">
-				<div class="grid gap-4 md:grid-cols-2">
-					<ACStats character={character} onSelectValue={handleSelectValue} />
-					<CombatStats character={character} onSelectValue={handleSelectValue} />
-				</div>
-			</Tabs.Content>
-			
-			<Tabs.Content value="feats" class="space-y-4">
-				<AncestryTraits character={character} />
-				<ClassFeatures character={character} />
-				<Archetypes character={character} />
-				<Discoveries character={character} />
-				<WildTalents character={character} />
-				<KiPowers character={character} />
-				<Bloodlines character={character} />
-				<Feats character={character} />
-				<Corruptions character={character} />
-				<!-- Prerequisites component temporarily disabled -->
-				<!-- <Prerequisites character={character} /> -->
-			</Tabs.Content>
-			
-			<Tabs.Content value="spells" class="space-y-4">
-				<SpellSlots character={character} />
-				<Spells character={character} />
-			</Tabs.Content>
-			
-			<Tabs.Content value="items" class="space-y-4">
-				<Enhancements character={character} />
-				<p>Additional item management coming soon</p>
-			</Tabs.Content>
+			</Tabs.Root>
 		</div>
-	</Tabs.Root>
-</div>
-{:else}
-<!-- No character data -->
-<div class="p-4">
-	<p>No character data available</p>
-</div>
-{/if}
+	{/if}
+</CharacterLoader>

@@ -10,7 +10,7 @@ export const ElementalOverflowFeature: Feature = {
   id: 'class.elemental_overflow',
   name: 'Elemental Overflow',
   requiredSubsystems: ['bonus'],
-  description: 'At 3rd level, a kineticist's body surges with energy from her chosen element when she accepts burn, causing her to glow with a nimbus of fire, weep water from her pores, or experience some other sign of her elemental power.',
+  description: "At 3rd level, a kineticist's body surges with energy from her chosen element when she accepts burn, causing her to glow with a nimbus of fire, weep water from her pores, or experience some other sign of her elemental power.",
   category: 'class',
   
   apply(entity: Entity, options: { element?: string, classLevel?: number } = {}, subsystems: { bonus: BonusSubsystem }) {
