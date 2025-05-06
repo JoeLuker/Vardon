@@ -9,6 +9,32 @@ import type { Entity, Capability } from '../../kernel/types';
 import type { CapabilityOptions } from '../BaseCapability';
 
 /**
+ * Ability score data structure
+ */
+export interface AbilityScore {
+  /** Base ability score without modifiers */
+  base: number;
+  
+  /** Calculated total after all modifiers */
+  total: number;
+  
+  /** Ability modifier derived from total score */
+  modifier: number;
+}
+
+/**
+ * Type of ability
+ */
+export enum AbilityType {
+  STRENGTH = 'strength',
+  DEXTERITY = 'dexterity',
+  CONSTITUTION = 'constitution',
+  INTELLIGENCE = 'intelligence',
+  WISDOM = 'wisdom',
+  CHARISMA = 'charisma'
+}
+
+/**
  * Ability score calculation breakdown
  */
 export interface AbilityBreakdown {

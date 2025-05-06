@@ -9,6 +9,12 @@ export type {
   ConditionType,
   Condition,
   ConditionEffect,
-  ConditionStateUpdate
+  ConditionStateUpdate,
+  ApplyConditionOptions
 } from './types';
-export * from './ConditionCapabilityProvider';
+
+// Export the class-based implementation (legacy)
+export { ConditionCapabilityProvider } from './ConditionCapabilityProvider';
+
+// Export the composition-based implementation (Unix-style)
+export { createConditionCapability } from './ConditionCapabilityComposed';

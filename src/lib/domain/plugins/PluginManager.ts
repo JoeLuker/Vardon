@@ -20,6 +20,7 @@ import type {
 } from '../kernel/types';
 import type { PluginMetadata } from './types';
 import { GameKernel } from '../kernel/GameKernel';
+import { DefaultPluginFilesystem, PLUGIN_PATHS, type PluginFilesystem } from './PluginFilesystem';
 
 /**
  * Options for the plugin manager
@@ -39,11 +40,11 @@ export class PluginManager {
   /** Whether debug logging is enabled */
   private readonly debug: boolean;
   
-  /** Map of registered plugins by ID (like executables in /bin) */
-  private readonly plugins: Map<string, Plugin> = new Map();
-  
   /** Reference to the kernel for file operations */
   private readonly kernel: GameKernel;
+  
+  /** The plugin filesystem abstraction */
+  private readonly filesystem: PluginFilesystem;
   
   /** Map of open file descriptors by path */
   private readonly openFiles: Map<string, number> = new Map();
@@ -56,19 +57,26 @@ export class PluginManager {
     }
     
     this.kernel = options.kernel;
+    
+    // Initialize the plugin filesystem
+    this.filesystem = new DefaultPluginFilesystem(this.kernel, this.debug);
+    
+    this.log('Plugin Manager initialized');
   }
   
   /**
-   * Register a plugin
+   * Register a plugin in the filesystem
    * @param plugin Plugin to register
    */
   registerPlugin(plugin: Plugin): void {
-    if (this.plugins.has(plugin.id)) {
-      this.error(`Plugin with ID ${plugin.id} is already registered`);
+    // Mount the plugin in the filesystem
+    const result = this.filesystem.mountPlugin(plugin);
+    
+    if (result !== 0) {
+      this.error(`Failed to register plugin ${plugin.id}: error code ${result}`);
       return;
     }
     
-    this.plugins.set(plugin.id, plugin);
     this.log(`Registered plugin: ${plugin.id} (${plugin.name})`);
   }
   
@@ -78,7 +86,24 @@ export class PluginManager {
    * @returns Plugin instance or undefined if not found
    */
   getPlugin(pluginId: string): Plugin | undefined {
-    return this.plugins.get(pluginId);
+    // Create the path to the plugin executable
+    const pluginPath = `${PLUGIN_PATHS.BIN}/${pluginId}`;
+    
+    // Check if the plugin exists
+    if (!this.filesystem.existsPlugin(pluginPath)) {
+      return undefined;
+    }
+    
+    // Get plugin metadata
+    const metadata = this.filesystem.getPluginMetadata(pluginPath);
+    if (!metadata) {
+      return undefined;
+    }
+    
+    // Since we can't directly return the plugin object (filesystem abstraction),
+    // we need to use the kernel to get the actual plugin instance
+    // This is a temporary bridge during refactoring
+    return this.kernel.getPlugin(pluginId);
   }
   
   /**
@@ -87,7 +112,11 @@ export class PluginManager {
    * @returns Whether the plugin is registered
    */
   hasPlugin(pluginId: string): boolean {
-    return this.plugins.has(pluginId);
+    // Create the path to the plugin executable
+    const pluginPath = `${PLUGIN_PATHS.BIN}/${pluginId}`;
+    
+    // Check if the plugin exists in the filesystem
+    return this.filesystem.existsPlugin(pluginPath);
   }
   
   /**
@@ -104,14 +133,13 @@ export class PluginManager {
    * @returns Array of plugin metadata
    */
   getAllPluginMetadata(): PluginMetadata[] {
-    return Array.from(this.plugins.values()).map(plugin => ({
-      id: plugin.id,
-      name: plugin.name,
-      description: plugin.description,
-      requiredDevices: plugin.requiredDevices,
-      version: (plugin as any).version || '1.0.0',
-      author: (plugin as any).author
-    }));
+    // Get all plugin paths in /bin
+    const pluginPaths = this.filesystem.listPlugins(PLUGIN_PATHS.BIN);
+    
+    // Map paths to metadata
+    return pluginPaths
+      .map(path => this.filesystem.getPluginMetadata(path))
+      .filter((metadata): metadata is PluginMetadata => metadata !== null);
   }
   
   /**
@@ -119,7 +147,16 @@ export class PluginManager {
    * @returns Array of all registered plugins
    */
   getAllPlugins(): Plugin[] {
-    return Array.from(this.plugins.values());
+    // Get all plugin paths in /bin
+    const pluginPaths = this.filesystem.listPlugins(PLUGIN_PATHS.BIN);
+    
+    // Map paths to plugin instances
+    return pluginPaths
+      .map(path => {
+        const pluginId = path.substring(PLUGIN_PATHS.BIN.length + 1);
+        return this.kernel.getPlugin(pluginId);
+      })
+      .filter((plugin): plugin is Plugin => plugin !== undefined);
   }
   
   /**
@@ -137,9 +174,18 @@ export class PluginManager {
    * @returns Array of plugins that require this device
    */
   getPluginsByDevice(devicePath: string): Plugin[] {
-    return this.getAllPlugins().filter(plugin => 
-      plugin.requiredDevices.includes(devicePath)
-    );
+    // Get all plugin metadata
+    const allMetadata = this.getAllPluginMetadata();
+    
+    // Filter plugins that require this device
+    const pluginIds = allMetadata
+      .filter(metadata => metadata.requiredDevices.includes(devicePath))
+      .map(metadata => metadata.id);
+    
+    // Get plugin instances
+    return pluginIds
+      .map(id => this.getPlugin(id))
+      .filter((plugin): plugin is Plugin => plugin !== undefined);
   }
   
   /**
@@ -148,14 +194,17 @@ export class PluginManager {
    * @returns Array of missing device paths, empty if all available
    */
   checkRequiredDevices(pluginId: string): string[] {
-    const plugin = this.getPlugin(pluginId);
-    if (!plugin) {
+    // Get plugin metadata
+    const pluginPath = `${PLUGIN_PATHS.BIN}/${pluginId}`;
+    const metadata = this.filesystem.getPluginMetadata(pluginPath);
+    
+    if (!metadata) {
       return [`Plugin not found: ${pluginId}`];
     }
     
     // Check if required devices are available
     const missingDevices: string[] = [];
-    for (const devicePath of plugin.requiredDevices) {
+    for (const devicePath of metadata.requiredDevices) {
       if (!this.hasDevice(devicePath)) {
         missingDevices.push(devicePath);
       }
@@ -172,8 +221,12 @@ export class PluginManager {
    * @returns Result of execution
    */
   async executePlugin(entityId: string, pluginId: string, options: Record<string, any> = {}): Promise<any> {
-    const plugin = this.getPlugin(pluginId);
-    if (!plugin) {
+    // Create the paths
+    const pluginPath = `${PLUGIN_PATHS.BIN}/${pluginId}`;
+    const entityPath = `/entity/${entityId}`;
+    
+    // Check if plugin exists
+    if (!this.filesystem.existsPlugin(pluginPath)) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
     
@@ -183,9 +236,6 @@ export class PluginManager {
       throw new Error(`Missing required devices for plugin ${pluginId}: ${missingDevices.join(', ')}`);
     }
     
-    // Full path to entity file
-    const entityPath = `/entity/${entityId}`;
-    
     // Check if entity exists
     if (!this.kernel.exists(entityPath)) {
       throw new Error(`Entity not found: ${entityId}`);
@@ -193,38 +243,8 @@ export class PluginManager {
     
     this.log(`Executing plugin ${pluginId} on entity ${entityId}`);
     
-    try {
-      // Execute the plugin
-      const exitCode = await plugin.execute(this.kernel, entityPath, options);
-      
-      if (exitCode !== 0) {
-        throw new Error(`Plugin exited with code: ${exitCode}`);
-      }
-      
-      // Get updated entity by opening and reading file
-      const fd = this.kernel.open(entityPath, OpenMode.READ);
-      if (fd < 0) {
-        throw new Error(`Failed to open entity file: ${entityPath}`);
-      }
-      
-      try {
-        // Read entity data
-        const entityData = {};
-        const result = this.kernel.read(fd, entityData);
-        
-        if (result !== 0) {
-          throw new Error(`Failed to read entity data: ${result}`);
-        }
-        
-        return entityData;
-      } finally {
-        // Always close the file descriptor
-        this.kernel.close(fd);
-      }
-    } catch (error) {
-      this.error(`Error executing plugin ${pluginId} on entity ${entityId}`, error);
-      throw error;
-    }
+    // Execute the plugin using the filesystem abstraction
+    return this.filesystem.executePlugin(pluginPath, entityPath, options);
   }
   
   /**
@@ -246,7 +266,12 @@ export class PluginManager {
     // Clear file tracking
     this.openFiles.clear();
     
-    // Note: Kernel is responsible for shutting down devices
+    // Unmount all plugins
+    const pluginPaths = this.filesystem.listPlugins(PLUGIN_PATHS.BIN);
+    for (const path of pluginPaths) {
+      const pluginId = path.substring(PLUGIN_PATHS.BIN.length + 1);
+      this.filesystem.unmountPlugin(pluginId);
+    }
     
     this.log('Plugin manager shut down');
   }
@@ -267,8 +292,7 @@ export class PluginManager {
     
     try {
       // Read entity data
-      const entityData = {};
-      const result = this.kernel.read(fd, entityData);
+      const [result, entityData] = this.kernel.read(fd);
       
       if (result !== 0) {
         this.error(`Failed to read entity data: ${result}`);

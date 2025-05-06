@@ -1,16 +1,19 @@
 /**
  * Combat Capability Module
  * 
- * This module exports the combat capability implementation and types.
+ * This module exports the combat capability implementations (both class-based and Unix-style)
+ * and related types.
  */
 
 export type { 
   CombatCapability,
-  AttackMode,
-  AttackType,
-  WeaponAttack,
-  WeaponInfo,
   AttackRoll,
-  DamageRoll
+  DamageRoll,
+  CombatStats
 } from './types';
-export * from './CombatCapabilityProvider';
+
+// Export the class-based implementation (legacy)
+export { CombatCapabilityProvider } from './CombatCapabilityProvider';
+
+// Export the composition-based implementation (Unix-style)
+export { createCombatCapability } from './CombatCapabilityComposed';

@@ -23,6 +23,9 @@ export interface PluginMetadata {
   /** List of capability IDs this plugin requires */
   requiredCapabilities: string[];
   
+  /** List of device paths this plugin requires access to */
+  requiredDevices: string[];
+  
   /** Category for organizing plugins */
   category?: string;
   

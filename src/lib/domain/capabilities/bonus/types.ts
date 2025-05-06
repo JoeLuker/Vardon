@@ -10,6 +10,93 @@ import type { CapabilityOptions } from '../BaseCapability';
 import type { BonusBreakdown } from '../ability/types';
 
 /**
+ * Standard bonus types with stacking rules
+ */
+export enum BonusType {
+  ALCHEMICAL = 'alchemical',      // Non-stacking
+  ARMOR = 'armor',                // Non-stacking
+  CIRCUMSTANCE = 'circumstance',  // Stacking
+  COMPETENCE = 'competence',      // Non-stacking
+  DEFLECTION = 'deflection',      // Non-stacking
+  DODGE = 'dodge',                // Stacking
+  ENHANCEMENT = 'enhancement',    // Non-stacking
+  INSIGHT = 'insight',           // Non-stacking
+  LUCK = 'luck',                 // Non-stacking
+  MORALE = 'morale',             // Non-stacking
+  NATURAL_ARMOR = 'natural_armor', // Non-stacking
+  PROFANE = 'profane',           // Non-stacking
+  RACIAL = 'racial',             // Stacking
+  RESISTANCE = 'resistance',     // Non-stacking
+  SACRED = 'sacred',             // Non-stacking
+  SHIELD = 'shield',             // Non-stacking
+  SIZE = 'size',                 // Non-stacking
+  TRAIT = 'trait',               // Stacking
+  UNTYPED = 'untyped'            // Stacking
+}
+
+/**
+ * Bonus source structure
+ */
+export interface BonusSource {
+  /** ID of source providing the bonus */
+  id: string;
+  
+  /** Name of source providing the bonus */
+  name: string;
+  
+  /** Type of source (item, feat, class feature, etc.) */
+  type: string;
+}
+
+/**
+ * Bonus target structure
+ */
+export interface BonusTarget {
+  /** ID of the target (ability, skill, etc.) */
+  id: string;
+  
+  /** Category of target (ability, attack, damage, etc.) */
+  category: string;
+}
+
+/**
+ * Individual bonus data
+ */
+export interface Bonus {
+  /** Value of the bonus */
+  value: number;
+  
+  /** Type of the bonus */
+  type: BonusType | string;
+  
+  /** Source of the bonus */
+  source: string;
+  
+  /** When the bonus was applied */
+  appliedAt: number;
+  
+  /** Duration in ms (0 for permanent) */
+  duration?: number;
+  
+  /** Conditions for the bonus to be active */
+  conditions?: string[];
+}
+
+/**
+ * Bonus stacking rule
+ */
+export enum StackingRule {
+  /** Stack all bonuses of same type */
+  STACK_ALL = 'stack_all',
+  
+  /** Only use the highest bonus of same type */
+  HIGHEST_ONLY = 'highest_only',
+  
+  /** Sum all positive bonuses, use lowest penalty */
+  POSITIVE_STACK_LOWEST_PENALTY = 'positive_stack_lowest_penalty'
+}
+
+/**
  * Bonus capability options
  */
 export interface BonusCapabilityOptions extends CapabilityOptions {

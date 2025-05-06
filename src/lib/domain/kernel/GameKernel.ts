@@ -8,10 +8,50 @@ import type {
   Inode,
   MountOptions,
   PathResult,
-  Stats
+  Stats,
+  Message
 } from './types';
 import { OpenMode, ErrorCode } from './types';
-import { EventBus } from './EventBus';
+import { 
+  MessageQueue, 
+  MessagePriority, 
+  type MessageQueueAttributes, 
+  type MessageSelector 
+} from './MessageQueue';
+import { PipeEventSystem } from './PipeEventSystem';
+
+// Plugin filesystem paths
+const PLUGIN_PATHS = {
+  /** Base path for plugin executables */
+  BIN: '/bin',
+  
+  /** Base path for plugin process information */
+  PROC_PLUGINS: '/proc/plugins',
+  
+  /** Base path for plugin configuration */
+  ETC_PLUGINS: '/etc/plugins',
+  
+  /** Base path for plugin signals */
+  PROC_SIGNALS: '/proc/signals'
+};
+
+// Message queue paths
+const QUEUE_PATHS = {
+  /** Base path for named pipes / message queues */
+  PIPES: '/pipes',
+  
+  /** System message queue for kernel events */
+  SYSTEM: '/pipes/system',
+  
+  /** Game events message queue */
+  GAME_EVENTS: '/pipes/game_events',
+  
+  /** Entity events message queue */
+  ENTITY_EVENTS: '/pipes/entity_events',
+  
+  /** Feature events message queue */
+  FEATURE_EVENTS: '/pipes/feature_events'
+};
 
 /**
  * GameKernel is the core of the system, implementing a Unix-like kernel:
@@ -30,14 +70,17 @@ export class GameKernel {
   private readonly fileDescriptors: Map<number, FileDescriptor> = new Map();
   private nextFd: number = 3; // 0=stdin, 1=stdout, 2=stderr
   
-  // Process management (plugins)
-  private readonly plugins: Map<string, Plugin> = new Map();
-  
   // Configuration
   private readonly debug: boolean;
   
   // Event system (like signals in Unix)
   public readonly events: EventEmitter;
+  
+  // Signal handlers for inter-plugin communication
+  private readonly signalHandlers: Map<string, (signal: number, source: string, data?: any) => void> = new Map();
+  
+  // Message queues (named pipes)
+  private readonly messageQueues: Map<string, MessageQueue> = new Map();
   
   constructor(options: KernelOptions = {}) {
     this.debug = options.debug || false;
@@ -49,6 +92,21 @@ export class GameKernel {
     // Create standard directories
     this.mkdir('/dev');    // Device files
     this.mkdir('/entity'); // Entity files
+    this.mkdir(PLUGIN_PATHS.BIN); // Executable plugins
+    this.mkdir('/proc'); // Process information
+    this.mkdir(PLUGIN_PATHS.PROC_PLUGINS); // Plugin process information
+    this.mkdir(PLUGIN_PATHS.PROC_SIGNALS); // Plugin signals
+    this.mkdir('/etc'); // Configuration
+    this.mkdir(PLUGIN_PATHS.ETC_PLUGINS); // Plugin configuration
+    
+    // Create directories for message queues
+    this.mkdir(QUEUE_PATHS.PIPES); // Base directory for named pipes
+    
+    // Create standard message queues
+    this.createMessageQueue(QUEUE_PATHS.SYSTEM, { debug: this.debug });
+    this.createMessageQueue(QUEUE_PATHS.GAME_EVENTS, { debug: this.debug });
+    this.createMessageQueue(QUEUE_PATHS.ENTITY_EVENTS, { debug: this.debug });
+    this.createMessageQueue(QUEUE_PATHS.FEATURE_EVENTS, { debug: this.debug });
     
     if (this.debug) {
       this.log('Kernel initialized');
@@ -100,6 +158,37 @@ export class GameKernel {
     this.log(`Created directory: ${path}`);
     
     return { success: true, path };
+  }
+  
+  /**
+   * Delete a file (like unlink)
+   * @param path Path to delete
+   * @returns Error code (0 for success)
+   */
+  unlink(path: string): ErrorCode {
+    if (!path.startsWith('/')) {
+      return ErrorCode.EINVAL;
+    }
+    
+    // Check if file exists
+    if (!this.inodes.has(path)) {
+      return ErrorCode.ENOENT;
+    }
+    
+    // Check if any file descriptors are open for this file
+    for (const descriptor of this.fileDescriptors.values()) {
+      if (descriptor.path === path) {
+        this.error(`Cannot unlink file ${path} while it has open file descriptors`);
+        return ErrorCode.EBUSY;
+      }
+    }
+    
+    // Remove file
+    this.inodes.delete(path);
+    this.events.emit('fs:unlink', { path });
+    this.log(`Unlinked file: ${path}`);
+    
+    return ErrorCode.SUCCESS;
   }
   
   /**
@@ -289,20 +378,19 @@ export class GameKernel {
   /**
    * Read from a file descriptor (like read)
    * @param fd File descriptor to read from
-   * @param buffer Buffer to read into
-   * @returns 0 on success, error code on failure
+   * @returns [Error code, data] where error code is 0 for success
    */
-  read(fd: number, buffer: any): number {
+  read(fd: number): [ErrorCode, any] {
     const descriptor = this.fileDescriptors.get(fd);
     if (!descriptor) {
       this.error(`Invalid file descriptor: ${fd}`);
-      return ErrorCode.EBADF;
+      return [ErrorCode.EBADF, null];
     }
     
     // Check read permission
     if (descriptor.mode !== OpenMode.READ && descriptor.mode !== OpenMode.READ_WRITE) {
       this.error(`File not opened for reading: ${descriptor.path}`);
-      return ErrorCode.EACCES;
+      return [ErrorCode.EACCES, null];
     }
     
     // Device file
@@ -310,14 +398,16 @@ export class GameKernel {
     if (device) {
       if (!device.read) {
         this.error(`Device does not support reading: ${descriptor.path}`);
-        return ErrorCode.EINVAL;
+        return [ErrorCode.EINVAL, null];
       }
       
       try {
-        return device.read(fd, buffer);
+        const buffer = {};
+        const result = device.read(fd, buffer);
+        return [result, buffer];
       } catch (error) {
         this.error(`Error reading from device: ${descriptor.path}`, error);
-        return ErrorCode.EIO;
+        return [ErrorCode.EIO, null];
       }
     }
     
@@ -325,29 +415,22 @@ export class GameKernel {
     const inode = this.inodes.get(descriptor.path);
     if (inode) {
       try {
-        // Copy data to buffer
-        if (typeof buffer === 'object') {
-          Object.assign(buffer, inode.data);
-        } else {
-          this.error(`Buffer must be an object: ${descriptor.path}`);
-          return ErrorCode.EINVAL;
-        }
-        
-        return ErrorCode.SUCCESS;
+        // Return a deep copy of the data to prevent modification
+        return [ErrorCode.SUCCESS, JSON.parse(JSON.stringify(inode.data))];
       } catch (error) {
         this.error(`Error reading from file: ${descriptor.path}`, error);
-        return ErrorCode.EIO;
+        return [ErrorCode.EIO, null];
       }
     }
     
     // Directory
     if (this.directories.has(descriptor.path)) {
       this.error(`Cannot read from directory: ${descriptor.path}`);
-      return ErrorCode.EISDIR;
+      return [ErrorCode.EISDIR, null];
     }
     
     this.error(`Path not found: ${descriptor.path}`);
-    return ErrorCode.ENOENT;
+    return [ErrorCode.ENOENT, null];
   }
   
   /**
@@ -582,30 +665,75 @@ export class GameKernel {
   }
   
   //=============================================================================
-  // Plugin Management (as processes)
+  // Plugin Management (as files in /bin directory)
   //=============================================================================
   
   /**
-   * Register a plugin with the kernel
+   * Register a plugin with the kernel by creating a file in /bin
    * @param plugin Plugin to register
    */
   registerPlugin(plugin: Plugin): void {
-    if (this.plugins.has(plugin.id)) {
-      this.log(`Replacing existing plugin: ${plugin.id}`);
+    // Path to plugin executable in /bin
+    const execPath = `${PLUGIN_PATHS.BIN}/${plugin.id}`;
+    
+    // Path to plugin metadata in /proc/plugins
+    const procPath = `${PLUGIN_PATHS.PROC_PLUGINS}/${plugin.id}`;
+    
+    // Create metadata
+    const metadata = {
+      id: plugin.id,
+      name: plugin.name || 'Unnamed Plugin',
+      description: plugin.description || '',
+      requiredDevices: plugin.requiredDevices || [],
+      version: (plugin as any).version || '1.0.0',
+      author: (plugin as any).author || 'Unknown',
+      registeredAt: new Date().toISOString()
+    };
+    
+    // Store plugin metadata in /proc/plugins
+    const procResult = this.create(procPath, metadata);
+    if (!procResult.success) {
+      this.error(`Failed to create plugin metadata file: ${procPath}`);
+      return;
     }
     
-    this.plugins.set(plugin.id, plugin);
-    this.events.emit('plugin:registered', { id: plugin.id });
-    this.log(`Registered plugin: ${plugin.id}`);
+    // Store the plugin itself in memory (will be replaced by actual filesystem-based execution)
+    // This is a temporary bridge during refactoring
+    const inode: Inode = {
+      path: execPath,
+      data: plugin,
+      createdAt: Date.now(),
+      modifiedAt: Date.now()
+    };
+    
+    this.inodes.set(execPath, inode);
+    
+    this.events.emit('plugin:registered', { id: plugin.id, path: execPath });
+    this.log(`Registered plugin: ${plugin.id} at ${execPath}`);
   }
   
   /**
-   * Get a plugin by ID
+   * Get a plugin by ID using filesystem
    * @param id Plugin ID
    * @returns Plugin or undefined if not found
    */
   getPlugin(id: string): Plugin | undefined {
-    return this.plugins.get(id);
+    // Path to plugin executable
+    const execPath = `${PLUGIN_PATHS.BIN}/${id}`;
+    
+    // Get plugin from inode
+    const inode = this.inodes.get(execPath);
+    return inode?.data as Plugin | undefined;
+  }
+  
+  /**
+   * List all plugins in the /bin directory
+   * @returns Array of plugin IDs
+   */
+  listPlugins(): string[] {
+    return Array.from(this.inodes.keys())
+      .filter(path => path.startsWith(`${PLUGIN_PATHS.BIN}/`))
+      .map(path => path.substring(`${PLUGIN_PATHS.BIN}/`.length));
   }
   
   /**
@@ -616,10 +744,25 @@ export class GameKernel {
    * @returns Result of execution
    */
   async executePlugin<T>(pluginId: string, entityId: string, options: Record<string, any> = {}): Promise<T> {
-    // Get plugin
-    const plugin = this.plugins.get(pluginId);
-    if (!plugin) {
+    // Path to plugin executable
+    const execPath = `${PLUGIN_PATHS.BIN}/${pluginId}`;
+    
+    // Check if plugin exists
+    if (!this.inodes.has(execPath)) {
       const error = `Plugin not found: ${pluginId}`;
+      this.error(error);
+      this.events.emit('plugin:execution_failed', {
+        pluginId,
+        entityId,
+        error
+      });
+      throw new Error(error);
+    }
+    
+    // Get plugin from inode
+    const plugin = this.inodes.get(execPath)?.data as Plugin;
+    if (!plugin) {
+      const error = `Invalid plugin: ${pluginId}`;
       this.error(error);
       this.events.emit('plugin:execution_failed', {
         pluginId,
@@ -692,9 +835,308 @@ export class GameKernel {
   // Utility Methods
   //=============================================================================
   
+  //=============================================================================
+  // Signal System (Unix-like signal handling)
+  //=============================================================================
+  
   /**
-   * Shut down the kernel
+   * Register a signal handler for a plugin
+   * @param pluginId Plugin ID
+   * @param handler Signal handler function
    */
+  registerSignalHandler(
+    pluginId: string,
+    handler: (signal: number, source: string, data?: any) => void
+  ): void {
+    // Create signal file in /proc/signals
+    const signalPath = `${PLUGIN_PATHS.PROC_SIGNALS}/${pluginId}`;
+    
+    // Store empty metadata for the signal handler
+    this.create(signalPath, {
+      pluginId,
+      registered: new Date().toISOString()
+    });
+    
+    // Register the handler
+    this.signalHandlers.set(pluginId, handler);
+    this.log(`Registered signal handler for plugin: ${pluginId}`);
+  }
+  
+  /**
+   * Unregister a signal handler for a plugin
+   * @param pluginId Plugin ID
+   */
+  unregisterSignalHandler(pluginId: string): void {
+    // Remove signal handler
+    this.signalHandlers.delete(pluginId);
+    
+    // Remove signal file
+    const signalPath = `${PLUGIN_PATHS.PROC_SIGNALS}/${pluginId}`;
+    this.unlink(signalPath);
+    
+    this.log(`Unregistered signal handler for plugin: ${pluginId}`);
+  }
+  
+  /**
+   * Send a signal to a plugin
+   * @param targetPluginId Target plugin ID
+   * @param signal Signal number
+   * @param sourcePluginId Source plugin ID
+   * @param data Optional signal data
+   * @returns Whether the signal was delivered
+   */
+  sendSignal(
+    targetPluginId: string,
+    signal: number,
+    sourcePluginId: string,
+    data?: any
+  ): boolean {
+    // Check if target plugin has a signal handler
+    const handler = this.signalHandlers.get(targetPluginId);
+    if (!handler) {
+      this.log(`No signal handler registered for plugin: ${targetPluginId}`);
+      return false;
+    }
+    
+    try {
+      // Call the signal handler
+      handler(signal, sourcePluginId, data);
+      
+      // Emit event for signal delivery
+      this.events.emit('plugin:signal', {
+        target: targetPluginId,
+        source: sourcePluginId,
+        signal,
+        timestamp: new Date().toISOString()
+      });
+      
+      this.log(`Sent signal ${signal} to plugin ${targetPluginId} from ${sourcePluginId}`);
+      return true;
+    } catch (error) {
+      this.error(`Error delivering signal ${signal} to plugin ${targetPluginId}:`, error);
+      return false;
+    }
+  }
+  
+  /**
+   * Broadcast a signal to all plugins with registered handlers
+   * @param signal Signal number
+   * @param sourcePluginId Source plugin ID
+   * @param data Optional signal data
+   * @returns Number of plugins that received the signal
+   */
+  broadcastSignal(signal: number, sourcePluginId: string, data?: any): number {
+    let count = 0;
+    
+    // Send to all registered handlers
+    for (const targetPluginId of this.signalHandlers.keys()) {
+      // Skip sending to self
+      if (targetPluginId === sourcePluginId) {
+        continue;
+      }
+      
+      // Send signal
+      const delivered = this.sendSignal(targetPluginId, signal, sourcePluginId, data);
+      if (delivered) {
+        count++;
+      }
+    }
+    
+    this.log(`Broadcast signal ${signal} from ${sourcePluginId} to ${count} plugins`);
+    return count;
+  }
+  
+  //=============================================================================
+  // Message Queue Operations (Unix IPC)
+  //=============================================================================
+  
+  /**
+   * Create a message queue (named pipe)
+   * @param path Path for the message queue
+   * @param attributes Optional queue attributes
+   * @returns Path result
+   */
+  createMessageQueue(path: string, attributes: Partial<MessageQueueAttributes> = {}): PathResult {
+    if (!path.startsWith('/')) {
+      return {
+        success: false,
+        errorCode: ErrorCode.EINVAL,
+        errorMessage: 'Path must be absolute',
+        path
+      };
+    }
+    
+    // Check if path already exists
+    if (this.messageQueues.has(path)) {
+      return {
+        success: false,
+        errorCode: ErrorCode.EEXIST,
+        errorMessage: 'Message queue already exists',
+        path
+      };
+    }
+    
+    // Create parent directories if needed
+    const parentPath = path.substring(0, path.lastIndexOf('/')) || '/';
+    if (!this.directories.has(parentPath)) {
+      const mkdirResult = this.mkdir(parentPath);
+      if (!mkdirResult.success) {
+        return mkdirResult;
+      }
+    }
+    
+    // Create the queue
+    const queue = new MessageQueue(path, { ...attributes, debug: this.debug });
+    this.messageQueues.set(path, queue);
+    
+    // Create a metadata file entry
+    this.create(path, { type: 'message_queue', created: Date.now() });
+    
+    this.log(`Created message queue: ${path}`);
+    this.events.emit('mq:created', { path });
+    
+    return { success: true, path };
+  }
+  
+  /**
+   * Send a message to a queue
+   * @param queuePath Path to the queue
+   * @param type Message type
+   * @param payload Message payload
+   * @param options Message options
+   * @returns Message ID if sent, null if failed
+   */
+  sendMessage(
+    queuePath: string,
+    type: string,
+    payload: any,
+    options: {
+      priority?: MessagePriority;
+      source?: string;
+      target?: string;
+      ttl?: number;
+    } = {}
+  ): string | null {
+    const queue = this.messageQueues.get(queuePath);
+    if (!queue) {
+      this.error(`Message queue not found: ${queuePath}`);
+      return null;
+    }
+    
+    const messageId = queue.enqueue(type, payload, options);
+    if (messageId) {
+      this.events.emit('mq:message_sent', { 
+        queue: queuePath, 
+        messageId,
+        type
+      });
+    }
+    
+    return messageId;
+  }
+  
+  /**
+   * Receive a message from a queue
+   * @param queuePath Path to the queue
+   * @param selector Optional message selector
+   * @returns Message or null if none available
+   */
+  receiveMessage(queuePath: string, selector?: MessageSelector): Message | null {
+    const queue = this.messageQueues.get(queuePath);
+    if (!queue) {
+      this.error(`Message queue not found: ${queuePath}`);
+      return null;
+    }
+    
+    const message = queue.dequeue(selector);
+    if (message) {
+      this.events.emit('mq:message_received', { 
+        queue: queuePath, 
+        messageId: message.id,
+        type: message.type
+      });
+    }
+    
+    return message;
+  }
+  
+  /**
+   * Wait for a message from a queue
+   * @param queuePath Path to the queue
+   * @param selector Optional message selector
+   * @param timeout Optional timeout in milliseconds
+   * @returns Promise that resolves with the message
+   */
+  async waitForMessage(
+    queuePath: string,
+    selector?: MessageSelector,
+    timeout: number = 0
+  ): Promise<Message> {
+    const queue = this.messageQueues.get(queuePath);
+    if (!queue) {
+      throw new Error(`Message queue not found: ${queuePath}`);
+    }
+    
+    const message = await queue.waitForMessage(selector, timeout);
+    
+    this.events.emit('mq:message_received', { 
+      queue: queuePath, 
+      messageId: message.id,
+      type: message.type
+    });
+    
+    return message;
+  }
+  
+  /**
+   * Browse messages in a queue without removing them
+   * @param queuePath Path to the queue
+   * @param selector Optional message selector
+   * @returns Array of messages
+   */
+  browseMessages(queuePath: string, selector?: MessageSelector): Message[] {
+    const queue = this.messageQueues.get(queuePath);
+    if (!queue) {
+      this.error(`Message queue not found: ${queuePath}`);
+      return [];
+    }
+    
+    return queue.browse(selector);
+  }
+  
+  /**
+   * Get a message queue by path
+   * @param queuePath Path to the queue
+   * @returns The message queue or undefined if not found
+   */
+  getMessageQueue(queuePath: string): MessageQueue | undefined {
+    return this.messageQueues.get(queuePath);
+  }
+  
+  /**
+   * Delete a message queue
+   * @param queuePath Path to the queue
+   * @returns Whether deletion was successful
+   */
+  deleteMessageQueue(queuePath: string): boolean {
+    const queue = this.messageQueues.get(queuePath);
+    if (!queue) {
+      return false;
+    }
+    
+    // Clear and remove the queue
+    queue.clear();
+    this.messageQueues.delete(queuePath);
+    
+    // Remove the queue file
+    this.unlink(queuePath);
+    
+    this.log(`Deleted message queue: ${queuePath}`);
+    this.events.emit('mq:deleted', { path: queuePath });
+    
+    return true;
+  }
+  
   async shutdown(): Promise<void> {
     this.log('Shutting down kernel');
     
@@ -722,12 +1164,23 @@ export class GameKernel {
         this.mountPoints.delete(path);
       }
       
+      // Close all message queues
+      const queuePaths = Array.from(this.messageQueues.keys());
+      this.log(`Closing ${queuePaths.length} message queues`);
+      for (const path of queuePaths) {
+        const queue = this.messageQueues.get(path);
+        if (queue) {
+          queue.clear();
+        }
+      }
+      this.messageQueues.clear();
+      
+      // Unregister all signal handlers
+      this.signalHandlers.clear();
+      
       // Clear filesystem
       this.inodes.clear();
       this.directories.clear();
-      
-      // Clear plugin registry
-      this.plugins.clear();
       
       // Clear event listeners
       this.events.removeAllListeners();

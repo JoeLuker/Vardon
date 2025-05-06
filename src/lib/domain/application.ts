@@ -12,9 +12,10 @@ import { GameKernel } from './kernel/GameKernel';
 import { createBonusCapability } from './capabilities/bonus';
 import { createAbilityCapability } from './capabilities/ability';
 import type { AbilityCapability } from './capabilities/ability';
+import type { BonusCapability } from './capabilities/bonus';
 import { createSkillCapability } from './capabilities/skill';
-import { CombatCapabilityProvider } from './capabilities/combat/CombatCapabilityProvider';
-import { ConditionCapabilityProvider } from './capabilities/condition/ConditionCapabilityProvider';
+import { createCombatCapability } from './capabilities/combat';
+import { createConditionCapability } from './capabilities/condition';
 import { EventBus } from './kernel/EventBus';
 import { SampleCharacters } from './config/SampleCharacters';
 import { supabase } from '$lib/db/supabaseClient';
@@ -117,7 +118,7 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   
   // 2. Ability capability depends on Bonus
   // Get the bonus capability directly from the mounted device
-  const bonusCapabilityInstance = kernel.getCapability('bonus') as BonusCapabilityProvider;
+  const bonusCapabilityInstance = kernel.getCapability('bonus') as BonusCapability;
   const abilityCapability = createAbilityCapability(
     bonusCapabilityInstance, 
     { debug }
@@ -141,9 +142,10 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   
   // 4. Combat capability depends on Ability and Bonus
   // Get dependency capabilities directly from mounted devices
-  const combatCapability = new CombatCapabilityProvider(
+  // Using the composition-based Unix-style implementation
+  const combatCapability = createCombatCapability(
     kernel.getCapability('ability') as AbilityCapability,
-    kernel.getCapability('bonus') as BonusCapabilityProvider,
+    kernel.getCapability('bonus') as BonusCapability,
     { debug }
   );
   kernel.registerCapability(combatCapability.id, combatCapability);
@@ -151,8 +153,9 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   
   // 5. Condition capability depends on Bonus
   // Get the bonus capability directly from the mounted device
-  const conditionCapability = new ConditionCapabilityProvider(
-    kernel.getCapability('bonus') as BonusCapabilityProvider,
+  // Using the composition-based Unix-style implementation
+  const conditionCapability = createConditionCapability(
+    kernel.getCapability('bonus') as BonusCapability,
     { debug }
   );
   kernel.registerCapability(conditionCapability.id, conditionCapability);

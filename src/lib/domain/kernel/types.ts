@@ -14,7 +14,28 @@ export enum OpenMode {
   WRITE = 'w',
   
   /** Read and write access */
-  READ_WRITE = 'rw'
+  READ_WRITE = 'rw',
+  
+  /** Create if file doesn't exist */
+  CREATE = 'c',
+  
+  /** Read and create if doesn't exist */
+  READ_CREATE = 'rc',
+  
+  /** Write and create if doesn't exist */
+  WRITE_CREATE = 'wc',
+  
+  /** Read, write and create if doesn't exist */
+  READ_WRITE_CREATE = 'rwc',
+  
+  /** Truncate file if it exists */
+  TRUNCATE = 't',
+  
+  /** Write and truncate */
+  WRITE_TRUNCATE = 'wt',
+  
+  /** Append to file */
+  APPEND = 'a'
 }
 
 /**
@@ -118,6 +139,17 @@ export interface Capability {
 }
 
 /**
+ * Plugin validation result
+ */
+export interface PluginValidationResult {
+  /** Whether plugin can be applied */
+  valid: boolean;
+  
+  /** Reason why plugin cannot be applied, if invalid */
+  reason?: string;
+}
+
+/**
  * Plugin is the interface for components that implement game features
  * In Unix, plugins would be like processes that open files and devices
  */
@@ -134,6 +166,18 @@ export interface Plugin {
   /** List of device paths this plugin requires access to */
   requiredDevices: string[];
   
+  /** Semantic version of this plugin */
+  version?: string;
+  
+  /** Author of this plugin */
+  author?: string;
+  
+  /** List of plugin IDs this plugin depends on */
+  dependencies?: string[];
+  
+  /** List of plugins this plugin conflicts with */
+  conflicts?: string[];
+  
   /**
    * Execute the plugin (like a process running)
    * @param kernel Kernel to use for file operations
@@ -144,11 +188,31 @@ export interface Plugin {
   execute(kernel: any, entityPath: string, options?: Record<string, any>): number | Promise<number>;
   
   /**
+   * Check if plugin can be applied to an entity
+   * @param entity Entity to check
+   * @returns Validation result
+   */
+  canApply?(entity: Entity): PluginValidationResult;
+  
+  /**
    * Signal handler for when the plugin is interrupted
    * @param signal Signal number
    * @returns Whether the signal was handled
    */
   signal?(signal: number): boolean;
+  
+  /**
+   * Initialization method called when plugin is first loaded
+   * @param kernel Kernel to use for file operations
+   * @returns Whether initialization was successful
+   */
+  onLoad?(kernel: any): boolean | Promise<boolean>;
+  
+  /**
+   * Cleanup method called when plugin is unloaded
+   * @returns Whether cleanup was successful
+   */
+  onUnload?(): boolean | Promise<boolean>;
 }
 
 /**
@@ -167,17 +231,65 @@ export enum ErrorCode {
   /** No such process */
   ESRCH = 3,
   
+  /** Interrupted system call */
+  EINTR = 4,
+  
+  /** I/O error */
+  EIO = 5,
+  
+  /** No such device or address */
+  ENXIO = 6,
+  
   /** Bad file descriptor */
   EBADF = 9,
+  
+  /** Try again */
+  EAGAIN = 11,
+  
+  /** Out of memory */
+  ENOMEM = 12,
   
   /** Permission denied */
   EACCES = 13,
   
+  /** Bad address */
+  EFAULT = 14,
+  
   /** Device or resource busy */
   EBUSY = 16,
   
+  /** File exists */
+  EEXIST = 17,
+  
+  /** No such device */
+  ENODEV = 19,
+  
+  /** Not a directory */
+  ENOTDIR = 20,
+  
+  /** Is a directory */
+  EISDIR = 21,
+  
   /** Invalid argument */
-  EINVAL = 22
+  EINVAL = 22,
+  
+  /** File too large */
+  EFBIG = 27,
+  
+  /** No space left on device */
+  ENOSPC = 28,
+  
+  /** Illegal seek */
+  ESPIPE = 29,
+  
+  /** Read-only file system */
+  EROFS = 30,
+  
+  /** Not implemented */
+  ENOSYS = 38,
+  
+  /** Operation not supported */
+  ENOTSUP = 95
 }
 
 /**
@@ -197,6 +309,35 @@ export interface EventSubscription {
   
   /** Listener function */
   listener: EventListener;
+}
+
+/**
+ * Message structure for message queues
+ */
+export interface Message {
+  /** Message type for filtering */
+  type: string;
+  
+  /** Message payload */
+  payload: any;
+  
+  /** Message priority (numeric, higher = more important) */
+  priority: number;
+  
+  /** Message ID (generated on enqueue) */
+  id: string;
+  
+  /** Timestamp when message was created */
+  timestamp: number;
+  
+  /** Source component that sent the message */
+  source?: string;
+  
+  /** Target component to receive the message (optional) */
+  target?: string;
+  
+  /** Time to live in milliseconds (0 = forever) */
+  ttl?: number;
 }
 
 /**
