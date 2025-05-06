@@ -317,7 +317,7 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   }
   
   /**
-   * Initialize character by running initialization plugins
+   * Initialize character using capabilities directly (proper Unix architecture approach)
    * @param entityId Character entity ID
    */
   async function initializeCharacterWithPlugins(entityId: string): Promise<void> {
@@ -326,19 +326,38 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
     }
     
     try {
-      // Execute initialization plugins
-      // 1. Initialize ability scores
-      await kernel.executePlugin('initialize-abilities', entityId);
+      // Get entity
+      const entity = kernel.getEntity(entityId);
+      if (!entity) {
+        throw new Error(`Entity not found: ${entityId}`);
+      }
       
-      // 2. Initialize skills
-      await kernel.executePlugin('initialize-skills', entityId);
+      // 1. Initialize ability scores directly using ability capability
+      if (capabilities.has('ability')) {
+        const abilityCapability = capabilities.get('ability');
+        abilityCapability.initialize(entity);
+      }
       
-      // 3. Initialize combat stats
-      await kernel.executePlugin('initialize-combat', entityId);
+      // 2. Initialize skills directly using skill capability
+      if (capabilities.has('skill')) {
+        const skillCapability = capabilities.get('skill');
+        skillCapability.initialize(entity);
+      }
       
-      // 4. Apply feats and class features
-      await kernel.executePlugin('apply-feats', entityId);
-      await kernel.executePlugin('apply-class-features', entityId);
+      // 3. Initialize combat stats directly using combat capability
+      if (capabilities.has('combat')) {
+        const combatCapability = capabilities.get('combat');
+        combatCapability.initialize(entity);
+      }
+      
+      // 4. Initialize conditions directly using condition capability
+      if (capabilities.has('condition')) {
+        const conditionCapability = capabilities.get('condition');
+        conditionCapability.initialize(entity);
+      }
+      
+      // Note: Feature application should be done through plugins via gameAPI.applyPlugin()
+      // after the character is loaded, not during initialization
       
       if (debug) {
         console.log(`Character initialization completed: ${entityId}`);
