@@ -16,12 +16,15 @@
 // Export types
 export type { PluginMetadata, PluginLoaderOptions } from './types';
 
-// Export base implementation
+// Export class-based implementation (legacy)
 export * from './BasePlugin';
 export * from './PluginManager';
 
-// Export Unix implementation with proper resource ownership
-export * from './UnixPluginManager';
+// Export composition-based Unix implementation
+export * from './PluginManagerComposed';
+export * from './ProcessKit';
+export * from './PluginFilesystem';
+export * from './PluginLoader';
 
 // Export migration utilities
 export * from './migration';

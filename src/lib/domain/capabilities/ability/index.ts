@@ -6,6 +6,16 @@
 export type { 
   AbilityCapability,
   AbilityScore,
-  AbilityType
+  AbilityBreakdown
 } from './types';
+
+export { AbilityType } from './types';
+
+// Export the class-based implementation (legacy)
 export { AbilityCapabilityProvider } from './AbilityCapabilityProvider';
+
+// Export the composition-based implementation (Unix-style)
+export { 
+  createAbilityCapability,
+  STANDARD_ABILITIES 
+} from './AbilityCapabilityComposed';

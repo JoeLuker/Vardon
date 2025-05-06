@@ -9,9 +9,10 @@
  */
 
 import { GameKernel } from './kernel/GameKernel';
-import { BonusCapabilityProvider } from './capabilities/bonus/BonusCapabilityProvider';
-import { AbilityCapabilityProvider } from './capabilities/ability/AbilityCapabilityProvider';
-import { SkillCapabilityProvider } from './capabilities/skill/SkillCapabilityProvider';
+import { createBonusCapability } from './capabilities/bonus';
+import { createAbilityCapability } from './capabilities/ability';
+import type { AbilityCapability } from './capabilities/ability';
+import { createSkillCapability } from './capabilities/skill';
 import { CombatCapabilityProvider } from './capabilities/combat/CombatCapabilityProvider';
 import { ConditionCapabilityProvider } from './capabilities/condition/ConditionCapabilityProvider';
 import { EventBus } from './kernel/EventBus';
@@ -22,9 +23,11 @@ import type { Capability, Entity } from './kernel/types';
 import { OpenMode, ErrorCode } from './kernel/types';
 import { CharacterStore } from './state/data/CharacterStore';
 import { CalculationExplainer } from './introspection/CalculationExplainer';
-import { PluginManager } from './plugins/PluginManager';
+import { createPluginManager, type PluginManager } from './plugins/PluginManagerComposed';
 import { FeatureToPluginMigrator } from './plugins/migration/FeatureToPluginMigrator';
 import { GameAPI } from './core/GameAPI';
+import { PluginLoader } from './plugins/PluginLoader';
+import { FeatureLoader, FEATURE_PATHS } from './features/FeatureLoader';
 
 // Feature imports for migration
 import { SkillFocusFeature } from './features/feats/SkillFocusFeature';
@@ -47,11 +50,26 @@ const APP_CONFIG = {
 };
 
 /**
+ * Device paths for mounting capabilities
+ */
+export const DEVICE_PATHS = {
+  ABILITY: '/dev/ability',
+  BONUS: '/dev/bonus',
+  SKILL: '/dev/skill',
+  COMBAT: '/dev/combat',
+  CONDITION: '/dev/condition',
+  SPELL: '/dev/spell',
+  PREREQUISITE: '/dev/prereq'
+};
+
+/**
  * Application interface
  */
 export interface Application {
   kernel: GameKernel;
   pluginManager: PluginManager;
+  pluginLoader: PluginLoader;
+  featureLoader: FeatureLoader;
   gameAPI: GameAPI;
   dbAPI: GameRulesAPI;
   calculationExplainer: CalculationExplainer;
@@ -92,36 +110,52 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   // Mount capabilities as device drivers in the filesystem
   
   // 1. Bonus capability is a core capability with no dependencies
-  const bonusCapability = new BonusCapabilityProvider({ debug });
-  const bonusDevicePath = `/dev/${bonusCapability.id}`;
-  kernel.mount(bonusDevicePath, bonusCapability);
+  // Using the composition-based Unix-style implementation
+  const bonusCapability = createBonusCapability({ debug });
+  kernel.registerCapability(bonusCapability.id, bonusCapability);
   capabilities.set(bonusCapability.id, bonusCapability);
   
   // 2. Ability capability depends on Bonus
-  const abilityCapability = new AbilityCapabilityProvider(bonusCapability, { debug });
-  const abilityDevicePath = `/dev/${abilityCapability.id}`;
-  kernel.mount(abilityDevicePath, abilityCapability);
+  // Get the bonus capability directly from the mounted device
+  const bonusCapabilityInstance = kernel.getCapability('bonus') as BonusCapabilityProvider;
+  const abilityCapability = createAbilityCapability(
+    bonusCapabilityInstance, 
+    { debug }
+  );
+  kernel.registerCapability(abilityCapability.id, abilityCapability);
   capabilities.set(abilityCapability.id, abilityCapability);
   
   // 3. Skill capability depends on Ability and Bonus
-  const skillCapability = new SkillCapabilityProvider(abilityCapability, bonusCapability, { 
-    skills: gameData?.skills || [],
-    debug 
-  });
-  const skillDevicePath = `/dev/${skillCapability.id}`;
-  kernel.mount(skillDevicePath, skillCapability);
+  // Get dependency capabilities directly from mounted devices
+  // Using the composition-based Unix-style implementation
+  const skillCapability = createSkillCapability(
+    kernel.getCapability('ability') as AbilityCapability,
+    kernel.getCapability('bonus') as BonusCapability,
+    { 
+      skills: gameData?.skills || [],
+      debug 
+    }
+  );
+  kernel.registerCapability(skillCapability.id, skillCapability);
   capabilities.set(skillCapability.id, skillCapability);
   
   // 4. Combat capability depends on Ability and Bonus
-  const combatCapability = new CombatCapabilityProvider(abilityCapability, bonusCapability, { debug });
-  const combatDevicePath = `/dev/${combatCapability.id}`;
-  kernel.mount(combatDevicePath, combatCapability);
+  // Get dependency capabilities directly from mounted devices
+  const combatCapability = new CombatCapabilityProvider(
+    kernel.getCapability('ability') as AbilityCapability,
+    kernel.getCapability('bonus') as BonusCapabilityProvider,
+    { debug }
+  );
+  kernel.registerCapability(combatCapability.id, combatCapability);
   capabilities.set(combatCapability.id, combatCapability);
   
   // 5. Condition capability depends on Bonus
-  const conditionCapability = new ConditionCapabilityProvider(bonusCapability, { debug });
-  const conditionDevicePath = `/dev/${conditionCapability.id}`;
-  kernel.mount(conditionDevicePath, conditionCapability);
+  // Get the bonus capability directly from the mounted device
+  const conditionCapability = new ConditionCapabilityProvider(
+    kernel.getCapability('bonus') as BonusCapabilityProvider,
+    { debug }
+  );
+  kernel.registerCapability(conditionCapability.id, conditionCapability);
   capabilities.set(conditionCapability.id, conditionCapability);
   
   // TODO: Add more capabilities
@@ -131,8 +165,14 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   // Create a feature migrator to convert features to plugins
   const migrator = new FeatureToPluginMigrator({ debug });
   
-  // Create plugin manager (like process manager in Unix)
-  const pluginManager = new PluginManager({ debug, kernel });
+  // Initialize the feature loader with kernel
+  const featureLoader = new FeatureLoader(kernel, debug);
+  
+  // Initialize the plugin loader with kernel
+  const pluginLoader = new PluginLoader(kernel, debug);
+  
+  // Create plugin manager (like process manager in Unix using composition)
+  const pluginManager = createPluginManager({ debug, kernel });
   
   // Create character store with database integration
   const characterStore = new CharacterStore(dbAPI);
@@ -147,6 +187,11 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   
   // Create the Game API
   const gameAPI = new GameAPI(kernel, pluginManager, dbAPI, { debug });
+  
+  // Initialize file system structure for features
+  if (!kernel.exists(FEATURE_PATHS.FEATURES_DIR)) {
+    kernel.mkdir(FEATURE_PATHS.FEATURES_DIR);
+  }
   
   // Migrate features to plugins
   const features = [
@@ -163,9 +208,13 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
     AllureFeature
   ];
   
-  // Register migrated plugins with the kernel's process management
+  // Register all features with the feature loader
   for (const feature of features) {
     try {
+      // Register feature in the filesystem
+      featureLoader.registerFeature(feature);
+      
+      // Migrate to plugin and register
       const plugin = migrator.migrateFeature(feature);
       kernel.registerPlugin(plugin);
       
@@ -191,7 +240,7 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
       if (debug) {
         console.log(`Loading character: ${characterId}`);
       }
-
+      
       // Create entity ID for the character
       const entityId = `character-${characterId}`;
       const entityPath = `/entity/${entityId}`;
@@ -209,21 +258,22 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
           return null;
         }
         
-        // Read entity data
-        const entity = {} as Entity;
-        const result = kernel.read(fd, entity);
-        
-        // Close file descriptor
-        kernel.close(fd);
-        
-        if (result === 0) {
-          if (debug) {
-            console.log(`Successfully read entity: ${entity.name}`);
+        try {
+          // Read entity data
+          const [result, entity] = kernel.read(fd);
+          
+          if (result === 0) {
+            if (debug) {
+              console.log(`Successfully read entity: ${entity.name}`);
+            }
+            return entity as Entity;
+          } else {
+            console.error(`Failed to read entity: ${entityPath}, error code: ${result}`);
+            return null;
           }
-          return entity;
-        } else {
-          console.error(`Failed to read entity: ${entityPath}, error code: ${result}`);
-          return null;
+        } finally {
+          // Always close file descriptor
+          kernel.close(fd);
         }
       }
       
@@ -285,8 +335,8 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
         return null;
       }
       
-      // Initialize character by running necessary plugins
-      await initializeCharacterWithPlugins(entityId);
+      // Initialize character with capabilities through file operations
+      await initializeCharacterWithCapabilities(entityId);
       
       // Read the final entity after initialization
       const fd = kernel.open(entityPath, OpenMode.READ);
@@ -295,21 +345,22 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
         return null;
       }
       
-      // Read entity data after initialization
-      const updatedEntity = {} as Entity;
-      const result = kernel.read(fd, updatedEntity);
-      
-      // Close file descriptor
-      kernel.close(fd);
-      
-      if (result === 0) {
-        if (debug) {
-          console.log(`Character ${characterId} loaded successfully: ${updatedEntity.name}`);
+      try {
+        // Read entity data after initialization
+        const [result, updatedEntity] = kernel.read(fd);
+        
+        if (result === 0) {
+          if (debug) {
+            console.log(`Character ${characterId} loaded successfully: ${(updatedEntity as Entity).name}`);
+          }
+          return updatedEntity as Entity;
+        } else {
+          console.error(`Failed to read entity after initialization: ${entityPath}, error code: ${result}`);
+          return null;
         }
-        return updatedEntity;
-      } else {
-        console.error(`Failed to read entity after initialization: ${entityPath}, error code: ${result}`);
-        return null;
+      } finally {
+        // Always close file descriptor
+        kernel.close(fd);
       }
     } catch (error) {
       console.error(`Failed to load character ${characterId}:`, error);
@@ -318,50 +369,107 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   }
   
   /**
-   * Initialize character using capabilities directly (proper Unix architecture approach)
+   * Initialize character using capabilities through file operations
    * @param entityId Character entity ID
    */
-  async function initializeCharacterWithPlugins(entityId: string): Promise<void> {
+  async function initializeCharacterWithCapabilities(entityId: string): Promise<void> {
     if (debug) {
       console.log(`Initializing character: ${entityId}`);
     }
     
     try {
-      // Get entity
-      const entity = kernel.getEntity(entityId);
-      if (!entity) {
-        throw new Error(`Entity not found: ${entityId}`);
+      // Path to the entity file
+      const entityPath = `/entity/${entityId}`;
+      
+      // Check if entity exists
+      if (!kernel.exists(entityPath)) {
+        throw new Error(`Entity not found: ${entityPath}`);
       }
       
-      // 1. Initialize ability scores directly using ability capability
-      if (capabilities.has('ability')) {
-        const abilityCapability = capabilities.get('ability');
-        abilityCapability.initialize(entity);
+      // Open the entity file with read-write access
+      const entityFd = kernel.open(entityPath, OpenMode.READ_WRITE);
+      if (entityFd < 0) {
+        throw new Error(`Failed to open entity: ${entityPath}`);
       }
       
-      // 2. Initialize skills directly using skill capability
-      if (capabilities.has('skill')) {
-        const skillCapability = capabilities.get('skill');
-        skillCapability.initialize(entity);
-      }
-      
-      // 3. Initialize combat stats directly using combat capability
-      if (capabilities.has('combat')) {
-        const combatCapability = capabilities.get('combat');
-        combatCapability.initialize(entity);
-      }
-      
-      // 4. Initialize conditions directly using condition capability
-      if (capabilities.has('condition')) {
-        const conditionCapability = capabilities.get('condition');
-        conditionCapability.initialize(entity);
-      }
-      
-      // Note: Feature application should be done through plugins via gameAPI.applyPlugin()
-      // after the character is loaded, not during initialization
-      
-      if (debug) {
-        console.log(`Character initialization completed: ${entityId}`);
+      try {
+        // 1. Initialize ability scores through device file
+        const abilityDeviceFd = kernel.open(DEVICE_PATHS.ABILITY, OpenMode.READ_WRITE);
+        if (abilityDeviceFd >= 0) {
+          try {
+            // Pass entity path to the capability as initialization parameter
+            const initParams = { entityPath, operation: 'initialize' };
+            const initResult = kernel.ioctl(abilityDeviceFd, 0, initParams);
+            
+            if (initResult !== 0) {
+              console.error(`Failed to initialize abilities: error code ${initResult}`);
+            }
+          } finally {
+            // Always close the file descriptor
+            kernel.close(abilityDeviceFd);
+          }
+        }
+        
+        // 2. Initialize skills through device file
+        const skillDeviceFd = kernel.open(DEVICE_PATHS.SKILL, OpenMode.READ_WRITE);
+        if (skillDeviceFd >= 0) {
+          try {
+            // Pass entity path to the capability as initialization parameter
+            const initParams = { entityPath, operation: 'initialize' };
+            const initResult = kernel.ioctl(skillDeviceFd, 0, initParams);
+            
+            if (initResult !== 0) {
+              console.error(`Failed to initialize skills: error code ${initResult}`);
+            }
+          } finally {
+            // Always close the file descriptor
+            kernel.close(skillDeviceFd);
+          }
+        }
+        
+        // 3. Initialize combat stats through device file
+        const combatDeviceFd = kernel.open(DEVICE_PATHS.COMBAT, OpenMode.READ_WRITE);
+        if (combatDeviceFd >= 0) {
+          try {
+            // Pass entity path to the capability as initialization parameter
+            const initParams = { entityPath, operation: 'initialize' };
+            const initResult = kernel.ioctl(combatDeviceFd, 0, initParams);
+            
+            if (initResult !== 0) {
+              console.error(`Failed to initialize combat stats: error code ${initResult}`);
+            }
+          } finally {
+            // Always close the file descriptor
+            kernel.close(combatDeviceFd);
+          }
+        }
+        
+        // 4. Initialize conditions through device file
+        const conditionDeviceFd = kernel.open(DEVICE_PATHS.CONDITION, OpenMode.READ_WRITE);
+        if (conditionDeviceFd >= 0) {
+          try {
+            // Pass entity path to the capability as initialization parameter
+            const initParams = { entityPath, operation: 'initialize' };
+            const initResult = kernel.ioctl(conditionDeviceFd, 0, initParams);
+            
+            if (initResult !== 0) {
+              console.error(`Failed to initialize conditions: error code ${initResult}`);
+            }
+          } finally {
+            // Always close the file descriptor
+            kernel.close(conditionDeviceFd);
+          }
+        }
+        
+        // Note: Feature application should be done through plugins via gameAPI.applyPlugin()
+        // after the character is loaded, not during initialization
+        
+        if (debug) {
+          console.log(`Character initialization completed: ${entityId}`);
+        }
+      } finally {
+        // Always close the entity file descriptor
+        kernel.close(entityFd);
       }
     } catch (error) {
       console.error(`Error initializing character ${entityId}:`, error);
@@ -399,6 +507,8 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
   return {
     kernel,
     pluginManager,
+    pluginLoader,
+    featureLoader,
     gameAPI,
     dbAPI,
     calculationExplainer,

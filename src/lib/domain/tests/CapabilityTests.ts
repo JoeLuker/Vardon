@@ -7,9 +7,15 @@
  */
 
 import { Entity } from '../kernel/types';
-import { BonusCapabilityProvider } from '../capabilities/bonus/BonusCapabilityProvider';
-import { AbilityCapabilityProvider } from '../capabilities/ability/AbilityCapabilityProvider';
-import { SkillCapabilityProvider } from '../capabilities/skill/SkillCapabilityProvider';
+// Import the composition-based providers (Unix-style)
+import { createBonusCapability } from '../capabilities/bonus/BonusCapabilityComposed';
+import { createAbilityCapability } from '../capabilities/ability/AbilityCapabilityComposed';
+import { createSkillCapability } from '../capabilities/skill/SkillCapabilityComposed';
+
+// Legacy class-based imports (for comparison)
+// import { BonusCapabilityProvider } from '../capabilities/bonus/BonusCapabilityProvider';
+// import { AbilityCapabilityProvider } from '../capabilities/ability/AbilityCapabilityProvider';
+// import { SkillCapabilityProvider } from '../capabilities/skill/SkillCapabilityProvider';
 
 /**
  * Run a capability system test
@@ -35,13 +41,13 @@ export async function runCapabilityTest() {
   // with explicit wiring between them
   
   // 1. Create the bonus capability (no dependencies)
-  const bonusCapability = new BonusCapabilityProvider({
+  const bonusCapability = createBonusCapability({
     debug: true,
     stackSameType: false
   });
   
   // 2. Create the ability capability (depends on bonus capability)
-  const abilityCapability = new AbilityCapabilityProvider(
+  const abilityCapability = createAbilityCapability(
     bonusCapability,
     {
       debug: true,
@@ -50,7 +56,7 @@ export async function runCapabilityTest() {
   );
   
   // 3. Create the skill capability (depends on ability and bonus capabilities)
-  const skillCapability = new SkillCapabilityProvider(
+  const skillCapability = createSkillCapability(
     abilityCapability,
     bonusCapability,
     {
