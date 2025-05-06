@@ -45,3 +45,17 @@ supabase/migrations/2024-12-29_init.sql
 
 old/
 **/.claude/settings.local.json
+
+# Experimental Unix architecture files
+src/lib/domain/kernel/MessageQueue.ts
+src/lib/domain/kernel/PipeEventSystem.ts
+src/lib/domain/state/active/MessageQueueSessionState.ts
+src/lib/domain/state/data/DataStream.ts
+src/lib/domain/state/data/StreamDataDriver.ts
+src/lib/domain/state/data/StreamDatabase.ts
+src/lib/domain/utils/
+src/lib/domain/plugins/initialization/
+src/lib/domain/plugins/feats/SkillFocusProcessPlugin.ts
+
+# Additional files to be added later once completed
+src/lib/domain/capabilities/combat/CombatCapabilityComposed.ts
