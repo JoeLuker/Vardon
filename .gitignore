@@ -57,5 +57,4 @@ src/lib/domain/utils/
 src/lib/domain/plugins/initialization/
 src/lib/domain/plugins/feats/SkillFocusProcessPlugin.ts
 
-# Additional files to be added later once completed
-src/lib/domain/capabilities/combat/CombatCapabilityComposed.ts
+# Files below are intentionally ignored - WIP and experimental implementations
