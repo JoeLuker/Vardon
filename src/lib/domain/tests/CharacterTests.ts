@@ -1,5 +1,6 @@
 import { initializeApplication } from '../application';
 import { Entity } from '../types/EntityTypes';
+import { SampleCharacters } from './mocks/SampleCharacters';
 
 // Set up mock game data
 const gameData = {
@@ -11,7 +12,12 @@ const gameData = {
 };
 
 describe('Character System Tests', () => {
-  const { engine, sampleCharacters, calculationExplainer } = initializeApplication(gameData);
+  const { engine, calculationExplainer } = initializeApplication(gameData);
+  
+  // Create sample characters for testing
+  const sampleCharacters = {
+    fighter: SampleCharacters.getFighter()
+  };
   
   describe('Fighter Tests', () => {
     const fighter: Entity = sampleCharacters.fighter;

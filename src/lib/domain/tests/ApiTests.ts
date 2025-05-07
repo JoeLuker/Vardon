@@ -1,4 +1,5 @@
 import { initializeApplication } from '../application';
+import { SampleCharacters } from './mocks/SampleCharacters';
 
 // Set up mock game data
 const gameData = {
@@ -13,7 +14,12 @@ async function runApiTests() {
   console.log('Starting GameAPI integration tests...');
   
   // Initialize application
-  const { gameAPI, sampleCharacters } = initializeApplication(gameData);
+  const { gameAPI } = initializeApplication(gameData);
+  
+  // Create sample character data using the mock
+  const sampleCharacters = {
+    fighter: SampleCharacters.getFighter()
+  };
   
   // Test saving characters
   console.log('\n=== Testing character saving ===');

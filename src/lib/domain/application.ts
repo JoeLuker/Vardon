@@ -17,7 +17,7 @@ import { createSkillCapability } from './capabilities/skill';
 import { createCombatCapability } from './capabilities/combat';
 import { createConditionCapability } from './capabilities/condition';
 import { EventBus } from './kernel/EventBus';
-import { SampleCharacters } from './config/SampleCharacters';
+// SampleCharacters import removed
 import { supabase } from '$lib/db/supabaseClient';
 import { GameRulesAPI } from '$lib/db/gameRules.api';
 import type { Capability, Entity } from './kernel/types';
@@ -229,9 +229,7 @@ export async function initializeApplication(options: { gameData?: any, debug?: b
     }
   }
   
-  // No sample characters are automatically loaded in production mode
-  // Use SampleCharacters.getXXX() methods directly if sample data is needed
-  const sampleCharacters: Record<string, Entity> = {};
+  // Sample character loading removed
   
   /**
    * Load a character from the database using Unix filesystem approach
