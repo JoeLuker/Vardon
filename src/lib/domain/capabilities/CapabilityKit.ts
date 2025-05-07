@@ -285,3 +285,262 @@ export function pipe<T>(
 ): (input: T) => T {
   return (input: T) => operations.reduce((value, op) => op(value), input);
 }
+
+/**
+ * Perform an entity operation with path-based access
+ * Common utility for IOCTL operations that operate directly on entity paths
+ * @param context Capability context
+ * @param entityPath Path to the entity
+ * @param operation Operation function that performs the actual work
+ * @param mode File open mode (defaults to READ_WRITE)
+ * @returns Error code
+ */
+export function performEntityOperation(
+  context: CapabilityContext,
+  entityPath: string,
+  operation: (entity: Entity) => void,
+  mode: OpenMode = OpenMode.READ_WRITE
+): number {
+  try {
+    const kernel = context.kernel;
+    if (!kernel) {
+      error(context, 'Kernel not available');
+      return ErrorCode.ENODEV;
+    }
+    
+    // Open the entity file
+    const fd = kernel.open(entityPath, mode);
+    if (fd < 0) {
+      error(context, `Failed to open entity file: ${entityPath}`);
+      return ErrorCode.ENOENT;
+    }
+    
+    try {
+      // Read entity data
+      const [result, entity] = kernel.read(fd);
+      
+      if (result !== 0) {
+        error(context, `Failed to read entity: ${entityPath}, error code: ${result}`);
+        return result;
+      }
+      
+      // Perform the operation with the entity
+      operation(entity as Entity);
+      
+      // If in read-only mode, don't write back
+      if (mode === OpenMode.READ) {
+        return ErrorCode.SUCCESS;
+      }
+      
+      // Write updated entity
+      const writeResult = kernel.write(fd, entity);
+      
+      if (writeResult !== 0) {
+        error(context, `Failed to write entity: ${entityPath}, error code: ${writeResult}`);
+        return writeResult;
+      }
+      
+      return ErrorCode.SUCCESS;
+    } finally {
+      // Always close the file descriptor
+      kernel.close(fd);
+    }
+  } catch (err) {
+    error(context, `Error processing entity operation: ${err}`);
+    return ErrorCode.EIO;
+  }
+}
+
+/**
+ * Bonus/modifier object used in calculations
+ */
+export interface Modifier {
+  /** Numeric value of the modifier */
+  value: number;
+  
+  /** Source of the modifier (e.g., 'Power Attack', 'Rage') */
+  source: string;
+  
+  /** Type of the modifier (e.g., 'enhancement', 'morale', 'untyped') */
+  type?: string;
+}
+
+/**
+ * Detailed breakdown of a value calculation
+ */
+export interface ModifierBreakdown {
+  /** Base value before modifiers */
+  base: number;
+  
+  /** List of applied modifiers */
+  appliedModifiers: Modifier[];
+  
+  /** List of modifiers that were not applied (due to stacking rules) */
+  unappliedModifiers?: Modifier[];
+  
+  /** Total value after applying modifiers */
+  total: number;
+}
+
+/**
+ * Default stacking rules for bonuses
+ * By default, most bonus types do not stack (only the highest applies),
+ * but certain types (like untyped, circumstance, and dodge) do stack.
+ */
+export const DEFAULT_STACKING_RULES: Record<string, boolean> = {
+  'untyped': true,      // Untyped bonuses always stack
+  'circumstance': true, // Circumstance bonuses stack
+  'dodge': true,        // Dodge bonuses stack
+  'penalty': true       // Penalties always stack (negative values)
+};
+
+/**
+ * Calculate a modified value with bonus stacking rules
+ * @param baseValue Base value before modifiers
+ * @param modifiers Array of modifiers to apply
+ * @param stackingRules Rules for which bonus types stack
+ * @returns Breakdown of the calculation including total
+ */
+export function calculateModifiedValue(
+  baseValue: number,
+  modifiers: Modifier[],
+  stackingRules: Record<string, boolean> = DEFAULT_STACKING_RULES
+): ModifierBreakdown {
+  // Group modifiers by type
+  const modifiersByType: Record<string, Modifier[]> = {};
+  
+  // Initialize result
+  const result: ModifierBreakdown = {
+    base: baseValue,
+    appliedModifiers: [],
+    unappliedModifiers: [],
+    total: baseValue
+  };
+  
+  // Sort modifiers into groups by type
+  for (const modifier of modifiers) {
+    const type = modifier.type || 'untyped';
+    
+    if (!modifiersByType[type]) {
+      modifiersByType[type] = [];
+    }
+    
+    modifiersByType[type].push(modifier);
+  }
+  
+  // Process each type according to stacking rules
+  for (const [type, typeModifiers] of Object.entries(modifiersByType)) {
+    const doesStack = stackingRules[type] ?? false;
+    
+    // Special case: all penalties stack regardless of type
+    const arePenalties = typeModifiers.every(m => m.value < 0);
+    const shouldStack = doesStack || arePenalties;
+    
+    if (shouldStack) {
+      // This type stacks - apply all modifiers
+      for (const modifier of typeModifiers) {
+        result.total += modifier.value;
+        result.appliedModifiers.push(modifier);
+      }
+    } else {
+      // This type doesn't stack - find the best one
+      let bestModifier: Modifier | null = null;
+      let bestValue = 0;
+      
+      for (const modifier of typeModifiers) {
+        // For bonuses we want the highest value, for penalties the lowest (most negative)
+        const isBetter = modifier.value > 0 
+          ? modifier.value > bestValue 
+          : modifier.value < bestValue;
+        
+        if (!bestModifier || isBetter) {
+          bestModifier = modifier;
+          bestValue = modifier.value;
+        }
+      }
+      
+      // Apply the best modifier
+      if (bestModifier) {
+        result.total += bestModifier.value;
+        result.appliedModifiers.push(bestModifier);
+        
+        // Add the others to unapplied
+        for (const modifier of typeModifiers) {
+          if (modifier !== bestModifier) {
+            result.unappliedModifiers.push(modifier);
+          }
+        }
+      }
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Operation handler for IOCTL operations
+ * Handles a specific IOCTL operation for a capability
+ */
+export type IoctlOperationHandler = (
+  context: CapabilityContext,
+  entityPath: string,
+  args: any
+) => number;
+
+/**
+ * Create a generic IOCTL handler for common capability operations
+ * @param context Capability context
+ * @param operationHandlers Map of operation names to handler functions
+ * @returns An IOCTL handler function
+ */
+export function createIoctlHandler(
+  context: CapabilityContext,
+  operationHandlers: Record<string, IoctlOperationHandler>
+): (fd: number, request: number, arg: any) => number {
+  return (fd: number, request: number, arg: any): number => {
+    // Basic validation
+    if (!arg || typeof arg !== 'object' || !arg.operation) {
+      error(context, 'Invalid IOCTL arguments: missing operation');
+      return ErrorCode.EINVAL;
+    }
+    
+    const { operation } = arg;
+    
+    // Check if we have a handler for this operation
+    if (!operationHandlers[operation]) {
+      error(context, `Unknown operation: ${operation}`);
+      return ErrorCode.EINVAL;
+    }
+    
+    try {
+      // Most operations require an entity path
+      if (!arg.entityPath && operation !== 'getConfig' && operation !== 'setConfig') {
+        error(context, `Missing entityPath for operation: ${operation}`);
+        return ErrorCode.EINVAL;
+      }
+      
+      // Call the operation handler
+      return operationHandlers[operation](context, arg.entityPath, arg);
+    } catch (err) {
+      error(context, `Error in IOCTL operation ${operation}:`, err);
+      return ErrorCode.EIO;
+    }
+  };
+}
+
+/**
+ * Standard IOCTL operation to initialize an entity
+ * @param context Capability context
+ * @param entityPath Path to the entity
+ * @param initializer Function to initialize the entity
+ * @returns Error code
+ */
+export function handleInitializeOperation(
+  context: CapabilityContext,
+  entityPath: string,
+  initializer: (entity: Entity) => void
+): number {
+  return performEntityOperation(context, entityPath, (entity) => {
+    initializer(entity);
+  });
+}

@@ -507,8 +507,66 @@ class Feature extends BaseFeature {
 }
 ```
 
+### Common Utility Patterns
+
+The architecture provides several high-level utility patterns to promote DRY principles:
+
+#### Entity Operation Pattern
+
+Use `performEntityOperation` for consistent entity file operations:
+
+```typescript
+// Common pattern for entity operations that avoids duplication
+function doSomethingWithEntity(context, entityPath, params) {
+  return performEntityOperation(context, entityPath, (entity) => {
+    // Your operation logic here
+    entity.properties.someProp = params.value;
+  });
+}
+```
+
+#### Modifier Calculator Pattern
+
+Use `calculateModifiedValue` for consistent bonus calculations:
+
+```typescript
+// Calculate a value with proper bonus stacking rules
+function calculateAttackBonus(entity) {
+  const baseAttack = entity.properties.baseAttackBonus;
+  const modifiers = getAllAttackModifiers(entity);
+  
+  const result = calculateModifiedValue(baseAttack, modifiers);
+  return result.total;
+}
+```
+
+#### IOCTL Handler Pattern
+
+Use `createIoctlHandler` to standardize IOCTL operations:
+
+```typescript
+// Define operation handlers with a consistent pattern
+const operationHandlers = {
+  initialize: (context, entityPath, args) => {
+    return handleInitializeOperation(context, entityPath, entity => {
+      initializeEntity(context, entity);
+    });
+  },
+  setValue: (context, entityPath, args) => {
+    return performEntityOperation(context, entityPath, entity => {
+      entity.properties[args.key] = args.value;
+    });
+  }
+};
+
+// Create a standardized IOCTL handler
+const ioctlHandler = createIoctlHandler(context, operationHandlers);
+```
+
 ## Conclusion
 
 The Unix-style architecture implementation provides a more modular, testable, and maintainable codebase. By following Unix principles and using composition over inheritance, we've created a system that is more flexible and easier to evolve over time.
+
+The addition of utility patterns like `performEntityOperation`, `calculateModifiedValue`, and `createIoctlHandler` further enhances the DRY principles in the codebase by extracting common patterns into reusable utilities.
 
 This architecture aligns well with modern functional programming practices while honoring the time-tested Unix design philosophy that has proven its value over decades.
