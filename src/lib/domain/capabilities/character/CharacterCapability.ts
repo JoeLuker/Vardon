@@ -31,38 +31,54 @@ export class CharacterCapability implements Capability {
   readonly id = 'character';
   readonly version = '1.0.0';
   
+  // Implement the kernel property required by the Capability interface
+  kernel: any = null;
+  
+  // Called when the device is mounted
+  onMount(kernel: any): void {
+    console.log(`[CharacterCapability] Device mounting, kernel:`, !!kernel);
+    this.kernel = kernel;
+    
+    // Ensure required directories exist
+    this.ensureDirectoriesExist();
+  }
+  
   // Store loaded character data for quick access
   private characterCache: Map<string, any> = new Map();
   
   /**
    * Ensures the required directory structure exists
+   * 
+   * IMPORTANT: This only creates parent directories, not character-specific directories
+   * Characters are FILES, not directories!
+   * 
    * @returns ErrorCode.SUCCESS if successful, otherwise an error code
    */
   private ensureDirectoriesExist(): number {
     console.log('[CharacterCapability] Ensuring directory structure exists');
     
-    // Check if /proc exists
-    if (typeof window !== 'undefined' && window.kernel) {
-      const kernel = window.kernel;
-      
-      // Create /proc if it doesn't exist
-      if (!kernel.exists(CHAR_PATHS.PROC)) {
-        console.log(`[CharacterCapability] Creating directory: ${CHAR_PATHS.PROC}`);
-        const result = kernel.mkdir(CHAR_PATHS.PROC);
-        if (result !== ErrorCode.SUCCESS) {
-          console.error(`[CharacterCapability] Failed to create directory: ${CHAR_PATHS.PROC}`, result);
-          return result;
-        }
+    if (!this.kernel) {
+      console.error('[CharacterCapability] No kernel reference available');
+      return ErrorCode.EINVAL;
+    }
+    
+    // Create /proc if it doesn't exist
+    if (!this.kernel.exists(CHAR_PATHS.PROC)) {
+      console.log(`[CharacterCapability] Creating directory: ${CHAR_PATHS.PROC}`);
+      const result = this.kernel.mkdir(CHAR_PATHS.PROC);
+      if (!result.success) {
+        console.error(`[CharacterCapability] Failed to create directory: ${CHAR_PATHS.PROC}`, result);
+        return ErrorCode.EIO;
       }
-      
-      // Create /proc/character if it doesn't exist
-      if (!kernel.exists(CHAR_PATHS.PROC_CHARACTER)) {
-        console.log(`[CharacterCapability] Creating directory: ${CHAR_PATHS.PROC_CHARACTER}`);
-        const result = kernel.mkdir(CHAR_PATHS.PROC_CHARACTER);
-        if (result !== ErrorCode.SUCCESS) {
-          console.error(`[CharacterCapability] Failed to create directory: ${CHAR_PATHS.PROC_CHARACTER}`, result);
-          return result;
-        }
+    }
+    
+    // Create /proc/character if it doesn't exist
+    if (!this.kernel.exists(CHAR_PATHS.PROC_CHARACTER)) {
+      console.log(`[CharacterCapability] Creating directory: ${CHAR_PATHS.PROC_CHARACTER}`);
+      const result = this.kernel.mkdir(CHAR_PATHS.PROC_CHARACTER);
+      if (!result.success) {
+        console.error(`[CharacterCapability] Failed to create directory: ${CHAR_PATHS.PROC_CHARACTER}`, result);
+        return ErrorCode.EIO;
       }
     }
     
@@ -97,7 +113,9 @@ export class CharacterCapability implements Capability {
    */
   private extractCharacterId(entityPath: string): string {
     // First, ensure the directory structure exists
-    this.ensureDirectoriesExist();
+    if (this.kernel) {
+      this.ensureDirectoriesExist();
+    }
     
     // Extract character ID from canonical path format:
     // - /proc/character/123
