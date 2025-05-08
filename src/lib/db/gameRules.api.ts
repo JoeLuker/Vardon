@@ -447,6 +447,121 @@ export class GameRulesAPI {
   }
   
   /**
+   * Ensures the character directory exists for a given character ID
+   * Creates the directory if it doesn't exist, including any parent directories
+   * @param characterId Character ID
+   * @returns Whether the directory exists or was created successfully
+   */
+  private ensureCharacterDirectoryExists(characterId: number): boolean {
+    if (!this.hasDbCapability) {
+      return false;
+    }
+    
+    // First ensure base directories exist
+    if (!this.ensureBaseDirectoriesExist()) {
+      return false;
+    }
+    
+    const characterDirPath = `/proc/character/${characterId}`;
+    
+    // Check if directory already exists
+    if (this.kernel.exists(characterDirPath)) {
+      return true;
+    }
+    
+    // Create the directory
+    if (this.debug) {
+      console.log(`[GameRulesAPI] Character directory does not exist, creating: ${characterDirPath}`);
+    }
+    
+    const createResult = this.kernel.mkdir(characterDirPath);
+    if (!createResult.success) {
+      if (this.debug) {
+        console.error(`[GameRulesAPI] Failed to create character directory: ${createResult.errorMessage}`);
+      }
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /**
+   * Ensures the base directories (/proc and /proc/character) exist
+   * Creates them if they don't exist
+   * @returns Whether both directories exist or were created successfully
+   */
+  private ensureBaseDirectoriesExist(): boolean {
+    if (!this.hasDbCapability) {
+      return false;
+    }
+    
+    const procPath = '/proc';
+    const characterDirPath = '/proc/character';
+    
+    // First check if /proc exists
+    if (!this.kernel.exists(procPath)) {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Base directory does not exist, creating: ${procPath}`);
+      }
+      
+      const procResult = this.kernel.mkdir(procPath);
+      if (!procResult.success) {
+        if (this.debug) {
+          console.error(`[GameRulesAPI] Failed to create proc directory: ${procResult.errorMessage}`);
+        }
+        return false;
+      }
+    }
+    
+    // Then check if /proc/character exists
+    if (!this.kernel.exists(characterDirPath)) {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Character base directory does not exist, creating: ${characterDirPath}`);
+      }
+      
+      const characterResult = this.kernel.mkdir(characterDirPath);
+      if (!characterResult.success) {
+        if (this.debug) {
+          console.error(`[GameRulesAPI] Failed to create character directory: ${characterResult.errorMessage}`);
+        }
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  /**
+   * Ensures the entity directory exists
+   * Creates it if it doesn't exist
+   * @returns Whether the directory exists or was created successfully
+   */
+  private ensureEntityDirectoryExists(): boolean {
+    if (!this.hasDbCapability) {
+      return false;
+    }
+    
+    const entityPath = '/entity';
+    
+    // Check if /entity exists
+    if (!this.kernel.exists(entityPath)) {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Entity directory does not exist, creating: ${entityPath}`);
+      }
+      
+      const entityResult = this.kernel.mkdir(entityPath);
+      if (!entityResult.success) {
+        if (this.debug) {
+          console.error(`[GameRulesAPI] Failed to create entity directory: ${entityResult.errorMessage}`);
+        }
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  /**
    * Initialize the Database Capability
    */
   private initializeDatabaseCapability(): void {
@@ -459,22 +574,11 @@ export class GameRulesAPI {
       this.kernel.registerCapability(this.dbCapability.id, this.dbCapability);
       this.hasDbCapability = true;
       
-      // Ensure /proc and /proc/character directories exist
-      const procPath = '/proc';
-      const characterDirPath = '/proc/character';
-      
-      if (!this.kernel.exists(procPath)) {
-        this.kernel.mkdir(procPath);
-        if (this.debug) {
-          console.log(`[GameRulesAPI] Created directory: ${procPath}`);
-        }
-      }
-      
-      if (!this.kernel.exists(characterDirPath)) {
-        this.kernel.mkdir(characterDirPath);
-        if (this.debug) {
-          console.log(`[GameRulesAPI] Created directory: ${characterDirPath}`);
-        }
+      // Ensure base directories exist
+      if (!this.ensureBaseDirectoriesExist()) {
+        console.error('[GameRulesAPI] Failed to create base directories');
+        this.hasDbCapability = false;
+        return;
       }
       
       if (this.debug) {
@@ -541,6 +645,23 @@ export class GameRulesAPI {
       
       // If DatabaseCapability is available, use it (Unix-style)
       if (this.hasDbCapability) {
+        // First ensure base directories exist
+        if (!this.ensureBaseDirectoriesExist()) {
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Base directories don't exist and couldn't be created`);
+          }
+          return this.legacyGetCompleteCharacterData(characterId);
+        }
+        
+        // Then ensure character directory exists
+        if (!this.ensureCharacterDirectoryExists(characterId)) {
+          // Fall back to original implementation if directory creation fails
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Character directory for ${characterId} doesn't exist and couldn't be created`);
+          }
+          return this.legacyGetCompleteCharacterData(characterId);
+        }
+        
         // Use the Database Capability to access the character using only the canonical path
         const entityPath = `/proc/character/${characterId}`;
         let fd = -1;
@@ -985,17 +1106,26 @@ export class GameRulesAPI {
       
       // If DatabaseCapability is available, use it
       if (this.hasDbCapability) {
+        // Ensure entity directory exists
+        if (!this.ensureEntityDirectoryExists()) {
+          if (this.debug) {
+            console.error('[GameRulesAPI] Entity directory doesn\'t exist and couldn\'t be created');
+          }
+          return this.legacyGetAllSkill();
+        }
+        
         // Use the Database Capability to get all skills
         const path = this.getFileSystemPath('skill', 'all');
         
         // Try direct entity path first
-        const entityPath = `/entity/skill`;
+        const entityPath = '/entity';
+        const skillEntityPath = `${entityPath}/skill`;
         let fd = -1;
         
-        if (this.kernel.exists(entityPath)) {
-          fd = this.kernel.open(entityPath, OpenMode.READ);
+        if (this.kernel.exists(skillEntityPath)) {
+          fd = this.kernel.open(skillEntityPath, OpenMode.READ);
           if (this.debug) {
-            console.log(`[GameRulesAPI] Using entity path for skills: ${entityPath}`);
+            console.log(`[GameRulesAPI] Using entity path for skills: ${skillEntityPath}`);
           }
         } else {
           // Fall back to the table path
@@ -1086,17 +1216,26 @@ export class GameRulesAPI {
       
       // If DatabaseCapability is available, use it
       if (this.hasDbCapability) {
+        // Ensure entity directory exists
+        if (!this.ensureEntityDirectoryExists()) {
+          if (this.debug) {
+            console.error('[GameRulesAPI] Entity directory doesn\'t exist and couldn\'t be created');
+          }
+          return this.legacyGetAllAbility();
+        }
+        
         // Use the Database Capability to get all abilities
         const path = this.getFileSystemPath('ability', 'all');
         
         // Try direct entity path first
-        const entityPath = `/entity/ability`;
+        const entityPath = '/entity';
+        const abilityEntityPath = `${entityPath}/ability`;
         let fd = -1;
         
-        if (this.kernel.exists(entityPath)) {
-          fd = this.kernel.open(entityPath, OpenMode.READ);
+        if (this.kernel.exists(abilityEntityPath)) {
+          fd = this.kernel.open(abilityEntityPath, OpenMode.READ);
           if (this.debug) {
-            console.log(`[GameRulesAPI] Using entity path for abilities: ${entityPath}`);
+            console.log(`[GameRulesAPI] Using entity path for abilities: ${abilityEntityPath}`);
           }
         } else {
           // Fall back to the table path
@@ -1495,6 +1634,7 @@ export class GameRulesAPI {
   /**
    * Get the Unix-style filesystem path for a database resource
    * Following Unix principles by treating database resources as files
+   * Also ensures required directories exist for character paths
    * 
    * @param resourceType The type of resource (e.g., 'character', 'ability')
    * @param id The ID of the resource (optional)
@@ -1512,12 +1652,21 @@ export class GameRulesAPI {
     if (resourceType.toLowerCase() === 'character' || resourceType.toLowerCase() === 'game_character') {
       const basePath = '/proc/character';
       
+      // Ensure base directories exist before returning character paths
+      this.ensureBaseDirectoriesExist();
+      
       if (id !== undefined) {
         if (id === 'all') {
           return basePath;
         }
         
         const characterPath = `${basePath}/${id}`;
+        
+        // For specific character IDs, ensure the character directory exists
+        if (typeof id === 'number' || (typeof id === 'string' && !isNaN(parseInt(id)))) {
+          const numericId = typeof id === 'number' ? id : parseInt(id);
+          this.ensureCharacterDirectoryExists(numericId);
+        }
         
         // Add subresource if specified
         if (subResource !== undefined) {
@@ -1549,7 +1698,14 @@ export class GameRulesAPI {
     // Get the mapped table name or use the resource type as-is if not mapped
     const tableName = resourcePathMap[resourceType.toLowerCase()] || resourceType;
     
-    let path = `/entity/${tableName}`;
+    // Ensure entity directory exists
+    if (this.hasDbCapability) {
+      this.ensureEntityDirectoryExists();
+    }
+    
+    const entityPath = '/entity';
+    
+    let path = `${entityPath}/${tableName}`;
     
     if (id !== undefined) {
       if (id === 'all') {
@@ -1924,6 +2080,23 @@ export class GameRulesAPI {
   async updateCharacterHP(characterId: number, currentHp: number): Promise<boolean> {
     try {
       if (this.hasDbCapability) {
+        // First ensure base directories exist
+        if (!this.ensureBaseDirectoriesExist()) {
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Base directories don't exist and couldn't be created for HP update`);
+          }
+          return this.legacyUpdateCharacterHP(characterId, currentHp);
+        }
+        
+        // Then ensure character directory exists
+        if (!this.ensureCharacterDirectoryExists(characterId)) {
+          // Fall back to original implementation if directory creation fails
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Character directory for ${characterId} doesn't exist and couldn't be created for HP update`);
+          }
+          return this.legacyUpdateCharacterHP(characterId, currentHp);
+        }
+        
         // Use the Database Capability to update the character using only the canonical path
         const entityPath = `/proc/character/${characterId}`;
         let fd = -1;
