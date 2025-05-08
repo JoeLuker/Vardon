@@ -1,5 +1,9 @@
 import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '$lib/domain/types/supabase';
+import { GameKernel } from '$lib/domain/kernel/GameKernel';
+import { createDatabaseCapability } from '$lib/domain/capabilities/database';
+import { OpenMode } from '$lib/domain/kernel/types';
+import { EventBus } from '$lib/domain/kernel/EventBus';
 
 /**
  * GameRules namespace organizes all types and interfaces related to game rules.
@@ -220,8 +224,11 @@ type RealtimeCallback<T extends keyof Tables> = GameRules.Callbacks.RealtimeCall
 
 /**
  * GameRulesAPI provides a centralized interface for accessing and manipulating
- * game rules data in the database. It optimizes for query performance by 
- * using deeply nested queries to avoid the N+1 query problem.
+ * game rules data in the database. It optimizes for query performance and follows
+ * Unix architecture principles by treating database resources as files.
+ * 
+ * This implementation serves as the SINGLE ENTRY POINT for all database access
+ * in the application, following Unix principles of file operations.
  */
 export class GameRulesAPI {
   /**
@@ -397,11 +404,87 @@ export class GameRulesAPI {
    */
   private activeSubscriptions: ReturnType<SupabaseClient['channel']>[] = [];
 
+  /** Original Supabase client for backward compatibility */
+  private originalClient: SupabaseClient<Database>;
+  
+  /** Kernel instance for Unix-style file operations */
+  private kernel: GameKernel;
+  
+  /** Database capability reference */
+  private dbCapability: any;
+  
+  /** Flag indicating if the Database Capability is available */
+  private hasDbCapability: boolean = false;
+  
+  /** Debug mode flag */
+  private debug: boolean;
+  
   /**
    * Creates a new GameRulesAPI instance
    * @param supabase The Supabase client used for database access
+   * @param options Additional options
    */
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(
+    private supabase: SupabaseClient<Database>,
+    options: { debug?: boolean } = {}
+  ) {
+    this.originalClient = supabase;
+    this.debug = options.debug || false;
+    
+    // Initialize the kernel with a private event bus
+    this.kernel = new GameKernel({
+      eventEmitter: new EventBus(this.debug),
+      debug: this.debug,
+      noFsEvents: true
+    });
+    
+    // Set up the Database Capability
+    this.initializeDatabaseCapability();
+    
+    if (this.debug) {
+      console.log('[GameRulesAPI] Initialized with Database Capability');
+    }
+  }
+  
+  /**
+   * Initialize the Database Capability
+   */
+  private initializeDatabaseCapability(): void {
+    try {
+      // Create and register the Database Capability
+      this.dbCapability = createDatabaseCapability({
+        debug: this.debug
+      });
+      
+      this.kernel.registerCapability(this.dbCapability.id, this.dbCapability);
+      this.hasDbCapability = true;
+      
+      // Ensure /proc and /proc/character directories exist
+      const procPath = '/proc';
+      const characterDirPath = '/proc/character';
+      
+      if (!this.kernel.exists(procPath)) {
+        this.kernel.mkdir(procPath);
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Created directory: ${procPath}`);
+        }
+      }
+      
+      if (!this.kernel.exists(characterDirPath)) {
+        this.kernel.mkdir(characterDirPath);
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Created directory: ${characterDirPath}`);
+        }
+      }
+      
+      if (this.debug) {
+        console.log('[GameRulesAPI] Database Capability mounted successfully');
+      }
+    } catch (error) {
+      console.error('[GameRulesAPI] Failed to initialize Database Capability:', error);
+      this.hasDbCapability = false;
+    }
+  }
 
   /**
    * Generic method to fetch an entity by ID
@@ -440,18 +523,83 @@ export class GameRulesAPI {
   }
 
   /**
-   * Fetches complete character data with all related entities in a single query.
+   * Fetches complete character data with all related entities.
    * 
    * @remarks
-   * This method uses a deeply nested query structure to avoid the N+1 query problem.
-   * While this results in a complex type structure, it significantly improves performance
-   * compared to multiple separate queries.
+   * This method uses Unix-style file operations via the DatabaseCapability when available.
+   * It falls back to the original implementation using a deeply nested query structure 
+   * when the DatabaseCapability is not available.
    * 
    * @param characterId The ID of the character to fetch
    * @returns A complete character object with all related data
    */
   async getCompleteCharacterData(characterId: number): Promise<GameRules.Complete.Character | null> {
     try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Getting complete data for character ${characterId}`);
+      }
+      
+      // If DatabaseCapability is available, use it (Unix-style)
+      if (this.hasDbCapability) {
+        // Use the Database Capability to access the character using only the canonical path
+        const entityPath = `/proc/character/${characterId}`;
+        let fd = -1;
+        
+        fd = this.kernel.open(entityPath, OpenMode.READ);
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Using entity path: ${entityPath}`);
+        }
+        
+        if (fd < 0) {
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Failed to open character ${characterId}: ${fd}`);
+          }
+          // Fall back to original implementation
+          return this.legacyGetCompleteCharacterData(characterId);
+        }
+        
+        try {
+          // Read the character data
+          const buffer: any = {};
+          const [result] = this.kernel.read(fd, buffer);
+          
+          if (result !== 0) {
+            if (this.debug) {
+              console.error(`[GameRulesAPI] Failed to read character ${characterId}: ${result}`);
+            }
+            // Fall back to original implementation
+            return this.legacyGetCompleteCharacterData(characterId);
+          }
+          
+          return buffer as GameRules.Complete.Character;
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+      } else {
+        // Fall back to original implementation if DatabaseCapability is not available
+        return this.legacyGetCompleteCharacterData(characterId);
+      }
+    } catch (err: any) {
+      console.error(`[GameRulesAPI] Error fetching character data: ${err.message || err}`);
+      // Fall back to original implementation
+      return this.legacyGetCompleteCharacterData(characterId);
+    }
+  }
+  
+  /**
+   * Legacy implementation of getCompleteCharacterData using direct database queries.
+   * This is used as a fallback when the DatabaseCapability is not available.
+   * 
+   * @param characterId The ID of the character to fetch
+   * @returns A complete character object with all related data
+   */
+  private async legacyGetCompleteCharacterData(characterId: number): Promise<GameRules.Complete.Character | null> {
+    try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Using legacy method for character ${characterId}`);
+      }
+      
       const { data, error } = await this.supabase
         .from('game_character')
         .select(this.queries.completeCharacter)
@@ -823,36 +971,204 @@ export class GameRulesAPI {
 
   /**
    * Gets all skills with their associated abilities, with caching for performance
+   * Uses Unix-style file operations via the DatabaseCapability when available.
+   * Falls back to the original implementation when the DatabaseCapability is not available.
+   * 
    * @returns All skills
    */
   async getAllSkill(): Promise<any[]> {
-    // Load into cache if not already loaded
-    if (!this.cache.skills) {
+    try {
+      // Use cached data if available
+      if (this.cache.skills) {
+        return this.cache.skills;
+      }
+      
+      // If DatabaseCapability is available, use it
+      if (this.hasDbCapability) {
+        // Use the Database Capability to get all skills
+        const path = this.getFileSystemPath('skill', 'all');
+        
+        // Try direct entity path first
+        const entityPath = `/entity/skill`;
+        let fd = -1;
+        
+        if (this.kernel.exists(entityPath)) {
+          fd = this.kernel.open(entityPath, OpenMode.READ);
+          if (this.debug) {
+            console.log(`[GameRulesAPI] Using entity path for skills: ${entityPath}`);
+          }
+        } else {
+          // Fall back to the table path
+          fd = this.kernel.open(path, OpenMode.READ);
+          if (this.debug) {
+            console.log(`[GameRulesAPI] Using table path for skills: ${path}`);
+          }
+        }
+        
+        if (fd < 0) {
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Failed to open all skills: ${fd}`);
+          }
+          return this.legacyGetAllSkill();
+        }
+        
+        try {
+          // Read the skills
+          const buffer: any = [];
+          const [result] = this.kernel.read(fd, buffer);
+          
+          if (result !== 0) {
+            if (this.debug) {
+              console.error(`[GameRulesAPI] Failed to read all skills: ${result}`);
+            }
+            return this.legacyGetAllSkill();
+          }
+          
+          // Cache the results for future use
+          this.cache.skills = buffer;
+          return buffer;
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+      } else {
+        // Fall back to original implementation
+        return this.legacyGetAllSkill();
+      }
+    } catch (error) {
+      console.error('[GameRulesAPI] Error getting all skills:', error);
+      
+      // Fall back to original implementation
+      return this.legacyGetAllSkill();
+    }
+  }
+  
+  /**
+   * Legacy implementation of getAllSkill using direct database queries.
+   * This is used as a fallback when the DatabaseCapability is not available.
+   * 
+   * @returns All skills
+   */
+  private async legacyGetAllSkill(): Promise<any[]> {
+    try {
+      if (this.debug) {
+        console.log('[GameRulesAPI] Using legacy method to get all skills');
+      }
+      
       const { data, error } = await this.supabase
         .from('skill')
         .select('*, ability(*)');
-
+        
       if (error) throw error;
-      this.cache.skills = data;
+      
+      // Cache the results for future use
+      this.cache.skills = data || [];
+      return this.cache.skills;
+    } catch (error) {
+      console.error('[GameRulesAPI] Failed to get all skills:', error);
+      return [];
     }
-    return this.cache.skills || [];
   }
 
   /**
    * Gets all abilities, with caching for performance
+   * Uses Unix-style file operations via the DatabaseCapability when available.
+   * Falls back to the original implementation when the DatabaseCapability is not available.
+   * 
    * @returns All abilities
    */
   async getAllAbility(): Promise<any[]> {
-    // Load into cache if not already loaded
-    if (!this.cache.abilities) {
+    try {
+      // Use cached data if available
+      if (this.cache.abilities) {
+        return this.cache.abilities;
+      }
+      
+      // If DatabaseCapability is available, use it
+      if (this.hasDbCapability) {
+        // Use the Database Capability to get all abilities
+        const path = this.getFileSystemPath('ability', 'all');
+        
+        // Try direct entity path first
+        const entityPath = `/entity/ability`;
+        let fd = -1;
+        
+        if (this.kernel.exists(entityPath)) {
+          fd = this.kernel.open(entityPath, OpenMode.READ);
+          if (this.debug) {
+            console.log(`[GameRulesAPI] Using entity path for abilities: ${entityPath}`);
+          }
+        } else {
+          // Fall back to the table path
+          fd = this.kernel.open(path, OpenMode.READ);
+          if (this.debug) {
+            console.log(`[GameRulesAPI] Using table path for abilities: ${path}`);
+          }
+        }
+        
+        if (fd < 0) {
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Failed to open all abilities: ${fd}`);
+          }
+          return this.legacyGetAllAbility();
+        }
+        
+        try {
+          // Read the abilities
+          const buffer: any = [];
+          const [result] = this.kernel.read(fd, buffer);
+          
+          if (result !== 0) {
+            if (this.debug) {
+              console.error(`[GameRulesAPI] Failed to read all abilities: ${result}`);
+            }
+            return this.legacyGetAllAbility();
+          }
+          
+          // Cache the results for future use
+          this.cache.abilities = buffer;
+          return buffer;
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+      } else {
+        // Fall back to original implementation
+        return this.legacyGetAllAbility();
+      }
+    } catch (error) {
+      console.error('[GameRulesAPI] Error getting all abilities:', error);
+      
+      // Fall back to original implementation
+      return this.legacyGetAllAbility();
+    }
+  }
+  
+  /**
+   * Legacy implementation of getAllAbility using direct database queries.
+   * This is used as a fallback when the DatabaseCapability is not available.
+   * 
+   * @returns All abilities
+   */
+  private async legacyGetAllAbility(): Promise<any[]> {
+    try {
+      if (this.debug) {
+        console.log('[GameRulesAPI] Using legacy method to get all abilities');
+      }
+      
       const { data, error } = await this.supabase
         .from('ability')
         .select('*');
-
+        
       if (error) throw error;
-      this.cache.abilities = data;
+      
+      // Cache the results for future use
+      this.cache.abilities = data || [];
+      return this.cache.abilities;
+    } catch (error) {
+      console.error('[GameRulesAPI] Failed to get all abilities:', error);
+      return [];
     }
-    return this.cache.abilities || [];
   }
 
   /**
@@ -1175,6 +1491,108 @@ export class GameRulesAPI {
       };
     }
   }
+  
+  /**
+   * Get the Unix-style filesystem path for a database resource
+   * Following Unix principles by treating database resources as files
+   * 
+   * @param resourceType The type of resource (e.g., 'character', 'ability')
+   * @param id The ID of the resource (optional)
+   * @param subResource The sub-resource type (optional)
+   * @param subId The sub-resource ID (optional)
+   * @returns The filesystem path for the resource
+   */
+  getFileSystemPath(
+    resourceType: string, 
+    id?: number | string,
+    subResource?: string,
+    subId?: number | string
+  ): string {
+    // Special case for characters - use the new path structure
+    if (resourceType.toLowerCase() === 'character' || resourceType.toLowerCase() === 'game_character') {
+      const basePath = '/proc/character';
+      
+      if (id !== undefined) {
+        if (id === 'all') {
+          return basePath;
+        }
+        
+        const characterPath = `${basePath}/${id}`;
+        
+        // Add subresource if specified
+        if (subResource !== undefined) {
+          const subPath = `${characterPath}/${subResource}`;
+          
+          if (subId !== undefined) {
+            return `${subPath}/${subId}`;
+          }
+          
+          return subPath;
+        }
+        
+        return characterPath;
+      }
+      
+      return basePath;
+    }
+    
+    // For other resource types, use the traditional entity paths
+    const resourcePathMap: Record<string, string> = {
+      'ability': 'ability',
+      'skill': 'skill',
+      'feat': 'feat',
+      'class': 'class',
+      'ancestry': 'ancestry',
+      'spell': 'spell'
+    };
+    
+    // Get the mapped table name or use the resource type as-is if not mapped
+    const tableName = resourcePathMap[resourceType.toLowerCase()] || resourceType;
+    
+    let path = `/entity/${tableName}`;
+    
+    if (id !== undefined) {
+      if (id === 'all') {
+        // Special case for 'all' - this is the collection path
+        return path;
+      }
+      
+      path += `/${id}`;
+      
+      if (subResource !== undefined) {
+        // Map sub-resource to table name if needed
+        const subTableName = resourcePathMap[subResource.toLowerCase()] || subResource;
+        path += `/${subTableName}`;
+        
+        if (subId !== undefined) {
+          path += `/${subId}`;
+        }
+      }
+    }
+    
+    return path;
+  }
+
+  /**
+   * Get the kernel instance
+   * @returns Kernel instance with Database Capability mounted
+   */
+  getKernel(): GameKernel {
+    return this.kernel;
+  }
+  
+  /**
+   * Shutdown the API and clean up resources
+   */
+  async shutdown(): Promise<void> {
+    if (this.debug) {
+      console.log('[GameRulesAPI] Shutting down');
+    }
+    
+    if (this.hasDbCapability) {
+      await this.kernel.shutdown();
+    }
+  }
 
   /**
    * Creates a watcher for a database table and properly tracks the subscription
@@ -1438,9 +1856,15 @@ export class GameRulesAPI {
    * This provides controlled access to the Supabase client while maintaining
    * encapsulation of the internal implementation details.
    * 
+   * @deprecated Direct database access is deprecated. Use the Unix-style file operations via DatabaseCapability instead.
    * @returns The Supabase client instance
    */
   getSupabaseClient(): SupabaseClient<Database> {
+    console.warn(
+      'DEPRECATED: Direct Supabase client access is strongly discouraged. ' +
+      'Use the Unix-style file operations via DatabaseCapability instead. ' +
+      'This method will be removed in a future version.'
+    );
     return this.supabase;
   }
 
@@ -1490,12 +1914,88 @@ export class GameRulesAPI {
 
   /**
    * Updates a character's HP
+   * Uses Unix-style file operations via the DatabaseCapability when available.
+   * Falls back to the original implementation when the DatabaseCapability is not available.
+   * 
    * @param characterId Character ID
    * @param currentHp Current HP value
    * @returns Whether the update was successful
    */
   async updateCharacterHP(characterId: number, currentHp: number): Promise<boolean> {
     try {
+      if (this.hasDbCapability) {
+        // Use the Database Capability to update the character using only the canonical path
+        const entityPath = `/proc/character/${characterId}`;
+        let fd = -1;
+        
+        fd = this.kernel.open(entityPath, OpenMode.READ_WRITE);
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Using entity path for HP update: ${entityPath}`);
+        }
+        
+        if (fd < 0) {
+          if (this.debug) {
+            console.error(`[GameRulesAPI] Failed to open character ${characterId} for HP update: ${fd}`);
+          }
+          return this.legacyUpdateCharacterHP(characterId, currentHp);
+        }
+        
+        try {
+          // Read the current character data
+          const buffer: any = {};
+          const [readResult] = this.kernel.read(fd, buffer);
+          
+          if (readResult !== 0) {
+            if (this.debug) {
+              console.error(`[GameRulesAPI] Failed to read character ${characterId} for HP update: ${readResult}`);
+            }
+            return this.legacyUpdateCharacterHP(characterId, currentHp);
+          }
+          
+          // Update the HP
+          buffer.current_hp = currentHp;
+          
+          // Write the updated data
+          const writeResult = this.kernel.write(fd, buffer);
+          
+          if (writeResult !== 0) {
+            if (this.debug) {
+              console.error(`[GameRulesAPI] Failed to write character ${characterId} for HP update: ${writeResult}`);
+            }
+            return this.legacyUpdateCharacterHP(characterId, currentHp);
+          }
+          
+          return true;
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+      } else {
+        // Fall back to original implementation
+        return this.legacyUpdateCharacterHP(characterId, currentHp);
+      }
+    } catch (err) {
+      console.error(`[GameRulesAPI] Error updating HP for character ${characterId}:`, err);
+      
+      // Fall back to original implementation
+      return this.legacyUpdateCharacterHP(characterId, currentHp);
+    }
+  }
+  
+  /**
+   * Legacy implementation of updateCharacterHP using direct database queries.
+   * This is used as a fallback when the DatabaseCapability is not available.
+   * 
+   * @param characterId Character ID
+   * @param currentHp Current HP value
+   * @returns Whether the update was successful
+   */
+  private async legacyUpdateCharacterHP(characterId: number, currentHp: number): Promise<boolean> {
+    try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Using legacy method to update HP for character ${characterId}`);
+      }
+      
       const { error } = await this.supabase
         .from('game_character')
         .update({ current_hp: currentHp })
@@ -1504,7 +2004,7 @@ export class GameRulesAPI {
       if (error) throw error;
       return true;
     } catch (err) {
-      console.error(`Failed to update character HP: ${err}`);
+      console.error(`[GameRulesAPI] Failed to update character HP: ${err}`);
       return false;
     }
   }
