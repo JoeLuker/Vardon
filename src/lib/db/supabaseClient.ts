@@ -1,14 +1,18 @@
 /**
- * Supabase Client Module
+ * Internal Supabase Client Module - FOR INTERNAL USE ONLY
  *
- * @deprecated Direct access to the Supabase client should be avoided.
- * Instead, use the GameRulesAPI or Unix-style file operations.
+ * @deprecated Direct access to the Supabase client is not supported.
+ * This module should ONLY be used by internal implementation of the database capability.
+ * All application code should use Unix-style file operations.
  *
- * Example usage with Unix architecture:
+ * Correct Unix architecture usage:
  * const kernel = new GameKernel();
  * const fd = kernel.open('/proc/character/1', OpenMode.READ);
- * const [result, data] = kernel.read(fd);
+ * const buffer = {};
+ * const [result] = kernel.read(fd, buffer);
  * kernel.close(fd);
+ *
+ * DO NOT IMPORT THIS MODULE DIRECTLY IN APPLICATION CODE!
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -38,5 +42,6 @@ const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 	}
 });
 
-// Export for internal module use only
+// Export for internal module use only - DO NOT IMPORT THIS IN APPLICATION CODE
+// This is only used by the database driver implementation
 export { supabaseClient };

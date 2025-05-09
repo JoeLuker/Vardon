@@ -1,4 +1,3 @@
-import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '$lib/domain/types/supabase';
 import { GameKernel } from '$lib/domain/kernel/GameKernel';
 import { createDatabaseCapability } from '$lib/domain/capabilities/database';
@@ -399,26 +398,22 @@ export class GameRulesAPI {
   };
 
   /**
-   * Active real-time subscriptions
-   * Tracking these allows proper cleanup when they're no longer needed
+   * REMOVED: Active real-time subscriptions reference
+   * Real-time updates now use the EventBus instead of direct Supabase subscriptions
    */
-  private activeSubscriptions: ReturnType<SupabaseClient['channel']>[] = [];
 
-  /** Original Supabase client for backward compatibility */
-  private originalClient: SupabaseClient<Database>;
-  
   /** Kernel instance for Unix-style file operations */
   private kernel: GameKernel;
-  
+
   /** Database capability reference */
   private dbCapability: any;
-  
+
   /** Flag indicating if the Database Capability is available */
   private hasDbCapability: boolean = false;
-  
+
   /** Debug mode flag */
   private debug: boolean;
-  
+
   /**
    * Creates a new GameRulesAPI instance
    * @param options Additional options
@@ -426,10 +421,6 @@ export class GameRulesAPI {
   constructor(
     options: { debug?: boolean } = {}
   ) {
-    // Import Supabase client only when needed
-    const { supabaseClient } = require('./supabaseClient');
-    this.supabase = supabaseClient;
-    this.originalClient = this.supabase;
     this.debug = options.debug || false;
 
     // Initialize the kernel with a private event bus
@@ -764,10 +755,10 @@ export class GameRulesAPI {
   }
 
   /**
-   * Generic method to fetch an entity by ID
+   * Generic method to fetch an entity by ID using Unix file operations
    * @param table The table name
    * @param id The entity ID
-   * @param query The query string (defaults to '*')
+   * @param query The query parameters (unused in Unix implementation)
    * @returns The entity data or null if not found
    */
   private async getEntityById<T extends keyof Tables>(
@@ -776,26 +767,40 @@ export class GameRulesAPI {
     query: string = '*'
   ): Promise<Row<T> | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(table)
-        .select(query)
-        .eq('id', id)
-        .single();
+      // Get the proper path for this entity
+      const entityPath = `/proc/${table}/${id}`;
 
-      if (error) throw error;
-      if (!data) return null;
-
-      // Use double casting with unknown to satisfy TypeScript
-      return data as unknown as Row<T>;
-    } catch (err: any) {
-      // Handle 406 errors (no rows found)
-      if (err?.code === '406' || err?.status === 406 || 
-          (err?.message && err?.message.includes('JSON object requested, multiple (or no) rows returned'))) {
+      // Check if the path exists
+      if (!this.kernel.exists(entityPath)) {
         console.warn(`No ${table} found with ID ${id}`);
         return null;
       }
-      
-      throw new Error(`Failed to fetch ${table} with id ${id}: ${err.message || err}`);
+
+      // Open the file
+      const fd = this.kernel.open(entityPath, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`Failed to open ${table} file: ${fd}`);
+        return null;
+      }
+
+      try {
+        // Read the entity data
+        const buffer: any = {};
+        const [result] = this.kernel.read(fd, buffer);
+
+        if (result !== 0) {
+          console.error(`Failed to read ${table} data: ${result}`);
+          return null;
+        }
+
+        return buffer as unknown as Row<T>;
+      } finally {
+        // Always close the file descriptor
+        this.kernel.close(fd);
+      }
+    } catch (err: any) {
+      console.error(`Failed to fetch ${table} with id ${id}: ${err.message || err}`);
+      return null;
     }
   }
 
@@ -830,9 +835,9 @@ export class GameRulesAPI {
   }
   
   /**
-   * Legacy implementation of getCompleteCharacterData using direct database queries.
-   * This is used as a fallback when the DatabaseCapability is not available.
-   * 
+   * Legacy implementation of getCompleteCharacterData using Unix file operations.
+   * This is used as a fallback when more direct methods fail.
+   *
    * @param characterId The ID of the character to fetch
    * @returns A complete character object with all related data
    */
@@ -841,102 +846,176 @@ export class GameRulesAPI {
       if (this.debug) {
         console.log(`[GameRulesAPI] Using legacy method for character ${characterId}`);
       }
-      
-      const { data, error } = await this.supabase
-        .from('game_character')
-        .select(this.queries.completeCharacter)
-        .eq('id', characterId)
-        .single();
 
-      if (error) throw error;
-      if (!data) return null;
+      // Use the raw device to fetch complete character data directly
+      const devicePath = '/dev/db';
+      const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
-      // Safely cast the data to the expected type
-      const characterData = data as unknown as GameRules.Complete.Character;
-      
-      // Enrich corruption manifestations if present
-      if (characterData?.game_character_corruption_manifestation?.length) {
-        await this.enrichCorruptionManifestations(characterData.game_character_corruption_manifestation);
-      }
-
-      return characterData;
-    } catch (err: any) {
-      // Handle 406 "Not Acceptable" error, which occurs when no rows found
-      if (err?.code === '406' || err?.status === 406 || 
-          (err?.message && err?.message.includes('JSON object requested, multiple (or no) rows returned'))) {
-        console.warn(`No character found with ID ${characterId}`);
+      if (deviceFd < 0) {
+        console.error(`[GameRulesAPI] Failed to open database device: ${devicePath}`);
         return null;
       }
-      
-      // For other errors, rethrow
-      throw new Error(`Failed to fetch character data: ${err.message || err}`);
+
+      try {
+        // Using ioctl to perform a database read operation
+        const buffer: any = {};
+        const ioctlResult = this.kernel.ioctl(deviceFd, 1, { // DatabaseOperation.READ
+          resource: 'character',
+          id: characterId,
+          query: 'complete'
+        }, buffer);
+
+        if (ioctlResult !== 0) {
+          console.error(`[GameRulesAPI] Database read operation failed: ${ioctlResult}`);
+          return null;
+        }
+
+        if (!buffer.data) {
+          console.warn(`[GameRulesAPI] No character found with ID ${characterId}`);
+          return null;
+        }
+
+        // Safely cast the data to the expected type
+        const characterData = buffer.data as GameRules.Complete.Character;
+
+        // Ensure all required paths exist for future operations
+        this.ensureCharacterDirectoryExists(characterId);
+
+        // Create the character file if it doesn't exist
+        const characterPath = this.getFileSystemPath('character', characterId);
+        if (!this.kernel.exists(characterPath)) {
+          const createResult = this.kernel.create(characterPath, characterData);
+          if (!createResult.success) {
+            console.warn(`[GameRulesAPI] Failed to create character file: ${createResult.errorMessage}`);
+            // Continue anyway since we have the data
+          }
+        }
+
+        return characterData;
+      } finally {
+        // Always close the file descriptor
+        this.kernel.close(deviceFd);
+      }
+    } catch (err: any) {
+      console.error(`[GameRulesAPI] Failed to fetch character data: ${err.message || err}`);
+      return null;
     }
   }
 
   /**
    * Helper method to enrich corruption manifestation data with prerequisites
    * This is extracted to keep the main method cleaner and more maintainable
+   * Now uses Unix file operations instead of direct Supabase queries
    */
   private async enrichCorruptionManifestations(manifestationEntries: any[]) {
     const manifestationIds = manifestationEntries
       .map(entry => entry.manifestation?.id)
       .filter(Boolean);
-      
+
     if (manifestationIds.length === 0) return;
-    
-    // Get all manifestations to have the full set
-    const { data: allManifestations, error: manifestationsError } = await this.supabase
-      .from('corruption_manifestation')
-      .select('*')
-      .in('id', manifestationIds);
-      
-    if (manifestationsError || !allManifestations) {
-      console.error('Failed to fetch manifestations:', manifestationsError);
+
+    // Build an array of promises for parallel file operations
+    const manifestationPromises = manifestationIds.map(async (id) => {
+      // Get manifestation data from file system
+      const manifestationPath = `/proc/corruption_manifestation/${id}`;
+
+      if (!this.kernel.exists(manifestationPath)) {
+        return null;
+      }
+
+      const fd = this.kernel.open(manifestationPath, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`Failed to open manifestation file: ${manifestationPath}`);
+        return null;
+      }
+
+      try {
+        const buffer: any = {};
+        const [result] = this.kernel.read(fd, buffer);
+
+        if (result !== 0) {
+          console.error(`Failed to read manifestation data: ${result}`);
+          return null;
+        }
+
+        return buffer;
+      } finally {
+        this.kernel.close(fd);
+      }
+    });
+
+    // Get all manifestation data in parallel
+    const allManifestations = await Promise.all(manifestationPromises);
+    const validManifestations = allManifestations.filter(Boolean) as GameRules.Relationships.ExtendedCorruptionManifestation[];
+
+    if (validManifestations.length === 0) {
+      console.warn('No valid manifestations found');
       return;
     }
-    
+
     // Create a map for quick lookup
-    const manifestationMap = allManifestations.reduce((map, m) => {
+    const manifestationMap = validManifestations.reduce((map, m) => {
       map[m.id] = m;
       return map;
     }, {} as Record<number, GameRules.Relationships.ExtendedCorruptionManifestation>);
-    
-    // Get prerequisites relationships from the relationship table
-    const { data: prerequisites, error: prerequisitesError } = await this.supabase
-      .from('corruption_manifestation_prerequisite')
-      .select('*')
-      .in('corruption_manifestation_id', manifestationIds);
-      
-    if (prerequisitesError || !prerequisites) {
-      console.error('Failed to fetch prerequisites:', prerequisitesError);
+
+    // Get prerequisites from the prerequisites file
+    const prerequisitesPath = `/proc/corruption_manifestation_prerequisite/batch`;
+    const prereqsFd = this.kernel.open(prerequisitesPath, OpenMode.WRITE);
+
+    if (prereqsFd < 0) {
+      console.error(`Failed to open prerequisites path: ${prerequisitesPath}`);
       return;
     }
-    
-    // Connect prerequisites for each manifestation
-    manifestationEntries.forEach((entry: any) => {
-      const manifestationExt = entry.manifestation as GameRules.Relationships.ExtendedCorruptionManifestation;
-      
-      // Collect all prerequisites for this manifestation
-      const manifestationPrereqs = prerequisites.filter(
-        p => p.corruption_manifestation_id === manifestationExt.id
-      );
-      
-      if (manifestationPrereqs.length > 0) {
-        // Store all prerequisites
-        manifestationExt.prerequisites = manifestationPrereqs.map(prereq => {
-          const prerequisiteId = prereq.prerequisite_manifestation_id;
-          return {
-            prerequisite_manifestation_id: prerequisiteId,
-            prerequisite: manifestationMap[prerequisiteId]
-          };
-        }).filter(p => p.prerequisite); // Only keep valid prerequisites
-        
-        // For backward compatibility, store the first prerequisite in the single field
-        if (manifestationExt.prerequisites.length > 0) {
-          manifestationExt.prerequisite = manifestationExt.prerequisites[0].prerequisite;
-        }
+
+    try {
+      // Write the request with the manifestation IDs
+      const writeResult = this.kernel.write(prereqsFd, { manifestation_ids: manifestationIds });
+
+      if (writeResult !== 0) {
+        console.error(`Failed to write prerequisites request: ${writeResult}`);
+        return;
       }
-    });
+
+      // Read the response
+      const buffer: any = {};
+      const [readResult] = this.kernel.read(prereqsFd, buffer);
+
+      if (readResult !== 0 || !buffer.prerequisites) {
+        console.error(`Failed to read prerequisites: ${readResult}`);
+        return;
+      }
+
+      const prerequisites = buffer.prerequisites;
+
+      // Connect prerequisites for each manifestation
+      manifestationEntries.forEach((entry: any) => {
+        const manifestationExt = entry.manifestation as GameRules.Relationships.ExtendedCorruptionManifestation;
+
+        // Collect all prerequisites for this manifestation
+        const manifestationPrereqs = prerequisites.filter(
+          (p: any) => p.corruption_manifestation_id === manifestationExt.id
+        );
+
+        if (manifestationPrereqs.length > 0) {
+          // Store all prerequisites
+          manifestationExt.prerequisites = manifestationPrereqs.map((prereq: any) => {
+            const prerequisiteId = prereq.prerequisite_manifestation_id;
+            return {
+              prerequisite_manifestation_id: prerequisiteId,
+              prerequisite: manifestationMap[prerequisiteId]
+            };
+          }).filter((p: any) => p.prerequisite); // Only keep valid prerequisites
+
+          // For backward compatibility, store the first prerequisite in the single field
+          if (manifestationExt.prerequisites.length > 0) {
+            manifestationExt.prerequisite = manifestationExt.prerequisites[0].prerequisite;
+          }
+        }
+      });
+    } finally {
+      this.kernel.close(prereqsFd);
+    }
   }
 
   /**
@@ -988,44 +1067,89 @@ export class GameRulesAPI {
    * @returns Array of ABP nodes with their bonuses
    */
   async getAbpNodesForLevel(level: number): Promise<GameRules.Relationships.AbpNodeWithBonuses[]> {
-    const { data, error } = await this.supabase
-      .from('abp_node')
-      .select(`
-        *,
-        abp_node_bonus (
-          *,
-          bonus_type:abp_bonus_type (
-            *
-          )
-        ),
-        group:abp_node_group!inner (
-          *
-        )
-      `)
-      .lte('group.level', level);
+    // Use Unix file operations to get ABP nodes by level
+    const nodePath = `/proc/abp_node/level/${level}`;
 
-    if (error) throw error;
-    
-    return (data || []).map(node => ({
-      id: node.id,
-      group_id: node.group_id,
-      name: node.name,
-      label: node.label,
-      description: node.description,
-      requires_choice: node.requires_choice,
-      created_at: node.created_at,
-      updated_at: node.updated_at,
-      bonuses: (node.abp_node_bonus || []).map((bonus: any) => ({
-        id: bonus.id,
-        node_id: bonus.node_id,
-        bonus_type_id: bonus.bonus_type_id,
-        value: bonus.value,
-        target_specifier: bonus.target_specifier,
-        created_at: bonus.created_at,
-        updated_at: bonus.updated_at,
-        bonus_type: bonus.bonus_type
-      }))
-    })) as GameRules.Relationships.AbpNodeWithBonuses[];
+    // Check if the path exists
+    if (!this.kernel.exists(nodePath)) {
+      // Try to create the path by querying the device
+      const devicePath = '/dev/db';
+      const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
+
+      if (deviceFd < 0) {
+        console.error(`Failed to open database device: ${devicePath}`);
+        return [];
+      }
+
+      try {
+        // Use ioctl to perform a filtered query
+        const buffer: any = {};
+        const ioctlResult = this.kernel.ioctl(deviceFd, 2, { // DatabaseOperation.QUERY
+          resource: 'abp_node',
+          filter: {
+            level_lte: level
+          }
+        }, buffer);
+
+        if (ioctlResult !== 0 || !buffer.data) {
+          console.error(`Database query operation failed: ${ioctlResult}`);
+          return [];
+        }
+
+        // Create the file for future access
+        const createResult = this.kernel.create(nodePath, { nodes: buffer.data });
+        if (!createResult.success) {
+          console.warn(`Failed to create ABP node level file: ${createResult.errorMessage}`);
+          // Continue anyway since we have the data
+        }
+
+        // Transform the data to the expected format
+        return (buffer.data || []).map((node: any) => ({
+          id: node.id,
+          group_id: node.group_id,
+          name: node.name,
+          label: node.label,
+          description: node.description,
+          requires_choice: node.requires_choice,
+          created_at: node.created_at,
+          updated_at: node.updated_at,
+          bonuses: (node.abp_node_bonus || []).map((bonus: any) => ({
+            id: bonus.id,
+            node_id: bonus.node_id,
+            bonus_type_id: bonus.bonus_type_id,
+            value: bonus.value,
+            target_specifier: bonus.target_specifier,
+            created_at: bonus.created_at,
+            updated_at: bonus.updated_at,
+            bonus_type: bonus.bonus_type
+          }))
+        })) as GameRules.Relationships.AbpNodeWithBonuses[];
+      } finally {
+        this.kernel.close(deviceFd);
+      }
+    }
+
+    // Path exists, read from the file
+    const fd = this.kernel.open(nodePath, OpenMode.READ);
+    if (fd < 0) {
+      console.error(`Failed to open ABP node level file: ${nodePath}`);
+      return [];
+    }
+
+    try {
+      // Read the file content
+      const buffer: any = {};
+      const [result] = this.kernel.read(fd, buffer);
+
+      if (result !== 0) {
+        console.error(`Failed to read ABP node level data: ${result}`);
+        return [];
+      }
+
+      return (buffer.nodes || []) as GameRules.Relationships.AbpNodeWithBonuses[];
+    } finally {
+      this.kernel.close(fd);
+    }
   }
 
   // Rest of the class methods follow...
@@ -1436,44 +1560,16 @@ export class GameRulesAPI {
     }
   }
 
-  /**
-   * Get the Supabase client for direct database access.
+  /*
+   * REMOVED: getSupabaseClient() method has been completely removed.
+   * All database access should now use kernel file operations
+   * (open, read, write, close) on database resources.
    *
-   * @deprecated This method is provided only for compatibility during transition to Unix architecture.
-   * Use kernel file operations and database capability instead, such as:
-   * - kernel.open('/path/to/resource')
-   * - kernel.read(fd, buffer)
-   * - kernel.write(fd, data)
-   *
-   * Example:
-   * const fd = kernel.open('/proc/character/1', OpenMode.READ);
-   * const buffer = {};
-   * kernel.read(fd, buffer);
-   * kernel.close(fd);
-   *
-   * @returns The original Supabase client instance
+   * To access database resources:
+   * - kernel.open('/proc/character/{id}', OpenMode.READ) - Get a character by ID
+   * - kernel.open('/proc/character/list', OpenMode.READ) - List all characters
+   * - kernel.open('/entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
    */
-  /**
-   * Returns the internal Supabase client for direct database access.
-   *
-   * @deprecated This method is provided only for backward compatibility during transition to Unix architecture.
-   * Use kernel file operations and database capability instead. This method will be removed in a future version.
-   *
-   * Preferred Unix-style alternatives:
-   * - kernel.open('/proc/character/1', OpenMode.READ)
-   * - kernel.read(fd)
-   * - kernel.write(fd, data)
-   * - kernel.close(fd)
-   *
-   * @returns The Supabase client instance
-   */
-  getSupabaseClient(): SupabaseClient<Database> {
-    console.warn('DEPRECATED: getSupabaseClient() is deprecated and will be removed in a future version.');
-    console.warn('Use kernel file operations instead of direct Supabase access.');
-    console.warn('Example: kernel.open("/proc/character/1", OpenMode.READ), kernel.read(fd), kernel.close(fd)');
-
-    return this.supabase;
-  }
 
   /**
    * Gets all game characters
