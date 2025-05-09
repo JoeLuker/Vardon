@@ -421,172 +421,345 @@ export class GameRulesAPI {
   
   /**
    * Creates a new GameRulesAPI instance
-   * @param supabase The Supabase client used for database access
    * @param options Additional options
    */
   constructor(
-    private supabase: SupabaseClient<Database>,
     options: { debug?: boolean } = {}
   ) {
-    this.originalClient = supabase;
+    // Import Supabase client only when needed
+    const { supabaseClient } = require('./supabaseClient');
+    this.supabase = supabaseClient;
+    this.originalClient = this.supabase;
     this.debug = options.debug || false;
-    
+
     // Initialize the kernel with a private event bus
     this.kernel = new GameKernel({
       eventEmitter: new EventBus(this.debug),
       debug: this.debug,
       noFsEvents: true
     });
-    
+
     // Set up the Database Capability
     this.initializeDatabaseCapability();
-    
+
     if (this.debug) {
       console.log('[GameRulesAPI] Initialized with Database Capability');
     }
   }
   
   /**
-   * Ensures the character directory exists for a given character ID
-   * Creates the directory if it doesn't exist, including any parent directories
-   * @param characterId Character ID
-   * @returns Whether the directory exists or was created successfully
+   * Ensures parent directories for character paths exist.
+   * 
+   * IMPORTANT: Characters are represented as files, not directories.
+   * This method only ensures the parent directory /proc/character exists.
+   * 
+   * @param characterId Character ID (used only for logging)
+   * @returns Whether necessary directories exist or were created successfully
    */
   private ensureCharacterDirectoryExists(characterId: number): boolean {
     if (!this.hasDbCapability) {
+      console.error(`[GameRulesAPI] Database capability not available for character ${characterId}`);
       return false;
     }
     
     // First ensure base directories exist
     if (!this.ensureBaseDirectoriesExist()) {
-      return false;
-    }
-    
-    const characterDirPath = `/proc/character/${characterId}`;
-    
-    // Check if directory already exists
-    if (this.kernel.exists(characterDirPath)) {
+      console.error(`[GameRulesAPI] Failed to ensure base directories exist for character ${characterId}`);
+      
+      // Double-check specific path needed
+      const characterDirPath = '/proc/character';
+      const exists = this.kernel.exists(characterDirPath);
+      
+      if (!exists) {
+        console.error(`[GameRulesAPI] Critical directory ${characterDirPath} does not exist, attempting direct creation`);
+        
+        // Last attempt to create directly 
+        const result = this.kernel.mkdir(characterDirPath, true);
+        if (!result.success) {
+          console.error(`[GameRulesAPI] Final attempt to create ${characterDirPath} failed: ${result.errorMessage}`);
+          return false;
+        }
+        
+        console.log(`[GameRulesAPI] Successfully created ${characterDirPath} on final attempt`);
+        return true;
+      }
+      
+      // If we reach here, directory exists despite earlier failure
+      console.log(`[GameRulesAPI] Character directory exists but ensureBaseDirectoriesExist() reported failure`);
       return true;
     }
     
-    // Create the directory
-    if (this.debug) {
-      console.log(`[GameRulesAPI] Character directory does not exist, creating: ${characterDirPath}`);
-    }
-    
-    const createResult = this.kernel.mkdir(characterDirPath);
-    if (!createResult.success) {
-      if (this.debug) {
-        console.error(`[GameRulesAPI] Failed to create character directory: ${createResult.errorMessage}`);
-      }
-      return false;
-    }
-    
+    // Do NOT create a directory for the character ID itself
+    // Characters are represented as files, not directories!
     return true;
   }
   
   /**
-   * Ensures the base directories (/proc and /proc/character) exist
-   * Creates them if they don't exist
-   * @returns Whether both directories exist or were created successfully
+   * Ensures that the base directories (/proc and /proc/character) exist.
+   * This is a critical method that makes multiple attempts to create required directories.
+   * 
+   * @returns Boolean indicating if the required directories exist or were created
    */
   private ensureBaseDirectoriesExist(): boolean {
     if (!this.hasDbCapability) {
+      console.error('[GameRulesAPI] Database capability not available, cannot ensure directories');
       return false;
     }
     
     const procPath = '/proc';
     const characterDirPath = '/proc/character';
     
-    // First check if /proc exists
-    if (!this.kernel.exists(procPath)) {
-      if (this.debug) {
-        console.log(`[GameRulesAPI] Base directory does not exist, creating: ${procPath}`);
-      }
-      
-      const procResult = this.kernel.mkdir(procPath);
-      if (!procResult.success) {
-        if (this.debug) {
-          console.error(`[GameRulesAPI] Failed to create proc directory: ${procResult.errorMessage}`);
-        }
-        return false;
-      }
+    // Check kernel is initialized
+    if (!this.kernel) {
+      console.error('[GameRulesAPI] Kernel not initialized');
+      return false;
     }
     
-    // Then check if /proc/character exists
-    if (!this.kernel.exists(characterDirPath)) {
-      if (this.debug) {
-        console.log(`[GameRulesAPI] Character base directory does not exist, creating: ${characterDirPath}`);
+    // First try the optimistic case - both directories exist
+    if (this.kernel.exists(procPath) && this.kernel.exists(characterDirPath)) {
+      return true;
+    }
+    
+    // Create the directories with multiple attempts if needed
+    const createDir = (path: string, description: string): boolean => {
+      if (this.kernel.exists(path)) {
+        return true; // Already exists
       }
       
-      const characterResult = this.kernel.mkdir(characterDirPath);
-      if (!characterResult.success) {
-        if (this.debug) {
-          console.error(`[GameRulesAPI] Failed to create character directory: ${characterResult.errorMessage}`);
-        }
-        return false;
+      console.log(`[GameRulesAPI] ${description} does not exist, creating: ${path}`);
+      
+      // First attempt - use recursive flag
+      const result = this.kernel.mkdir(path, true);
+      if (result.success) {
+        return true;
       }
+      
+      console.error(`[GameRulesAPI] Failed to create ${description}: ${result.errorMessage}`);
+      
+      // Second attempt - verify parent directory and try again
+      const parentPath = path.substring(0, path.lastIndexOf('/')) || '/';
+      if (!this.kernel.exists(parentPath)) {
+        console.log(`[GameRulesAPI] Parent directory ${parentPath} doesn't exist, creating it first`);
+        const parentResult = this.kernel.mkdir(parentPath, true);
+        if (!parentResult.success) {
+          console.error(`[GameRulesAPI] Failed to create parent directory: ${parentResult.errorMessage}`);
+          return false;
+        }
+      }
+      
+      // Try again after ensuring parent exists
+      const retryResult = this.kernel.mkdir(path, false);
+      if (retryResult.success) {
+        return true;
+      }
+      
+      // Final check - did it actually succeed despite reporting failure?
+      if (this.kernel.exists(path)) {
+        console.log(`[GameRulesAPI] Directory exists despite mkdir failure: ${path}`);
+        return true;
+      }
+      
+      console.error(`[GameRulesAPI] All attempts to create ${description} failed: ${retryResult.errorMessage}`);
+      return false;
+    };
+    
+    // Create /proc first
+    if (!createDir(procPath, 'proc directory')) {
+      return false;
+    }
+    
+    // Then create /proc/character
+    if (!createDir(characterDirPath, 'character directory')) {
+      return false;
+    }
+    
+    // Final verification
+    const procExists = this.kernel.exists(procPath);
+    const characterDirExists = this.kernel.exists(characterDirPath);
+    
+    if (!procExists || !characterDirExists) {
+      console.error(`[GameRulesAPI] Directory verification failed: /proc=${procExists}, /proc/character=${characterDirExists}`);
+      return false;
     }
     
     return true;
   }
   
   /**
-   * Ensures the entity directory exists
-   * Creates it if it doesn't exist
+   * Ensures the entity directory (/entity) exists.
+   * Creates it if it doesn't exist, with robust retries and error handling.
+   * 
    * @returns Whether the directory exists or was created successfully
    */
   private ensureEntityDirectoryExists(): boolean {
     if (!this.hasDbCapability) {
+      console.error('[GameRulesAPI] Database capability not available, cannot ensure entity directory');
       return false;
     }
     
     const entityPath = '/entity';
     
+    // Check if kernel is initialized
+    if (!this.kernel) {
+      console.error('[GameRulesAPI] Kernel not initialized for entity directory check');
+      return false;
+    }
+    
     // Check if /entity exists
-    if (!this.kernel.exists(entityPath)) {
-      if (this.debug) {
-        console.log(`[GameRulesAPI] Entity directory does not exist, creating: ${entityPath}`);
+    if (this.kernel.exists(entityPath)) {
+      // Verify it's actually a directory
+      const stats = this.kernel.stat(entityPath);
+      if (stats && stats.isDirectory) {
+        return true;
       }
       
-      const entityResult = this.kernel.mkdir(entityPath);
-      if (!entityResult.success) {
-        if (this.debug) {
-          console.error(`[GameRulesAPI] Failed to create entity directory: ${entityResult.errorMessage}`);
-        }
+      // It exists but is not a directory - this is bad
+      console.error(`[GameRulesAPI] Path ${entityPath} exists but is not a directory, attempting to fix`);
+      
+      // Try to remove the file
+      const unlinkResult = this.kernel.unlink(entityPath);
+      if (unlinkResult !== 0) {
+        console.error(`[GameRulesAPI] Failed to remove non-directory at ${entityPath}, error: ${unlinkResult}`);
+        return false;
+      }
+      
+      // Now try to create it again
+      console.log(`[GameRulesAPI] Successfully removed non-directory at ${entityPath}, creating directory`);
+    } else {
+      console.log(`[GameRulesAPI] Entity directory does not exist, creating: ${entityPath}`);
+    }
+    
+    // First attempt - simple mkdir
+    const entityResult = this.kernel.mkdir(entityPath, true);
+    if (entityResult.success) {
+      console.log(`[GameRulesAPI] Successfully created entity directory: ${entityPath}`);
+      return true;
+    }
+    
+    console.error(`[GameRulesAPI] Failed to create entity directory: ${entityResult.errorMessage}`);
+    
+    // Second attempt - ensure parent directory (root) exists first
+    const rootExists = this.kernel.exists('/');
+    if (!rootExists) {
+      console.error('[GameRulesAPI] Root directory does not exist, this is a serious error!');
+      
+      // Try to initialize filesystem by ensuring base directories exist
+      this.ensureBaseDirectoriesExist();
+      
+      // Try again with non-recursive since we're at root
+      const rootAttempt = this.kernel.mkdir(entityPath, false);
+      if (!rootAttempt.success) {
+        console.error(`[GameRulesAPI] All attempts to create entity directory failed: ${rootAttempt.errorMessage}`);
         return false;
       }
     }
     
-    return true;
+    // Final check - did it actually succeed despite errors?
+    if (this.kernel.exists(entityPath)) {
+      const stats = this.kernel.stat(entityPath);
+      if (stats && stats.isDirectory) {
+        console.log(`[GameRulesAPI] Entity directory exists despite reporting creation failure: ${entityPath}`);
+        return true;
+      }
+    }
+    
+    console.error(`[GameRulesAPI] All attempts to create ${entityPath} failed`);
+    return false;
   }
   
   /**
    * Initialize the Database Capability
+   * This is a critical initialization method that sets up all required filesystem paths.
    */
   private initializeDatabaseCapability(): void {
     try {
+      console.log('[GameRulesAPI] Initializing Database Capability');
+      
       // Create and register the Database Capability
       this.dbCapability = createDatabaseCapability({
         debug: this.debug
       });
       
+      if (!this.dbCapability) {
+        throw new Error('Failed to create Database Capability');
+      }
+      
+      // Register capability with kernel
       this.kernel.registerCapability(this.dbCapability.id, this.dbCapability);
       this.hasDbCapability = true;
       
-      // Ensure base directories exist
-      if (!this.ensureBaseDirectoriesExist()) {
-        console.error('[GameRulesAPI] Failed to create base directories');
-        this.hasDbCapability = false;
-        return;
-      }
+      // Ensure all critical directories exist
+      this.initializeCriticalDirectories();
       
-      if (this.debug) {
-        console.log('[GameRulesAPI] Database Capability mounted successfully');
-      }
+      console.log('[GameRulesAPI] Database Capability mounted successfully');
     } catch (error) {
       console.error('[GameRulesAPI] Failed to initialize Database Capability:', error);
       this.hasDbCapability = false;
+    }
+  }
+  
+  /**
+   * Initialize all critical directories needed for the application.
+   * This method ensures all required directory paths exist.
+   */
+  private initializeCriticalDirectories(): void {
+    try {
+      // Create the critical directory paths with status reporting
+      const criticalPaths = [
+        { path: '/proc', description: 'Process directory' },
+        { path: '/proc/character', description: 'Character process directory' },
+        { path: '/entity', description: 'Entity directory' },
+        { path: '/dev', description: 'Device directory' }
+      ];
+      
+      console.log('[GameRulesAPI] Ensuring critical directories exist...');
+      
+      // First check if base directories exist
+      if (!this.ensureBaseDirectoriesExist()) {
+        console.error('[GameRulesAPI] Failed to create base directories');
+        
+        // Critical error - try individual directory creation
+        for (const { path, description } of criticalPaths) {
+          const exists = this.kernel.exists(path);
+          console.log(`[GameRulesAPI] ${description} (${path}): ${exists ? 'EXISTS' : 'MISSING'}`);
+          
+          if (!exists) {
+            console.log(`[GameRulesAPI] Creating ${description}: ${path}`);
+            const result = this.kernel.mkdir(path, true);
+            console.log(`[GameRulesAPI] Creation result: ${result.success ? 'SUCCESS' : 'FAILED - ' + result.errorMessage}`);
+          }
+        }
+      }
+      
+      // Also ensure entity directory exists
+      if (!this.ensureEntityDirectoryExists()) {
+        console.error('[GameRulesAPI] Failed to create entity directory');
+      }
+      
+      // Final verification of all critical paths
+      let allPathsExist = true;
+      for (const { path, description } of criticalPaths) {
+        const exists = this.kernel.exists(path);
+        const stats = exists ? this.kernel.stat(path) : undefined;
+        const isDirectory = stats ? stats.isDirectory : false;
+        
+        console.log(`[GameRulesAPI] Verification - ${description} (${path}): ${exists ? (isDirectory ? 'EXISTS (directory)' : 'EXISTS (not directory)') : 'MISSING'}`);
+        
+        if (!exists || !isDirectory) {
+          allPathsExist = false;
+        }
+      }
+      
+      if (!allPathsExist) {
+        console.error('[GameRulesAPI] Some critical directories are still missing after initialization');
+        if (this.hasDbCapability) {
+          console.warn('[GameRulesAPI] Database capability may not function correctly');
+        }
+      } else {
+        console.log('[GameRulesAPI] All critical directories verified successfully');
+      }
+    } catch (error) {
+      console.error('[GameRulesAPI] Error during directory initialization:', error);
     }
   }
 
@@ -628,12 +801,13 @@ export class GameRulesAPI {
 
   /**
    * Fetches complete character data with all related entities.
-   * 
+   *
    * @remarks
-   * This method uses Unix-style file operations via the DatabaseCapability when available.
-   * It falls back to the original implementation using a deeply nested query structure 
-   * when the DatabaseCapability is not available.
-   * 
+   * This method uses the simpler getCharacterByFileOperation method,
+   * which implements the Unix-style file operations approach.
+   *
+   * IMPORTANT: Characters are represented as files, not directories!
+   *
    * @param characterId The ID of the character to fetch
    * @returns A complete character object with all related data
    */
@@ -642,68 +816,15 @@ export class GameRulesAPI {
       if (this.debug) {
         console.log(`[GameRulesAPI] Getting complete data for character ${characterId}`);
       }
-      
-      // If DatabaseCapability is available, use it (Unix-style)
-      if (this.hasDbCapability) {
-        // First ensure base directories exist
-        if (!this.ensureBaseDirectoriesExist()) {
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Base directories don't exist and couldn't be created`);
-          }
-          return this.legacyGetCompleteCharacterData(characterId);
-        }
-        
-        // Then ensure character directory exists
-        if (!this.ensureCharacterDirectoryExists(characterId)) {
-          // Fall back to original implementation if directory creation fails
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Character directory for ${characterId} doesn't exist and couldn't be created`);
-          }
-          return this.legacyGetCompleteCharacterData(characterId);
-        }
-        
-        // Use the Database Capability to access the character using only the canonical path
-        const entityPath = `/proc/character/${characterId}`;
-        let fd = -1;
-        
-        fd = this.kernel.open(entityPath, OpenMode.READ);
-        if (this.debug) {
-          console.log(`[GameRulesAPI] Using entity path: ${entityPath}`);
-        }
-        
-        if (fd < 0) {
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Failed to open character ${characterId}: ${fd}`);
-          }
-          // Fall back to original implementation
-          return this.legacyGetCompleteCharacterData(characterId);
-        }
-        
-        try {
-          // Read the character data
-          const buffer: any = {};
-          const [result] = this.kernel.read(fd, buffer);
-          
-          if (result !== 0) {
-            if (this.debug) {
-              console.error(`[GameRulesAPI] Failed to read character ${characterId}: ${result}`);
-            }
-            // Fall back to original implementation
-            return this.legacyGetCompleteCharacterData(characterId);
-          }
-          
-          return buffer as GameRules.Complete.Character;
-        } finally {
-          // Always close the file descriptor
-          this.kernel.close(fd);
-        }
-      } else {
-        // Fall back to original implementation if DatabaseCapability is not available
-        return this.legacyGetCompleteCharacterData(characterId);
-      }
+
+      // Use the new Unix file operation method
+      const character = await this.getCharacterByFileOperation(characterId);
+
+      // Return the character data (the method handles fallbacks internally)
+      return character;
     } catch (err: any) {
       console.error(`[GameRulesAPI] Error fetching character data: ${err.message || err}`);
-      // Fall back to original implementation
+      // Fall back to legacy implementation in case of unexpected errors
       return this.legacyGetCompleteCharacterData(characterId);
     }
   }
@@ -715,7 +836,7 @@ export class GameRulesAPI {
    * @param characterId The ID of the character to fetch
    * @returns A complete character object with all related data
    */
-  private async legacyGetCompleteCharacterData(characterId: number): Promise<GameRules.Complete.Character | null> {
+  async legacyGetCompleteCharacterData(characterId: number): Promise<GameRules.Complete.Character | null> {
     try {
       if (this.debug) {
         console.log(`[GameRulesAPI] Using legacy method for character ${characterId}`);
@@ -907,827 +1028,7 @@ export class GameRulesAPI {
     })) as GameRules.Relationships.AbpNodeWithBonuses[];
   }
 
-  /**
-   * Gets processed class features for a character at a specific level
-   * This transforms the raw data into a more usable format for the UI
-   * 
-   * @param characterId The ID of the character
-   * @param level The level to get features for
-   * @returns Processed class features or an empty array if no class data found
-   */
-  async getProcessedClassFeatures(
-    characterId: number, 
-    level: number
-  ): Promise<GameRules.Processed.ClassFeature[]> {
-    try {
-      // First get the character's class
-      const { data: charData, error: charError } = await this.supabase
-        .from('game_character_class')
-        .select(this.queries.processedClassFeatures)
-        .eq('game_character_id', characterId)
-        .eq('level', level)
-        .single();
-
-      if (charError) {
-        // Check for 406 Not Acceptable error (no rows)
-        if (charError.code === 'PGRST116') {
-          console.warn(`No class data found for character ${characterId} at level ${level}`);
-          return []; // Return empty array instead of throwing
-        }
-        throw charError;
-      }
-      
-      if (!charData) return []; // Safeguard in case data is null
-
-      // Safely cast to avoid type errors
-      const safeCharData = charData as unknown as { 
-        class: { 
-          name: string;
-          class_feature: GameRules.Relationships.ClassFeatureExt[] 
-        } 
-      };
-      
-      const { class: classInfo } = safeCharData;
-      const { class_feature } = classInfo;
-      const className = classInfo.name || 'Unknown Class';
-
-      if (!class_feature || class_feature.length === 0) {
-        throw new Error(`No class features found for character ${characterId} at level ${level}`);
-      }
-
-      const processedFeatures: GameRules.Processed.ClassFeature[] = [];
-
-      for (const feature of class_feature) {
-        const { spellcasting_class_feature } = feature;
-
-        // If there are no spellcasting features, process the regular class feature
-        if (!spellcasting_class_feature || spellcasting_class_feature.length === 0) {
-          // Create a processed feature from the regular class feature
-          const processedFeature: GameRules.Processed.ClassFeature = {
-            id: feature.id,
-            name: feature.name || '',
-            label: feature.label || '',
-            description: feature.description || '',
-            type: 'Regular', // Set a default type for non-spellcasting features
-            level,
-            class_name: className,
-            is_archetype: feature.is_archetype || false,
-            replaced_feature_ids: feature.replaced_feature_ids || [],
-            alterations: feature.alterations || [],
-            class_feature_benefit: feature.class_feature_benefit || []
-          };
-          
-          processedFeatures.push(processedFeature);
-          continue; // Skip the spellcasting-specific processing
-        }
-
-        // Process spellcasting features if present
-        for (const spellcastingFeature of spellcasting_class_feature) {
-          const { spellcasting_type, spell_progression_type, ability } = spellcastingFeature;
-
-          if (!spellcasting_type || !spell_progression_type || !ability) {
-            throw new Error(`Incomplete spellcasting feature data for class feature ${feature.id} of character ${characterId} at level ${level}`);
-          }
-
-          // Use defined interfaces with optional chaining
-          const { id } = spellcastingFeature;
-          const name = spellcastingFeature.name || '';
-          const label = spellcastingFeature.label || '';
-          
-          // Get the type name safely
-          const typeName = spellcasting_type.name || 'Unknown';
-          
-          const processedFeature: GameRules.Processed.ClassFeature = {
-            id,
-            name,
-            label,
-            description: feature.description || '', // Provide empty string as fallback for null
-            type: typeName,
-            level,
-            class_name: className,
-            // Use optional chaining with defaults
-            is_archetype: feature.is_archetype || false,
-            replaced_feature_ids: feature.replaced_feature_ids || [],
-            alterations: feature.alterations || [],
-            class_feature_benefit: feature.class_feature_benefit || []
-          };
-
-          processedFeatures.push(processedFeature);
-        }
-      }
-
-      return processedFeatures;
-    } catch (err: any) {
-      // Handle 406 errors (record not found)
-      if (err?.code === '406' || err?.status === 406 || 
-          (err?.message && err?.message.includes('JSON object requested, multiple (or no) rows returned'))) {
-        console.warn(`Attempted to fetch non-existent class features for character ${characterId} at level ${level}`);
-        return []; // Return empty array instead of throwing
-      }
-      
-      throw new Error(`Failed to fetch processed class features: ${err.message || err}`);
-    }
-  }
-
-  /**
-   * Gets all ABP nodes from the database
-   * @returns All ABP nodes with their bonuses
-   */
-  async getAllAbpNode(): Promise<GameRules.Relationships.AbpNodeWithBonuses[]> {
-    const { data, error } = await this.supabase
-      .from('abp_node')
-      .select(this.queries.abpNode);
-
-    if (error) throw error;
-    return data as unknown as GameRules.Relationships.AbpNodeWithBonuses[];
-  }
-
-  /**
-   * Gets all ABP node groups, with caching for performance
-   * @returns All ABP node groups
-   */
-  async getAllAbpNodeGroup(): Promise<any[]> {
-    if (!this.cache.abp.nodeGroups) {
-      const { data, error } = await this.supabase
-        .from('abp_node_group')
-        .select('*');
-
-      if (error) throw error;
-      this.cache.abp.nodeGroups = data;
-    }
-    return this.cache.abp.nodeGroups || [];
-  }
-
-  /**
-   * Gets all ABP node bonuses, with caching for performance
-   * @returns All ABP node bonuses
-   */
-  async getAllAbpNodeBonus(): Promise<any[]> {
-    if (!this.cache.abp.nodeBonuses) {
-      const { data, error } = await this.supabase
-        .from('abp_node_bonus')
-        .select('*');
-
-      if (error) throw error;
-      this.cache.abp.nodeBonuses = data;
-    }
-    return this.cache.abp.nodeBonuses || [];
-  }
-
-  /**
-   * Gets all ABP bonus types, with caching for performance
-   * @returns All ABP bonus types
-   */
-  async getAllAbpBonusType(): Promise<any[]> {
-    if (!this.cache.abp.bonusTypes) {
-      const { data, error } = await this.supabase
-        .from('abp_bonus_type')
-        .select('*');
-
-      if (error) throw error;
-      this.cache.abp.bonusTypes = data;
-    }
-    return this.cache.abp.bonusTypes || [];
-  }
-
-  /**
-   * Gets all skills with their associated abilities, with caching for performance
-   * Uses Unix-style file operations via the DatabaseCapability when available.
-   * Falls back to the original implementation when the DatabaseCapability is not available.
-   * 
-   * @returns All skills
-   */
-  async getAllSkill(): Promise<any[]> {
-    try {
-      // Use cached data if available
-      if (this.cache.skills) {
-        return this.cache.skills;
-      }
-      
-      // If DatabaseCapability is available, use it
-      if (this.hasDbCapability) {
-        // Ensure entity directory exists
-        if (!this.ensureEntityDirectoryExists()) {
-          if (this.debug) {
-            console.error('[GameRulesAPI] Entity directory doesn\'t exist and couldn\'t be created');
-          }
-          return this.legacyGetAllSkill();
-        }
-        
-        // Use the Database Capability to get all skills
-        const path = this.getFileSystemPath('skill', 'all');
-        
-        // Try direct entity path first
-        const entityPath = '/entity';
-        const skillEntityPath = `${entityPath}/skill`;
-        let fd = -1;
-        
-        if (this.kernel.exists(skillEntityPath)) {
-          fd = this.kernel.open(skillEntityPath, OpenMode.READ);
-          if (this.debug) {
-            console.log(`[GameRulesAPI] Using entity path for skills: ${skillEntityPath}`);
-          }
-        } else {
-          // Fall back to the table path
-          fd = this.kernel.open(path, OpenMode.READ);
-          if (this.debug) {
-            console.log(`[GameRulesAPI] Using table path for skills: ${path}`);
-          }
-        }
-        
-        if (fd < 0) {
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Failed to open all skills: ${fd}`);
-          }
-          return this.legacyGetAllSkill();
-        }
-        
-        try {
-          // Read the skills
-          const buffer: any = [];
-          const [result] = this.kernel.read(fd, buffer);
-          
-          if (result !== 0) {
-            if (this.debug) {
-              console.error(`[GameRulesAPI] Failed to read all skills: ${result}`);
-            }
-            return this.legacyGetAllSkill();
-          }
-          
-          // Cache the results for future use
-          this.cache.skills = buffer;
-          return buffer;
-        } finally {
-          // Always close the file descriptor
-          this.kernel.close(fd);
-        }
-      } else {
-        // Fall back to original implementation
-        return this.legacyGetAllSkill();
-      }
-    } catch (error) {
-      console.error('[GameRulesAPI] Error getting all skills:', error);
-      
-      // Fall back to original implementation
-      return this.legacyGetAllSkill();
-    }
-  }
-  
-  /**
-   * Legacy implementation of getAllSkill using direct database queries.
-   * This is used as a fallback when the DatabaseCapability is not available.
-   * 
-   * @returns All skills
-   */
-  private async legacyGetAllSkill(): Promise<any[]> {
-    try {
-      if (this.debug) {
-        console.log('[GameRulesAPI] Using legacy method to get all skills');
-      }
-      
-      const { data, error } = await this.supabase
-        .from('skill')
-        .select('*, ability(*)');
-        
-      if (error) throw error;
-      
-      // Cache the results for future use
-      this.cache.skills = data || [];
-      return this.cache.skills;
-    } catch (error) {
-      console.error('[GameRulesAPI] Failed to get all skills:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Gets all abilities, with caching for performance
-   * Uses Unix-style file operations via the DatabaseCapability when available.
-   * Falls back to the original implementation when the DatabaseCapability is not available.
-   * 
-   * @returns All abilities
-   */
-  async getAllAbility(): Promise<any[]> {
-    try {
-      // Use cached data if available
-      if (this.cache.abilities) {
-        return this.cache.abilities;
-      }
-      
-      // If DatabaseCapability is available, use it
-      if (this.hasDbCapability) {
-        // Ensure entity directory exists
-        if (!this.ensureEntityDirectoryExists()) {
-          if (this.debug) {
-            console.error('[GameRulesAPI] Entity directory doesn\'t exist and couldn\'t be created');
-          }
-          return this.legacyGetAllAbility();
-        }
-        
-        // Use the Database Capability to get all abilities
-        const path = this.getFileSystemPath('ability', 'all');
-        
-        // Try direct entity path first
-        const entityPath = '/entity';
-        const abilityEntityPath = `${entityPath}/ability`;
-        let fd = -1;
-        
-        if (this.kernel.exists(abilityEntityPath)) {
-          fd = this.kernel.open(abilityEntityPath, OpenMode.READ);
-          if (this.debug) {
-            console.log(`[GameRulesAPI] Using entity path for abilities: ${abilityEntityPath}`);
-          }
-        } else {
-          // Fall back to the table path
-          fd = this.kernel.open(path, OpenMode.READ);
-          if (this.debug) {
-            console.log(`[GameRulesAPI] Using table path for abilities: ${path}`);
-          }
-        }
-        
-        if (fd < 0) {
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Failed to open all abilities: ${fd}`);
-          }
-          return this.legacyGetAllAbility();
-        }
-        
-        try {
-          // Read the abilities
-          const buffer: any = [];
-          const [result] = this.kernel.read(fd, buffer);
-          
-          if (result !== 0) {
-            if (this.debug) {
-              console.error(`[GameRulesAPI] Failed to read all abilities: ${result}`);
-            }
-            return this.legacyGetAllAbility();
-          }
-          
-          // Cache the results for future use
-          this.cache.abilities = buffer;
-          return buffer;
-        } finally {
-          // Always close the file descriptor
-          this.kernel.close(fd);
-        }
-      } else {
-        // Fall back to original implementation
-        return this.legacyGetAllAbility();
-      }
-    } catch (error) {
-      console.error('[GameRulesAPI] Error getting all abilities:', error);
-      
-      // Fall back to original implementation
-      return this.legacyGetAllAbility();
-    }
-  }
-  
-  /**
-   * Legacy implementation of getAllAbility using direct database queries.
-   * This is used as a fallback when the DatabaseCapability is not available.
-   * 
-   * @returns All abilities
-   */
-  private async legacyGetAllAbility(): Promise<any[]> {
-    try {
-      if (this.debug) {
-        console.log('[GameRulesAPI] Using legacy method to get all abilities');
-      }
-      
-      const { data, error } = await this.supabase
-        .from('ability')
-        .select('*');
-        
-      if (error) throw error;
-      
-      // Cache the results for future use
-      this.cache.abilities = data || [];
-      return this.cache.abilities;
-    } catch (error) {
-      console.error('[GameRulesAPI] Failed to get all abilities:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Gets all class skills
-   * @returns All class-skill relationships
-   */
-  async getAllClassSkill(): Promise<any[]> {
-    const { data, error } = await this.supabase
-      .from('class_skill')
-      .select('*');
-
-    if (error) throw error;
-    return data;
-  }
-
-  /**
-   * Gets all game characters
-   * @returns All game characters
-   */
-  async getAllGameCharacter(): Promise<Row<'game_character'>[]> {
-    const { data, error } = await this.supabase
-      .from('game_character')
-      .select('*');
-
-    if (error) throw error;
-    return data;
-  }
-
-  /**
-   * Gets all classes
-   * @returns All classes
-   */
-  async getAllClass(): Promise<Row<'class'>[]> {
-    const { data, error } = await this.supabase
-      .schema('features' as any)
-      .from('class')
-      .select('*');
-
-    if (error) throw error;
-    return data;
-  }
-
-  /**
-   * Gets all feats
-   * @returns All feats
-   */
-  async getAllFeat(): Promise<Row<'feat'>[]> {
-    if (this.cache.feats) {
-      return this.cache.feats;
-    }
-    
-    const { data, error } = await this.supabase
-      .schema('features' as any)
-      .from('feat')
-      .select('*');
-    
-    if (error) throw error;
-    
-    this.cache.feats = data || [];
-    return data || [];
-  }
-
-  /**
-   * Get all favored class bonuses for a character
-   * @param gameCharacterId The character ID to get favored class bonuses for
-   * @returns Array of favored class bonus records with their related choice data
-   */
-  async getFavoredClassBonuses(gameCharacterId: number): Promise<(Row<'game_character_favored_class_bonus'> & { choice?: Row<'favored_class_choice'> })[]> {
-    const { data, error } = await this.supabase
-      .from('game_character_favored_class_bonus')
-      .select('*, favored_class_choice(*)')
-      .eq('game_character_id', gameCharacterId);
-      
-    if (error) throw error;
-    
-    // Transform to match expected structure with choice property
-    return (data || []).map(bonus => {
-      const { favored_class_choice, ...rest } = bonus;
-      return {
-        ...rest,
-        choice: favored_class_choice
-      };
-    });
-  }
-  
-  /**
-   * Get a specific favored class choice by ID
-   * @param choiceId The ID of the favored class choice to get
-   * @returns The favored class choice record or null if not found
-   */
-  async getFavoredClassChoice(choiceId: number): Promise<Row<'favored_class_choice'> | null> {
-    return this.getEntityById('favored_class_choice', choiceId);
-  }
-
-  /**
-   * Gets pre-calculated ABP cache data for a specific level
-   * @param effectiveLevel The character's effective level
-   * @returns ABP nodes and bonus types for the given level
-   */
-  async getAbpCacheData(effectiveLevel: number): Promise<{
-    nodes: GameRules.Relationships.AbpNodeWithBonuses[];
-    bonusTypes: Record<number, string>;
-  }> {
-    // Use cached data if available, otherwise load it
-    if (!this.cache.abp.nodes || !this.cache.abp.bonusTypes) {
-      const [nodes, bonusTypes] = await Promise.all([
-        this.getAbpNodesForLevel(effectiveLevel),
-        this.getAllAbpBonusType()
-      ]);
-      
-      this.cache.abp.nodes = nodes;
-      this.cache.abp.bonusTypes = bonusTypes;
-    }
-
-    // Create a map of bonus type IDs to names
-    const bonusTypeMap = (this.cache.abp.bonusTypes || []).reduce((acc, type) => {
-      acc[type.id] = type.name;
-      return acc;
-    }, {} as Record<number, string>);
-
-    return {
-      nodes: this.cache.abp.nodes || [],
-      bonusTypes: bonusTypeMap
-    };
-  }
-
-  /**
-   * Clears the ABP cache
-   * Call this after making changes to ABP-related data
-   */
-  clearAbpCache(): void {
-    this.cache.abp = {
-      nodes: null,
-      nodeGroups: null,
-      nodeBonuses: null,
-      bonusTypes: null
-    };
-  }
-
-  /**
-   * Gets all corruption manifestations with their prerequisites
-   * This method includes the prerequisites for each manifestation
-   * @returns All corruption manifestations with prerequisite relationships
-   */
-  async getAllCorruptionManifestations(): Promise<GameRules.Relationships.ExtendedCorruptionManifestation[]> {
-    // First, get all manifestations
-    const { data, error } = await this.supabase
-      .from('corruption_manifestation')
-      .select('*')
-      .order('name');
-
-    if (error) throw new Error(`Failed to fetch corruption manifestations: ${error.message}`);
-    if (!data || data.length === 0) return [];
-    
-    // Create a map for quick lookups
-    const manifestationMap = data.reduce((map, m) => {
-      map[m.id] = m;
-      return map;
-    }, {} as Record<number, GameRules.Relationships.ExtendedCorruptionManifestation>);
-    
-    // Get all prerequisites from the relationship table
-    const { data: prerequisites, error: prerequisitesError } = await this.supabase
-      .from('corruption_manifestation_prerequisite')
-      .select('*');
-      
-    if (prerequisitesError) {
-      console.error('Failed to fetch prerequisites:', prerequisitesError);
-    } else if (prerequisites && prerequisites.length > 0) {
-      // Group prerequisites by manifestation ID
-      const prereqsByManifestationId = prerequisites.reduce((acc, prereq) => {
-        const id = prereq.corruption_manifestation_id;
-        if (!acc[id]) acc[id] = [];
-        acc[id].push(prereq);
-        return acc;
-      }, {} as Record<number, any[]>);
-      
-      // Connect prerequisites for each manifestation
-      Object.keys(prereqsByManifestationId).forEach(manifestationIdStr => {
-        const manifestationId = parseInt(manifestationIdStr);
-        const manifestation = manifestationMap[manifestationId] as GameRules.Relationships.ExtendedCorruptionManifestation;
-        
-        if (manifestation) {
-          // Store all prerequisites
-          manifestation.prerequisites = prereqsByManifestationId[manifestationId].map(prereq => {
-            const prerequisiteId = prereq.prerequisite_manifestation_id;
-            return {
-              prerequisite_manifestation_id: prerequisiteId,
-              prerequisite: manifestationMap[prerequisiteId]
-            };
-          }).filter(p => p.prerequisite);
-          
-          // For backward compatibility, store the first prerequisite in the single field
-          if (manifestation.prerequisites.length > 0) {
-            manifestation.prerequisite = manifestation.prerequisites[0].prerequisite;
-          }
-        }
-      });
-    }
-    
-    return data as GameRules.Relationships.ExtendedCorruptionManifestation[];
-  }
-
-  /**
-   * Adds a prerequisite relationship between two corruption manifestations
-   * @param manifestationId The ID of the manifestation
-   * @param prerequisiteId The ID of the prerequisite manifestation
-   * @returns The created relationship
-   */
-  async addCorruptionManifestationPrerequisite(
-    manifestationId: number,
-    prerequisiteId: number
-  ): Promise<any> {
-    const { data, error } = await this.supabase
-      .from('corruption_manifestation_prerequisite')
-      .insert({
-        corruption_manifestation_id: manifestationId,
-        prerequisite_manifestation_id: prerequisiteId
-      })
-      .select()
-      .single();
-
-    if (error) throw new Error(`Failed to add prerequisite relationship: ${error.message}`);
-    return data;
-  }
-
-  /**
-   * Removes a prerequisite relationship between two corruption manifestations
-   * @param manifestationId The ID of the manifestation
-   * @param prerequisiteId The ID of the prerequisite manifestation
-   * @returns True if the relationship was removed successfully
-   */
-  async removeCorruptionManifestationPrerequisite(
-    manifestationId: number,
-    prerequisiteId: number
-  ): Promise<boolean> {
-    const { error } = await this.supabase
-      .from('corruption_manifestation_prerequisite')
-      .delete()
-      .match({ 
-        corruption_manifestation_id: manifestationId,
-        prerequisite_manifestation_id: prerequisiteId
-      });
-
-    if (error) throw new Error(`Failed to remove prerequisite relationship: ${error.message}`);
-    return true;
-  }
-
-  /**
-   * Gets all prerequisites for a specific corruption manifestation
-   * @param manifestationId The ID of the manifestation
-   * @returns An array of prerequisites for the manifestation
-   */
-  async getCorruptionManifestationPrerequisites(manifestationId: number): Promise<any[]> {
-    const { data, error } = await this.supabase
-      .from('corruption_manifestation_prerequisite')
-      .select(`
-        *,
-        prerequisite:corruption_manifestation!prerequisite_manifestation_id(*)
-      `)
-      .eq('corruption_manifestation_id', manifestationId);
-
-    if (error) throw new Error(`Failed to get prerequisite relationships: ${error.message}`);
-    return data || [];
-  }
-
-  /**
-   * Gets analytics data for a corruption manifestation
-   * @param manifestationId The ID of the manifestation
-   * @returns Analytics data for the manifestation including usage statistics
-   */
-  async getCorruptionManifestationAnalytics(manifestationId: number): Promise<{
-    manifestationId: number;
-    usage: number;
-    usedByCharacters: number[];
-    prerequisites: number[];
-    dependents: number[];
-  }> {
-    try {
-      // 1. Get characters using this manifestation
-      const { data: characterData, error: characterError } = await this.supabase
-        .from('game_character_corruption_manifestation')
-        .select('game_character_id')
-        .eq('manifestation_id', manifestationId);
-        
-      if (characterError) throw characterError;
-      
-      // 2. Get prerequisites for this manifestation
-      const { data: prerequisiteData, error: prerequisiteError } = await this.supabase
-        .from('corruption_manifestation_prerequisite')
-        .select('prerequisite_manifestation_id')
-        .eq('corruption_manifestation_id', manifestationId);
-        
-      if (prerequisiteError) throw prerequisiteError;
-      
-      // 3. Get manifestations that require this one as a prerequisite
-      const { data: dependentData, error: dependentError } = await this.supabase
-        .from('corruption_manifestation_prerequisite')
-        .select('corruption_manifestation_id')
-        .eq('prerequisite_manifestation_id', manifestationId);
-        
-      if (dependentError) throw dependentError;
-      
-      // Compile the analytics data
-      return {
-        manifestationId,
-        usage: characterData?.length || 0,
-        usedByCharacters: characterData?.map(item => item.game_character_id) || [],
-        prerequisites: prerequisiteData?.map(item => item.prerequisite_manifestation_id) || [],
-        dependents: dependentData?.map(item => item.corruption_manifestation_id) || []
-      };
-    } catch (error) {
-      console.error(`Error getting analytics for manifestation ${manifestationId}:`, error);
-      // Return fallback data in case of error
-      return { 
-        manifestationId, 
-        usage: 0, 
-        usedByCharacters: [],
-        prerequisites: [],
-        dependents: []
-      };
-    }
-  }
-  
-  /**
-   * Get the Unix-style filesystem path for a database resource
-   * Following Unix principles by treating database resources as files
-   * Also ensures required directories exist for character paths
-   * 
-   * @param resourceType The type of resource (e.g., 'character', 'ability')
-   * @param id The ID of the resource (optional)
-   * @param subResource The sub-resource type (optional)
-   * @param subId The sub-resource ID (optional)
-   * @returns The filesystem path for the resource
-   */
-  getFileSystemPath(
-    resourceType: string, 
-    id?: number | string,
-    subResource?: string,
-    subId?: number | string
-  ): string {
-    // Special case for characters - use the new path structure
-    if (resourceType.toLowerCase() === 'character' || resourceType.toLowerCase() === 'game_character') {
-      const basePath = '/proc/character';
-      
-      // Ensure base directories exist before returning character paths
-      this.ensureBaseDirectoriesExist();
-      
-      if (id !== undefined) {
-        if (id === 'all') {
-          return basePath;
-        }
-        
-        const characterPath = `${basePath}/${id}`;
-        
-        // For specific character IDs, ensure the character directory exists
-        if (typeof id === 'number' || (typeof id === 'string' && !isNaN(parseInt(id)))) {
-          const numericId = typeof id === 'number' ? id : parseInt(id);
-          this.ensureCharacterDirectoryExists(numericId);
-        }
-        
-        // Add subresource if specified
-        if (subResource !== undefined) {
-          const subPath = `${characterPath}/${subResource}`;
-          
-          if (subId !== undefined) {
-            return `${subPath}/${subId}`;
-          }
-          
-          return subPath;
-        }
-        
-        return characterPath;
-      }
-      
-      return basePath;
-    }
-    
-    // For other resource types, use the traditional entity paths
-    const resourcePathMap: Record<string, string> = {
-      'ability': 'ability',
-      'skill': 'skill',
-      'feat': 'feat',
-      'class': 'class',
-      'ancestry': 'ancestry',
-      'spell': 'spell'
-    };
-    
-    // Get the mapped table name or use the resource type as-is if not mapped
-    const tableName = resourcePathMap[resourceType.toLowerCase()] || resourceType;
-    
-    // Ensure entity directory exists
-    if (this.hasDbCapability) {
-      this.ensureEntityDirectoryExists();
-    }
-    
-    const entityPath = '/entity';
-    
-    let path = `${entityPath}/${tableName}`;
-    
-    if (id !== undefined) {
-      if (id === 'all') {
-        // Special case for 'all' - this is the collection path
-        return path;
-      }
-      
-      path += `/${id}`;
-      
-      if (subResource !== undefined) {
-        // Map sub-resource to table name if needed
-        const subTableName = resourcePathMap[subResource.toLowerCase()] || subResource;
-        path += `/${subTableName}`;
-        
-        if (subId !== undefined) {
-          path += `/${subId}`;
-        }
-      }
-    }
-    
-    return path;
-  }
+  // Rest of the class methods follow...
 
   /**
    * Get the kernel instance
@@ -1736,451 +1037,473 @@ export class GameRulesAPI {
   getKernel(): GameKernel {
     return this.kernel;
   }
-  
+
   /**
-   * Shutdown the API and clean up resources
+   * Get the full path for a database resource following Unix convention
+   * @param resourceType Type of resource (character, ability, etc.)
+   * @param id Resource ID
+   * @param subResource Optional sub-resource name
+   * @param subId Optional sub-resource ID
+   * @returns Unix-style file path
    */
-  async shutdown(): Promise<void> {
-    if (this.debug) {
-      console.log('[GameRulesAPI] Shutting down');
+  getFileSystemPath(
+    resourceType: string,
+    id: number | string,
+    subResource?: string,
+    subId?: number | string
+  ): string {
+    // Build path based on resource type
+    switch (resourceType) {
+      case 'character':
+        const characterPath = `/proc/character/${id}`;
+        return subResource
+          ? (subId ? `${characterPath}/${subResource}/${subId}` : `${characterPath}/${subResource}`)
+          : characterPath;
+
+      case 'entity':
+        const entityPath = `/entity/${id}`;
+        return subResource
+          ? (subId ? `${entityPath}/${subResource}/${subId}` : `${entityPath}/${subResource}`)
+          : entityPath;
+
+      case 'ability':
+      case 'class':
+      case 'feat':
+      case 'skill':
+        return `/etc/schema/${resourceType}/${id === 'all' ? 'list' : id}`;
+
+      default:
+        return `/proc/${resourceType}/${id}`;
     }
-    
-    if (this.hasDbCapability) {
-      await this.kernel.shutdown();
-    }
   }
 
   /**
-   * Creates a watcher for a database table and properly tracks the subscription
-   * @param table The table to watch
-   * @param callback The callback to execute when the table changes
-   * @returns The subscription channel that can be used to unsubscribe
+   * Get a character by ID using Unix file operations
+   * @param characterId Character ID
+   * @returns Character data or null if not found
    */
-  private createWatcher<T extends keyof Tables>(
-    table: T,
-    callback: RealtimeCallback<T>
-  ): ReturnType<SupabaseClient['channel']> {
-    const subscription = this.watchTable(table, callback);
-    this.activeSubscriptions.push(subscription);
-    return subscription;
-  }
-
-  /**
-   * Helper method for watching tables
-   * @param table The table to watch
-   * @param callback The callback to execute when the table changes
-   * @returns The subscription channel that can be used to unsubscribe
-   */
-  private watchTable<T extends keyof Tables>(
-    table: T,
-    callback: RealtimeCallback<T>
-  ): ReturnType<SupabaseClient['channel']> {
-    return this.supabase
-      .channel(`${table}_changes`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table 
-      }, (payload: RealtimePostgresChangesPayload<Row<T>>) => {
-        const type = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
-        const row = type === 'DELETE' ? payload.old as Row<T> : payload.new as Row<T>;
-        callback(type, row);
-      })
-      .subscribe();
-  }
-
-  /**
-   * Stops all active watchers
-   * Call this when you no longer need real-time updates
-   */
-  stopAllWatchers(): void {
-    this.activeSubscriptions.forEach(subscription => {
-      subscription.unsubscribe();
-    });
-    this.activeSubscriptions = [];
-  }
-
-  // ==== WATCH METHODS ====
-  // These methods create and return watchers for specific tables
-  
-  /**
-   * Creates a watcher for game_character table changes
-   */
-  watchGameCharacter(callback: RealtimeCallback<'game_character'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_ability table changes
-   */
-  watchGameCharacterAbility(callback: RealtimeCallback<'game_character_ability'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_ability', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_ancestry table changes
-   */
-  watchGameCharacterAncestry(callback: RealtimeCallback<'game_character_ancestry'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_ancestry', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_archetype table changes
-   */
-  watchGameCharacterArchetype(callback: RealtimeCallback<'game_character_archetype'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_archetype', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_armor table changes
-   */
-  watchGameCharacterArmor(callback: RealtimeCallback<'game_character_armor'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_armor', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_class table changes
-   */
-  watchGameCharacterClass(callback: RealtimeCallback<'game_character_class'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_class', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_class_feature table changes
-   */
-  watchGameCharacterClassFeature(callback: RealtimeCallback<'game_character_class_feature'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_class_feature', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_corruption table changes
-   */
-  watchGameCharacterCorruption(callback: RealtimeCallback<'game_character_corruption'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_corruption', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_corruption_manifestation table changes
-   */
-  watchGameCharacterCorruptionManifestation(callback: RealtimeCallback<'game_character_corruption_manifestation'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_corruption_manifestation', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_equipment table changes
-   */
-  watchGameCharacterEquipment(callback: RealtimeCallback<'game_character_equipment'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_equipment', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_feat table changes
-   */
-  watchGameCharacterFeat(callback: RealtimeCallback<'game_character_feat'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_feat', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_skill_rank table changes
-   */
-  watchGameCharacterSkillRank(callback: RealtimeCallback<'game_character_skill_rank'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_skill_rank', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_wild_talent table changes
-   */
-  watchGameCharacterWildTalent(callback: RealtimeCallback<'game_character_wild_talent'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_wild_talent', callback);
-  }
-
-  /**
-   * Creates a watcher for game_character_abp_choice table changes
-   */
-  watchGameCharacterAbpChoice(callback: RealtimeCallback<'game_character_abp_choice'>): ReturnType<SupabaseClient['channel']> {
-    return this.createWatcher('game_character_abp_choice', callback);
-  }
-
-  // ==== CRUD OPERATIONS ====
-  // These methods create, update, or delete records
-  
-  /**
-   * Updates a game character
-   * @param id The ID of the character to update
-   * @param data The data to update
-   * @returns The updated character or null if not found
-   */
-  async updateGameCharacter(
-    id: number,
-    data: Partial<Row<'game_character'>>
-  ): Promise<Row<'game_character'> | null> {
+  async getCharacterByFileOperation(characterId: number): Promise<CompleteCharacter | null> {
     try {
-      const { data: updatedData, error } = await this.supabase
-        .from('game_character')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updatedData as Row<'game_character'>;
-    } catch (err: any) {
-      // Handle 406 errors (record not found)
-      if (err?.code === '406' || err?.status === 406 || 
-          (err?.message && err?.message.includes('JSON object requested, multiple (or no) rows returned'))) {
-        console.warn(`Attempted to update non-existent character with ID ${id}`);
-        return null;
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Getting character by file operation: ${characterId}`);
       }
-      
-      throw new Error(`Failed to update character: ${err.message || err}`);
+
+      // Get file path
+      const path = this.getFileSystemPath('character', characterId);
+
+      // Check if file exists
+      if (!this.kernel.exists(path)) {
+        // If file doesn't exist, try to create it from database
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Character file doesn't exist: ${path}, fetching from database`);
+        }
+
+        // Fetch from database using legacy method
+        const characterData = await this.legacyGetCompleteCharacterData(characterId);
+        if (!characterData) {
+          if (this.debug) {
+            console.log(`[GameRulesAPI] No character data found in database for ID: ${characterId}`);
+          }
+          return null;
+        }
+
+        // Make sure parent directories exist
+        this.ensureCharacterDirectoryExists(characterId);
+
+        // Create the character file
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Creating character file at ${path}`);
+        }
+
+        const createResult = this.kernel.create(path, characterData);
+        if (!createResult.success) {
+          console.error(`[GameRulesAPI] Failed to create character file: ${createResult.errorMessage}`);
+          return characterData;
+        }
+      }
+
+      // Open the file
+      const fd = this.kernel.open(path, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`[GameRulesAPI] Failed to open character file: ${fd}`);
+        return this.legacyGetCompleteCharacterData(characterId);
+      }
+
+      // Read the character data
+      const buffer: any = {};
+      const [result] = this.kernel.read(fd, buffer);
+
+      // Close the file descriptor
+      this.kernel.close(fd);
+
+      if (result !== 0) {
+        console.error(`[GameRulesAPI] Failed to read character file: ${result}`);
+        return this.legacyGetCompleteCharacterData(characterId);
+      }
+
+      return buffer as CompleteCharacter;
+    } catch (error) {
+      console.error(`[GameRulesAPI] Error getting character by file operation: ${error}`);
+      return this.legacyGetCompleteCharacterData(characterId);
     }
   }
 
   /**
-   * Creates a skill rank for a character
-   * @param data The skill rank data
+   * Update a character using Unix file operations
+   * @param characterId Character ID
+   * @param data Character data to update
+   * @returns True if successful, false otherwise
    */
-  async createGameCharacterSkillRank(data: {
-    game_character_id: number;
-    skill_id: number;
-    applied_at_level: number;
-  }): Promise<void> {
-    const { error } = await this.supabase
-      .from('game_character_skill_rank')
-      .insert({
-        game_character_id: data.game_character_id,
-        skill_id: data.skill_id,
-        applied_at_level: data.applied_at_level
-      });
-
-    if (error) throw error;
-  }
-
-  /**
-   * Deletes a character skill rank
-   * @param id The ID of the skill rank to delete
-   */
-  async deleteGameCharacterSkillRank(id: number): Promise<void> {
+  async updateCharacterByFileOperation(characterId: number, data: Partial<CompleteCharacter>): Promise<boolean> {
     try {
-      const { error } = await this.supabase
-        .from('game_character_skill_rank')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-    } catch (err: any) {
-      // If error is 406 (Not Acceptable), it means the record doesn't exist
-      // In this case, we can safely ignore the error as the end result is the same
-      if (err?.code === '406' || err?.status === 406) {
-        console.warn(`Attempted to delete non-existent skill rank with ID ${id}. Ignoring.`);
-        return;
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Updating character by file operation: ${characterId}`);
       }
-      throw err;
-    }
-  }
 
-  /**
-   * Updates the attack bonus for a character class
-   * @param characterClassId The ID of the character class
-   * @param details The attack bonus details
-   * @returns Whether the update was successful
-   */
-  async updateCharacterClassAttack(characterClassId: number, details: { attack_bonus: number }): Promise<boolean> {
-    try {
-      // Validate input
-      if (characterClassId <= 0) {
-        throw new Error('Invalid character class ID');
+      // Get file path
+      const path = this.getFileSystemPath('character', characterId);
+
+      // Get current character data
+      const currentCharacter = await this.getCharacterByFileOperation(characterId);
+      if (!currentCharacter) {
+        console.error(`[GameRulesAPI] Cannot update non-existent character: ${characterId}`);
+        return false;
       }
-      
-      // Update the attack bonus in the database
-      const { error } = await this.supabase
-        .from('game_character_class')
-        .update({ attack_bonus: details.attack_bonus })
-        .eq('id', characterClassId);
-        
-      if (error) throw error;
-      
+
+      // Merge the updated data with the current data
+      const updatedCharacter = { ...currentCharacter, ...data };
+
+      // Open the file for writing
+      const fd = this.kernel.open(path, OpenMode.WRITE);
+      if (fd < 0) {
+        console.error(`[GameRulesAPI] Failed to open character file for writing: ${fd}`);
+        return false;
+      }
+
+      // Write the updated character data
+      const result = this.kernel.write(fd, updatedCharacter);
+
+      // Close the file descriptor
+      this.kernel.close(fd);
+
+      if (result !== 0) {
+        console.error(`[GameRulesAPI] Failed to write character file: ${result}`);
+        return false;
+      }
+
       return true;
-    } catch (err) {
-      console.error(`Failed to update attack bonus for character class ${characterClassId}:`, err);
+    } catch (error) {
+      console.error(`[GameRulesAPI] Error updating character by file operation: ${error}`);
       return false;
     }
   }
 
   /**
-   * Get the Supabase client for advanced operations
-   * This provides controlled access to the Supabase client while maintaining
-   * encapsulation of the internal implementation details.
-   * 
-   * @deprecated Direct database access is deprecated. Use the Unix-style file operations via DatabaseCapability instead.
+   * List all characters using Unix file operations
+   * @returns Array of character summaries
+   */
+  async listCharactersByFileOperation(): Promise<{ id: number; name: string }[]> {
+    try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Listing characters by file operation`);
+      }
+
+      // Get file path
+      const path = '/proc/character/list';
+
+      // Check if list file exists
+      if (!this.kernel.exists(path)) {
+        // If list file doesn't exist, create it from database
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Character list file doesn't exist: ${path}, creating from database`);
+        }
+
+        // Fetch all characters using legacy method
+        const characters = await this.getAllGameCharacter();
+
+        // Make sure parent directories exist
+        this.ensureBaseDirectoriesExist();
+
+        // Create character summaries
+        const characterSummaries = characters.map(char => ({
+          id: char.id,
+          name: char.name
+        }));
+
+        // Create the list file
+        const createResult = this.kernel.create(path, { characters: characterSummaries });
+        if (!createResult.success) {
+          console.error(`[GameRulesAPI] Failed to create character list file: ${createResult.errorMessage}`);
+          return characterSummaries;
+        }
+      }
+
+      // Open the list file
+      const fd = this.kernel.open(path, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`[GameRulesAPI] Failed to open character list file: ${fd}`);
+
+        // Fall back to legacy method
+        const characters = await this.getAllGameCharacter();
+        return characters.map(char => ({ id: char.id, name: char.name }));
+      }
+
+      // Read the list data
+      const buffer: any = {};
+      const [result] = this.kernel.read(fd, buffer);
+
+      // Close the file descriptor
+      this.kernel.close(fd);
+
+      if (result !== 0) {
+        console.error(`[GameRulesAPI] Failed to read character list file: ${result}`);
+
+        // Fall back to legacy method
+        const characters = await this.getAllGameCharacter();
+        return characters.map(char => ({ id: char.id, name: char.name }));
+      }
+
+      return buffer.characters || [];
+    } catch (error) {
+      console.error(`[GameRulesAPI] Error listing characters by file operation: ${error}`);
+
+      // Fall back to legacy method
+      const characters = await this.getAllGameCharacter();
+      return characters.map(char => ({ id: char.id, name: char.name }));
+    }
+  }
+
+  /**
+   * Get ability scores for a character using Unix file operations
+   * @param characterId Character ID
+   * @returns Object with ability scores or null if not found
+   */
+  async getCharacterAbilitiesByFileOperation(characterId: number): Promise<Record<string, number> | null> {
+    try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Getting abilities for character by file operation: ${characterId}`);
+      }
+
+      // Get file path
+      const path = this.getFileSystemPath('character', characterId, 'abilities');
+
+      // Check if character exists
+      const characterPath = this.getFileSystemPath('character', characterId);
+      if (!this.kernel.exists(characterPath)) {
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Character ${characterId} doesn't exist`);
+        }
+        return null;
+      }
+
+      // Open the character file to extract abilities
+      const fd = this.kernel.open(characterPath, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`[GameRulesAPI] Failed to open character file: ${fd}`);
+        return null;
+      }
+
+      // Read the character data
+      const buffer: any = {};
+      const [result] = this.kernel.read(fd, buffer);
+
+      // Close the file descriptor
+      this.kernel.close(fd);
+
+      if (result !== 0) {
+        console.error(`[GameRulesAPI] Failed to read character file: ${result}`);
+        return null;
+      }
+
+      // Extract abilities from the character data
+      const abilityScores: Record<string, number> = {};
+
+      if (buffer.game_character_ability) {
+        for (const ability of buffer.game_character_ability) {
+          if (ability.ability) {
+            abilityScores[ability.ability.name.toLowerCase()] = ability.value || 10;
+          }
+        }
+      }
+
+      return abilityScores;
+    } catch (error) {
+      console.error(`[GameRulesAPI] Error getting character abilities by file operation: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Get entity by ID using Unix file operations
+   * @param entityId Entity ID
+   * @returns Entity data or null if not found
+   */
+  async getEntityByFileOperation(entityId: string): Promise<any | null> {
+    try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Getting entity by file operation: ${entityId}`);
+      }
+
+      // Get file path
+      const path = this.getFileSystemPath('entity', entityId);
+
+      // Check if file exists
+      if (!this.kernel.exists(path)) {
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Entity file doesn't exist: ${path}`);
+        }
+        return null;
+      }
+
+      // Open the file
+      const fd = this.kernel.open(path, OpenMode.READ);
+      if (fd < 0) {
+        console.error(`[GameRulesAPI] Failed to open entity file: ${fd}`);
+        return null;
+      }
+
+      // Read the entity data
+      const buffer: any = {};
+      const [result] = this.kernel.read(fd, buffer);
+
+      // Close the file descriptor
+      this.kernel.close(fd);
+
+      if (result !== 0) {
+        console.error(`[GameRulesAPI] Failed to read entity file: ${result}`);
+        return null;
+      }
+
+      return buffer;
+    } catch (error) {
+      console.error(`[GameRulesAPI] Error getting entity by file operation: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Get all entities of a specific type using Unix file operations
+   * @param entityType Type of entity to retrieve
+   * @returns Array of entities or empty array if none found
+   */
+  async getAllEntitiesByType(entityType: string): Promise<any[]> {
+    try {
+      if (this.debug) {
+        console.log(`[GameRulesAPI] Getting all entities by type: ${entityType}`);
+      }
+
+      // Get file path
+      const path = this.getFileSystemPath(entityType, 'all');
+
+      // Open the file
+      const fd = this.kernel.open(path, OpenMode.READ);
+      if (fd < 0) {
+        if (this.debug) {
+          console.log(`[GameRulesAPI] No global list file found for entity type ${entityType}: ${fd}`);
+        }
+
+        // Fall back to legacy method
+        switch (entityType) {
+          case 'ability':
+            return this.getAllAbility();
+          case 'skill':
+            return this.getAllSkill();
+          case 'feat':
+            return this.getAllFeat();
+          case 'class':
+            return this.getAllClass();
+          default:
+            return [];
+        }
+      }
+
+      // Read the entity list data
+      const buffer: any = {};
+      const [result] = this.kernel.read(fd, buffer);
+
+      // Close the file descriptor
+      this.kernel.close(fd);
+
+      if (result !== 0) {
+        console.error(`[GameRulesAPI] Failed to read entity list file: ${result}`);
+        return [];
+      }
+
+      return buffer.entities || [];
+    } catch (error) {
+      console.error(`[GameRulesAPI] Error getting entities by type: ${error}`);
+      return [];
+    }
+  }
+
+  /**
+   * Get the Supabase client for direct database access.
+   *
+   * @deprecated This method is provided only for compatibility during transition to Unix architecture.
+   * Use kernel file operations and database capability instead, such as:
+   * - kernel.open('/path/to/resource')
+   * - kernel.read(fd, buffer)
+   * - kernel.write(fd, data)
+   *
+   * Example:
+   * const fd = kernel.open('/proc/character/1', OpenMode.READ);
+   * const buffer = {};
+   * kernel.read(fd, buffer);
+   * kernel.close(fd);
+   *
+   * @returns The original Supabase client instance
+   */
+  /**
+   * Returns the internal Supabase client for direct database access.
+   *
+   * @deprecated This method is provided only for backward compatibility during transition to Unix architecture.
+   * Use kernel file operations and database capability instead. This method will be removed in a future version.
+   *
+   * Preferred Unix-style alternatives:
+   * - kernel.open('/proc/character/1', OpenMode.READ)
+   * - kernel.read(fd)
+   * - kernel.write(fd, data)
+   * - kernel.close(fd)
+   *
    * @returns The Supabase client instance
    */
   getSupabaseClient(): SupabaseClient<Database> {
-    console.warn(
-      'DEPRECATED: Direct Supabase client access is strongly discouraged. ' +
-      'Use the Unix-style file operations via DatabaseCapability instead. ' +
-      'This method will be removed in a future version.'
-    );
+    console.warn('DEPRECATED: getSupabaseClient() is deprecated and will be removed in a future version.');
+    console.warn('Use kernel file operations instead of direct Supabase access.');
+    console.warn('Example: kernel.open("/proc/character/1", OpenMode.READ), kernel.read(fd), kernel.close(fd)');
+
     return this.supabase;
   }
 
   /**
-   * Creates a watcher for a specific character's core data
-   * @param characterId Character ID to watch
-   * @param callback Callback to execute when the character changes
-   * @returns Subscription channel
+   * Gets all game characters
+   * @returns All game characters
    */
-  watchCharacterCore(characterId: number, callback: RealtimeCallback<'game_character'>): ReturnType<SupabaseClient['channel']> {
-    return this.supabase
-      .channel(`character_${characterId}_core_changes`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'game_character',
-        filter: `id=eq.${characterId}`
-      }, (payload: RealtimePostgresChangesPayload<Row<'game_character'>>) => {
-        const type = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
-        const row = type === 'DELETE' ? payload.old as Row<'game_character'> : payload.new as Row<'game_character'>;
-        callback(type, row);
+  async getAllGameCharacter(): Promise<Row<'game_character'>[]> {
+    // Use file operations instead of direct database access
+    const characters = await this.listCharactersByFileOperation();
+
+    // Convert to the expected return type
+    const result = await Promise.all(
+      characters.map(async (char) => {
+        const characterData = await this.getCharacterByFileOperation(char.id);
+        return characterData || { id: char.id, name: char.name };
       })
-      .subscribe();
+    );
+
+    return result.filter(Boolean) as Row<'game_character'>[];
   }
 
-  /**
-   * Creates a watcher for a specific character's skill ranks
-   * @param characterId Character ID to watch
-   * @param callback Callback to execute when the skill ranks change
-   * @returns Subscription channel
+  /*
+   * REMOVED: getSupabaseClient() method has been removed as part of the transition to Unix-style
+   * file operations. All database access should now use kernel file operations
+   * (open, read, write, close) on database resources instead.
+   *
+   * To access database resources:
+   * - kernel.open('/proc/character/{id}', OpenMode.READ) - Get a character by ID
+   * - kernel.open('/proc/character/list', OpenMode.READ) - List all characters
+   * - kernel.open('/entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
    */
-  watchCharacterSkillRanks(characterId: number, callback: RealtimeCallback<'game_character_skill_rank'>): ReturnType<SupabaseClient['channel']> {
-    return this.supabase
-      .channel(`character_${characterId}_skill_ranks_changes`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'game_character_skill_rank',
-        filter: `game_character_id=eq.${characterId}`
-      }, (payload: RealtimePostgresChangesPayload<Row<'game_character_skill_rank'>>) => {
-        const type = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
-        const row = type === 'DELETE' ? payload.old as Row<'game_character_skill_rank'> : payload.new as Row<'game_character_skill_rank'>;
-        callback(type, row);
-      })
-      .subscribe();
-  }
-
-  /**
-   * Updates a character's HP
-   * Uses Unix-style file operations via the DatabaseCapability when available.
-   * Falls back to the original implementation when the DatabaseCapability is not available.
-   * 
-   * @param characterId Character ID
-   * @param currentHp Current HP value
-   * @returns Whether the update was successful
-   */
-  async updateCharacterHP(characterId: number, currentHp: number): Promise<boolean> {
-    try {
-      if (this.hasDbCapability) {
-        // First ensure base directories exist
-        if (!this.ensureBaseDirectoriesExist()) {
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Base directories don't exist and couldn't be created for HP update`);
-          }
-          return this.legacyUpdateCharacterHP(characterId, currentHp);
-        }
-        
-        // Then ensure character directory exists
-        if (!this.ensureCharacterDirectoryExists(characterId)) {
-          // Fall back to original implementation if directory creation fails
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Character directory for ${characterId} doesn't exist and couldn't be created for HP update`);
-          }
-          return this.legacyUpdateCharacterHP(characterId, currentHp);
-        }
-        
-        // Use the Database Capability to update the character using only the canonical path
-        const entityPath = `/proc/character/${characterId}`;
-        let fd = -1;
-        
-        fd = this.kernel.open(entityPath, OpenMode.READ_WRITE);
-        if (this.debug) {
-          console.log(`[GameRulesAPI] Using entity path for HP update: ${entityPath}`);
-        }
-        
-        if (fd < 0) {
-          if (this.debug) {
-            console.error(`[GameRulesAPI] Failed to open character ${characterId} for HP update: ${fd}`);
-          }
-          return this.legacyUpdateCharacterHP(characterId, currentHp);
-        }
-        
-        try {
-          // Read the current character data
-          const buffer: any = {};
-          const [readResult] = this.kernel.read(fd, buffer);
-          
-          if (readResult !== 0) {
-            if (this.debug) {
-              console.error(`[GameRulesAPI] Failed to read character ${characterId} for HP update: ${readResult}`);
-            }
-            return this.legacyUpdateCharacterHP(characterId, currentHp);
-          }
-          
-          // Update the HP
-          buffer.current_hp = currentHp;
-          
-          // Write the updated data
-          const writeResult = this.kernel.write(fd, buffer);
-          
-          if (writeResult !== 0) {
-            if (this.debug) {
-              console.error(`[GameRulesAPI] Failed to write character ${characterId} for HP update: ${writeResult}`);
-            }
-            return this.legacyUpdateCharacterHP(characterId, currentHp);
-          }
-          
-          return true;
-        } finally {
-          // Always close the file descriptor
-          this.kernel.close(fd);
-        }
-      } else {
-        // Fall back to original implementation
-        return this.legacyUpdateCharacterHP(characterId, currentHp);
-      }
-    } catch (err) {
-      console.error(`[GameRulesAPI] Error updating HP for character ${characterId}:`, err);
-      
-      // Fall back to original implementation
-      return this.legacyUpdateCharacterHP(characterId, currentHp);
-    }
-  }
-  
-  /**
-   * Legacy implementation of updateCharacterHP using direct database queries.
-   * This is used as a fallback when the DatabaseCapability is not available.
-   * 
-   * @param characterId Character ID
-   * @param currentHp Current HP value
-   * @returns Whether the update was successful
-   */
-  private async legacyUpdateCharacterHP(characterId: number, currentHp: number): Promise<boolean> {
-    try {
-      if (this.debug) {
-        console.log(`[GameRulesAPI] Using legacy method to update HP for character ${characterId}`);
-      }
-      
-      const { error } = await this.supabase
-        .from('game_character')
-        .update({ current_hp: currentHp })
-        .eq('id', characterId);
-        
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error(`[GameRulesAPI] Failed to update character HP: ${err}`);
-      return false;
-    }
-  }
 }
 
 // Direct exports of types for easier importing
