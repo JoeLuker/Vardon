@@ -119,9 +119,9 @@ export interface Capability {
    * Write to the device (like a write() system call)
    * @param fd File descriptor to write to
    * @param buffer Data to write
-   * @returns 0 on success, error code on failure
+   * @returns 0 on success, error code on failure, or a Promise resolving to one of these
    */
-  write?(fd: number, buffer: any): number;
+  write?(fd: number, buffer: any): number | Promise<number>;
   
   /**
    * Control device (like an ioctl() system call)
@@ -289,7 +289,66 @@ export enum ErrorCode {
   ENOSYS = 38,
   
   /** Operation not supported */
-  ENOTSUP = 95
+  ENOTSUP = 95,
+  
+  /** Custom error codes for our system */
+  
+  /** Filesystem not ready */
+  EFSNOTREADY = 200,
+  
+  /** Device not ready */
+  EDEVNOTREADY = 201,
+  
+  /** Path already exists */
+  EPATHEXISTS = 202,
+  
+  /** Entity not found */
+  EENTITYNOTFOUND = 203,
+  
+  /** Character not found */
+  ECHARACTERNOTFOUND = 204,
+  
+  /** Capability not found */
+  ECAPABILITYNOTFOUND = 205,
+  
+  /** Plugin not found */
+  EPLUGINNOTFOUND = 206,
+  
+  /** Database error */
+  EDBERROR = 207,
+  
+  /** Network error */
+  ENETWORKERROR = 208,
+  
+  /** Authentication error */
+  EAUTHERROR = 209,
+  
+  /** Invalid operation for the current state */
+  EINVALIDSTATE = 210,
+  
+  /** Feature not available */
+  EFEATURENOTAVAILABLE = 211,
+  
+  /** Resource limit reached */
+  ERESOURCELIMIT = 212,
+  
+  /** Timeout occurred */
+  ETIMEOUT = 213,
+  
+  /** Required parameter missing */
+  EPARAMMISSING = 214,
+  
+  /** Validation failed */
+  EVALIDATION = 215,
+  
+  /** Character already exists */
+  ECHARACTEREXISTS = 216,
+  
+  /** Maximum number of items reached */
+  EMAXITEMSREACHED = 217,
+  
+  /** Data format error */
+  EDATAFORMAT = 218
 }
 
 /**
@@ -380,6 +439,9 @@ export interface KernelOptions {
   
   /** Custom event emitter implementation */
   eventEmitter?: EventEmitter;
+  
+  /** Whether to disable emitting filesystem events (improves performance) */
+  noFsEvents?: boolean;
 }
 
 /**

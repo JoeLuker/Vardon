@@ -19,6 +19,7 @@ import {
   type MessageSelector 
 } from './MessageQueue';
 import { PipeEventSystem } from './PipeEventSystem';
+import { EventBus } from './EventBus';
 
 // Plugin filesystem paths
 const PLUGIN_PATHS = {
@@ -72,6 +73,7 @@ export class GameKernel {
   
   // Configuration
   private readonly debug: boolean;
+  private readonly noFsEvents: boolean;
   
   // Event system (like signals in Unix)
   public readonly events: EventEmitter;
@@ -82,35 +84,91 @@ export class GameKernel {
   // Message queues (named pipes)
   private readonly messageQueues: Map<string, MessageQueue> = new Map();
   
+  // Unix standard directory paths
+  public static readonly PATHS = {
+    DEV: '/dev',           // Device files
+    PROC: '/proc',         // Process information
+    PROC_CHARACTER: '/proc/character',  // Character processes
+    ENTITY: '/entity',     // Entity files
+    ETC: '/etc',           // Configuration
+    VAR: '/var',           // Variable data
+    TMP: '/tmp',           // Temporary files
+    BIN: '/bin',           // Executable plugins
+    HOME: '/home'          // User home directories
+  };
+  
   constructor(options: KernelOptions = {}) {
     this.debug = options.debug || false;
+    this.noFsEvents = options.noFsEvents || false;
     this.events = options.eventEmitter || new EventBus(this.debug);
     
+    // Initialize filesystem
+    this.initializeFilesystem();
+    
+    // Initialize message queues
+    this.initializeMessageQueues();
+    
+    if (this.debug) {
+      this.log('Kernel initialized');
+    }
+  }
+  
+  /**
+   * Initialize the filesystem structure
+   * Creates all standard directories in a Unix-like hierarchy
+   */
+  private initializeFilesystem(): void {
     // Create root directory
     this.directories.add('/');
     
-    // Create standard directories
-    this.mkdir('/dev');    // Device files
-    this.mkdir('/entity'); // Entity files
-    this.mkdir(PLUGIN_PATHS.BIN); // Executable plugins
-    this.mkdir('/proc'); // Process information
-    this.mkdir(PLUGIN_PATHS.PROC_PLUGINS); // Plugin process information
-    this.mkdir(PLUGIN_PATHS.PROC_SIGNALS); // Plugin signals
-    this.mkdir('/etc'); // Configuration
-    this.mkdir(PLUGIN_PATHS.ETC_PLUGINS); // Plugin configuration
+    // Create standard top-level directories (like a Unix filesystem)
+    this.mkdir(GameKernel.PATHS.DEV);     // Device files
+    this.mkdir(GameKernel.PATHS.PROC);    // Process information
+    this.mkdir(GameKernel.PATHS.ENTITY);  // Entity files
+    this.mkdir(GameKernel.PATHS.ETC);     // Configuration
+    this.mkdir(GameKernel.PATHS.BIN);     // Executable plugins
+    this.mkdir(GameKernel.PATHS.VAR);     // Variable data
+    this.mkdir(GameKernel.PATHS.TMP);     // Temporary files
+    this.mkdir(GameKernel.PATHS.HOME);    // User home directories
     
-    // Create directories for message queues
-    this.mkdir(QUEUE_PATHS.PIPES); // Base directory for named pipes
+    // Create standard subdirectories
+    this.mkdir(GameKernel.PATHS.PROC_CHARACTER);  // Character processes
+    this.mkdir(PLUGIN_PATHS.PROC_PLUGINS);        // Plugin process information
+    this.mkdir(PLUGIN_PATHS.PROC_SIGNALS);        // Plugin signals
+    this.mkdir(PLUGIN_PATHS.ETC_PLUGINS);         // Plugin configuration
+    this.mkdir(`${GameKernel.PATHS.VAR}/log`);    // Log files
+    this.mkdir(`${GameKernel.PATHS.VAR}/run`);    // Runtime data
     
+    // Create message queue directory
+    this.mkdir(QUEUE_PATHS.PIPES);                // Named pipes directory
+    
+    // Create device-specific directories
+    this.mkdir('/dev/ability');                   // Ability device directory
+    this.mkdir('/dev/skill');                     // Skill device directory
+    this.mkdir('/dev/combat');                    // Combat device directory
+    this.mkdir('/dev/condition');                 // Condition device directory
+    this.mkdir('/dev/bonus');                     // Bonus device directory
+    this.mkdir('/dev/character');                 // Character device directory
+    
+    // Create app-specific directories
+    this.mkdir('/sys');                           // System directory
+    this.mkdir('/sys/class');                     // Class definitions
+    this.mkdir('/sys/devices');                   // Device specifications
+    
+    this.log('Filesystem initialized');
+  }
+  
+  /**
+   * Initialize standard message queues
+   */
+  private initializeMessageQueues(): void {
     // Create standard message queues
     this.createMessageQueue(QUEUE_PATHS.SYSTEM, { debug: this.debug });
     this.createMessageQueue(QUEUE_PATHS.GAME_EVENTS, { debug: this.debug });
     this.createMessageQueue(QUEUE_PATHS.ENTITY_EVENTS, { debug: this.debug });
     this.createMessageQueue(QUEUE_PATHS.FEATURE_EVENTS, { debug: this.debug });
     
-    if (this.debug) {
-      this.log('Kernel initialized');
-    }
+    this.log('Message queues initialized');
   }
   
   //=============================================================================
@@ -118,11 +176,12 @@ export class GameKernel {
   //=============================================================================
   
   /**
-   * Create a directory (like mkdir)
+   * Create a directory (like mkdir -p)
    * @param path Directory path to create
+   * @param recursive Whether to create parent directories if they don't exist
    * @returns Path result
    */
-  mkdir(path: string): PathResult {
+  mkdir(path: string, recursive: boolean = true): PathResult {
     if (!path.startsWith('/')) {
       return {
         success: false,
@@ -132,29 +191,43 @@ export class GameKernel {
       };
     }
     
+    // If directory already exists, silently return success
     if (this.directories.has(path)) {
       return {
-        success: false,
-        errorCode: ErrorCode.EEXIST,
-        errorMessage: 'Directory already exists',
+        success: true,
         path
       };
     }
     
-    // Check parent directory exists
+    // Check if parent directory exists
     const parentPath = path.substring(0, path.lastIndexOf('/')) || '/';
+    
     if (!this.directories.has(parentPath)) {
-      return {
-        success: false,
-        errorCode: ErrorCode.ENOENT,
-        errorMessage: `Parent directory does not exist: ${parentPath}`,
-        path
-      };
+      // If not recursive, return error
+      if (!recursive) {
+        return {
+          success: false,
+          errorCode: ErrorCode.ENOENT,
+          errorMessage: `Parent directory does not exist: ${parentPath}`,
+          path
+        };
+      }
+      
+      // Otherwise create parent directories recursively
+      const parentResult = this.mkdir(parentPath, true);
+      if (!parentResult.success) {
+        return parentResult;
+      }
     }
     
     // Create directory
     this.directories.add(path);
-    this.events.emit('fs:mkdir', { path });
+    
+    // Only emit event if not disabled
+    if (!this.noFsEvents) {
+      this.events.emit('fs:mkdir', { path });
+    }
+    
     this.log(`Created directory: ${path}`);
     
     return { success: true, path };
@@ -185,7 +258,12 @@ export class GameKernel {
     
     // Remove file
     this.inodes.delete(path);
-    this.events.emit('fs:unlink', { path });
+    
+    // Only emit event if not disabled
+    if (!this.noFsEvents) {
+      this.events.emit('fs:unlink', { path });
+    }
+    
     this.log(`Unlinked file: ${path}`);
     
     return ErrorCode.SUCCESS;
@@ -219,7 +297,12 @@ export class GameKernel {
     
     // Mount the device
     this.mountPoints.set(path, device);
-    this.events.emit('fs:mount', { path, device: device.id });
+    
+    // Only emit event if not disabled
+    if (!this.noFsEvents) {
+      this.events.emit('fs:mount', { path, device: device.id });
+    }
+    
     this.log(`Mounted device ${device.id} at ${path}`);
     
     // Call device's onMount handler
@@ -234,9 +317,10 @@ export class GameKernel {
    * Create a file (like creat)
    * @param path File path
    * @param data File data
+   * @param createParentDirs Whether to create parent directories if they don't exist
    * @returns Path result
    */
-  create(path: string, data: any): PathResult {
+  create(path: string, data: any, createParentDirs: boolean = true): PathResult {
     if (!path.startsWith('/')) {
       return {
         success: false,
@@ -246,24 +330,57 @@ export class GameKernel {
       };
     }
     
+    this.log(`Creating file at ${path} (createParentDirs=${createParentDirs})`);
+    
     if (this.inodes.has(path)) {
-      return {
-        success: false,
-        errorCode: ErrorCode.EEXIST,
-        errorMessage: 'File already exists',
-        path
-      };
+      // If file exists and it's a directory, we'll remove it
+      const stats = this.stat(path);
+      if (stats?.isDirectory) {
+        this.log(`Found directory at ${path} where a file should be. Removing.`);
+        const unlinkResult = this.unlink(path);
+        if (unlinkResult !== 0) {
+          return {
+            success: false,
+            errorCode: unlinkResult,
+            errorMessage: `Found a directory at ${path} but failed to remove it`,
+            path
+          };
+        }
+      } else {
+        // It's a file that already exists
+        return {
+          success: false,
+          errorCode: ErrorCode.EEXIST,
+          errorMessage: 'File already exists',
+          path
+        };
+      }
     }
     
     // Check parent directory exists
     const parentPath = path.substring(0, path.lastIndexOf('/')) || '/';
     if (!this.directories.has(parentPath)) {
-      return {
-        success: false,
-        errorCode: ErrorCode.ENOENT,
-        errorMessage: `Parent directory does not exist: ${parentPath}`,
-        path
-      };
+      if (!createParentDirs) {
+        return {
+          success: false,
+          errorCode: ErrorCode.ENOENT,
+          errorMessage: `Parent directory does not exist: ${parentPath}`,
+          path
+        };
+      }
+      
+      this.log(`Parent directory ${parentPath} doesn't exist, creating it`);
+      
+      // Create parent directories recursively
+      const mkdirResult = this.mkdir(parentPath, true);
+      if (!mkdirResult.success) {
+        return {
+          success: false,
+          errorCode: ErrorCode.ENOENT,
+          errorMessage: `Failed to create parent directory: ${mkdirResult.errorMessage}`,
+          path
+        };
+      }
     }
     
     // Create inode
@@ -275,7 +392,12 @@ export class GameKernel {
     };
     
     this.inodes.set(path, inode);
-    this.events.emit('fs:create', { path });
+    
+    // Only emit event if not disabled
+    if (!this.noFsEvents) {
+      this.events.emit('fs:create', { path });
+    }
+    
     this.log(`Created file: ${path}`);
     
     return { success: true, path };
@@ -445,13 +567,13 @@ export class GameKernel {
       this.error(`Invalid file descriptor: ${fd}`);
       return ErrorCode.EBADF;
     }
-    
+
     // Check write permission
     if (descriptor.mode !== OpenMode.WRITE && descriptor.mode !== OpenMode.READ_WRITE) {
       this.error(`File not opened for writing: ${descriptor.path}`);
       return ErrorCode.EACCES;
     }
-    
+
     // Device file
     const device = this.mountPoints.get(descriptor.path);
     if (device) {
@@ -459,15 +581,24 @@ export class GameKernel {
         this.error(`Device does not support writing: ${descriptor.path}`);
         return ErrorCode.EINVAL;
       }
-      
+
       try {
-        return device.write(fd, buffer);
+        const result = device.write(fd, buffer);
+
+        // If device write returns a Promise, return success for now
+        // For proper async handling, use writeAsync instead
+        if (result instanceof Promise) {
+          this.log(`Device ${descriptor.path} returned a Promise, consider using writeAsync() instead`);
+          return ErrorCode.SUCCESS;
+        }
+
+        return result;
       } catch (error) {
         this.error(`Error writing to device: ${descriptor.path}`, error);
         return ErrorCode.EIO;
       }
     }
-    
+
     // Regular file
     const inode = this.inodes.get(descriptor.path);
     if (inode) {
@@ -486,15 +617,63 @@ export class GameKernel {
         return ErrorCode.EIO;
       }
     }
-    
+
     // Directory
     if (this.directories.has(descriptor.path)) {
       this.error(`Cannot write to directory: ${descriptor.path}`);
       return ErrorCode.EISDIR;
     }
-    
+
     this.error(`Path not found: ${descriptor.path}`);
     return ErrorCode.ENOENT;
+  }
+
+  /**
+   * Asynchronous write to a file descriptor (like write but returns a Promise)
+   * This is especially useful for device files that may implement async write methods
+   * @param fd File descriptor to write to
+   * @param buffer Data to write
+   * @returns Promise resolving to 0 on success, error code on failure
+   */
+  async writeAsync(fd: number, buffer: any): Promise<number> {
+    const descriptor = this.fileDescriptors.get(fd);
+    if (!descriptor) {
+      this.error(`Invalid file descriptor: ${fd}`);
+      return ErrorCode.EBADF;
+    }
+
+    // Check write permission
+    if (descriptor.mode !== OpenMode.WRITE && descriptor.mode !== OpenMode.READ_WRITE) {
+      this.error(`File not opened for writing: ${descriptor.path}`);
+      return ErrorCode.EACCES;
+    }
+
+    // Device file
+    const device = this.mountPoints.get(descriptor.path);
+    if (device) {
+      if (!device.write) {
+        this.error(`Device does not support writing: ${descriptor.path}`);
+        return ErrorCode.EINVAL;
+      }
+
+      try {
+        const result = device.write(fd, buffer);
+
+        // If device's write method returns a Promise, await it
+        if (result instanceof Promise) {
+          return await result;
+        }
+
+        // Otherwise return the synchronous result
+        return result;
+      } catch (error) {
+        this.error(`Error writing to device: ${descriptor.path}`, error);
+        return ErrorCode.EIO;
+      }
+    }
+
+    // For regular files, directories, etc., just use the synchronous write method
+    return this.write(fd, buffer);
   }
   
   /**
@@ -1198,6 +1377,17 @@ export class GameKernel {
    * @param data Optional data to log
    */
   private log(message: string, data?: any): void {
+    // ALWAYS log these critical messages regardless of debug setting
+    if (message.includes('Path not found') || 
+        message.includes('Creating file') || 
+        message.includes('Created file') ||
+        message.includes('Failed to create') ||
+        message.includes('directory') ||
+        message.includes('/proc/character')) {
+      console.warn(`[GameKernel-DEBUG] ${message}`, data);
+      return;
+    }
+    
     if (this.debug) {
       if (data !== undefined) {
         console.log(`[GameKernel] ${message}`, data);
@@ -1213,10 +1403,8 @@ export class GameKernel {
    * @param error Optional error object
    */
   private error(message: string, error?: any): void {
-    if (error !== undefined) {
-      console.error(`[GameKernel] ${message}`, error);
-    } else {
-      console.error(`[GameKernel] ${message}`);
-    }
+    // ALWAYS print stack trace for errors
+    console.error(`[GameKernel-ERROR] ${message}`, error);
+    console.error("Stack trace for error:", new Error().stack);
   }
 }
