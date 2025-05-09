@@ -1,64 +1,71 @@
-import { supabase } from '$lib/db/supabaseClient';
 import type { StorageDriver } from './CharacterStore';
 import type { Entity } from '../../types/EntityTypes';
 import type { GameRulesAPI } from '$lib/db/gameRules.api';
 import type { CompleteCharacter } from '$lib/db/gameRules.api';
+import { OpenMode } from '../../kernel/types';
 
 /**
- * Supabase implementation of the StorageDriver interface
- * Provides persistence for characters in the Supabase database
+ * Unix-style implementation of the StorageDriver interface
+ * Provides persistence for characters in the database using Unix file operations
  */
 export class SupabaseStorageDriver implements StorageDriver {
   private gameRulesAPI: GameRulesAPI;
-  
+  private kernel: any;
+
   /**
    * Creates a new SupabaseStorageDriver
    * @param gameRulesAPI The GameRulesAPI instance for database access
    */
   constructor(gameRulesAPI: GameRulesAPI) {
     this.gameRulesAPI = gameRulesAPI;
+    this.kernel = gameRulesAPI.getKernel();
   }
 
   /**
-   * Saves a character entity to the Supabase database
+   * Saves a character entity to the database using Unix file operations
    * @param id The UUID of the entity
    * @param data The entity data to save
    */
   async save(id: string, data: Entity): Promise<void> {
+    console.log(`[SupabaseStorageDriver] Saving entity: ${id}`);
+
     // First, check if the character already exists in the database
     const numericId = this.extractNumericId(id);
-    let charData = null;
-    
+
     if (numericId) {
       try {
-        // First, try to find the entity record to get the character ID
-        const { data: entityData } = await supabase
-          .from('entity')
-          .select('ref_id')
-          .eq('type', 'character')
-          .eq('name', id)
-          .single();
-          
-        if (entityData) {
-          const charDbId = entityData.ref_id;
-          charData = await this.gameRulesAPI.getCompleteCharacterData(charDbId);
+        // Get character path
+        const entityPath = this.gameRulesAPI.getFileSystemPath('entity', id);
+
+        // Check if the entity exists
+        if (this.kernel.exists(entityPath)) {
+          // Update existing character
+          await this.updateExistingCharacter(numericId, data);
+        } else {
+          // Try to find the character by ID
+          const characterPath = this.gameRulesAPI.getFileSystemPath('character', numericId);
+
+          if (this.kernel.exists(characterPath)) {
+            // Update existing character
+            await this.updateExistingCharacter(numericId, data);
+          } else {
+            // Create new character
+            await this.createNewCharacter(data);
+          }
         }
       } catch (error) {
         console.warn(`Character lookup failed, will attempt to create new: ${error}`);
+        // Create new character
+        await this.createNewCharacter(data);
       }
-    }
-    
-    if (charData) {
-      // Update existing character
-      await this.updateExistingCharacter(numericId, data);
     } else {
-      // Create new character
+      // No numeric ID, create new character
       await this.createNewCharacter(data);
     }
   }
 
   /**
-   * Updates an existing character in the database
+   * Updates an existing character in the database using Unix file operations
    * @param numericId The numeric ID of the character in the database
    * @param data The updated entity data
    */
@@ -67,42 +74,75 @@ export class SupabaseStorageDriver implements StorageDriver {
       throw new Error('Cannot update character: character data is missing');
     }
 
-    // Update the base character record
-    await this.gameRulesAPI.updateGameCharacter(numericId, {
+    console.log(`[SupabaseStorageDriver] Updating existing character: ${numericId}`);
+
+    // Use the Unix file operation method in GameRulesAPI to update the character
+    const characterPath = this.gameRulesAPI.getFileSystemPath('character', numericId);
+
+    // Get current character data
+    const characterData = await this.gameRulesAPI.getCharacterByFileOperation(numericId);
+    if (!characterData) {
+      throw new Error(`Cannot update character ${numericId}: not found`);
+    }
+
+    // Prepare the update data
+    const updateData = {
       name: data.name,
       description: data.description || '',
       experience: data.character.experience || 0,
       updated_at: new Date().toISOString()
-    });
+    };
 
-    // Update abilities
-    if (data.character.abilities) {
-      await this.updateCharacterAbilities(numericId, data.character.abilities);
+    // Update the character using file operations
+    const success = await this.gameRulesAPI.updateCharacterByFileOperation(numericId, updateData);
+    if (!success) {
+      throw new Error(`Failed to update character ${numericId}`);
     }
 
-    // Update class data if present
-    if (data.character.classes && data.character.classes.length > 0) {
-      await this.updateCharacterClasses(numericId, data.character.classes);
-    }
+    // Now update the entity file
+    const entityPath = this.gameRulesAPI.getFileSystemPath('entity', data.id);
 
-    // Update feats if present
-    if (data.character.feats && data.character.feats.length > 0) {
-      await this.updateCharacterFeats(numericId, data.character.feats);
-    }
+    // Check if entity file exists
+    if (!this.kernel.exists(entityPath)) {
+      // Create a new entity file
+      this.kernel.create(entityPath, {
+        ...data,
+        metadata: {
+          ...data.metadata,
+          databaseId: numericId,
+          updatedAt: Date.now()
+        }
+      });
+    } else {
+      // Open the entity file
+      const fd = this.kernel.open(entityPath, OpenMode.WRITE);
+      if (fd < 0) {
+        throw new Error(`Failed to open entity file for writing: ${entityPath}`);
+      }
 
-    // Update skill ranks if present
-    if (data.character.skills) {
-      await this.updateCharacterSkills(numericId, data.character.skills);
-    }
+      try {
+        // Write the updated entity data
+        const result = this.kernel.write(fd, {
+          ...data,
+          metadata: {
+            ...data.metadata,
+            databaseId: numericId,
+            updatedAt: Date.now()
+          }
+        });
 
-    // Handle active features (enabling/disabling)
-    if (data.activeFeatures && data.activeFeatures.length > 0) {
-      await this.updateActiveFeatures(numericId, data);
+        if (result !== 0) {
+          throw new Error(`Failed to write entity file: ${result}`);
+        }
+      } finally {
+        // Always close the file descriptor
+        this.kernel.close(fd);
+      }
     }
   }
 
   /**
-   * Creates a new character in the database
+   * Creates a new character in the database using Unix file operations
    * @param data The character entity data
    */
   private async createNewCharacter(data: Entity): Promise<void> {
@@ -110,72 +150,110 @@ export class SupabaseStorageDriver implements StorageDriver {
       throw new Error('Cannot create character: character data is missing');
     }
 
-    // Insert the base character record
-    const { data: newChar, error } = await supabase
-      .from('game_character')
-      .insert({
+    console.log(`[SupabaseStorageDriver] Creating new character: ${data.name}`);
+
+    // Use the character creation path
+    const creationPath = '/proc/character/create';
+
+    // Open the creation path
+    const fd = this.kernel.open(creationPath, OpenMode.WRITE);
+    if (fd < 0) {
+      throw new Error(`Failed to open character creation path: ${creationPath}`);
+    }
+
+    try {
+      // Prepare the character data
+      const characterData = {
         name: data.name,
         description: data.description || '',
         experience: data.character.experience || 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+        updated_at: new Date().toISOString(),
+        // Include ability scores
+        ability_scores: data.character.abilities || {
+          strength: 10,
+          dexterity: 10,
+          constitution: 10,
+          intelligence: 10,
+          wisdom: 10,
+          charisma: 10
+        },
+        // Include classes
+        classes: data.character.classes || [],
+        // Include feats
+        feats: data.character.feats || [],
+        // Include skills
+        skills: data.character.skills || {}
+      };
 
-    if (error) throw new Error(`Failed to create character: ${error.message}`);
-    if (!newChar) throw new Error('Character creation failed: no data returned');
+      // Write the new character data
+      const result = this.kernel.write(fd, characterData);
 
-    const newCharId = newChar.id;
+      if (result !== 0) {
+        throw new Error(`Failed to create character: ${result}`);
+      }
 
-    // Set the numeric ID in the entity for future reference
-    data.metadata = data.metadata || {};
-    data.metadata.databaseId = newCharId;
+      // Read back the created character to get its ID
+      const buffer: any = {};
+      const [readResult] = this.kernel.read(fd, buffer);
 
-    // Add abilities
-    if (data.character.abilities) {
-      await this.updateCharacterAbilities(newCharId, data.character.abilities);
-    }
+      if (readResult !== 0 || !buffer.id) {
+        throw new Error(`Failed to read back created character: ${readResult}`);
+      }
 
-    // Add class data if present
-    if (data.character.classes && data.character.classes.length > 0) {
-      await this.updateCharacterClasses(newCharId, data.character.classes);
-    }
+      const newCharId = buffer.id;
 
-    // Add feats if present
-    if (data.character.feats && data.character.feats.length > 0) {
-      await this.updateCharacterFeats(newCharId, data.character.feats);
-    }
+      // Set the numeric ID in the entity for future reference
+      data.metadata = data.metadata || {};
+      data.metadata.databaseId = newCharId;
 
-    // Add skill ranks if present
-    if (data.character.skills) {
-      await this.updateCharacterSkills(newCharId, data.character.skills);
-    }
+      // Create entity file
+      const entityPath = this.gameRulesAPI.getFileSystemPath('entity', data.id);
 
-    // Create entity record in the entity table (for the Entity system)
-    const { error: entityError } = await supabase
-      .from('entity')
-      .insert({
-        type: data.type,
-        ref_id: newCharId,
-        name: data.id,
-        metadata: data.metadata || {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // Check if entity directory exists
+      const entityDir = '/entity';
+      if (!this.kernel.exists(entityDir)) {
+        const mkdirResult = this.kernel.mkdir(entityDir, true);
+        if (!mkdirResult.success) {
+          throw new Error(`Failed to create entity directory: ${mkdirResult.errorMessage}`);
+        }
+      }
+
+      // Create the entity file
+      const createResult = this.kernel.create(entityPath, {
+        ...data,
+        metadata: {
+          ...data.metadata,
+          databaseId: newCharId,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
       });
 
-    if (entityError) throw new Error(`Failed to create entity record: ${entityError.message}`);
+      if (!createResult.success) {
+        throw new Error(`Failed to create entity file: ${createResult.errorMessage}`);
+      }
+
+      console.log(`[SupabaseStorageDriver] Successfully created new character with ID: ${newCharId}`);
+    } finally {
+      // Always close the file descriptor
+      this.kernel.close(fd);
+    }
   }
 
   /**
-   * Updates character abilities in the database
+   * Updates character abilities in the database using Unix file operations
    * @param characterId The character ID
    * @param abilities The ability scores
    */
   private async updateCharacterAbilities(
-    characterId: number, 
+    characterId: number,
     abilities: Record<string, number>
   ): Promise<void> {
+    // Import the utility directly since this is within a class
+    const { getAbilityIdFromName } = await import('../../utils/DatabaseMappings');
+
+    // Fetch all abilities to get their IDs using kernel file operations
     const abilityData = await this.gameRulesAPI.getAllAbility();
     const abilityMap = new Map(abilityData.map(a => [a.name.toLowerCase(), a.id]));
 
@@ -187,34 +265,58 @@ export class SupabaseStorageDriver implements StorageDriver {
         continue;
       }
 
-      // Check if the ability record already exists
-      const { data: existingAbilities } = await supabase
-        .from('game_character_ability')
-        .select('id')
-        .eq('game_character_id', characterId)
-        .eq('ability_id', abilityId);
+      // The Unix path for character ability
+      const abilityPath = `/proc/character/${characterId}/ability/${abilityId}`;
 
-      if (existingAbilities && existingAbilities.length > 0) {
-        // Update existing ability
-        await supabase
-          .from('game_character_ability')
-          .update({ value })
-          .eq('id', existingAbilities[0].id);
+      // Check if the path exists - ability record already exists
+      if (this.kernel.exists(abilityPath)) {
+        // Update existing ability - use file operations
+        const fd = this.kernel.open(abilityPath, OpenMode.WRITE);
+        if (fd < 0) {
+          console.error(`Failed to open ability file: ${abilityPath}`);
+          continue;
+        }
+
+        try {
+          // Write updated ability value
+          const result = this.kernel.write(fd, { value });
+          if (result !== 0) {
+            console.error(`Failed to update ability: ${result}`);
+          }
+        } finally {
+          // Always close file descriptor
+          this.kernel.close(fd);
+        }
       } else {
-        // Create new ability record
-        await supabase
-          .from('game_character_ability')
-          .insert({
+        // Create a new ability record
+        const createPath = `/proc/character/${characterId}/ability/create`;
+        const fd = this.kernel.open(createPath, OpenMode.WRITE);
+        if (fd < 0) {
+          console.error(`Failed to open ability creation path: ${createPath}`);
+          continue;
+        }
+
+        try {
+          // Create new ability record with value
+          const result = this.kernel.write(fd, {
             game_character_id: characterId,
             ability_id: abilityId,
             value
           });
+
+          if (result !== 0) {
+            console.error(`Failed to create ability: ${result}`);
+          }
+        } finally {
+          // Always close file descriptor
+          this.kernel.close(fd);
+        }
       }
     }
   }
 
   /**
-   * Updates character classes in the database
+   * Updates character classes in the database using Unix file operations
    * @param characterId The character ID
    * @param classes The character's classes
    */
@@ -222,55 +324,104 @@ export class SupabaseStorageDriver implements StorageDriver {
     characterId: number,
     classes: Array<{ id: string; name: string; level: number }>
   ): Promise<void> {
-    // Fetch all classes to get their IDs
-    const { data: classData } = await supabase
-      .from('class')
-      .select('id, name');
-
-    if (!classData) {
+    // First get all available classes using file operations
+    const classesPath = '/schema/class/list';
+    const classesFd = this.kernel.open(classesPath, OpenMode.READ);
+    if (classesFd < 0) {
+      console.error(`Failed to open classes list: ${classesPath}`);
       throw new Error('Failed to fetch class data');
+    }
+
+    let classData: any[] = [];
+    try {
+      const buffer: any = {};
+      const [result] = this.kernel.read(classesFd, buffer);
+      if (result !== 0) {
+        console.error(`Failed to read classes list: ${result}`);
+        throw new Error('Failed to fetch class data');
+      }
+      classData = buffer.entities || [];
+    } finally {
+      this.kernel.close(classesFd);
     }
 
     const classMap = new Map(classData.map(c => [c.name.toLowerCase(), c.id]));
 
-    // Get existing character classes
-    const { data: existingClasses } = await supabase
-      .from('game_character_class')
-      .select('*')
-      .eq('game_character_id', characterId);
+    // Get existing character classes using the character classes path
+    const characterClassesPath = `/proc/character/${characterId}/class/list`;
+    const existingClassesFd = this.kernel.open(characterClassesPath, OpenMode.READ);
+
+    let existingClasses: any[] = [];
+    if (existingClassesFd >= 0) {
+      try {
+        const buffer: any = {};
+        const [result] = this.kernel.read(existingClassesFd, buffer);
+        if (result === 0) {
+          existingClasses = buffer.classes || [];
+        }
+      } finally {
+        this.kernel.close(existingClassesFd);
+      }
+    }
 
     const existingClassMap = new Map(
-      (existingClasses || []).map(c => [c.class_id, c])
+      existingClasses.map(c => [c.class_id, c])
     );
 
     // Process each class
     for (const cls of classes) {
       const classId = classMap.get(cls.name.toLowerCase());
-      
+
       if (!classId) {
         console.warn(`Unknown class: ${cls.name}`);
         continue;
       }
 
       const existingClass = existingClassMap.get(classId);
+      const classPath = `/proc/character/${characterId}/class/${classId}`;
 
       if (existingClass) {
-        // Update existing class
+        // Update existing class if level has changed
         if (existingClass.level !== cls.level) {
-          await supabase
-            .from('game_character_class')
-            .update({ level: cls.level })
-            .eq('id', existingClass.id);
+          const fd = this.kernel.open(classPath, OpenMode.WRITE);
+          if (fd < 0) {
+            console.error(`Failed to open class file: ${classPath}`);
+            continue;
+          }
+
+          try {
+            // Write updated class level
+            const result = this.kernel.write(fd, { level: cls.level });
+            if (result !== 0) {
+              console.error(`Failed to update class: ${result}`);
+            }
+          } finally {
+            this.kernel.close(fd);
+          }
         }
       } else {
-        // Create new class record
-        await supabase
-          .from('game_character_class')
-          .insert({
+        // Create a new class record
+        const createPath = `/proc/character/${characterId}/class/create`;
+        const fd = this.kernel.open(createPath, OpenMode.WRITE);
+        if (fd < 0) {
+          console.error(`Failed to open class creation path: ${createPath}`);
+          continue;
+        }
+
+        try {
+          // Create new class record with level
+          const result = this.kernel.write(fd, {
             game_character_id: characterId,
             class_id: classId,
             level: cls.level
           });
+
+          if (result !== 0) {
+            console.error(`Failed to create class: ${result}`);
+          }
+        } finally {
+          this.kernel.close(fd);
+        }
       }
     }
 
@@ -280,19 +431,28 @@ export class SupabaseStorageDriver implements StorageDriver {
       .filter(Boolean) as number[];
 
     const classesToRemove = Array.from(existingClassMap.values())
-      .filter(c => !currentClassIds.includes(c.class_id))
-      .map(c => c.id);
+      .filter(c => !currentClassIds.includes(c.class_id));
 
-    if (classesToRemove.length > 0) {
-      await supabase
-        .from('game_character_class')
-        .delete()
-        .in('id', classesToRemove);
+    // Delete each class that's no longer present
+    for (const classToRemove of classesToRemove) {
+      const deletePath = `/proc/character/${characterId}/class/${classToRemove.class_id}`;
+      const fd = this.kernel.open(deletePath, OpenMode.WRITE);
+      if (fd >= 0) {
+        try {
+          // Use a special write operation to indicate deletion
+          const result = this.kernel.write(fd, { _delete: true });
+          if (result !== 0) {
+            console.error(`Failed to delete class: ${result}`);
+          }
+        } finally {
+          this.kernel.close(fd);
+        }
+      }
     }
   }
 
   /**
-   * Updates character feats in the database
+   * Updates character feats in the database using Unix file operations
    * @param characterId The character ID
    * @param feats The character's feats
    */
@@ -300,31 +460,54 @@ export class SupabaseStorageDriver implements StorageDriver {
     characterId: number,
     feats: Array<{ id: string; name: string }>
   ): Promise<void> {
-    // Fetch all feats to get their IDs
-    const { data: featData } = await supabase
-      .from('feat')
-      .select('id, name');
-
-    if (!featData) {
+    // First get all available feats using file operations
+    const featsPath = '/schema/feat/list';
+    const featsFd = this.kernel.open(featsPath, OpenMode.READ);
+    if (featsFd < 0) {
+      console.error(`Failed to open feats list: ${featsPath}`);
       throw new Error('Failed to fetch feat data');
+    }
+
+    let featData: any[] = [];
+    try {
+      const buffer: any = {};
+      const [result] = this.kernel.read(featsFd, buffer);
+      if (result !== 0) {
+        console.error(`Failed to read feats list: ${result}`);
+        throw new Error('Failed to fetch feat data');
+      }
+      featData = buffer.entities || [];
+    } finally {
+      this.kernel.close(featsFd);
     }
 
     const featMap = new Map(featData.map(f => [f.name.toLowerCase(), f.id]));
 
-    // Get existing character feats
-    const { data: existingFeats } = await supabase
-      .from('game_character_feat')
-      .select('*')
-      .eq('game_character_id', characterId);
+    // Get existing character feats using the character feats path
+    const characterFeatsPath = `/proc/character/${characterId}/feat/list`;
+    const existingFeatsFd = this.kernel.open(characterFeatsPath, OpenMode.READ);
+
+    let existingFeats: any[] = [];
+    if (existingFeatsFd >= 0) {
+      try {
+        const buffer: any = {};
+        const [result] = this.kernel.read(existingFeatsFd, buffer);
+        if (result === 0) {
+          existingFeats = buffer.feats || [];
+        }
+      } finally {
+        this.kernel.close(existingFeatsFd);
+      }
+    }
 
     const existingFeatMap = new Map(
-      (existingFeats || []).map(f => [f.feat_id, f])
+      existingFeats.map(f => [f.feat_id, f])
     );
 
     // Process each feat
     for (const feat of feats) {
       const featId = featMap.get(feat.name.toLowerCase());
-      
+
       if (!featId) {
         console.warn(`Unknown feat: ${feat.name}`);
         continue;
@@ -332,12 +515,27 @@ export class SupabaseStorageDriver implements StorageDriver {
 
       // Only add the feat if it doesn't already exist
       if (!existingFeatMap.has(featId)) {
-        await supabase
-          .from('game_character_feat')
-          .insert({
+        // Create a new feat record
+        const createPath = `/proc/character/${characterId}/feat/create`;
+        const fd = this.kernel.open(createPath, OpenMode.WRITE);
+        if (fd < 0) {
+          console.error(`Failed to open feat creation path: ${createPath}`);
+          continue;
+        }
+
+        try {
+          // Create new feat record
+          const result = this.kernel.write(fd, {
             game_character_id: characterId,
             feat_id: featId
           });
+
+          if (result !== 0) {
+            console.error(`Failed to create feat: ${result}`);
+          }
+        } finally {
+          this.kernel.close(fd);
+        }
       }
     }
 
@@ -347,19 +545,28 @@ export class SupabaseStorageDriver implements StorageDriver {
       .filter(Boolean) as number[];
 
     const featsToRemove = Array.from(existingFeatMap.values())
-      .filter(f => !currentFeatIds.includes(f.feat_id))
-      .map(f => f.id);
+      .filter(f => !currentFeatIds.includes(f.feat_id));
 
-    if (featsToRemove.length > 0) {
-      await supabase
-        .from('game_character_feat')
-        .delete()
-        .in('id', featsToRemove);
+    // Delete each feat that's no longer present
+    for (const featToRemove of featsToRemove) {
+      const deletePath = `/proc/character/${characterId}/feat/${featToRemove.feat_id}`;
+      const fd = this.kernel.open(deletePath, OpenMode.WRITE);
+      if (fd >= 0) {
+        try {
+          // Use a special write operation to indicate deletion
+          const result = this.kernel.write(fd, { _delete: true });
+          if (result !== 0) {
+            console.error(`Failed to delete feat: ${result}`);
+          }
+        } finally {
+          this.kernel.close(fd);
+        }
+      }
     }
   }
 
   /**
-   * Updates character skills in the database
+   * Updates character skills in the database using Unix file operations
    * @param characterId The character ID
    * @param skills The character's skills with ranks
    */
@@ -367,66 +574,123 @@ export class SupabaseStorageDriver implements StorageDriver {
     characterId: number,
     skills: Record<string, { ranks: number; classSkill: boolean }>
   ): Promise<void> {
-    // Fetch all skills to get their IDs
-    const { data: skillData } = await supabase
-      .from('skill')
-      .select('id, name');
-
-    if (!skillData) {
+    // First get all available skills using file operations
+    const skillsPath = '/schema/skill/list';
+    const skillsFd = this.kernel.open(skillsPath, OpenMode.READ);
+    if (skillsFd < 0) {
+      console.error(`Failed to open skills list: ${skillsPath}`);
       throw new Error('Failed to fetch skill data');
+    }
+
+    let skillData: any[] = [];
+    try {
+      const buffer: any = {};
+      const [result] = this.kernel.read(skillsFd, buffer);
+      if (result !== 0) {
+        console.error(`Failed to read skills list: ${result}`);
+        throw new Error('Failed to fetch skill data');
+      }
+      skillData = buffer.entities || [];
+    } finally {
+      this.kernel.close(skillsFd);
     }
 
     const skillMap = new Map(skillData.map(s => [s.name.toLowerCase(), s.id]));
 
-    // Get existing character skill ranks
-    const { data: existingSkills } = await supabase
-      .from('game_character_skill_rank')
-      .select('*')
-      .eq('game_character_id', characterId);
+    // Get existing character skill ranks using the character skills path
+    const characterSkillsPath = `/proc/character/${characterId}/skill/list`;
+    const existingSkillsFd = this.kernel.open(characterSkillsPath, OpenMode.READ);
+
+    let existingSkills: any[] = [];
+    if (existingSkillsFd >= 0) {
+      try {
+        const buffer: any = {};
+        const [result] = this.kernel.read(existingSkillsFd, buffer);
+        if (result === 0) {
+          existingSkills = buffer.skills || [];
+        }
+      } finally {
+        this.kernel.close(existingSkillsFd);
+      }
+    }
 
     // Group existing skills by skill ID
-    const existingSkillRanks = new Map<number, number>();
-    (existingSkills || []).forEach(s => {
-      const currentRanks = existingSkillRanks.get(s.skill_id) || 0;
-      existingSkillRanks.set(s.skill_id, currentRanks + 1);
-    });
+    const existingSkillRanks = new Map<number, { count: number, records: any[] }>();
+    for (const skill of existingSkills) {
+      const skillId = skill.skill_id;
+      const existing = existingSkillRanks.get(skillId) || { count: 0, records: [] };
+      existing.count += 1;
+      existing.records.push(skill);
+      existingSkillRanks.set(skillId, existing);
+    }
 
     // Process each skill
     for (const [skillName, skillInfo] of Object.entries(skills)) {
       const skillId = skillMap.get(skillName.toLowerCase());
-      
+
       if (!skillId) {
         console.warn(`Unknown skill: ${skillName}`);
         continue;
       }
 
-      const existingRanks = existingSkillRanks.get(skillId) || 0;
+      const existing = existingSkillRanks.get(skillId) || { count: 0, records: [] };
+      const existingRanks = existing.count;
       const desiredRanks = skillInfo.ranks;
 
       if (desiredRanks > existingRanks) {
         // Add additional ranks
         const ranksToAdd = desiredRanks - existingRanks;
         for (let i = 0; i < ranksToAdd; i++) {
-          await this.gameRulesAPI.createGameCharacterSkillRank({
-            game_character_id: characterId,
-            skill_id: skillId,
-            applied_at_level: i + existingRanks + 1
-          });
+          // Create a new skill rank record
+          const createPath = `/proc/character/${characterId}/skill/create`;
+          const fd = this.kernel.open(createPath, OpenMode.WRITE);
+          if (fd < 0) {
+            console.error(`Failed to open skill creation path: ${createPath}`);
+            continue;
+          }
+
+          try {
+            // Create new skill rank record
+            const result = this.kernel.write(fd, {
+              game_character_id: characterId,
+              skill_id: skillId,
+              applied_at_level: i + existingRanks + 1
+            });
+
+            if (result !== 0) {
+              console.error(`Failed to create skill rank: ${result}`);
+            }
+          } finally {
+            this.kernel.close(fd);
+          }
         }
       } else if (desiredRanks < existingRanks) {
         // Remove excess ranks
-        // To do this properly, we need to get the rank IDs in order
-        const { data: rankRecords } = await supabase
-          .from('game_character_skill_rank')
-          .select('id, applied_at_level')
-          .eq('game_character_id', characterId)
-          .eq('skill_id', skillId)
-          .order('applied_at_level', { ascending: false });
+        // Sort records by applied_at_level in descending order
+        const records = existing.records.sort((a, b) =>
+          (b.applied_at_level || 0) - (a.applied_at_level || 0)
+        );
 
-        if (rankRecords) {
-          const ranksToRemove = rankRecords.slice(0, existingRanks - desiredRanks);
-          for (const rank of ranksToRemove) {
-            await this.gameRulesAPI.deleteGameCharacterSkillRank(rank.id);
+        // Take the records to remove
+        const ranksToRemove = records.slice(0, existingRanks - desiredRanks);
+
+        for (const rank of ranksToRemove) {
+          // Delete the skill rank record
+          const deletePath = `/proc/character/${characterId}/skill/rank/${rank.id}`;
+          const fd = this.kernel.open(deletePath, OpenMode.WRITE);
+          if (fd < 0) {
+            console.error(`Failed to open skill rank deletion path: ${deletePath}`);
+            continue;
+          }
+
+          try {
+            // Use a special write operation to indicate deletion
+            const result = this.kernel.write(fd, { _delete: true });
+            if (result !== 0) {
+              console.error(`Failed to delete skill rank: ${result}`);
+            }
+          } finally {
+            this.kernel.close(fd);
           }
         }
       }
@@ -434,35 +698,54 @@ export class SupabaseStorageDriver implements StorageDriver {
   }
 
   /**
-   * Updates active features in the database
+   * Updates active features in the database using Unix file operations
    * @param characterId The character ID
    * @param entity The full entity with active features
    */
   private async updateActiveFeatures(characterId: number, entity: Entity): Promise<void> {
     if (!entity.activeFeatures) return;
 
-    // Fetch entity ID from the database
-    const { data: entityData } = await supabase
-      .from('entity')
-      .select('id')
-      .eq('game_character_id', characterId)
-      .eq('uuid', entity.id)
-      .single();
+    // Use entity file path to get entity database ID
+    const entityMetadataPath = `/proc/character/${characterId}/entity`;
+    const entityMetadataFd = this.kernel.open(entityMetadataPath, OpenMode.READ);
 
-    if (!entityData) {
+    if (entityMetadataFd < 0) {
+      console.error(`Failed to open entity metadata: ${entityMetadataPath}`);
       throw new Error(`Entity record not found for character ID ${characterId}`);
     }
 
-    const entityId = entityData.id;
+    let entityId: number;
+    try {
+      const buffer: any = {};
+      const [result] = this.kernel.read(entityMetadataFd, buffer);
+      if (result !== 0 || !buffer.id) {
+        console.error(`Failed to read entity metadata: ${result}`);
+        throw new Error(`Entity record not found for character ID ${characterId}`);
+      }
+      entityId = buffer.id;
+    } finally {
+      this.kernel.close(entityMetadataFd);
+    }
 
-    // Get existing active features for this entity
-    const { data: existingFeatures } = await supabase
-      .from('active_feature')
-      .select('*')
-      .eq('entity_id', entityId);
+    // Get existing active features using the feature path
+    const featuresPath = `/proc/character/${characterId}/feature/list`;
+    const existingFeaturesFd = this.kernel.open(featuresPath, OpenMode.READ);
+
+    let existingFeatures: any[] = [];
+    if (existingFeaturesFd >= 0) {
+      try {
+        const buffer: any = {};
+        const [result] = this.kernel.read(existingFeaturesFd, buffer);
+        if (result === 0) {
+          existingFeatures = buffer.features || [];
+        }
+      } finally {
+        this.kernel.close(existingFeaturesFd);
+      }
+    }
 
     const existingFeatureMap = new Map(
-      (existingFeatures || []).map(f => [f.feature_path, f])
+      existingFeatures.map(f => [f.feature_path, f])
     );
 
     // Process each active feature
@@ -471,41 +754,86 @@ export class SupabaseStorageDriver implements StorageDriver {
       const existingFeature = existingFeatureMap.get(featurePath);
 
       if (existingFeature) {
-        // Update existing feature if needed
+        // The file path for this specific feature
+        const featureFilePath = `/proc/character/${characterId}/feature/${existingFeature.id}`;
+
         if (existingFeature.deactivated_at && feature.active) {
           // Reactivate the feature
-          await supabase
-            .from('active_feature')
-            .update({
+          const fd = this.kernel.open(featureFilePath, OpenMode.WRITE);
+          if (fd < 0) {
+            console.error(`Failed to open feature for reactivation: ${featureFilePath}`);
+            continue;
+          }
+
+          try {
+            // Update the feature to reactivate it
+            const result = this.kernel.write(fd, {
               activated_at: new Date().toISOString(),
               deactivated_at: null,
               state: feature.state || {},
               options: feature.options || {}
-            })
-            .eq('id', existingFeature.id);
+            });
+
+            if (result !== 0) {
+              console.error(`Failed to reactivate feature: ${result}`);
+            }
+          } finally {
+            this.kernel.close(fd);
+          }
         } else if (!existingFeature.deactivated_at && !feature.active) {
           // Deactivate the feature
-          await supabase
-            .from('active_feature')
-            .update({
+          const fd = this.kernel.open(featureFilePath, OpenMode.WRITE);
+          if (fd < 0) {
+            console.error(`Failed to open feature for deactivation: ${featureFilePath}`);
+            continue;
+          }
+
+          try {
+            // Update to deactivate the feature
+            const result = this.kernel.write(fd, {
               deactivated_at: new Date().toISOString()
-            })
-            .eq('id', existingFeature.id);
+            });
+
+            if (result !== 0) {
+              console.error(`Failed to deactivate feature: ${result}`);
+            }
+          } finally {
+            this.kernel.close(fd);
+          }
         } else if (feature.active) {
           // Update state and options if active
-          await supabase
-            .from('active_feature')
-            .update({
+          const fd = this.kernel.open(featureFilePath, OpenMode.WRITE);
+          if (fd < 0) {
+            console.error(`Failed to open feature for update: ${featureFilePath}`);
+            continue;
+          }
+
+          try {
+            // Update the feature state and options
+            const result = this.kernel.write(fd, {
               state: feature.state || {},
               options: feature.options || {}
-            })
-            .eq('id', existingFeature.id);
+            });
+
+            if (result !== 0) {
+              console.error(`Failed to update feature: ${result}`);
+            }
+          } finally {
+            this.kernel.close(fd);
+          }
         }
       } else if (feature.active) {
         // Create new active feature
-        await supabase
-          .from('active_feature')
-          .insert({
+        const createPath = `/proc/character/${characterId}/feature/create`;
+        const fd = this.kernel.open(createPath, OpenMode.WRITE);
+        if (fd < 0) {
+          console.error(`Failed to open feature creation path: ${createPath}`);
+          continue;
+        }
+
+        try {
+          // Create new active feature
+          const result = this.kernel.write(fd, {
             entity_id: entityId,
             feature_id: parseInt(feature.id) || 0,
             feature_path: featurePath,
@@ -514,61 +842,130 @@ export class SupabaseStorageDriver implements StorageDriver {
             state: feature.state || {},
             options: feature.options || {}
           });
+
+          if (result !== 0) {
+            console.error(`Failed to create feature: ${result}`);
+          }
+        } finally {
+          this.kernel.close(fd);
+        }
       }
     }
 
     // Deactivate features that are no longer in the list
     const currentFeaturePaths = entity.activeFeatures.map(f => f.path);
     const featuresToDeactivate = Array.from(existingFeatureMap.values())
-      .filter(f => !f.deactivated_at && !currentFeaturePaths.includes(f.feature_path))
-      .map(f => f.id);
+      .filter(f => !f.deactivated_at && !currentFeaturePaths.includes(f.feature_path));
 
-    if (featuresToDeactivate.length > 0) {
-      await supabase
-        .from('active_feature')
-        .update({ deactivated_at: new Date().toISOString() })
-        .in('id', featuresToDeactivate);
+    // Deactivate each feature that is no longer in the list
+    for (const feature of featuresToDeactivate) {
+      const featurePath = `/proc/character/${characterId}/feature/${feature.id}`;
+      const fd = this.kernel.open(featurePath, OpenMode.WRITE);
+      if (fd >= 0) {
+        try {
+          // Update to deactivate the feature
+          const result = this.kernel.write(fd, {
+            deactivated_at: new Date().toISOString()
+          });
+
+          if (result !== 0) {
+            console.error(`Failed to deactivate feature: ${result}`);
+          }
+        } finally {
+          this.kernel.close(fd);
+        }
+      }
     }
   }
 
   /**
-   * Loads a character entity from the database by ID
+   * Loads a character entity from the database by ID using Unix file operations
    * @param id The UUID of the entity to load
    * @returns The loaded entity or null if not found
    */
   async load(id: string): Promise<Entity | null> {
     try {
-      // First, try to find the entity record
-      const { data: entityData } = await supabase
-        .from('entity')
-        .select('*, ref_id')
-        .eq('type', 'character')
-        .eq('name', id)
-        .single();
+      console.log(`[SupabaseStorageDriver] Loading entity: ${id}`);
 
-      if (!entityData) {
-        console.warn(`Entity with UUID ${id} not found`);
-        return null;
+      // First, check if the entity file exists
+      const entityPath = this.gameRulesAPI.getFileSystemPath('entity', id);
+
+      if (this.kernel.exists(entityPath)) {
+        // Load the entity from the entity file
+        const fd = this.kernel.open(entityPath, OpenMode.READ);
+        if (fd < 0) {
+          console.error(`Failed to open entity file: ${entityPath}`);
+          return null;
+        }
+
+        try {
+          // Read the entity data
+          const buffer: any = {};
+          const [result] = this.kernel.read(fd, buffer);
+
+          if (result !== 0) {
+            console.error(`Failed to read entity file: ${result}`);
+            return null;
+          }
+
+          // Get the database ID from the entity metadata
+          const characterId = buffer.metadata?.databaseId;
+
+          if (characterId) {
+            // Make sure we have the latest character data
+            const characterData = await this.gameRulesAPI.getCharacterByFileOperation(characterId);
+
+            if (characterData) {
+              // Update any changed fields in the entity
+              buffer.name = characterData.name || buffer.name;
+              buffer.description = characterData.description || buffer.description;
+
+              // If the character has abilities, update them
+              if (characterData.game_character_ability && buffer.character.abilities) {
+                for (const ability of characterData.game_character_ability) {
+                  if (ability.ability) {
+                    const abilityName = ability.ability.name.toLowerCase();
+                    buffer.character.abilities[abilityName] = ability.value || 10;
+                  }
+                }
+              }
+            }
+          }
+
+          return buffer as Entity;
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
       }
 
-      const characterId = entityData.ref_id;
-      
-      // Load the character data
-      const characterData = await this.gameRulesAPI.getCompleteCharacterData(characterId);
-      if (!characterData) {
-        console.warn(`Character with ID ${characterId} not found`);
-        return null;
+      // Entity file doesn't exist, try to find the character by a direct lookup
+      const numericId = this.extractNumericId(id);
+
+      if (numericId) {
+        // Try to load the character data directly
+        const characterData = await this.gameRulesAPI.getCharacterByFileOperation(numericId);
+
+        if (characterData) {
+          // Construct an entity from the character data
+          const entity = this.constructEntityFromDatabaseCharacter(
+            { id: 0, name: id, type: 'character', ref_id: numericId },
+            characterData,
+            [] // No active features yet
+          );
+
+          // Create the entity file for next time
+          const createResult = this.kernel.create(entityPath, entity);
+          if (!createResult.success) {
+            console.warn(`Failed to create entity file: ${createResult.errorMessage}`);
+          }
+
+          return entity;
+        }
       }
 
-      // Get active features
-      const activeFeatures = await this.getActiveFeatures(entityData.id);
-
-      // Construct the entity from database character
-      return this.constructEntityFromDatabaseCharacter(
-        entityData, 
-        characterData, 
-        activeFeatures
-      );
+      console.warn(`Entity with UUID ${id} not found`);
+      return null;
     } catch (error) {
       console.error('Error loading character:', error);
       return null;
@@ -576,18 +973,36 @@ export class SupabaseStorageDriver implements StorageDriver {
   }
 
   /**
-   * Gets active features for an entity
+   * Gets active features for an entity using Unix file operations
    * @param entityId The database entity ID
    * @returns Array of active features
    */
   private async getActiveFeatures(entityId: number): Promise<any[]> {
-    const { data } = await supabase
-      .from('active_feature')
-      .select('*')
-      .eq('entity_id', entityId)
-      .is('deactivated_at', null);
+    // Get active features using the entity features path
+    const featuresPath = `/entity/${entityId}/features`;
+    const featuresFd = this.kernel.open(featuresPath, OpenMode.READ);
 
-    return data || [];
+    if (featuresFd < 0) {
+      console.error(`Failed to open entity features: ${featuresPath}`);
+      return [];
+    }
+
+    try {
+      // Read the active features
+      const buffer: any = {};
+      const [result] = this.kernel.read(featuresFd, buffer);
+      if (result !== 0) {
+        console.error(`Failed to read entity features: ${result}`);
+        return [];
+      }
+
+      // Return only active features (those without deactivated_at)
+      const allFeatures = buffer.features || [];
+      return allFeatures.filter((feature: any) => !feature.deactivated_at);
+    } finally {
+      // Always close file descriptor
+      this.kernel.close(featuresFd);
+    }
   }
 
   /**
@@ -834,42 +1249,88 @@ export class SupabaseStorageDriver implements StorageDriver {
   }
 
   /**
-   * Deletes a character from the database
+   * Deletes a character from the database using Unix file operations
    * @param id The UUID of the entity to delete
    * @returns True if successful
    */
   async delete(id: string): Promise<boolean> {
     try {
-      // Find the entity record to get the character ID
-      const { data: entityData } = await supabase
-        .from('entity')
-        .select('ref_id')
-        .eq('type', 'character')
-        .eq('name', id)
-        .single();
+      console.log(`[SupabaseStorageDriver] Deleting entity: ${id}`);
 
-      if (!entityData) {
-        console.warn(`Entity with UUID ${id} not found for deletion`);
-        return false;
+      // First check if the entity file exists
+      const entityPath = this.gameRulesAPI.getFileSystemPath('entity', id);
+
+      if (this.kernel.exists(entityPath)) {
+        // Get the character ID from the entity before deleting
+        const fd = this.kernel.open(entityPath, OpenMode.READ);
+
+        if (fd < 0) {
+          console.error(`Failed to open entity file for reading: ${entityPath}`);
+          return false;
+        }
+
+        let characterId: number | null = null;
+
+        try {
+          // Read the entity data to get character ID
+          const buffer: any = {};
+          const [result] = this.kernel.read(fd, buffer);
+
+          if (result === 0 && buffer.metadata?.databaseId) {
+            characterId = buffer.metadata.databaseId;
+          }
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+
+        // Delete the entity file
+        const unlinkResult = this.kernel.unlink(entityPath);
+        if (unlinkResult !== 0) {
+          console.error(`Failed to delete entity file: ${unlinkResult}`);
+          return false;
+        }
+
+        // If we have a character ID, delete the character file too
+        if (characterId) {
+          const characterPath = this.gameRulesAPI.getFileSystemPath('character', characterId);
+
+          if (this.kernel.exists(characterPath)) {
+            const characterUnlinkResult = this.kernel.unlink(characterPath);
+            if (characterUnlinkResult !== 0) {
+              console.warn(`Failed to delete character file: ${characterUnlinkResult}`);
+              // Continue anyway, as the entity is already deleted
+            }
+          }
+
+          // Use an ioctl to delete from database too
+          const devicePath = '/dev/db';
+          const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
+
+          if (deviceFd >= 0) {
+            try {
+              // Send a delete request
+              const ioctlResult = this.kernel.ioctl(deviceFd, 5, { // DatabaseOperation.DELETE
+                resource: 'character',
+                id: characterId
+              });
+
+              if (ioctlResult !== 0) {
+                console.warn(`Database delete operation failed: ${ioctlResult}`);
+                // Continue anyway, as we've already deleted the files
+              }
+            } finally {
+              this.kernel.close(deviceFd);
+            }
+          }
+        }
+
+        return true;
       }
 
-      const characterId = entityData.ref_id;
-
-      // Delete the entity record first (maintains referential integrity)
-      await supabase
-        .from('entity')
-        .delete()
-        .eq('type', 'character')
-        .eq('name', id);
-
-      // Delete the character record (cascading deletes should handle related records)
-      const { error } = await supabase
-        .from('game_character')
-        .delete()
-        .eq('id', characterId);
-
-      if (error) throw error;
-      return true;
+      // Entity not found
+      console.warn(`Entity with UUID ${id} not found for deletion`);
+      return false;
     } catch (error) {
       console.error('Error deleting character:', error);
       return false;
@@ -877,18 +1338,99 @@ export class SupabaseStorageDriver implements StorageDriver {
   }
 
   /**
-   * Lists all character entities
+   * Lists all character entities using Unix file operations
    * @returns Array of entity UUIDs
    */
   async list(): Promise<string[]> {
     try {
-      const { data, error } = await supabase
-        .from('entity')
-        .select('uuid')
-        .eq('type', 'character');
+      console.log(`[SupabaseStorageDriver] Listing all characters`);
 
-      if (error) throw error;
-      return (data || []).map(entity => entity.uuid);
+      // First, check if the list file exists
+      const listPath = '/proc/character/list';
+
+      if (this.kernel.exists(listPath)) {
+        // Read the list file
+        const fd = this.kernel.open(listPath, OpenMode.READ);
+
+        if (fd < 0) {
+          console.error(`Failed to open character list file: ${listPath}`);
+          return [];
+        }
+
+        try {
+          // Read the character list
+          const buffer: any = {};
+          const [result] = this.kernel.read(fd, buffer);
+
+          if (result !== 0) {
+            console.error(`Failed to read character list: ${result}`);
+            return [];
+          }
+
+          // Extract character IDs
+          if (buffer.characters && Array.isArray(buffer.characters)) {
+            // Use the list from the file
+            return buffer.characters.map(char => char.id || char.uuid || char.name).filter(Boolean);
+          }
+
+          return [];
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+      }
+
+      // No list file, scan the entity directory
+      const entityDir = '/entity';
+
+      if (this.kernel.exists(entityDir)) {
+        // Try to list all files in the entity directory
+        const stats = this.kernel.stat(entityDir);
+
+        if (stats && stats.isDirectory) {
+          // Get directory contents
+          const contents = this.kernel.readdir(entityDir);
+
+          // Filter for character entities
+          if (Array.isArray(contents)) {
+            // Read each file to check if it's a character
+            const characterIds: string[] = [];
+
+            for (const item of contents) {
+              const path = `${entityDir}/${item}`;
+
+              if (this.kernel.exists(path)) {
+                const stats = this.kernel.stat(path);
+
+                if (stats && stats.isFile) {
+                  // Read the file to check if it's a character entity
+                  const fd = this.kernel.open(path, OpenMode.READ);
+
+                  if (fd >= 0) {
+                    try {
+                      // Read the entity data
+                      const buffer: any = {};
+                      const [result] = this.kernel.read(fd, buffer);
+
+                      if (result === 0 && buffer.type === 'character') {
+                        characterIds.push(buffer.id);
+                      }
+                    } finally {
+                      this.kernel.close(fd);
+                    }
+                  }
+                }
+              }
+            }
+
+            return characterIds;
+          }
+        }
+      }
+
+      // Fallback: try to list characters directly from GameRulesAPI
+      const characters = await this.gameRulesAPI.listCharactersByFileOperation();
+      return characters.map(char => `character_${char.id}`);
     } catch (error) {
       console.error('Error listing characters:', error);
       return [];
