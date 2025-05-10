@@ -11,7 +11,8 @@
 		"yaml:split": "python yaml-tools/core/advanced_yaml_splitter.py data/pathfinder_data.yaml data/split",
 		"yaml:combine": "python yaml-tools/core/advanced_yaml_combiner.py data/split data/pathfinder_data.yaml",
 		"yaml:load": "python scripts/load_yaml_to_db.py",
-		"yaml:pipeline": "node yaml-tools/core/yaml_pipeline.js"
+		"yaml:pipeline": "node yaml-tools/core/yaml_pipeline.js",
+		"types:generate": "node scripts/generate_types.js"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.6.0",

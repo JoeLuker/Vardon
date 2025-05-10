@@ -16,6 +16,7 @@ import type { SchemaDescriptor } from './SchemaDescriptor';
 import { getSchemaRegistry } from './SchemaRegistry';
 import { OpenMode } from '../../kernel/types';
 import type { GameKernel } from '../../kernel/GameKernel';
+import type { CompleteCharacter, Character } from '../../../types/supabase';
 
 /**
  * File descriptor information for an open database resource
@@ -61,7 +62,17 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 
   /** Debug mode flag */
   private debug: boolean;
-  
+
+  // Define DatabaseOperation constants to match those used in the system
+  private readonly DATABASE_OPERATIONS = {
+    READ: 1,
+    QUERY: 2,
+    GET_BY_ID: 3,
+    CREATE: 4,
+    UPDATE: 5,
+    DELETE: 6
+  };
+
   /**
    * Create a new Supabase database driver
    * @param client Supabase client instance (REQUIRED - no longer has a default)
@@ -88,6 +99,54 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
       }
     }
 
+    // Register basic schemas for essential tables if they aren't already registered
+    const basicSchemas = [
+      {
+        name: 'game_character',
+        tableName: 'game_character',
+        primaryKey: 'id',
+        fields: ['id', 'name', 'label', 'user_id', 'current_hp', 'max_hp', 'is_offline', 'created_at', 'updated_at']
+      },
+      {
+        name: 'ability',
+        tableName: 'ability',
+        primaryKey: 'id',
+        fields: ['id', 'name', 'label', 'ability_type', 'created_at', 'updated_at']
+      },
+      {
+        name: 'skill',
+        tableName: 'skill',
+        primaryKey: 'id',
+        fields: ['id', 'name', 'label', 'ability_id']
+      },
+      {
+        name: 'feat',
+        tableName: 'feat',
+        primaryKey: 'id',
+        fields: ['id', 'name', 'description', 'type']
+      },
+      {
+        name: 'class',
+        tableName: 'class',
+        primaryKey: 'id',
+        fields: ['id', 'name', 'description', 'hit_die']
+      }
+    ];
+
+    for (const basicSchema of basicSchemas) {
+      if (!this.schemaRegistry.has(basicSchema.name)) {
+        this.registerSchema(basicSchema.name, {
+          tableName: basicSchema.tableName,
+          primaryKey: basicSchema.primaryKey,
+          fields: basicSchema.fields
+        });
+
+        if (this.debug) {
+          console.log(`[SupabaseDatabaseDriver] Registered basic schema for ${basicSchema.name}`);
+        }
+      }
+    }
+
     if (this.debug) {
       console.log('[SupabaseDatabaseDriver] Initialized with schemas:',
         Array.from(this.schemaRegistry.keys()));
@@ -97,6 +156,219 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
         console.log('[SupabaseDatabaseDriver] No kernel provided, falling back to direct Supabase access');
       }
     }
+  }
+
+  // The getCharacterById method has been moved below to prevent duplication
+
+  /**
+   * Execute a query against the database
+   * @param resourceType Resource type to query
+   * @param filter Filter criteria (optional)
+   * @param queryStr Query string (optional)
+   * @returns Query results or empty array if error
+   */
+  async query(resourceType: string, filter?: any, queryStr: string = '*'): Promise<any[]> {
+    try {
+      if (this.debug) {
+        console.log(`[SupabaseDatabaseDriver] Query on ${resourceType} with filter:`, filter);
+      }
+
+      // Get schema for resource type
+      const schema = this.getSchema(resourceType);
+      if (!schema) {
+        console.error(`[SupabaseDatabaseDriver] No schema found for resource type: ${resourceType}`);
+        return [];
+      }
+
+      // Build query
+      let query = this.client.from(schema.tableName).select(queryStr);
+
+      // Apply filters if provided
+      if (filter) {
+        // Handle specific filter types
+        if (filter.id) {
+          query = query.eq('id', filter.id);
+        }
+
+        if (filter.level_lte !== undefined) {
+          query = query.lte('level', filter.level_lte);
+        }
+
+        // Additional filters can be added here
+      }
+
+      // Execute query
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`[SupabaseDatabaseDriver] Query error:`, error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error(`[SupabaseDatabaseDriver] Error in query:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get a character by ID from the database
+   * @param id Character ID
+   * @param query Query parameters (optional)
+   * @returns Type-safe character data
+   */
+  async getCharacterById(id: number | string, query: string = '*'): Promise<CompleteCharacter> {
+    try {
+      if (this.debug) {
+        console.log(`[SupabaseDatabaseDriver] Getting character by ID: ${id} with query: ${query}`);
+      }
+
+      // Use Supabase client to fetch character data
+      const { data, error } = await this.client
+        .from('game_character')
+        .select(query === 'complete' ? this.getCompleteCharacterQuery() : query)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`[SupabaseDatabaseDriver] Error fetching character ${id}:`, error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      if (!data) {
+        console.error(`[SupabaseDatabaseDriver] No character found with ID: ${id}`);
+        throw new Error(`Character not found: ${id}`);
+      }
+
+      return data as CompleteCharacter;
+    } catch (error) {
+      console.error(`[SupabaseDatabaseDriver] Error in getCharacterById:`, error);
+      throw error; // Let the error propagate to caller
+    }
+  }
+
+  /**
+   * Generate the complete character query for Supabase
+   * @returns The complete query string
+   */
+  private getCompleteCharacterQuery(): string {
+    return `
+      *,
+      game_character_ability(*, ability(*)),
+      game_character_class(
+        *,
+        class(
+          *,
+          class_feature(
+            *,
+            spellcasting_class_feature(
+              *,
+              spellcasting_type(*),
+              spell_progression_type(*, spell_progression(*)),
+              ability(*)
+            )
+          )
+        )
+      ),
+      game_character_abp_choice(
+        *,
+        node:abp_node(
+          *,
+          bonuses:abp_node_bonus(*, bonus_type:abp_bonus_type(*))
+        )
+      ),
+      game_character_ancestry(
+        *,
+        ancestry(
+          *,
+          ancestry_trait(
+            *,
+            ancestry_trait_benefit(
+              *,
+              ancestry_trait_benefit_bonus(
+                *,
+                bonus_type(*),
+                target_specifier(*)
+              )
+            ),
+            replacing_traits:ancestry_trait_replacement!replacing_trait_id(
+              replaced_trait:ancestry_trait!replaced_trait_id(*)
+            )
+          )
+        )
+      ),
+      game_character_ancestry_trait(
+        *,
+        ancestry_trait(
+          *,
+          ancestry_trait_benefit(
+            *,
+            ancestry_trait_benefit_bonus(
+              *,
+              bonus_type(*),
+              target_specifier(*)
+            )
+          ),
+          replacing_traits:ancestry_trait_replacement!replacing_trait_id(
+            replaced_trait:ancestry_trait!replaced_trait_id(*)
+          )
+        )
+      ),
+      game_character_armor(*, armor(*)),
+      game_character_equipment(*, equipment(*)),
+      game_character_feat(*, feat(*)),
+      game_character_trait(*, trait(*)),
+      game_character_class_feature(
+        *,
+        class_feature(
+          *,
+          spellcasting_class_feature(
+            *,
+            spellcasting_type(*),
+            spell_progression_type(*),
+            ability(*)
+          ),
+          class_feature_benefit(
+            *,
+            class_feature_benefit_bonus(
+              *,
+              bonus_type(*),
+              target_specifier(*)
+            )
+          )
+        )
+      ),
+      game_character_corruption_manifestation(
+        *,
+        manifestation:corruption_manifestation(*)
+      ),
+      game_character_corruption(*, corruption(*)),
+      game_character_skill_rank(*, skill(*, ability(*))),
+      game_character_favored_class_bonus(*, favored_class_choice(*)),
+      game_character_archetype(
+        *,
+        archetype(
+          *,
+          archetype_class_feature(
+            *,
+            class_feature(
+              *,
+              class_feature_benefit(
+                *,
+                class_feature_benefit_bonus(
+                  *,
+                  bonus_type(*),
+                  target_specifier(*)
+                )
+              )
+            ),
+            archetype_class_feature_alteration(*),
+            archetype_class_feature_replacement(*)
+          )
+        )
+      )
+    `;
   }
   
   /**

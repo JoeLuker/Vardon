@@ -4,6 +4,8 @@
 
 import type { Capability } from '../../kernel/types';
 import { ErrorCode } from '../../kernel/ErrorHandler';
+import type { SupabaseDatabaseDriver } from '../database/SupabaseDatabaseDriver';
+import type { CompleteCharacter } from '../../../types/supabase';
 
 /**
  * Character device ioctl request codes
@@ -33,18 +35,30 @@ export class CharacterCapability implements Capability {
   
   // Implement the kernel property required by the Capability interface
   kernel: any = null;
+
+  // Database driver for data access
+  databaseDriver: SupabaseDatabaseDriver | null = null;
   
   // Called when the device is mounted
   onMount(kernel: any): void {
     console.log(`[CharacterCapability] Device mounting, kernel:`, !!kernel);
+    console.log(`[CharacterCapability] Has database driver:`, !!this.databaseDriver);
     this.kernel = kernel;
-    
+
     // Ensure required directories exist
     this.ensureDirectoriesExist();
+
+    // Log character capability mounting to help with debugging
+    console.log(`[CharacterCapability] Character device mounted at /dev/character`);
+
+    // Emit an event to notify other components
+    if (kernel && kernel.events) {
+      kernel.events.emit('character:device_ready', { path: '/dev/character' });
+    }
   }
   
   // Store loaded character data for quick access
-  private characterCache: Map<string, any> = new Map();
+  private characterCache: Map<string, CompleteCharacter> = new Map();
   
   /**
    * Ensures the required directory structure exists
@@ -132,92 +146,85 @@ export class CharacterCapability implements Capability {
   /**
    * Process character device requests
    */
-  ioctl(fd: number, request: number, arg: any): number {
+  async ioctl(fd: number, request: number, arg: any): Promise<number> {
     console.log(`[CharacterCapability] Processing ioctl request ${request}`, arg);
-    
+
     // Ensure directories exist before processing any request
     const dirResult = this.ensureDirectoriesExist();
     if (dirResult !== ErrorCode.SUCCESS) {
       return dirResult;
     }
-    
-    switch (request) {
-      case CharacterRequest.GET_CHARACTER:
-        return this.getCharacter(arg);
-        
-      case CharacterRequest.UPDATE_CHARACTER:
-        return this.updateCharacter(arg);
-        
-      case CharacterRequest.GET_ABILITIES:
-        return this.getAbilities(arg);
-        
-      case CharacterRequest.UPDATE_ABILITY:
-        return this.updateAbility(arg);
-        
-      default:
-        console.error(`[CharacterCapability] Unknown request code: ${request}`);
-        return ErrorCode.EINVAL;
+
+    try {
+      switch (request) {
+        case CharacterRequest.GET_CHARACTER:
+          return await this.getCharacter(arg);
+
+        case CharacterRequest.UPDATE_CHARACTER:
+          return this.updateCharacter(arg);
+
+        case CharacterRequest.GET_ABILITIES:
+          return this.getAbilities(arg);
+
+        case CharacterRequest.UPDATE_ABILITY:
+          return this.updateAbility(arg);
+
+        default:
+          console.error(`[CharacterCapability] Unknown request code: ${request}`);
+          return ErrorCode.EINVAL;
+      }
+    } catch (error) {
+      console.error(`[CharacterCapability] Error processing ioctl request:`, error);
+      return ErrorCode.EIO;
     }
   }
   
   /**
    * Get a character by ID
    */
-  private getCharacter(arg: any): number {
-    const { entityPath, characterId } = arg;
-    
-    if (!entityPath && !characterId) {
-      console.error(`[CharacterCapability] No entity path or character ID provided`);
+  private async getCharacter(arg: any): Promise<number> {
+    // Check parameters - now support 'operation' field for Unix-style IOCTL
+    const { operation, entityPath, characterId } = arg;
+
+    if ((!operation || operation !== 'getCharacter') && !entityPath && !characterId) {
+      console.error(`[CharacterCapability] Invalid parameters for character operation`);
       return ErrorCode.EINVAL;
     }
-    
+
     // Ensure directory structure exists
     const dirResult = this.ensureDirectoriesExist();
     if (dirResult !== ErrorCode.SUCCESS) {
       return dirResult;
     }
-    
+
     // Extract the character ID from path if not provided
     const id = characterId || this.extractCharacterId(entityPath);
-    
-    // In a real implementation, we would access the character data
-    // For now, we'll simulate success and provide dummy data
-    arg.character = {
-      id: id,
-      name: 'Simulated Character',
-      totalLevel: 1,
-      game_character_class: [
-        { 
-          id: 1, 
-          class: { id: 1, name: 'Fighter' },
-          level: 1
-        }
-      ],
-      game_character_ancestry: [
-        { 
-          id: 1, 
-          ancestry: { id: 1, name: 'Human' } 
-        }
-      ],
-      abilities: {
-        STR: 10,
-        DEX: 10,
-        CON: 10,
-        INT: 10,
-        WIS: 10,
-        CHA: 10
-      },
-      skills: {
-        1: { total: 4, ranks: 1 },
-        2: { total: 5, ranks: 1 },
-        3: { total: 3, ranks: 1 }
+
+    try {
+      // Check if we have a database driver available
+      if (!this.databaseDriver) {
+        console.error(`[CharacterCapability] No database driver available`);
+        return ErrorCode.ENOSYS;
       }
-    };
-    
-    // Cache the character data
-    this.characterCache.set(arg.character.id, arg.character);
-    
-    return ErrorCode.SUCCESS;
+
+      console.log(`[CharacterCapability] Using database driver to get character ${id}`);
+      // Check if id is a string or number and handle it appropriately
+      // For string IDs that aren't numeric, we'll try to find by name instead (future feature)
+      // For now, we'll parse it as a number or use the string directly
+      const characterId = id.toString().match(/^\d+$/) ? Number(id) :
+                         isNaN(parseInt(id)) ? id : parseInt(id);
+      // Try to fetch character data from the database
+      const characterData = await this.databaseDriver.getCharacterById(characterId, 'complete');
+
+      console.log(`[CharacterCapability] Successfully loaded character from database: ${characterData.id}, ${characterData.name}`);
+      arg.character = characterData;
+      // Cache the character data
+      this.characterCache.set(String(characterData.id), characterData);
+      return ErrorCode.SUCCESS;
+    } catch (error) {
+      console.error(`[CharacterCapability] Error getting character data:`, error);
+      return ErrorCode.EIO;
+    }
   }
   
   /**

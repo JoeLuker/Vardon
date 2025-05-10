@@ -11,20 +11,37 @@ export { type Entity, type Capability, type Plugin } from './kernel/types';
 
 // Capability exports
 export { type AbilityCapability } from './capabilities/ability/types';
-export { AbilityCapabilityProvider } from './capabilities/ability/AbilityCapabilityProvider';
+export { createAbilityCapability } from './capabilities/ability/AbilityCapabilityComposed';
 export { type BonusCapability } from './capabilities/bonus/types';
-export { BonusCapabilityProvider } from './capabilities/bonus/BonusCapabilityProvider';
+export { createBonusCapability } from './capabilities/bonus/BonusCapabilityComposed';
 export { type SkillCapability } from './capabilities/skill/types';
-export { SkillCapabilityProvider } from './capabilities/skill/SkillCapabilityProvider';
+export { createSkillCapability } from './capabilities/skill/SkillCapabilityComposed';
+export { type CombatCapability } from './capabilities/combat/types';
+export { createCombatCapability } from './capabilities/combat/CombatCapabilityComposed';
 
 // Plugin exports
-export { PluginManager } from './plugins/PluginManager';
+export { PluginManagerComposed as PluginManager } from './plugins/PluginManagerComposed';
 export { BasePlugin } from './plugins/BasePlugin';
 export { FeatPlugin } from './plugins/feats/FeatPlugin';
 export { SkillFocusPlugin } from './plugins/feats/SkillFocusPlugin';
 
-// Migration exports
-export { FeatureToPluginMigrator } from './plugins/migration/FeatureToPluginMigrator';
+// Migration capability is now handled using the Unix composition pattern
+// No migration exports needed
+
+// Database type exports
+export type {
+  Character,
+  CompleteCharacter,
+  Ability,
+  Class,
+  ClassFeature,
+  Feat,
+  Skill,
+  Ancestry,
+  Tables,
+  TablesInsert,
+  TablesUpdate
+} from '../types/supabase';
 
 // API exports
 export { GameAPI } from './core/GameAPI';
@@ -36,4 +53,3 @@ export { initializeApplication } from './application';
 // Test exports (for debugging and development)
 export { runCapabilityTest } from './tests/CapabilityTests';
 export { runPluginTest } from './tests/PluginTests';
-export { runMigrationTest } from './tests/MigrationTests';
