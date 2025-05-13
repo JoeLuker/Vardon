@@ -103,6 +103,24 @@
 			}
 
 			try {
+				// Ensure entity exists at entityPath
+				if (!kernel.exists(entityPath)) {
+					// Create entity file with basic data if it doesn't exist
+					console.log(`Creating entity file at ${entityPath}`);
+					kernel.create(entityPath, {
+						id: character.id,
+						type: 'character',
+						name: character.name || 'Unknown Character',
+						properties: {
+							abilities: {}
+						},
+						metadata: {
+							createdAt: Date.now(),
+							updatedAt: Date.now()
+						}
+					});
+				}
+
 				// Call ioctl to get all ability scores
 				const ioctlResult = kernel.ioctl(fd, ABILITY_REQUEST.GET_ALL, {
 					operation: 'getBreakdown',
@@ -210,6 +228,24 @@
 		try {
 			// Path to character in filesystem
 			const entityPath = `${ABILITY_PATHS.PROC_CHARACTER}/${character.id}`;
+
+			// Ensure entity exists at entityPath
+			if (!kernel.exists(entityPath)) {
+				// Create entity file with basic data if it doesn't exist
+				console.log(`Creating entity file at ${entityPath}`);
+				kernel.create(entityPath, {
+					id: character.id,
+					type: 'character',
+					name: character.name || 'Unknown Character',
+					properties: {
+						abilities: {}
+					},
+					metadata: {
+						createdAt: Date.now(),
+						updatedAt: Date.now()
+					}
+				});
+			}
 
 			// Request the ability breakdown
 			const abilityKey = ability.name.toLowerCase();
