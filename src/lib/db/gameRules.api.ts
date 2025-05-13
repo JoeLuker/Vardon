@@ -431,10 +431,19 @@ export class GameRulesAPI {
     });
 
     // Set up the Database Capability
-    this.initializeDatabaseCapability();
+    // We can't await in constructor, so we use a then() chain
+    this.initializeDatabaseCapability()
+      .then(() => {
+        if (this.debug) {
+          console.log('[GameRulesAPI] Async initialization of Database Capability completed');
+        }
+      })
+      .catch(error => {
+        console.error('[GameRulesAPI] Async initialization failed:', error);
+      });
 
     if (this.debug) {
-      console.log('[GameRulesAPI] Initialized with Database Capability');
+      console.log('[GameRulesAPI] Initialized with Database Capability (setup started)');
     }
   }
   
@@ -492,14 +501,70 @@ export class GameRulesAPI {
    * @returns Whether necessary directories exist or were created successfully
    */
   private ensureCharacterDirectoryExists(characterId: number): boolean {
+    // The Unix Way: Better error handling for proper diagnostics
     if (!this.hasDbCapability) {
-      console.error(`[GameRulesAPI] Database capability not available for character ${characterId}`);
+      // Provide detailed diagnostics for this common error case
+      const errorInfo = {
+        timestamp: Date.now(),
+        characterId,
+        kernelReady: !!this.kernel,
+        dbCapCreated: !!this.dbCapability,
+        dbDeviceExists: this.kernel && this.kernel.exists('/dev/db'),
+        procDirExists: this.kernel && this.kernel.exists('/proc'),
+        characterDirExists: this.kernel && this.kernel.exists('/proc/character'),
+      };
+
+      console.error(`[GameRulesAPI] Database capability not available for character ${characterId}`, errorInfo);
+
+      // The Unix Way: On failure, attempt to wait for or create resources using retry
+      if (this.kernel && !this.hasDbCapability && this.dbCapability) {
+        console.log('[GameRulesAPI] Attempting to recover database capability for character load...');
+
+        // Attempt to create critical directories directly
+        const procSuccess = this.ensureDirectoryExists('/proc', 'process directory (recovery)');
+        const charDirSuccess = this.ensureDirectoryExists('/proc/character', 'character directory (recovery)');
+
+        if (procSuccess && charDirSuccess) {
+          console.log('[GameRulesAPI] Recovery succeeded - directories created!');
+
+          // Mark capability as available since directories now exist
+          this.hasDbCapability = true;
+
+          // Signal recovery via event bus
+          if (this.kernel.events) {
+            this.kernel.events.emit('database:recovered', {
+              timestamp: Date.now(),
+              component: 'GameRulesAPI',
+              characterId
+            });
+          }
+
+          return true;
+        } else {
+          console.error('[GameRulesAPI] Recovery failed - could not create required directories');
+        }
+      }
+
       return false;
     }
 
     // Ensure /proc and /proc/character directories exist
-    return this.ensureDirectoryExists('/proc', 'process directory') &&
-           this.ensureDirectoryExists('/proc/character', 'character directory');
+    // Allow parent directory to be created if it doesn't exist yet
+    let success = this.ensureDirectoryExists('/proc', 'process directory');
+    if (!success) {
+      // The Unix Way: Better error reporting
+      console.error('[GameRulesAPI] Failed to ensure /proc directory exists');
+      return false;
+    }
+
+    // Now create character directory
+    success = this.ensureDirectoryExists('/proc/character', 'character directory');
+    if (!success) {
+      console.error('[GameRulesAPI] Failed to ensure /proc/character directory exists');
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -549,8 +614,10 @@ export class GameRulesAPI {
   /**
    * Initialize the Database Capability
    * This is a critical initialization method that sets up all required filesystem paths.
+   *
+   * The Unix way: Use proper initialization sequence and event signaling for readiness
    */
-  private initializeDatabaseCapability(): void {
+  private async initializeDatabaseCapability(): Promise<void> {
     try {
       console.log('[GameRulesAPI] Initializing Database Capability');
 
@@ -573,23 +640,49 @@ export class GameRulesAPI {
 
       // Also register capability with kernel (for backward compatibility)
       this.kernel.registerCapability(this.dbCapability.id, this.dbCapability);
+
+      // The Unix Way: Initialize base file structure first before setting capability as available
+      await this.initializeCriticalDirectories();
+
+      // Only mark capability as available AFTER directories are confirmed ready
       this.hasDbCapability = true;
 
-      // Ensure all critical directories exist
-      this.initializeCriticalDirectories();
+      // The Unix Way: Signal via event bus that the database is ready
+      // This allows listeners to respond accordingly rather than polling
+      if (this.kernel.events) {
+        this.kernel.events.emit('database:ready', {
+          timestamp: Date.now(),
+          component: 'GameRulesAPI',
+          success: true
+        });
+      }
 
       console.log('[GameRulesAPI] Database Capability mounted successfully at /dev/db');
     } catch (error) {
       console.error('[GameRulesAPI] Failed to initialize Database Capability:', error);
       this.hasDbCapability = false;
+
+      // The Unix Way: Signal error condition via event bus
+      if (this.kernel.events) {
+        this.kernel.events.emit('database:error', {
+          timestamp: Date.now(),
+          component: 'GameRulesAPI',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
   }
   
   /**
    * Initialize all critical directories needed for the application.
    * This method ensures all required directory paths exist.
+   *
+   * The Unix way: Implement resilient directory creation with retries and proper
+   * error handling, following Unix's "do one thing well" principle.
+   *
+   * @returns Whether all critical directories were successfully created
    */
-  private initializeCriticalDirectories(): void {
+  private async initializeCriticalDirectories(): Promise<boolean> {
     try {
       console.log('[GameRulesAPI] Ensuring critical directories exist...');
 
@@ -613,31 +706,84 @@ export class GameRulesAPI {
       // Combine all directories to create
       const allDirectories = [...criticalPaths, ...schemaDirectories];
 
-      // Create all directories
-      let allPathsExist = true;
-      for (const { path, description } of allDirectories) {
+      // The Unix Way: Create the most critical directories first with retries
+      // This ensures base directories are available before child directories
+      console.log('[GameRulesAPI] Creating critical base directories first...');
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      // Create critical paths first with retries
+      for (const { path, description } of criticalPaths) {
         if (path === '/dev') {
           // Skip creating /dev directly - it should already exist in the kernel
           continue;
         }
 
+        // Try up to maxRetries times for critical paths
+        let success = false;
+        for (let i = 0; i <= maxRetries && !success; i++) {
+          // If this is a retry, log it and wait a brief moment
+          if (i > 0) {
+            console.log(`[GameRulesAPI] Retry ${i}/${maxRetries} creating ${description}: ${path}`);
+            // Small delay before retry (incrementing with each retry)
+            const delay = i * 10;
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+
+          success = this.ensureDirectoryExists(path, description);
+
+          // If successful on a retry, record it
+          if (success && i > 0) {
+            retryCount++;
+          }
+        }
+
+        // If still not successful after retries, this is a fatal error
+        if (!success) {
+          console.error(`[GameRulesAPI] FATAL: Failed to create critical directory ${path} after ${maxRetries} retries`);
+          return false;
+        }
+      }
+
+      if (retryCount > 0) {
+        console.log(`[GameRulesAPI] Successfully created ${retryCount} directories after retries`);
+      }
+
+      // Now create schema directories (non-critical, but still important)
+      console.log('[GameRulesAPI] Creating schema directories...');
+      let allSchemaDirsExist = true;
+      for (const { path, description } of schemaDirectories) {
         const success = this.ensureDirectoryExists(path, description);
         if (!success) {
-          allPathsExist = false;
+          console.warn(`[GameRulesAPI] Failed to create schema directory: ${path}`);
+          allSchemaDirsExist = false;
         }
       }
 
       // Final report
-      if (!allPathsExist) {
-        console.error('[GameRulesAPI] Some directories are still missing after initialization');
-        if (this.hasDbCapability) {
-          console.warn('[GameRulesAPI] Database capability may not function correctly');
-        }
+      if (!allSchemaDirsExist) {
+        console.warn('[GameRulesAPI] Some schema directories could not be created. This may affect schema operations.');
       } else {
-        console.log('[GameRulesAPI] All critical directories verified successfully');
+        console.log('[GameRulesAPI] All directories verified successfully');
       }
+
+      // The Unix Way: Write sentinel file to indicate directories are ready
+      try {
+        if (!this.kernel.exists('/etc/db_dirs_ready')) {
+          this.kernel.create('/etc/db_dirs_ready', {
+            timestamp: Date.now(),
+            status: 'ready'
+          });
+        }
+      } catch (sentinelError) {
+        console.warn('[GameRulesAPI] Failed to create sentinel file, but continuing:', sentinelError);
+      }
+
+      // Return true only if critical directories were created
+      return true;
     } catch (error) {
       console.error('[GameRulesAPI] Error during directory initialization:', error);
+      return false;
     }
   }
 
@@ -1020,24 +1166,108 @@ export class GameRulesAPI {
    */
   async getCharacterByFileOperation(characterId: number): Promise<CompleteCharacter> {
     try {
+      // The Unix Way: Log operation start with timestamp
+      const startTime = Date.now();
       if (this.debug) {
-        console.log(`[GameRulesAPI] Getting character by file operation: ${characterId}`);
+        console.log(`[GameRulesAPI] ${new Date(startTime).toISOString()} Getting character by file operation: ${characterId}`);
       }
 
       // Get file path
       const path = this.getFileSystemPath('character', characterId);
 
-      // Check if file exists
+      // The Unix Way: Check for necessary filesystem resources first
+      if (!this.hasDbCapability) {
+        // Emit a specific database capability error event
+        if (this.kernel && this.kernel.events) {
+          this.kernel.events.emit('database:error:capability_unavailable', {
+            timestamp: Date.now(),
+            operation: 'getCharacterByFileOperation',
+            characterId
+          });
+        }
+
+        // The Unix Way: Try to recover by recreating necessary directories
+        const recovered = this.ensureCharacterDirectoryExists(characterId);
+        if (!recovered) {
+          throw new Error(`Database capability not available when loading character ${characterId}`);
+        } else {
+          console.log(`[GameRulesAPI] Successfully recovered database capability for character ${characterId}`);
+        }
+      }
+
+      // The Unix Way: Create a lock file to indicate this character is being accessed
+      // This helps prevent race conditions with multiple concurrent accesses
+      const lockPath = `${path}.lock`;
+      let lockCreated = false;
+
+      try {
+        // Create lock file if it doesn't exist
+        if (!this.kernel.exists(lockPath)) {
+          const lockResult = this.kernel.create(lockPath, {
+            created: Date.now(),
+            pid: 'gameRulesAPI',
+            operation: 'getCharacterByFileOperation'
+          });
+
+          if (lockResult.success) {
+            lockCreated = true;
+          } else {
+            console.warn(`[GameRulesAPI] Failed to create lock file: ${lockPath}`);
+          }
+        }
+      } catch (lockError) {
+        // Non-fatal, we'll continue without lock
+        console.warn(`[GameRulesAPI] Error creating lock file:`, lockError);
+      }
+
+      // Check if character file exists
       if (!this.kernel.exists(path)) {
         console.log(`[GameRulesAPI] Character file doesn't exist: ${path}, fetching from database`);
+
+        // The Unix Way: Emit an event before database fetch to notify observers
+        if (this.kernel && this.kernel.events) {
+          this.kernel.events.emit('character:fetching', {
+            timestamp: Date.now(),
+            characterId,
+            source: 'database'
+          });
+        }
 
         // Try to fetch character directly from database
         const characterData = await this.fetchCharacterFromDatabase(characterId);
 
         if (characterData) {
           // Character found, create the file for future access
-          this.createCharacterFile(characterId, characterData);
+          const success = this.createCharacterFile(characterId, characterData);
+
+          // The Unix Way: Signal success via event
+          if (this.kernel && this.kernel.events) {
+            this.kernel.events.emit('character:created', {
+              timestamp: Date.now(),
+              characterId,
+              success
+            });
+          }
+
+          // Always remove lock after operation
+          if (lockCreated) {
+            try {
+              this.kernel.unlink(lockPath);
+            } catch (unlockError) {
+              console.warn(`[GameRulesAPI] Error removing lock:`, unlockError);
+            }
+          }
+
           return characterData;
+        }
+
+        // The Unix Way: Signal failure via event for monitoring tools
+        if (this.kernel && this.kernel.events) {
+          this.kernel.events.emit('character:not_found', {
+            timestamp: Date.now(),
+            characterId,
+            source: 'database'
+          });
         }
 
         // No character found in database
@@ -1049,11 +1279,41 @@ export class GameRulesAPI {
       if (fd < 0) {
         console.error(`[GameRulesAPI] Failed to open character file: ${fd}`);
 
+        // The Unix Way: Emit specific error event for monitoring
+        if (this.kernel && this.kernel.events) {
+          this.kernel.events.emit('file:open_error', {
+            timestamp: Date.now(),
+            path,
+            characterId,
+            errorCode: fd
+          });
+        }
+
+        // Remove any invalid file that can't be opened
+        console.log(`[GameRulesAPI] Removing invalid file that cannot be opened: ${path}`);
+        try {
+          this.kernel.unlink(path);
+        } catch (unlinkError) {
+          console.warn(`[GameRulesAPI] Error removing invalid file:`, unlinkError);
+        }
+
         // Try direct database access as fallback
         console.log(`[GameRulesAPI] Trying database fallback for character ${characterId}`);
         const fallbackData = await this.fetchCharacterFromDatabase(characterId);
 
         if (fallbackData) {
+          // Save for next time
+          this.createCharacterFile(characterId, fallbackData);
+
+          // Always remove lock after operation
+          if (lockCreated) {
+            try {
+              this.kernel.unlink(lockPath);
+            } catch (unlockError) {
+              console.warn(`[GameRulesAPI] Error removing lock:`, unlockError);
+            }
+          }
+
           return fallbackData;
         }
 
@@ -1068,11 +1328,23 @@ export class GameRulesAPI {
         if (result !== 0) {
           console.error(`[GameRulesAPI] Failed to read character file: ${result}`);
 
+          // The Unix Way: Emit specific error event
+          if (this.kernel && this.kernel.events) {
+            this.kernel.events.emit('file:read_error', {
+              timestamp: Date.now(),
+              path,
+              characterId,
+              errorCode: result
+            });
+          }
+
           // Try direct database access as fallback
           console.log(`[GameRulesAPI] Trying database fallback after file read error`);
           const fallbackData = await this.fetchCharacterFromDatabase(characterId);
 
           if (fallbackData) {
+            // Replace invalid file
+            this.createCharacterFile(characterId, fallbackData);
             return fallbackData;
           }
 
@@ -1080,11 +1352,20 @@ export class GameRulesAPI {
         }
 
         // Check if buffer is valid
-        if (!buffer || Object.keys(buffer).length === 0) {
+        if (!buffer || Object.keys(buffer).length === 0 || !buffer.id) {
           console.error(`[GameRulesAPI] Character file is empty or invalid`);
 
+          // The Unix Way: Emit specific error event
+          if (this.kernel && this.kernel.events) {
+            this.kernel.events.emit('file:invalid_data', {
+              timestamp: Date.now(),
+              path,
+              characterId
+            });
+          }
+
           // Try direct database access as fallback
-          console.log(`[GameRulesAPI] Trying database fallback for empty file`);
+          console.log(`[GameRulesAPI] Trying database fallback for empty/invalid file`);
           const fallbackData = await this.fetchCharacterFromDatabase(characterId);
 
           if (fallbackData) {
@@ -1096,13 +1377,50 @@ export class GameRulesAPI {
           throw new Error(`Character file for ${characterId} is empty or invalid and database fallback failed`);
         }
 
+        // The Unix Way: Log successful operation with duration
+        const endTime = Date.now();
+        if (this.debug) {
+          console.log(`[GameRulesAPI] Character ${characterId} loaded successfully in ${endTime - startTime}ms`);
+        }
+
+        // The Unix Way: Emit load event for performance monitoring
+        if (this.kernel && this.kernel.events) {
+          this.kernel.events.emit('character:loaded', {
+            timestamp: endTime,
+            characterId,
+            duration: endTime - startTime,
+            source: 'file'
+          });
+        }
+
         return buffer as CompleteCharacter;
       } finally {
-        // Always close the file descriptor
+        // The Unix Way: Always clean up resources
+        // Close the file descriptor
         this.kernel.close(fd);
+
+        // Remove lock file if we created one
+        if (lockCreated) {
+          try {
+            this.kernel.unlink(lockPath);
+          } catch (unlockError) {
+            console.warn(`[GameRulesAPI] Error removing lock:`, unlockError);
+          }
+        }
       }
     } catch (error) {
-      console.error(`[GameRulesAPI] Error getting character by file operation: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[GameRulesAPI] Error getting character by file operation: ${errorMessage}`);
+
+      // The Unix Way: Emit error event for monitoring and diagnostics
+      if (this.kernel && this.kernel.events) {
+        this.kernel.events.emit('character:load_error', {
+          timestamp: Date.now(),
+          characterId,
+          error: errorMessage
+        });
+      }
+
       throw error; // Propagate the error upward
     }
   }
@@ -1189,27 +1507,48 @@ export class GameRulesAPI {
         }
       };
 
-      // Force removal of existing file to prevent partial writes
+      // For existing files, we'll update instead of removing them
+      // since they might have open file descriptors
       if (this.kernel.exists(characterPath)) {
-        console.log(`[GameRulesAPI] Removing existing character file at ${characterPath}`);
-        this.kernel.unlink(characterPath);
+        console.log(`[GameRulesAPI] Updating existing character file at ${characterPath}`);
+        const fd = this.kernel.open(characterPath, OpenMode.WRITE);
+
+        if (fd < 0) {
+          console.error(`[GameRulesAPI] Failed to open character file for update: ${fd}`);
+          return false;
+        }
+
+        try {
+          // Write the updated data
+          const writeResult = this.kernel.write(fd, enhancedData);
+
+          if (writeResult !== 0) {
+            console.error(`[GameRulesAPI] Failed to write to character file: ${writeResult}`);
+            return false;
+          }
+
+          return true;
+        } finally {
+          // Always close the file descriptor
+          this.kernel.close(fd);
+        }
+      } else {
+        // Create a new file with the enhanced data
+        console.log(`[GameRulesAPI] Creating character file at ${characterPath}`);
+        const createResult = this.kernel.create(characterPath, enhancedData);
+
+        if (!createResult.success) {
+          console.warn(`[GameRulesAPI] Failed to create character file: ${createResult.errorMessage}`);
+          return false;
+        }
+
+        // Verify the file was created and contains valid data
+        if (this.debug) {
+          this.verifyCharacterFile(characterId, characterPath);
+        }
+
+        return true;
       }
-
-      // Create a new file with the enhanced data
-      console.log(`[GameRulesAPI] Creating character file at ${characterPath}`);
-      const createResult = this.kernel.create(characterPath, enhancedData);
-
-      if (!createResult.success) {
-        console.warn(`[GameRulesAPI] Failed to create character file: ${createResult.errorMessage}`);
-        return false;
-      }
-
-      // Verify the file was created and contains valid data
-      if (this.debug) {
-        this.verifyCharacterFile(characterId, characterPath);
-      }
-
-      return true;
     } catch (error) {
       console.error(`[GameRulesAPI] Error creating/updating character file: ${error}`);
       return false;
