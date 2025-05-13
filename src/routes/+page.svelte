@@ -2,16 +2,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { GameRulesAPI } from '$lib/db';
-	import { supabase } from '$lib/db/supabaseClient';
 	import type { CompleteCharacter } from '$lib/db/gameRules.api';
-	
+
 	// State for character data
 	let characters = $state<CompleteCharacter[]>([]);
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
-	
-	// Initialize GameRulesAPI
-	const gameRules = new GameRulesAPI(supabase);
+
+	// Initialize GameRulesAPI without direct Supabase client
+	const gameRules = new GameRulesAPI();
 	
 	function formatCharacterClass(character: any) {
 		const archetype = character.game_character_archetype?.[0]?.archetype?.label || '';
@@ -62,7 +61,82 @@
 		}
 	}
 	
-	onMount(() => {
+	onMount(async () => {
+		// 🚨 EMERGENCY INITIALIZER - Fix for "Path not found: /proc/character/X" error
+		console.log('🚨 EMERGENCY CHARACTER INITIALIZER RUNNING');
+		try {
+			// Get kernel
+			const kernel = gameRules.getKernel();
+			
+			if (!kernel) {
+				console.error('🚨 NO KERNEL FOUND');
+				return;
+			}
+			
+			// Ensure directories
+			if (!kernel.exists('/proc')) {
+				console.log('🚨 CREATING /proc DIRECTORY');
+				kernel.mkdir('/proc');
+			}
+			
+			if (!kernel.exists('/proc/character')) {
+				console.log('🚨 CREATING /proc/character DIRECTORY');
+				kernel.mkdir('/proc/character');
+			}
+			
+			// Get all characters and create files
+			console.log('🚨 LOADING ALL CHARACTERS');
+			const allChars = await gameRules.getAllGameCharacter();
+			
+			if (allChars && allChars.length > 0) {
+				console.log(`🚨 FOUND ${allChars.length} CHARACTERS, CREATING FILES`);
+				
+				// Create a file for each character
+				for (const char of allChars) {
+					const charPath = `/proc/character/${char.id}`;
+					
+					// Check if file exists
+					if (!kernel.exists(charPath)) {
+						console.log(`🚨 CREATING MISSING FILE FOR CHARACTER ${char.id}`);
+						
+						try {
+							// Get full character data using standard method
+							// This will use the Unix file operations properly
+							const charData = await gameRules.getCompleteCharacterData(char.id);
+
+							if (charData) {
+								// Create the file
+								console.log(`🚨 CREATING FILE AT ${charPath}`);
+								const result = kernel.create(charPath, charData);
+								
+								console.log(`🚨 FILE CREATION RESULT:`, result);
+								
+								// Verify file exists
+								if (kernel.exists(charPath)) {
+									console.log(`✅ FILE ${charPath} SUCCESSFULLY CREATED`);
+								} else {
+									console.error(`❌ FILE ${charPath} CREATION FAILED! STILL DOESN'T EXIST!`);
+								}
+							} else {
+								console.error(`❌ NO DATA FOR CHARACTER ${char.id}`);
+							}
+						} catch (err) {
+							console.error(`❌ ERROR CREATING FILE FOR CHARACTER ${char.id}:`, err);
+						}
+					} else {
+						console.log(`✅ FILE ALREADY EXISTS FOR CHARACTER ${char.id}`);
+					}
+				}
+				
+				console.log('🚨 EMERGENCY INITIALIZATION COMPLETE');
+			} else {
+				console.log('🚨 NO CHARACTERS FOUND');
+			}
+		} catch (err) {
+			console.error('🚨 EMERGENCY INITIALIZATION FAILED:', err);
+		}
+		
+		// Continue with normal loading
 		loadCharacters();
 	});
 </script>

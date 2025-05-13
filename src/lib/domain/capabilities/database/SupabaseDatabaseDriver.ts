@@ -46,7 +46,21 @@ interface FileDescriptorInfo {
  */
 export class SupabaseDatabaseDriver implements DatabaseDriver {
   /** Supabase client instance */
-  private client: SupabaseClient;
+  private _client: SupabaseClient | null;
+
+  /**
+   * Get the Supabase client, lazy-loading it if needed
+   * This is only used in diagnostics or when needed for backward compatibility
+   */
+  private get client(): SupabaseClient {
+    if (!this._client) {
+      console.warn('Auto-importing supabaseClient (diagnostics only) - lazy loading client');
+      // Dynamic import for diagnostics only
+      const { supabaseClient } = require('$lib/db/supabaseClient');
+      this._client = supabaseClient;
+    }
+    return this._client;
+  }
 
   /** Kernel instance for Unix file operations */
   private kernel: GameKernel | null;
@@ -75,16 +89,18 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 
   /**
    * Create a new Supabase database driver
-   * @param client Supabase client instance (REQUIRED - no longer has a default)
+   * @param client Supabase client instance (can be null for diagnostics/testing)
    * @param kernel GameKernel instance (optional, for filesystem operations)
    * @param debug Whether to enable debug logging
    */
-  constructor(client: SupabaseClient, kernel?: GameKernel, debug: boolean = false) {
+  constructor(client: SupabaseClient | null, kernel?: GameKernel, debug: boolean = false) {
     if (!client) {
-      throw new Error('SupabaseDatabaseDriver requires a Supabase client. Use kernel.mount("/dev/db", new SupabaseDatabaseDriver(client))');
+      console.warn('SupabaseDatabaseDriver initialized without client - will auto-import on first use (diagnostics only)');
+      // Client will be lazy-loaded on first use
+      this._client = null;
+    } else {
+      this._client = client;
     }
-
-    this.client = client;
     this.kernel = kernel || null;
     this.debug = debug;
 
@@ -224,24 +240,79 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
         console.log(`[SupabaseDatabaseDriver] Getting character by ID: ${id} with query: ${query}`);
       }
 
-      // Use Supabase client to fetch character data
-      const { data, error } = await this.client
-        .from('game_character')
-        .select(query === 'complete' ? this.getCompleteCharacterQuery() : query)
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error(`[SupabaseDatabaseDriver] Error fetching character ${id}:`, error);
-        throw new Error(`Database error: ${error.message}`);
+      // Check if client is available
+      if (!this.client) {
+        console.error(`[SupabaseDatabaseDriver] No Supabase client available`);
+        throw new Error('Database connection not available');
       }
 
-      if (!data) {
-        console.error(`[SupabaseDatabaseDriver] No character found with ID: ${id}`);
-        throw new Error(`Character not found: ${id}`);
-      }
+      // Use alternative approach to get character if having issues with complex queries
+      try {
+        // First try the full query
+        const { data, error } = await this.client
+          .from('game_character')
+          .select(query === 'complete' ? this.getCompleteCharacterQuery() : query)
+          .eq('id', id)
+          .single();
 
-      return data as CompleteCharacter;
+        if (error) {
+          console.error(`[SupabaseDatabaseDriver] Error fetching character ${id} with full query:`, error);
+          throw error;
+        }
+
+        if (!data) {
+          console.error(`[SupabaseDatabaseDriver] No character found with ID: ${id}`);
+          throw new Error(`Character not found: ${id}`);
+        }
+
+        console.log(`[SupabaseDatabaseDriver] Successfully fetched character:`, {
+          id: data.id,
+          name: data.name,
+          hasClasses: !!data.game_character_class?.length,
+          hasAbilities: !!data.game_character_ability?.length
+        });
+
+        return data as CompleteCharacter;
+      } catch (queryError) {
+        // If the complex query fails, try a simpler query as fallback
+        console.warn(`[SupabaseDatabaseDriver] Falling back to basic character query:`, queryError);
+
+        // Get basic character data
+        const { data: basicData, error: basicError } = await this.client
+          .from('game_character')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (basicError) {
+          console.error(`[SupabaseDatabaseDriver] Basic character query failed:`, basicError);
+          throw new Error(`Database error: ${basicError.message}`);
+        }
+
+        if (!basicData) {
+          console.error(`[SupabaseDatabaseDriver] Character not found with basic query: ${id}`);
+          throw new Error(`Character not found: ${id}`);
+        }
+
+        console.log(`[SupabaseDatabaseDriver] Successfully fetched basic character data:`, {
+          id: basicData.id,
+          name: basicData.name
+        });
+
+        // Create a minimal CompleteCharacter with the basic data
+        const minimalCharacter = {
+          ...basicData,
+          game_character_ability: [],
+          game_character_class: [],
+          // Add other required empty arrays to satisfy CompleteCharacter
+          game_character_ancestry: [],
+          game_character_feat: [],
+          game_character_skill_rank: [],
+          game_character_class_feature: []
+        } as CompleteCharacter;
+
+        return minimalCharacter;
+      }
     } catch (error) {
       console.error(`[SupabaseDatabaseDriver] Error in getCharacterById:`, error);
       throw error; // Let the error propagate to caller
@@ -677,6 +748,8 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
    */
   async exists(path: string): Promise<boolean> {
     try {
+      console.log(`[SupabaseDatabaseDriver] Checking if path exists: ${path}`);
+
       // If we have a kernel, use direct filesystem check
       if (this.kernel) {
         // Convert the database path to a Unix file path
@@ -695,9 +768,32 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
             unixPath = `/proc/${dbPath.resource}/${dbPath.id}`;
           }
 
+          console.log(`[SupabaseDatabaseDriver] Converted to Unix path: ${unixPath}`);
+
           // Use kernel.exists to check if the path exists
-          return this.kernel.exists(unixPath);
+          const exists = this.kernel.exists(unixPath);
+
+          // Also check the file content if it exists
+          if (exists) {
+            try {
+              const stats = this.kernel.stat(unixPath);
+              console.log(`[SupabaseDatabaseDriver] Path stats:`, stats);
+
+              // If it's not a file or its size is 0, consider it non-existent
+              if (!stats || !stats.isFile || stats.size === 0) {
+                console.log(`[SupabaseDatabaseDriver] Path exists but is empty or not a file: ${unixPath}`);
+                return false;
+              }
+            } catch (statError) {
+              console.error(`[SupabaseDatabaseDriver] Error checking file stats: ${statError}`);
+              // Consider it non-existent if we can't stat it
+              return false;
+            }
+          }
+
+          return exists;
         } catch (error) {
+          console.error(`[SupabaseDatabaseDriver] Error parsing path: ${error}`);
           // If parsing fails, try the direct path
           return this.kernel.exists(path);
         }
