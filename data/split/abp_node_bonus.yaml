@@ -1,0 +1,194 @@
+abp_node_bonus:
+# Level 3 Resistance
+- id: 1
+  node_id: *resistance_1_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 1
+  target_specifier: 'resistance'
+
+# Level 4 Basic Attunement
+- id: 2
+  node_id: *attunement_1_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 1
+  target_specifier: 'armor'
+
+- id: 3
+  node_id: *attunement_1_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 1
+  target_specifier: 'weapon'
+
+# Level 6 Mental Prowess Options
+- id: 4
+  node_id: *mental_prowess_int_node_id
+  bonus_type_id: *abp_mental_prowess_int_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 5
+  node_id: *mental_prowess_wis_node_id
+  bonus_type_id: *abp_mental_prowess_wis_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 6
+  node_id: *mental_prowess_cha_node_id
+  bonus_type_id: *abp_mental_prowess_cha_id
+  value: 2
+  target_specifier: 'first'
+
+# Level 7 Physical Prowess Options
+- id: 7
+  node_id: *physical_prowess_str_node_id
+  bonus_type_id: *abp_physical_prowess_str_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 8
+  node_id: *physical_prowess_dex_node_id
+  bonus_type_id: *abp_physical_prowess_dex_id
+  value: 2
+  target_specifier: 'first'
+
+- id: 9
+  node_id: *physical_prowess_con_node_id
+  bonus_type_id: *abp_physical_prowess_con_id
+  value: 2
+  target_specifier: 'first'
+
+# Level 5 Deflection
+- id: 10
+  node_id: *deflection_1_node_id
+  bonus_type_id: *abp_deflection_id
+  value: 1
+  target_specifier: 'deflection'
+
+# Level 8 Bonuses
+- id: 11
+  node_id: *level_8_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 2
+  target_specifier: 'resistance'
+
+- id: 12
+  node_id: *level_8_node_id
+  bonus_type_id: *abp_toughening_id
+  value: 1
+  target_specifier: 'natural_armor'
+
+# Level 9 Bonuses
+- id: 15
+  node_id: *level_9_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 2
+  target_specifier: 'armor'
+
+- id: 16
+  node_id: *level_9_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 2
+  target_specifier: 'weapon'
+
+# Level 10 Bonuses
+- id: 17
+  node_id: *level_10_node_id
+  bonus_type_id: *abp_deflection_id
+  value: 2
+  target_specifier: 'deflection'
+
+- id: 18
+  node_id: *level_10_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 3
+  target_specifier: 'resistance'
+
+# Level 11 Mental Increase
+- id: 19
+  node_id: *level_11_node_id
+  bonus_type_id: *abp_mental_prowess_int_id
+  value: 4
+  target_specifier: 'first'
+
+# Level 12 Physical Increase
+- id: 20
+  node_id: *level_12_node_id
+  bonus_type_id: *abp_physical_prowess_str_id
+  value: 4
+  target_specifier: 'first'
+
+# Level 13 Bonuses
+- id: 21
+  node_id: *level_13_node_id
+  bonus_type_id: *abp_resistance_id
+  value: 4
+  target_specifier: 'resistance'
+
+- id: 22
+  node_id: *level_13_node_id
+  bonus_type_id: *abp_toughening_id
+  value: 2
+  target_specifier: 'natural_armor'
+
+# Level 14 Split/Single Options
+- id: 23
+  node_id: *level_14_armor_split_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 2
+  target_specifier: 'split'
+
+- id: 24
+  node_id: *level_14_armor_single_node_id
+  bonus_type_id: *abp_armor_attunement_id
+  value: 3
+  target_specifier: 'single'
+
+- id: 25
+  node_id: *level_14_weapon_split_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 2
+  target_specifier: 'split'
+
+- id: 26
+  node_id: *level_14_weapon_single_node_id
+  bonus_type_id: *abp_weapon_attunement_id
+  value: 3
+  target_specifier: 'single'
+
+# Level 19 Legendary Gift Bonuses
+- id: 40
+  node_id: *legendary_ability_node_id
+  bonus_type_id: *legendary_gift_ability_id
+  value: 1
+  target_specifier: 'any'
+
+- id: 41
+  node_id: *legendary_armor_node_id
+  bonus_type_id: *legendary_gift_armor_id
+  value: 2
+  target_specifier: 'armor'
+
+- id: 42
+  node_id: *legendary_body_node_id
+  bonus_type_id: *legendary_gift_body_id
+  value: 6
+  target_specifier: 'physical'
+
+- id: 43
+  node_id: *legendary_mind_node_id
+  bonus_type_id: *legendary_gift_mind_id
+  value: 6
+  target_specifier: 'mental'
+
+- id: 44
+  node_id: *legendary_shield_node_id
+  bonus_type_id: *legendary_gift_shield_id
+  value: 5
+  target_specifier: 'dual'
+
+- id: 45
+  node_id: *legendary_weapons_node_id
+  bonus_type_id: *legendary_gift_weapons_id
+  value: 5
+  target_specifier: 'dual'
+

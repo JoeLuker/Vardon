@@ -1,0 +1,17 @@
+qualification_type:
+- id: &qualification_type_class_feature_id 1
+  name: 'class_feature'
+  label: 'Class Feature'
+
+- id: &qualification_type_fulfillment_id 2
+  name: 'fulfillment'
+  label: 'fulfillment'
+
+- id: &qualification_type_monk_unchained_ki_power_id 3
+  name: 'monk_unchained_ki_power'
+  label: 'Unchained Monk Ki Power'
+
+- id: &qualification_type_wild_talent_id 4
+  name: 'wild_talent'
+  label: 'Wild Talent'
+

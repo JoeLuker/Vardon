@@ -1,18 +1,18 @@
 <!-- FILE: src/lib/ui/CharacterHeader.svelte -->
 <script lang="ts">
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+	import { Card, CardHeader } from '$lib/components/ui/card';
+	import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';
 
 	// UI components
 	import { Badge } from '$lib/components/ui/badge';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { Card, CardHeader } from '$lib/components/ui/card';
 
 	/**
 	 * Props:
-	 * character: The EnrichedCharacter object or null/undefined if loading.
+	 * character: The AssembledCharacter object or null/undefined if loading.
 	 */
 	let { character } = $props<{
-		character?: EnrichedCharacter | null;
+		character?: AssembledCharacter | null;
 	}>();
 </script>
 

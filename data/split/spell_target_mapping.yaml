@@ -1,0 +1,4 @@
+spell_target_mapping:
+- spell_id: *spell_augury_id
+  spell_target_id: *spell_target_you_id
+

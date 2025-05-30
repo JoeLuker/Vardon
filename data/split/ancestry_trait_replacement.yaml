@@ -1,0 +1,28 @@
+ancestry_trait_replacement:
+- replaced_trait_id: *ancestry_trait_oread_type_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_mostly_human_id
+- replaced_trait_id: *ancestry_trait_oread_languages_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_mostly_human_id
+- replaced_trait_id: *ancestry_trait_oread_earth_affinity_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_crystalline_form_id
+- replaced_trait_id: *ancestry_trait_oread_earth_affinity_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_earth_insight_id
+- replaced_trait_id: *ancestry_trait_oread_spell_like_ability_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_ferrous_growth_id
+- replaced_trait_id: *ancestry_trait_oread_energy_resistance_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_granite_skin_id
+- replaced_trait_id: *ancestry_trait_oread_spell_like_ability_id
+  replacing_trait_id: *ancestry_alternate_trait_oread_mountain_born_id
+- replaced_trait_id: *ancestry_trait_tengu_gifted_linguist_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_carrion_sense_id
+- replaced_trait_id: *ancestry_trait_tengu_swordtrained_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_claw_attack_id
+- replaced_trait_id: *ancestry_trait_tengu_sneaky_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_deft_swords_id
+- replaced_trait_id: *ancestry_trait_tengu_natural_weapons_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_deft_swords_id
+- replaced_trait_id: *ancestry_trait_tengu_swordtrained_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_exotic_weapon_training_id
+- replaced_trait_id: *ancestry_trait_tengu_gifted_linguist_id
+  replacing_trait_id: *ancestry_alternate_trait_tengu_glide_id
+

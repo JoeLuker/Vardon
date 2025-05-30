@@ -1,0 +1,10 @@
+game_character_weapon:
+- game_character_id: *game_character_vardon_salvador_id
+  weapon_id: *weapon_dagger_id
+  enhancement: 0
+  masterwork: true
+- game_character_id: *game_character_killiq_said_id
+  weapon_id: *weapon_kukri_id
+  enhancement: 1
+  masterwork: true
+

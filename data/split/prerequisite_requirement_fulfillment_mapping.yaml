@@ -1,0 +1,166 @@
+prerequisite_requirement_fulfillment_mapping:
+# ALL fulfillments are needed for requirements
+- prerequisite_requirement_id: *prerequisite_requirement_flurry_id
+  prerequisite_fulfillment_id: *fulfillment_flurry_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_kinetic_fist_id
+  prerequisite_fulfillment_id: *fulfillment_kinetic_fist_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_elemental_burst_id
+  prerequisite_fulfillment_id: *fulfillment_elemental_fury_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_cobra_breath_id
+  prerequisite_fulfillment_id: *fulfillment_diamond_body_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_ki_hurricane_id
+  prerequisite_fulfillment_id: *fulfillment_sudden_speed_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_ki_volley_id
+  prerequisite_fulfillment_id: *fulfillment_diamond_soul_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_light_steps_id
+  prerequisite_fulfillment_id: *fulfillment_feather_balance_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_wind_jump_id
+  prerequisite_fulfillment_id: *fulfillment_high_jump_id
+
+- prerequisite_requirement_id: *prerequisite_requirement_ki_guardian_id
+  prerequisite_fulfillment_id: *fulfillment_ki_metabolism_id
+
+# TODO: INTEGRATE WITH THE OVERALL PREREQ SYSTEM
+# Prerequisite types table
+# prerequisite_type:
+# - id: &prereq_type_ability_score_id 1
+#   name: 'ability_score'
+
+# - id: &prereq_type_feat_id 2
+#   name: 'feat'
+
+# - id: &prereq_type_skill_id 3
+#   name: 'skill'
+
+# - id: &prereq_type_class_feature_id 4
+#   name: 'class_feature'
+
+# class_feature_benefit_prerequisite:
+# - id: &class_feature_benefit_prerequisite_level_1_spells_id 1
+#   name: 'level_1_spells'
+#   label: 'Level 1 Spells'
+#   description: |
+#     The ability to cast 1st-level spells.
+
+# - id: &class_feature_benefit_prerequisite_level_2_spells_id 2
+#   name: 'level_2_spells'
+#   label: 'Level 2 Spells'
+#   description: |
+#     The ability to cast 2nd-level spells.
+
+# class_feature_benefit_prerequisite_mapping:
+# - id: &class_feature_benefit_prerequisite_mapping_cleric_level_2_spells_id 1
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_cleric_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_medium_level_2_spells_id 2
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_medium_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_oracle_level_2_spells_id 3
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_oracle_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_psychic_level_2_spells_id 4
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_psychic_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_occultist_level_2_spells_id 5
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_occultist_divination_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_witch_level_2_spells_id 6
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_witch_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_warpriest_level_2_spells_id 7
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_warpriest_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_spiritualist_level_2_spells_id 8
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_spiritualist_spellcasting_level_2_id
+
+# - id: &class_feature_benefit_prerequisite_mapping_shaman_level_2_spells_id 9
+#   class_feature_benefit_prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+#   class_feature_benefit_id: *class_feature_benefit_shaman_spellcasting_level_2_id
+
+# # Ability score prerequisites table
+# ability_score_prerequisites:
+# - id: &ability_prereq_dex13_id 2
+#   prerequisite_type_id: *prereq_type_ability_score_id
+#   ability_id: *ability_dex_id
+#   value: 13
+
+# - id: &ability_prereq_dex15_id 3
+#   prerequisite_type_id: *prereq_type_ability_score_id
+#   ability_id: *ability_dex_id
+#   value: 15
+
+# # Feat prerequisites table
+# feat_prerequisites:
+# - id: &feat_prereq_nimble_moves_id 1
+#   prerequisite_type_id: *prereq_type_feat_id
+#   prerequisite_id: *feat_nimble_moves_id
+
+# - id: &feat_prereq_improved_unarmed_strike_id 2
+#   prerequisite_type_id: *prereq_type_feat_id
+#   prerequisite_id: *feat_improved_unarmed_strike_id
+
+# - id: &feat_prereq_craft_alchemy_1_id 3
+#   prerequisite_type_id: *prereq_type_skill_id
+#   prerequisite_id: *skill_craft_alchemy_id
+#   ranks: 1
+
+# - id: &feat_prereq_poison_use_id 4
+#   prerequisite_type_id: *prereq_type_class_feature_id
+#   prerequisite_id: *class_feature_poison_use_id
+
+# - id: &feat_prereq_spell_focus_id 5
+#   prerequisite_type_id: *prereq_type_feat_id
+#   prerequisite_id: *feat_spell_focus_id
+
+# - id: &feat_prereq_second_level_spells_id 6
+#   prerequisite_type_id: *prereq_type_class_feature_id
+#   prerequisite_id: *class_feature_benefit_prerequisite_level_2_spells_id
+
+# # Feat-to-prerequisite mapping table
+# feat_prerequisite_mapping:
+# - feat_id: *feat_acrobatic_steps_id
+#   prerequisite_id: *ability_prereq_dex15_id
+#   prerequisite_type_id: *prereq_type_ability_score_id
+
+# - feat_id: *feat_acrobatic_steps_id
+#   prerequisite_id: *feat_prereq_nimble_moves_id
+#   prerequisite_type_id: *prereq_type_feat_id
+
+# - feat_id: *feat_nimble_moves_id
+#   prerequisite_id: *ability_prereq_dex13_id
+#   prerequisite_type_id: *prereq_type_ability_score_id
+
+# - feat_id: *feat_adder_strike_id
+#   prerequisite_id: *feat_prereq_improved_unarmed_strike_id
+#   prerequisite_type_id: *prereq_type_feat_id
+
+# - feat_id: *feat_adder_strike_id
+#   prerequisite_id: *feat_prereq_craft_alchemy_1_id
+#   prerequisite_type_id: *prereq_type_skill_id
+
+# - feat_id: *feat_adder_strike_id
+#   prerequisite_id: *feat_prereq_poison_use_id
+#   prerequisite_type_id: *prereq_type_class_feature_id
+
+# - feat_id: *feat_sahir_afiyun_id
+#   prerequisite_id: *feat_prereq_spell_focus_id
+#   prerequisite_type_id: *prereq_type_feat_id
+
+# - feat_id: *feat_sahir_afiyun_id
+#   prerequisite_id: *feat_prereq_second_level_spells_id
+#   prerequisite_type_id: *prereq_type_class_feature_id

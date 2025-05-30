@@ -1,0 +1,14 @@
+archetype:
+- id: &archetype_mindchemist_id 801
+  name: 'mindchemist'
+  label: 'Mindchemist'
+- id: &archetype_hungry_ghost_monk_id 215
+  name: 'hungry_ghost_monk'
+  label: 'Hungry Ghost Monk (Unchained)'
+- id: &archetype_extra_bombs_id 221
+  name: 'extra_bombs'
+  label: 'Extra Bombs Replaces Brew Potion'
+- id: &archetype_elemental_ascetic_id 222
+  name: 'elemental_ascetic'
+  label: 'Elemental Ascetic'
+

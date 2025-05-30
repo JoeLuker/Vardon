@@ -1,0 +1,11 @@
+bonus_attack_progression:
+- id: &bonus_attack_progression_full_id 1
+  name: 'full'
+  label: 'full'
+- id: &bonus_attack_progression_three_quarters_id 2
+  name: 'three-quarters'
+  label: 'three-quarters'
+- id: &bonus_attack_progression_half_id 3
+  name: 'half'
+  label: 'half'
+

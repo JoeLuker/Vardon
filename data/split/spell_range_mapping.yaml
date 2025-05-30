@@ -1,0 +1,4 @@
+spell_range_mapping:
+- spell_id: *spell_augury_id
+  spell_range_id: *spell_range_personal_id
+

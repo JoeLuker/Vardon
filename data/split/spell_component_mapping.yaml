@@ -1,0 +1,13 @@
+spell_component_mapping:
+- spell_id: *spell_augury_id
+  spell_component_id: *spell_component_V_id
+
+- spell_id: *spell_augury_id
+  spell_component_id: *spell_component_S_id
+
+- spell_id: *spell_augury_id
+  spell_component_id: *spell_component_incense_id
+
+- spell_id: *spell_augury_id
+  spell_component_id: *spell_component_bones_id
+

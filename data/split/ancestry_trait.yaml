@@ -1,0 +1,244 @@
+ancestry_trait:
+# Tengu Standard Racial Traits
+- id: &ancestry_trait_tengu_ability_scores_id 91
+  name: 'tengu_ability_scores'
+  label: 'Tengu Ability Score Modifiers'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are fast and observant, but relatively fragile and delicate. They gain +2 Dexterity, +2 Wisdom, –2 Constitution.
+
+- id: &ancestry_trait_tengu_type_id 92
+  name: 'tengu_type'
+  label: 'Type'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are humanoids with the tengu subtype.
+
+- id: &ancestry_trait_tengu_size_id 93
+  name: 'tengu_size'
+  label: 'Size'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are Medium creatures and receive no bonuses or penalties due to their size.
+
+- id: &ancestry_trait_tengu_speed_id 94
+  name: 'tengu_speed'
+  label: 'Speed'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus have a base speed of 30 feet.
+
+- id: &ancestry_trait_tengu_languages_id 95
+  name: 'tengu_languages'
+  label: 'Languages'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus begin play speaking Common and Tengu. Tengus with high Intelligence scores can choose any languages they want (except for secret languages, such as Druidic).
+
+- id: &ancestry_trait_tengu_sneaky_id 96
+  name: 'tengu_sneaky'
+  label: 'Sneaky'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus gain a +2 racial bonus on Perception and Stealth checks.
+
+- id: &ancestry_trait_tengu_gifted_linguist_id 97
+  name: 'tengu_gifted_linguist'
+  label: 'Gifted Linguist'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus gain a +4 racial bonus on Linguistics checks, and learn 2 languages each time they gain a rank in Linguistics rather than 1 language.
+
+- id: &ancestry_trait_tengu_swordtrained_id 98
+  name: 'tengu_swordtrained'
+  label: 'Swordtrained'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus are trained from birth in swordplay, and as a result are automatically proficient with sword-like weapons (including bastard swords, daggers, elven curve blades, falchions, greatswords, kukris, longswords, punching daggers, rapiers, scimitars, short swords, and two-bladed swords).
+
+- id: &ancestry_trait_tengu_natural_weapons_id 99
+  name: 'tengu_natural_weapons'
+  label: 'Natural Weapons'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    A tengu has a bite attack that deals 1d3 points of damage.
+
+- id: &ancestry_trait_tengu_senses_id 100
+  name: 'tengu_senses'
+  label: 'Senses'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: true
+  description: |
+    Tengus have low-light vision allowing them to see twice as far as humans in conditions of dim light.
+
+- id: &ancestry_trait_oread_ability_scores_id 101
+  name: 'oread_ability_scores'
+  label: 'Oread Ability Score Modifiers'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads are strong, solid, stable, and stoic. They gain +2 Strength, +2 Wisdom, and –2 Charisma.
+
+- id: &ancestry_trait_oread_type_id 102
+  name: 'oread_type'
+  label: 'Type'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads are outsiders with the native subtype.
+
+- id: &ancestry_trait_oread_size_id 103
+  name: 'oread_size'
+  label: 'Size'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads are Medium creatures and thus have no bonuses or penalties due to their size.
+
+- id: &ancestry_trait_oread_speed_id 104
+  name: 'oread_speed'
+  label: 'Speed (Slow)'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads have a base speed of 20 feet.
+
+- id: &ancestry_trait_oread_languages_id 105
+  name: 'oread_languages'
+  label: 'Languages'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads begin play speaking Common and Terran. Oreads with high Intelligence scores can choose from the following: Aquan, Auran, Dwarven, Elven, Gnome, Halfling, Ignan, and Undercommon.
+
+- id: &ancestry_trait_oread_energy_resistance_id 106
+  name: 'oread_energy_resistance'
+  label: 'Energy Resistance'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads have acid resistance 5.
+
+- id: &ancestry_trait_oread_spell_like_ability_id 107
+  name: 'oread_spell_like_ability'
+  label: 'Spell-Like Ability'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oread can use magic stone 1/day (caster level equals the oread's total level; DC 11 + Charisma modifier).
+
+- id: &ancestry_trait_oread_darkvision_id 108
+  name: 'oread_darkvision'
+  label: 'Darkvision'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oreads can see perfectly in the dark up to 60 feet.
+
+- id: &ancestry_trait_oread_earth_affinity_id 109
+  name: 'oread_earth_affinity'
+  label: 'Earth Affinity'
+  ancestry_id: *ancestry_oread_id
+  is_standard: true
+  description: |
+    Oread sorcerers with the elemental (earth) bloodline treat their Charisma score as 2 points higher for all sorcerer spells and class abilities. Oread clerics with the Earth domain use their domain powers and spells at +1 caster level.
+
+# Oread Alternate Racial Traits
+- id: &ancestry_alternate_trait_oread_crystalline_form_id 6
+  name: 'oread_crystalline_form'
+  label: 'Crystalline Form'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Oreads with this trait gain a +2 racial bonus to AC against rays thanks to their reflective crystalline skin. In addition, once per day, they can deflect a single ray attack targeted at them as if they were using the Deflect Arrows feat.
+
+- id: &ancestry_alternate_trait_oread_earth_insight_id 7
+  name: 'oread_earth_insight'
+  label: 'Earth Insight'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Summon monster and summon nature's ally spells that such oreads cast last 2 rounds longer than normal when used to summon creatures with the earth subtype.
+
+- id: &ancestry_alternate_trait_oread_ferrous_growth_id 8
+  name: 'oread_ferrous_growth'
+  label: 'Ferrous Growth'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Once per day, such an oread can cause a touched piece of non-magical iron or steel to grow into an object up to 10 pounds in weight, such as a sword, crowbar, or light steel shield. This object remains in this form for 10 minutes or until broken or destroyed.
+
+- id: &ancestry_alternate_trait_oread_granite_skin_id 9
+  name: 'oread_granite_skin'
+  label: 'Granite Skin'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Rocky growths cover the skin of oreads with this racial trait. They gain a +1 racial bonus to natural armor.
+
+- id: &ancestry_alternate_trait_oread_mountain_born_id 10
+  name: 'oread_mountain_born'
+  label: 'Mountain-Born'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    Oreads gain a +2 racial bonus on Acrobatics checks made to cross narrow ledges and on saves against altitude fatigue and sickness.
+
+- id: &ancestry_alternate_trait_oread_mostly_human_id 11
+  name: 'oread_mostly_human'
+  label: 'Mostly Human'
+  ancestry_id: *ancestry_oread_id
+  is_standard: false
+  description: |
+    A few oreads have appearances much closer to those of their human ancestors; in fact, they may not even realize their true race. Such geniekin appear to be human, save perhaps minor features like unusual eye color, and they count as humanoid (human) as well as outsider (native) for all purposes (such as humanoid-affecting spells such as charm person or enlarge person). These geniekin do not automatically gain their associated elemental language (but may select it as a bonus language if their Intelligence is high enough).
+
+# Tengu Alternate Racial Traits
+- id: &ancestry_alternate_trait_tengu_carrion_sense_id 1
+  name: 'tengu_carrion_sense'
+  label: 'Carrion Sense'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Many tengus have a natural ability to sniff out carrion. While their sense of smell isn't as keen as that of other species, it is particularly attuned to the scent of injuries or death. Tengus with this racial trait have a limited scent ability, which only functions for corpses and badly wounded creatures (50% or fewer hit points).
+
+- id: &ancestry_alternate_trait_tengu_claw_attack_id 2
+  name: 'tengu_claw_attack'
+  label: 'Claw Attack'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Tengus with this racial trait have learned to use their claws as natural weapons. They gain two claw attacks as primary natural attacks that deal 1d3 points of damage, and are treated as having the Improved Unarmed Strike feat for the purpose of qualifying for other feats.
+
+- id: &ancestry_alternate_trait_tengu_deft_swords_id 3
+  name: 'tengu_deft_swords'
+  label: 'Deft Swords'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Some tengu learn dazzling blade techniques that allow them to use their weapons to protect against combat maneuvers. They gain a +2 dodge bonus to CMD while wielding a swordlike weapon.
+
+- id: &ancestry_alternate_trait_tengu_exotic_weapon_training_id 4
+  name: 'tengu_exotic_weapon_training'
+  label: 'Exotic Weapon Training'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Instead of swords, some tengus are trained in exotic weaponry. Such tengus choose a number of eastern weapons equal to 3 + their Intelligence bonus, and gain proficiency with these weapons.
+
+- id: &ancestry_alternate_trait_tengu_glide_id 5
+  name: 'tengu_glide'
+  label: 'Glide'
+  ancestry_id: *ancestry_tengu_id
+  is_standard: false
+  description: |
+    Some tengus can use their feathered arms and legs to glide. Tengus with this racial trait can make a DC 15 Fly check to fall safely from any height without taking falling damage, as if using feather fall. When falling safely, a tengu may make an additional DC 15 Fly check to glide, moving 5 feet laterally for every 20 feet he falls.
+

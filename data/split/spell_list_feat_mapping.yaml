@@ -1,0 +1,4 @@
+spell_list_feat_mapping:
+- spell_list_id: *spell_list_sahir_afiyun_id
+  feat_id: *feat_sahir_afiyun_id
+

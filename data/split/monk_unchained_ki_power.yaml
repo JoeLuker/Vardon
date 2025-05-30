@@ -1,0 +1,280 @@
+monk_unchained_ki_power:
+- id: &monk_unchained_ki_power_abundant_step_id 1
+  name: 'abundant_step'
+  label: 'Abundant Step'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 8
+  description: |
+    A monk with this ki power can slip magically between spaces, as if using the spell dimension door. Using this ability is a move action that consumes 2 points from his ki pool. The monk's caster level for this effect is equal to his monk level. He cannot take other creatures with him when he uses this ability.
+
+- id: &monk_unchained_ki_power_cobra_breath_id 2
+  name: 'cobra_breath'
+  label: 'Cobra Breath'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 12
+  description: |
+    Whenever a monk with this ki power uses diamond body to neutralize a poison, he can instead release that poison as a ranged touch attack against a single foe within 30 feet. If the attack hits, the foe must succeed at a saving throw (using the poison's original DC) or suffer the poison's effects, even if it was not originally a contact poison.
+
+- id: &monk_unchained_ki_power_diamond_body_id 3
+  name: 'diamond_body'
+  label: 'Diamond Body'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 8
+  description: |
+    By spending 1 point from his ki pool, a monk with this power can remove one toxin from his body as if using neutralize poison, using his monk level as his caster level. He can remove only one poison in this way per use of this ability.
+
+- id: &monk_unchained_ki_power_diamond_mind_id 4
+  name: 'diamond_mind'
+  label: 'Diamond Mind'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 6
+  description: |
+    By spending 1 point from his ki pool as a swift action, a monk with this power can suppress a fear effect affecting him as if using remove fear, using his monk level as his caster level. He can spend 2 ki points to activate this ability even when frightened or panicked.
+
+- id: &monk_unchained_ki_power_diamond_resilience_id 5
+  name: 'diamond_resilience'
+  label: 'Diamond Resilience'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 12
+  description: |
+    By spending 1 ki point as a swift action, the monk gains DR 2/—. At 16th level, the damage reduction increases to 4/—. At 19th level, it increases to DR 6/—. This DR lasts for 1 minute.
+
+- id: &monk_unchained_ki_power_diamond_soul_id 6
+  name: 'diamond_soul'
+  label: 'Diamond Soul'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 12
+  description: |
+    A monk can spend 2 points from his ki pool as a swift action to gain spell resistance equal to his monk level + 10. This spell resistance lasts for a number of rounds equal to the monk's level.
+
+- id: &monk_unchained_ki_power_elemental_fury_id 7
+  name: 'elemental_fury'
+  label: 'Elemental Fury'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 6
+  description: |
+    A monk who selects this ki power must select one type of energy: acid, cold, electricity, or fire. Once this choice is made, it cannot be changed. The monk can expend 1 point from his ki pool as a swift action to imbue his natural attacks with this energy, causing them to deal 1d6 points of damage of the chosen type for a number of rounds equal to 1/2 his monk level.
+
+- id: &monk_unchained_ki_power_elemental_burst_id 8
+  name: 'elemental_burst'
+  label: 'Elemental Burst'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 18
+  description: |
+    A monk with this ability can spend 4 ki points to unleash a gout of energy in a 30-foot cone. Creatures within the cone take 20d6 points of damage of the same type as the monk's elemental fury ki power. A Reflex save (DC = 10 + 1/2 the monk's level + his Wisdom modifier) halves the damage.
+
+- id: &monk_unchained_ki_power_empty_body_id 9
+  name: 'empty_body'
+  label: 'Empty Body'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 12
+  description: |
+    A monk with this ki power gains the ability to assume an ethereal state for 1 minute as though using the spell etherealness, using his monk level as his caster level. Using this ability is a move action that consumes 3 points from the monk's ki pool. This ability affects only the monk and cannot be used to make other creatures ethereal.
+
+- id: &monk_unchained_ki_power_feather_balance_id 10
+  name: 'feather_balance'
+  label: 'Feather Balance'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 4
+  description: |
+    A monk with this ability can spend 1 ki point as a swift action to achieve perfect balance. While this is active, the monk treats any Acrobatics attempt made to balance as if he had rolled a 20. This ability lasts for 1 minute.
+
+- id: &monk_unchained_ki_power_formless_mastery_id 11
+  name: 'formless_mastery'
+  label: 'Formless Mastery'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 7
+  description: |
+    A monk with this ability varies his styles, never repeating the same move twice and capitalizing on the weaknesses of an opponent's style. As long as he does not possess any style feat, the monk can spend 1 point from his ki pool as an immediate action to gain the following against opponents in the stance of a style feat: a +4 dodge bonus to AC, a +4 circumstance bonus on attack rolls, and a bonus equal to his monk level on damage rolls. These bonuses last until the end of the monk's next turn (or his current turn if he uses this ability on his own turn). The monk can activate this ability and the furious defense ki power with the same immediate action for a total cost of 3 ki points.
+
+- id: &monk_unchained_ki_power_furious_defense_id 12
+  name: 'furious_defense'
+  label: 'Furious Defense'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 7
+  description: |
+    By spending 1 point from his ki pool as an immediate action, a monk with this ki power can grant himself a +4 dodge bonus to AC until the end of his next turn. The monk can activate this ability and the formless mastery ki power with the same immediate action for a total cost of 3 ki points.
+
+- id: &monk_unchained_ki_power_high_jump_id 13
+  name: 'high_jump'
+  label: 'High Jump'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 4
+  description: |
+    A monk with this ki power adds his level as a bonus on all Acrobatics checks to jump, both for vertical jumps and horizontal jumps. In addition, he always counts as having a running start when attempting Acrobatics checks to jump. By spending 1 point from his ki pool as a swift action, the monk gains a +20 bonus on Acrobatics checks to jump for 1 round.
+
+- id: &monk_unchained_ki_power_insightful_wisdom_id 14
+  name: 'insightful_wisdom'
+  label: 'Insightful Wisdom'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 8
+  description: |
+    A monk with this ability can spend 2 ki points as an immediate action to give another ally within 30 feet just the right word of advice to prevent disaster. If the ally can hear the monk, she can reroll a single attack roll or saving throw. The ally must take the second result, even if it is worse.
+
+- id: &monk_unchained_ki_power_ki_blocker_id 15
+  name: 'ki_blocker'
+  label: 'Ki Blocker'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 10
+  description: |
+    A monk with this ability can spend 1 ki point as a free action before making an unarmed strike against a foe. If the attack hits, the monk can interrupt the target's flow of ki. If the monk successfully damages the target of his attack, that opponent's cost to activate abilities with ki increases by 1 ki point for 1 hour. If the monk spends 2 points from his ki pool, he can use this ability to affect the target's arcane pool, arcane reservoir, grit points, inspiration, or panache points instead of its ki pool. The effects of this ability do not stack, but multiple hits increase the duration by 1 hour for each hit.
+
+- id: &monk_unchained_ki_power_ki_hurricane_id 16
+  name: 'ki_hurricane'
+  label: 'Ki Hurricane'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 10
+  description: |
+    As a full-round action, a monk with this ability can move up to twice his speed. At any point in that movement, the monk can spend 1 ki point to make the first attack in his flurry of blows. He can later spend another ki point to make the next attack in his flurry of blows, and so on, until he either stops spending ki points or has exhausted all the attacks from his flurry of blows.
+
+- id: &monk_unchained_ki_power_ki_metabolism_id 17
+  name: 'ki_metabolism'
+  label: 'Ki Metabolism'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 4
+  description: |
+    A monk with this ability uses his ki to control his metabolism. As long as he has at least 1 point remaining in his ki pool, the monk needs to eat and drink only 1/4 as often as normal, needs only 2 hours of sleep each night (including to replenish his ki pool), and can hold his breath for up to 1 hour per point of Constitution. As a move action, he can spend 1 ki point to enter a state of suspended animation, falling unconscious and appearing dead to all senses. At the time he enters this state, he indicates a preset period of time or a triggering condition, after which he awakens.
+
+- id: &monk_unchained_ki_power_ki_mount_id 18
+  name: 'ki_mount'
+  label: 'Ki Mount'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 6
+  description: |
+    A monk with this ability can spend 1 ki point as a standard action to grant 2 temporary hit points per monk level he possesses to his mount for 1 hour per monk level. As long as the monk and his mount are adjacent or the monk is mounted, the mount shares the benefits of whichever of the AC bonus, evasion, high jump, improved evasion, ki strike, perfect self, and still mind abilities the monk possesses.
+
+- id: &monk_unchained_ki_power_ki_range_id 19
+  name: 'ki_range'
+  label: 'Ki Range'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 4
+  description: |
+    A monk with this ability can spend 1 ki point as a swift action to increase the range increment of any thrown monk weapon by 20 feet. Apply this benefit before doubling the range increment with the Far Shot feat.
+
+- id: &monk_unchained_ki_power_ki_visions_id 20
+  name: 'ki_visions'
+  label: 'Ki Visions'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 10
+  description: |
+    A monk with this ability often sees visions of spirits or hears the voice of his departed mentor in his dreams. On any given night during which the monk dreams, he can use this ability to gain the benefits of a divination. If he does, he spends 2 ki points from the next day's total.
+
+- id: &monk_unchained_ki_power_ki_volley_id 21
+  name: 'ki_volley'
+  label: 'Ki Volley'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 16
+  description: |
+    When a targeted spell or spell-like ability fails to overcome the monk's spell resistance from diamond soul, he can spend 2 ki points as an immediate action to send that spell back at its caster as spell turning.
+
+- id: &monk_unchained_ki_power_light_steps_id 22
+  name: 'light_steps'
+  label: 'Light Steps'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 8
+  description: |
+    A monk with this ki power can move effortlessly across nearly any surface. Whenever the monk activates his feather balance ki power, he can also ignore all difficult terrain. In addition, while active, he can cross any solid surface, even if it would normally not support his weight. This does not allow him to walk on liquids.
+
+- id: &monk_unchained_ki_power_one_touch_id 23
+  name: 'one_touch'
+  label: 'One Touch'
+  class_id: *class_monk_unchained_id
+  type: 'Ex'
+  min_level: 12
+  description: |
+    As long as he has at least 1 point remaining in his ki pool, as a standard action, a monk with this power can make an unarmed strike against a foe as a touch attack. He adds 1/2 his monk level as a bonus on the damage roll. He can spend 1 ki point to double this bonus for that attack.
+
+- id: &monk_unchained_ki_power_qinggong_power_id 24
+  name: 'qinggong_power'
+  label: 'Qinggong Power'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 4
+  description: |
+    A monk with this power selects any of the qinggong monk ki powers (Pathfinder RPG Ultimate Magic 51) for which he qualifies based on his monk level. A monk can select this ability multiple times. Each time, he must select a different qinggong monk ki power.
+
+- id: &monk_unchained_ki_power_quivering_palm_id 25
+  name: 'quivering_palm'
+  label: 'Quivering Palm'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 16
+  description: |
+    A monk can set up vibrations within the body of another creature that can thereafter be fatal if the monk so desires. Using this ability is a standard action that costs 4 ki points, and the monk must announce his intent to use this ability (and spend the ki points) before making the attack roll. Creatures immune to critical hits cannot be affected. Otherwise, if the attack hits and the target takes damage from the blow, the quivering palm attack succeeds. Thereafter, the monk can try to slay the victim at any time within a number of days equal to his monk level. To make such an attempt, the monk merely wills the target to die (a free action); unless the target succeeds at a Fortitude saving throw (DC = 10 + 1/2 the monk's level + the monk's Wisdom modifier), it dies. If the saving throw is successful, the target is no longer in danger from that particular quivering palm attack, but it can still be affected by another one at a later time. A monk can have no more than one quivering palm in effect at one time. If a monk uses quivering palm while another is still in effect, the previous one is negated.
+
+- id: &monk_unchained_ki_power_slow_fall_id 26
+  name: 'slow_fall'
+  label: 'Slow Fall'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 4
+  description: |
+    A monk within arm's reach of a wall can use it to slow his descent by expending 1 point from his ki pool. When he uses this ability, he takes no damage from the fall (as if using feather fall), but he must be adjacent to a wall for the length of the fall (although this can be used to reduce the damage from a fall if only part of it is adjacent to a wall).
+
+- id: &monk_unchained_ki_power_sudden_speed_id 27
+  name: 'sudden_speed'
+  label: 'Sudden Speed'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 4
+  description: |
+    A monk with this ki power can spend 1 point from his ki pool as a swift action to grant himself a sudden burst of speed. This increases the monk's base land speed by 30 feet for 1 minute.
+
+- id: &monk_unchained_ki_power_water_sprint_id 28
+  name: 'water_sprint'
+  label: 'Water Sprint'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 6
+  description: |
+    A monk with this ki power can spend 1 point from his ki pool as a swift action to gain the ability to walk on water, as if under the effects of water walk. Once activated, this ability lasts for 1 minute per monk level.
+
+- id: &monk_unchained_ki_power_wind_jump_id 29
+  name: 'wind_jump'
+  label: 'Wind Jump'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 8
+  description: |
+    A monk with this ki power can spend 1 point from his ki pool as a move action to grant himself a fly speed (with perfect maneuverability) equal to his base land speed. He must end his movement each round on solid ground (or some other surface that can support his weight) or fall as normal. Once activated, this ability lasts for 1 minute.
+
+- id: &monk_unchained_ki_power_wholeness_of_body_id 30
+  name: 'wholeness_of_body'
+  label: 'Wholeness of Body'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 4
+  description: |
+    A monk with this ki power can heal his own wounds as a standard action. By spending 2 points from his ki pool, he can heal an amount of damage equal to 1d8 + his monk level.
+
+- id: &monk_unchained_ki_power_ki_guardian_id 31
+  name: 'ki_guardian'
+  label: 'Ki Guardian'
+  class_id: *class_monk_unchained_id
+  type: 'Su'
+  min_level: 6
+  description: |
+    As an immediate action before he rolls a saving throw against a targeted effect that also targets other allies or an area effect whose area includes other allies, a monk with this ability can spend any number of ki points and designate a number of adjacent allies equal to the number of ki points spent. The monk rolls one saving throw for each designated ally, using his bonus instead of the ally's. For each successful saving throw, the corresponding ally treats the effect as if that ally had succeeded at the saving throw, and for each saving throw failed, the corresponding ally treats the effect as if that ally had failed the saving throw. If the monk fails any of the saving throws (including his own original saving throw), the monk treats the effect as if he had failed the saving throw.
+

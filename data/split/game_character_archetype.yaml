@@ -1,0 +1,5 @@
+game_character_archetype:
+- game_character_id: *game_character_vardon_salvador_id
+  archetype_id: *archetype_mindchemist_id
+- game_character_id: *game_character_killiq_said_id
+  archetype_id: *archetype_elemental_ascetic_id

@@ -1,0 +1,13 @@
+game_character_corruption:
+- game_character_id: *game_character_killiq_said_id
+  corruption_id: *corruption_vampirism_id
+  corruption_stage: 0
+  manifestation_level: 7
+  blood_required: 7
+  blood_consumed: 0
+- game_character_id: *game_character_vardon_salvador_id
+  corruption_id: *corruption_vampirism_id
+  corruption_stage: 0
+  manifestation_level: 7
+  blood_required: 7
+  blood_consumed: 0

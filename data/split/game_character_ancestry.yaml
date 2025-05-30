@@ -1,0 +1,5 @@
+game_character_ancestry:
+- game_character_id: *game_character_vardon_salvador_id
+  ancestry_id: *ancestry_tengu_id
+- game_character_id: *game_character_killiq_said_id
+  ancestry_id: *ancestry_oread_id

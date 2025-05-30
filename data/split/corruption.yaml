@@ -1,0 +1,7 @@
+corruption:
+- id: &corruption_vampirism_id 113
+  name: 'vampirism'
+  label: 'Vampirism'
+  description: |
+    A dark corruption that transforms the victim into an undead creature that feeds on blood. Vampires gain various supernatural abilities but also suffer from weaknesses like vulnerability to sunlight. The corruption progresses through manifestation levels, granting both gifts and stains, until potentially consuming the victim entirely.
+

@@ -1,0 +1,37 @@
+spell_school:
+- id: &spell_school_divination_id 1
+  name: 'divination'
+  label: 'Divination'
+
+- id: &spell_school_necromancy_id 2
+  name: 'necromancy'
+  label: 'Necromancy'
+
+- id: &spell_school_enchantment_id 3
+  name: 'enchantment'
+  label: 'Enchantment'
+
+- id: &spell_school_evocation_id 4
+  name: 'evocation'
+  label: 'Evocation'
+
+- id: &spell_school_illusion_id 5
+  name: 'illusion'
+  label: 'Illusion'
+
+- id: &spell_school_transmutation_id 6
+  name: 'transmutation'
+  label: 'Transmutation'
+
+- id: &spell_school_abjuration_id 7
+  name: 'abjuration'
+  label: 'Abjuration'
+
+- id: &spell_school_conjuration_id 8
+  name: 'conjuration'
+  label: 'Conjuration'
+
+- id: &spell_school_universal_id 9
+  name: 'universal'
+  label: 'Universal'
+

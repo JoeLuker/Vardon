@@ -1,0 +1,5 @@
+spell_target:
+- id: &spell_target_you_id 1
+  name: 'you'
+  label: 'You'
+

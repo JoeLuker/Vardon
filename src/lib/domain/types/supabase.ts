@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ability: {
@@ -175,6 +200,56 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      active_feature: {
+        Row: {
+          activated_at: string
+          created_at: string | null
+          deactivated_at: string | null
+          entity_id: number
+          feature_id: number
+          feature_path: string
+          feature_type: string
+          id: number
+          options: Json | null
+          state: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          activated_at?: string
+          created_at?: string | null
+          deactivated_at?: string | null
+          entity_id: number
+          feature_id: number
+          feature_path: string
+          feature_type: string
+          id?: number
+          options?: Json | null
+          state?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string | null
+          deactivated_at?: string | null
+          entity_id?: number
+          feature_id?: number
+          feature_path?: string
+          feature_type?: string
+          id?: number
+          options?: Json | null
+          state?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_feature_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ancestry: {
         Row: {
@@ -696,11 +771,14 @@ export type Database = {
           created_at: string | null
           description: string | null
           feature_level: number | null
+          feature_path: string | null
           id: number
           is_limited: boolean | null
           is_toggleable: boolean | null
           label: string | null
           name: string
+          persistent: boolean | null
+          required_subsystems: string[] | null
           type: string | null
           updated_at: string | null
         }
@@ -709,11 +787,14 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           feature_level?: number | null
+          feature_path?: string | null
           id?: number
           is_limited?: boolean | null
           is_toggleable?: boolean | null
           label?: string | null
           name: string
+          persistent?: boolean | null
+          required_subsystems?: string[] | null
           type?: string | null
           updated_at?: string | null
         }
@@ -722,11 +803,14 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           feature_level?: number | null
+          feature_path?: string | null
           id?: number
           is_limited?: boolean | null
           is_toggleable?: boolean | null
           label?: string | null
           name?: string
+          persistent?: boolean | null
+          required_subsystems?: string[] | null
           type?: string | null
           updated_at?: string | null
         }
@@ -940,30 +1024,36 @@ export type Database = {
           corruption_id: number
           created_at: string | null
           description: string | null
+          feature_path: string | null
           id: number
           label: string | null
           min_manifestation_level: number
           name: string
+          required_subsystems: string[] | null
           updated_at: string | null
         }
         Insert: {
           corruption_id: number
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           min_manifestation_level?: number
           name: string
+          required_subsystems?: string[] | null
           updated_at?: string | null
         }
         Update: {
           corruption_id?: number
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           min_manifestation_level?: number
           name?: string
+          required_subsystems?: string[] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1019,25 +1109,31 @@ export type Database = {
         Row: {
           created_at: string | null
           discovery_level: number | null
+          feature_path: string | null
           id: number
           label: string | null
           name: string
+          required_subsystems: string[] | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           discovery_level?: number | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           name: string
+          required_subsystems?: string[] | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           discovery_level?: number | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           name?: string
+          required_subsystems?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1071,6 +1167,71 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      entity: {
+        Row: {
+          created_at: string | null
+          id: number
+          metadata: Json | null
+          name: string
+          ref_id: number
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          metadata?: Json | null
+          name: string
+          ref_id: number
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          metadata?: Json | null
+          name?: string
+          ref_id?: number
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      entity_metadata: {
+        Row: {
+          created_at: string | null
+          entity_id: number
+          id: number
+          metadata_key: string
+          metadata_value: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: number
+          id?: number
+          metadata_key: string
+          metadata_value?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: number
+          id?: number
+          metadata_key?: string
+          metadata_value?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_metadata_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       equipment: {
         Row: {
@@ -1125,6 +1286,44 @@ export type Database = {
           },
         ]
       }
+      event_log: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          entity_id: number | null
+          event_type: string
+          id: number
+          occurred_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          entity_id?: number | null
+          event_type: string
+          id?: number
+          occurred_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          entity_id?: number | null
+          event_type?: string
+          id?: number
+          occurred_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_log_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favored_class_choice: {
         Row: {
           created_at: string | null
@@ -1154,30 +1353,39 @@ export type Database = {
           created_at: string | null
           description: string | null
           feat_type: string | null
+          feature_path: string | null
           id: number
           is_toggleable: boolean | null
           label: string | null
           name: string
+          persistent: boolean | null
+          required_subsystems: string[] | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
           feat_type?: string | null
+          feature_path?: string | null
           id?: number
           is_toggleable?: boolean | null
           label?: string | null
           name: string
+          persistent?: boolean | null
+          required_subsystems?: string[] | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
           feat_type?: string | null
+          feature_path?: string | null
           id?: number
           is_toggleable?: boolean | null
           label?: string | null
           name?: string
+          persistent?: boolean | null
+          required_subsystems?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1276,10 +1484,12 @@ export type Database = {
         Row: {
           created_at: string | null
           current_hp: number
+          entity_type: string
           id: number
           is_offline: boolean | null
           label: string | null
           max_hp: number
+          metadata: Json | null
           name: string
           updated_at: string | null
           user_id: string
@@ -1287,10 +1497,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           current_hp?: number
+          entity_type?: string
           id?: number
           is_offline?: boolean | null
           label?: string | null
           max_hp?: number
+          metadata?: Json | null
           name: string
           updated_at?: string | null
           user_id: string
@@ -1298,10 +1510,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           current_hp?: number
+          entity_type?: string
           id?: number
           is_offline?: boolean | null
           label?: string | null
           max_hp?: number
+          metadata?: Json | null
           name?: string
           updated_at?: string | null
           user_id?: string
@@ -1909,6 +2123,7 @@ export type Database = {
       }
       game_character_feat: {
         Row: {
+          activation_state: Json | null
           created_at: string | null
           feat_id: number
           game_character_id: number
@@ -1918,6 +2133,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          activation_state?: Json | null
           created_at?: string | null
           feat_id: number
           game_character_id: number
@@ -1927,6 +2143,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          activation_state?: Json | null
           created_at?: string | null
           feat_id?: number
           game_character_id?: number
@@ -2242,10 +2459,12 @@ export type Database = {
           class_id: number | null
           created_at: string | null
           description: string | null
+          feature_path: string | null
           id: number
           label: string | null
           min_level: number | null
           name: string
+          required_subsystems: string[] | null
           type: string | null
           updated_at: string | null
         }
@@ -2253,10 +2472,12 @@ export type Database = {
           class_id?: number | null
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           min_level?: number | null
           name: string
+          required_subsystems?: string[] | null
           type?: string | null
           updated_at?: string | null
         }
@@ -2264,10 +2485,12 @@ export type Database = {
           class_id?: number | null
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           min_level?: number | null
           name?: string
+          required_subsystems?: string[] | null
           type?: string | null
           updated_at?: string | null
         }
@@ -2595,27 +2818,33 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          feature_path: string | null
           id: number
           label: string | null
           name: string
+          required_subsystems: string[] | null
           source: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           name: string
+          required_subsystems?: string[] | null
           source?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           name?: string
+          required_subsystems?: string[] | null
           source?: string | null
           updated_at?: string | null
         }
@@ -3490,6 +3719,36 @@ export type Database = {
         }
         Relationships: []
       }
+      subsystem_registry: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean
+          name: string
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       target_specifier: {
         Row: {
           created_at: string | null
@@ -3518,27 +3777,33 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          feature_path: string | null
           id: number
           label: string | null
           name: string
+          required_subsystems: string[] | null
           trait_type: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           name: string
+          required_subsystems?: string[] | null
           trait_type?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           name?: string
+          required_subsystems?: string[] | null
           trait_type?: string | null
           updated_at?: string | null
         }
@@ -3587,10 +3852,12 @@ export type Database = {
           class_id: number | null
           created_at: string | null
           description: string | null
+          feature_path: string | null
           id: number
           label: string | null
           level: number | null
           name: string
+          required_subsystems: string[] | null
           saving_throw: string | null
           updated_at: string | null
           wild_talent_type_id: number | null
@@ -3601,10 +3868,12 @@ export type Database = {
           class_id?: number | null
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           level?: number | null
           name: string
+          required_subsystems?: string[] | null
           saving_throw?: string | null
           updated_at?: string | null
           wild_talent_type_id?: number | null
@@ -3615,10 +3884,12 @@ export type Database = {
           class_id?: number | null
           created_at?: string | null
           description?: string | null
+          feature_path?: string | null
           id?: number
           label?: string | null
           level?: number | null
           name?: string
+          required_subsystems?: string[] | null
           saving_throw?: string | null
           updated_at?: string | null
           wild_talent_type_id?: number | null
@@ -3680,27 +3951,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -3708,20 +3981,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -3729,20 +4004,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -3750,21 +4027,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -3773,6 +4052,16 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const
+

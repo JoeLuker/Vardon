@@ -1,0 +1,37 @@
+spell_progression_type:
+- id: &spell_progression_type_prepared_9_id 1
+  name: 'prepared_9'
+  label: '9-level Prepared Caster'
+  max_spell_level: 9
+  is_spontaneous: false
+
+- id: &spell_progression_type_spontaneous_9_id 2
+  name: 'spontaneous_9'
+  label: '9-level Spontaneous Caster'
+  max_spell_level: 9
+  is_spontaneous: true
+
+- id: &spell_progression_type_prepared_6_id 3
+  name: 'prepared_6'
+  label: '6-level Prepared Caster'
+  max_spell_level: 6
+  is_spontaneous: false
+
+- id: &spell_progression_type_spontaneous_6_id 4
+  name: 'spontaneous_6'
+  label: '6-level Spontaneous Caster'
+  max_spell_level: 6
+  is_spontaneous: true
+
+- id: &spell_progression_type_prepared_4_id 5
+  name: 'prepared_4'
+  label: '4-level Prepared Caster'
+  max_spell_level: 4
+  is_spontaneous: false
+
+- id: &spell_progression_type_spontaneous_4_id 6
+  name: 'spontaneous_4'
+  label: '4-level Spontaneous Caster'
+  max_spell_level: 4
+  is_spontaneous: true
+

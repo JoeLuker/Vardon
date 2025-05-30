@@ -1,0 +1,13 @@
+game_character_ancestry_trait:
+# Only need to track non-standard choices
+
+# Vardon's Alternate Ancestry Traits
+- game_character_id: *game_character_vardon_salvador_id
+  ancestry_trait_id: *ancestry_alternate_trait_tengu_glide_id
+# Killiq's Alternate Ancestry Traits
+- game_character_id: *game_character_killiq_said_id
+  ancestry_trait_id: *ancestry_alternate_trait_oread_mountain_born_id
+
+- game_character_id: *game_character_killiq_said_id
+  ancestry_trait_id: *ancestry_alternate_trait_oread_mostly_human_id
+

@@ -1,59 +1,196 @@
-<!-- FILE: src/lib/ui/HPTracker.svelte (Svelte 5 runes version) -->
+<!-- FILE: src/lib/ui/HPTracker.svelte -->
 <script lang="ts">
-	// UI
+	// UI components
 	import { Button } from '$lib/components/ui/button';
 	import { Progress } from '$lib/components/ui/progress';
-	// Types
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
+	
+	// File system imports
+	import type { GameKernel } from "$lib/domain/kernel/GameKernel";
+	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
+	import { 
+		PATHS, 
+		ensureCharacterParentDirectoriesExist, 
+		fixCharacterPath 
+	} from '$lib/domain/utils/FilesystemUtils';
+
+	const COMBAT_REQUEST = {
+		GET_CURRENT_HP: 0x1001,
+		GET_MAX_HP: 0x1002,
+		SET_CURRENT_HP: 0x1003
+	};
+
+	// File operations
+	const OpenMode = {
+		READ: 0x01,
+		WRITE: 0x02,
+		READ_WRITE: 0x03
+	};
 
 	/**
-	 * Props:
-	 * - character: The character data (maybe null if loading)
-	 * - onUpdateDB: Callback that actually writes to the DB (like gameCharacterApi.updateRow)
+	 * Component props
 	 */
-	let { character, onUpdateDB = async (_changes: Partial<EnrichedCharacter>) => {} } = $props<{
-		character?: EnrichedCharacter | null;
-		onUpdateDB?: (changes: Partial<EnrichedCharacter>) => Promise<void>;
+	let { 
+		character = null, 
+		kernel = null
+	} = $props<{
+		character: any;
+		kernel: GameKernel | null;
 	}>();
 
 	/**
 	 * Svelte 5 local state
 	 */
+	let current_hp = $state(0);
+	let max_hp = $state(0);
 	let isSliding = $state(false);
-	let sliderValue = $state<number>(0);
-
+	let sliderValue = $state(0);
+	let isLoading = $state(true);
+	let error = $state<string | null>(null);
 	let updateStatus = $state<'idle' | 'syncing' | 'error'>('idle');
 	let errorMessage = $state<string | null>(null);
 
 	/**
 	 * Derived variables for HP
 	 */
-	let currentHp = $derived.by(() => {
-		return Number(character?.current_hp ?? 0);
-	});
-	let maxHp = $derived.by(() => {
-		return Number(character?.max_hp ?? 0);
-	});
 	let hpPercentage = $derived.by(() => {
-		if (maxHp === 0) return 0;
-		return Math.round((sliderValue / maxHp) * 100);
+		if (max_hp === 0) return 0;
+		return Math.round((sliderValue / max_hp) * 100);
 	});
 
 	/**
-	 * Only sync with database value if:
-	 * 1. We're not sliding
-	 * 2. There's no pending update
-	 * 3. We're not currently syncing with the DB
+	 * Load HP data when component mounts
 	 */
 	$effect(() => {
-		if (!isSliding && pendingHP === null && updateStatus !== 'syncing') {
-			sliderValue = currentHp;
+		if (kernel && character) {
+			loadHPData();
 		}
 	});
 
 	/**
-	 * We also want a 'debounce' approach, so if the user drags the slider multiple 
-	 * times quickly, we only do one DB update after they've settled on a final value.
+	 * File operation to load HP data
+	 */
+	async function loadHPData() {
+		isLoading = true;
+		error = null;
+		
+		// Clear any pending values
+		pendingHP = null;
+		if (updateTimer) clearTimeout(updateTimer);
+		
+		// Ensure parent directories exist and character paths are files, not directories
+		if (!ensureCharacterParentDirectoriesExist(kernel, character.id)) {
+			error = 'Failed to ensure parent directories exist';
+			isLoading = false;
+			return;
+		}
+		
+		// Fix character path in case it was incorrectly created as a directory
+		fixCharacterPath(kernel, character.id);
+		
+		// Get entity path for current character
+		const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
+		
+		// Open combat device
+		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ_WRITE);
+		if (fd < 0) {
+			error = `Failed to open combat device: error ${fd}`;
+			isLoading = false;
+			return;
+		}
+		
+		try {
+			// Get current HP
+			const currentHPResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_CURRENT_HP, {
+				entityPath
+			});
+			
+			if (currentHPResult.errorCode !== ErrorCode.SUCCESS) {
+				error = `Failed to get current HP: ${currentHPResult.errorMessage}`;
+				isLoading = false;
+				return;
+			}
+			
+			// Get max HP
+			const maxHPResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_MAX_HP, {
+				entityPath
+			});
+			
+			if (maxHPResult.errorCode !== ErrorCode.SUCCESS) {
+				error = `Failed to get max HP: ${maxHPResult.errorMessage}`;
+				isLoading = false;
+				return;
+			}
+			
+			// Update local state
+			current_hp = currentHPResult.data;
+			max_hp = maxHPResult.data;
+			sliderValue = current_hp;
+			
+		} finally {
+			// Always close the file descriptor
+			if (fd > 0) kernel.close(fd);
+			isLoading = false;
+		}
+	}
+	
+	/**
+	 * Unix-style file operation to update HP
+	 */
+	async function updateHP(newHP: number) {
+		if (!kernel || !character) {
+			throw new Error('Kernel or character not available');
+		}
+		
+		// Ensure parent directories exist and character paths are files, not directories
+		if (!ensureCharacterParentDirectoriesExist(kernel, character.id)) {
+			throw new Error('Failed to ensure parent directories exist');
+		}
+		
+		// Fix character path in case it was incorrectly created as a directory
+		fixCharacterPath(kernel, character.id);
+		
+		const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
+		
+		// Open combat device
+		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ_WRITE);
+		if (fd < 0) {
+			throw new Error(`Failed to open combat device: error ${fd}`);
+		}
+		
+		try {
+			// Update current HP
+			const updateResult = kernel.ioctl(fd, COMBAT_REQUEST.SET_CURRENT_HP, {
+				entityPath,
+				value: newHP
+			});
+			
+			if (updateResult.errorCode !== ErrorCode.SUCCESS) {
+				throw new Error(`Failed to update HP: ${updateResult.errorMessage}`);
+			}
+			
+			// Update local state on success
+			current_hp = newHP;
+			
+		} finally {
+			// Always close the file descriptor
+			if (fd > 0) kernel.close(fd);
+		}
+	}
+
+	/**
+	 * Only sync with current_hp if:
+	 * 1. We're not sliding
+	 * 2. There's no pending update
+	 * 3. We're not currently syncing with the system
+	 */
+	$effect(() => {
+		if (!isSliding && pendingHP === null && updateStatus !== 'syncing') {
+			sliderValue = current_hp;
+		}
+	});
+
+	/**
+	 * Debounce approach for HP updates
 	 */
 	let updateTimer: ReturnType<typeof setTimeout> | null = null;
 	let pendingHP: number | null = null;
@@ -66,9 +203,7 @@
 	 * - schedules flush with setTimeout
 	 */
 	function queueHPUpdate(newHP: number) {
-		if (!character) return;
-
-		const boundedHP = Math.max(0, Math.min(maxHp, newHP));
+		const boundedHP = Math.max(0, Math.min(max_hp, newHP));
 		
 		// Save to pending
 		pendingHP = boundedHP;
@@ -84,14 +219,14 @@
 	}
 
 	/**
-	 * flushPending: does the actual DB update
+	 * flushPending: does the actual system update
 	 */
 	async function flushPending() {
-		if (!character || pendingHP === null) return;
+		if (pendingHP === null) return;
 
 		try {
 			updateStatus = 'syncing';
-			await onUpdateDB({ current_hp: pendingHP });
+			await updateHP(pendingHP);
 			updateStatus = 'idle';
 		} catch (err) {
 			console.error('Failed HP update:', err);
@@ -131,9 +266,28 @@
 </script>
 
 <!-- Template -->
-{#if !character}
-	<div class="card">
-		<p class="text-muted-foreground">Loading HP data...</p>
+{#if isLoading}
+	<div class="card space-y-6 animate-pulse">
+		<h2 class="section-title">Hit Points</h2>
+		<div class="h-4 bg-muted rounded"></div>
+		<div class="grid grid-cols-4 gap-3">
+			{#each Array(4) as _}
+				<div class="h-9 bg-muted rounded"></div>
+			{/each}
+		</div>
+		<div class="flex items-baseline justify-center gap-2">
+			<div class="h-10 w-16 bg-muted rounded"></div>
+		</div>
+	</div>
+{:else if error}
+	<div class="card space-y-6 border-destructive">
+		<h2 class="section-title">Hit Points</h2>
+		<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+			{error}
+		</div>
+		<Button variant="outline" onclick={loadHPData}>
+			Retry
+		</Button>
 	</div>
 {:else}
 	<div class="card space-y-6" class:border-destructive={updateStatus === 'error'}>
@@ -145,7 +299,7 @@
 			<input
 				type="range"
 				class="absolute inset-0 w-full cursor-pointer opacity-0"
-				max={maxHp}
+				max={max_hp}
 				min={0}
 				value={sliderValue}
 				oninput={(e) => {
@@ -162,7 +316,7 @@
 				<Button
 					{variant}
 					size="sm"
-					disabled={amount < 0 ? sliderValue <= 0 : sliderValue >= maxHp}
+					disabled={amount < 0 ? sliderValue <= 0 : sliderValue >= max_hp}
 					onclick={() => handleQuickAction(amount)}
 				>
 					{label}
@@ -173,7 +327,7 @@
 		<!-- HP readout -->
 		<div class="flex items-baseline justify-center gap-2">
 			<span class="text-4xl font-bold">{sliderValue}</span>
-			<span class="text-xl text-muted-foreground">/ {maxHp}</span>
+			<span class="text-xl text-muted-foreground">/ {max_hp}</span>
 		</div>
 
 		<!-- Error message -->

@@ -1,0 +1,4 @@
+spell_casting_time_mapping:
+- spell_id: *spell_augury_id
+  spell_casting_time_id: *spell_casting_time_1_minute_id
+

@@ -1,0 +1,9 @@
+spell_sorcerer_bloodline_mapping:
+- spell_id: *spell_augury_id
+  sorcerer_bloodline_id: *sorcerer_bloodline_dreamspun_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  sorcerer_bloodline_id: *sorcerer_bloodline_harrow_id
+  level: 2
+

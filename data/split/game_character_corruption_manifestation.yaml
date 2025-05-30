@@ -1,0 +1,47 @@
+game_character_corruption_manifestation:
+# killiq's active manifestations
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_allure_id
+  active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_vampiric_grace_id
+  active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_fangs_id
+  active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_unlife_id
+  active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_greater_unlife_id
+  active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_true_unlife_id
+  active: true
+- game_character_id: *game_character_killiq_said_id
+  manifestation_id: *manifestation_dreadful_charm_id
+  active: true
+
+# Vardon's active manifestations
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_children_of_the_night_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_vampiric_grace_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_fangs_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_unlife_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_greater_unlife_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_true_unlife_id
+  active: true
+- game_character_id: *game_character_vardon_salvador_id
+  manifestation_id: *manifestation_allure_id
+  active: true
+

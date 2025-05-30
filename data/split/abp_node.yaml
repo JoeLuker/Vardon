@@ -1,0 +1,189 @@
+abp_node:
+# Level 3
+- id: &resistance_1_node_id 1200
+  group_id: *group_level_3_id
+  name: 'resistance_1'
+  label: 'Resistance +1'
+  description: 'Gain a +1 resistance bonus on all saving throws'
+  requires_choice: false
+
+# Level 4
+- id: &attunement_1_node_id 1201
+  group_id: *group_level_4_id
+  name: 'basic_attunement'
+  label: 'Basic Attunement'
+  description: '+1 enhancement bonus to armor/weapons'
+  requires_choice: false
+
+# Level 6 Mental Choices
+- id: &mental_prowess_int_node_id 1202
+  group_id: *group_level_6_id
+  name: 'mental_prowess_intelligence'
+  label: 'Mental Prowess (Intelligence)'
+  description: 'First mental ability score increases by 2'
+  requires_choice: true
+
+- id: &mental_prowess_wis_node_id 1203
+  group_id: *group_level_6_id
+  name: 'mental_prowess_wisdom'
+  label: 'Mental Prowess (Wisdom)'
+  description: 'First mental ability score increases by 2'
+  requires_choice: true
+
+- id: &mental_prowess_cha_node_id 1204
+  group_id: *group_level_6_id
+  name: 'mental_prowess_charisma'
+  label: 'Mental Prowess (Charisma)'
+  description: 'First mental ability score increases by 2'
+  requires_choice: true
+
+# Level 7 Physical Choices
+- id: &physical_prowess_str_node_id 1205
+  group_id: *group_level_7_id
+  name: 'physical_prowess_strength'
+  label: 'Physical Prowess (Strength)'
+  description: 'First physical ability score increases by 2'
+  requires_choice: true
+
+- id: &physical_prowess_dex_node_id 1206
+  group_id: *group_level_7_id
+  name: 'physical_prowess_dexterity'
+  label: 'Physical Prowess (Dexterity)'
+  description: 'First physical ability score increases by 2'
+  requires_choice: true
+
+- id: &physical_prowess_con_node_id 1207
+  group_id: *group_level_7_id
+  name: 'physical_prowess_constitution'
+  label: 'Physical Prowess (Constitution)'
+  description: 'First physical ability score increases by 2'
+  requires_choice: true
+
+# Level 5
+- id: &deflection_1_node_id 1208
+  group_id: *group_level_5_id
+  name: 'deflection_1'
+  label: 'Deflection +1'
+  description: 'Gain a +1 deflection bonus to AC'
+  requires_choice: false
+
+# Level 8
+- id: &level_8_node_id 1209
+  group_id: *group_level_8_id
+  name: 'level_8_bonuses'
+  label: 'Level 8 Bonuses'
+  description: 'Resistance +2, Toughening +1, Split Armor/Weapon +1/+1'
+  requires_choice: false
+
+# Level 9
+- id: &level_9_node_id 1210
+  group_id: *group_level_9_id
+  name: 'level_9_attunement'
+  label: 'Enhanced Attunement'
+  description: '+2 enhancement bonus to armor/weapons'
+  requires_choice: false
+
+# Level 10
+- id: &level_10_node_id 1211
+  group_id: *group_level_10_id
+  name: 'level_10_bonuses'
+  label: 'Level 10 Bonuses'
+  description: 'Deflection +2, Resistance +3'
+  requires_choice: false
+
+# Level 11
+- id: &level_11_node_id 1212
+  group_id: *group_level_11_id
+  name: 'level_11_mental'
+  label: 'Enhanced Mental Prowess'
+  description: 'First mental ability score increases to +4'
+  requires_choice: false
+
+# Level 12
+- id: &level_12_node_id 1213
+  group_id: *group_level_12_id
+  name: 'level_12_physical'
+  label: 'Enhanced Physical Prowess'
+  description: 'First physical ability score increases to +4'
+  requires_choice: false
+
+# Level 13
+- id: &level_13_node_id 1214
+  group_id: *group_level_13_id
+  name: 'level_13_bonuses'
+  label: 'Level 13 Bonuses'
+  description: 'Resistance +4, Toughening +2'
+  requires_choice: false
+
+# Level 14 Split/Single Choice
+- id: &level_14_armor_split_node_id 1215
+  group_id: *group_level_14_id
+  name: 'level_14_armor_split'
+  label: 'Split Armor Attunement'
+  description: '+2/+2 enhancement bonus to armor and shield'
+  requires_choice: true
+
+- id: &level_14_armor_single_node_id 1216
+  group_id: *group_level_14_id
+  name: 'level_14_armor_single'
+  label: 'Single Armor Attunement'
+  description: '+3 enhancement bonus to armor or shield'
+  requires_choice: true
+
+- id: &level_14_weapon_split_node_id 1217
+  group_id: *group_level_14_id
+  name: 'level_14_weapon_split'
+  label: 'Split Weapon Attunement'
+  description: '+2/+2 enhancement bonus to two weapons'
+  requires_choice: true
+
+- id: &level_14_weapon_single_node_id 1218
+  group_id: *group_level_14_id
+  name: 'level_14_weapon_single'
+  label: 'Single Weapon Attunement'
+  description: '+3 enhancement bonus to one weapon'
+  requires_choice: true
+
+# Level 19 Legendary Gifts
+- id: &legendary_ability_node_id 1219
+  group_id: *group_level_19_id
+  name: 'legendary_ability'
+  label: 'Legendary Ability'
+  description: '+1 inherent bonus to any ability score'
+  requires_choice: true
+
+- id: &legendary_armor_node_id 1220
+  group_id: *group_level_19_id
+  name: 'legendary_armor'
+  label: 'Legendary Armor'
+  description: '+2 enhancement bonus to armor attunement'
+  requires_choice: true
+
+- id: &legendary_body_node_id 1221
+  group_id: *group_level_19_id
+  name: 'legendary_body'
+  label: 'Legendary Body'
+  description: 'Increase physical prowess to +6/+6/+4'
+  requires_choice: true
+
+- id: &legendary_mind_node_id 1222
+  group_id: *group_level_19_id
+  name: 'legendary_mind'
+  label: 'Legendary Mind'
+  description: 'Increase mental prowess to +6/+6/+4'
+  requires_choice: true
+
+- id: &legendary_shield_node_id 1223
+  group_id: *group_level_19_id
+  name: 'legendary_shield'
+  label: 'Legendary Shieldmaster'
+  description: '+5 enhancement bonus to both armor and shield'
+  requires_choice: true
+
+- id: &legendary_weapons_node_id 1224
+  group_id: *group_level_19_id
+  name: 'legendary_weapons'
+  label: 'Legendary Twin Weapons'
+  description: '+5 enhancement bonus to two weapons'
+  requires_choice: true
+# Actual bonus values

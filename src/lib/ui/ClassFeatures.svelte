@@ -1,86 +1,183 @@
 <script lang="ts">
-	import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-	import type { ProcessedFeature } from '$lib/domain/characterCalculations';
+	import type { AssembledCharacter } from '$lib/domain/character/characterTypes';
 	import * as Card from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import * as Dialog from '$lib/components/ui/dialog';
+	// Unix architecture imports
+	import { OpenMode } from '$lib/domain/kernel/types';
+	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import type { Entity } from '$lib/domain/kernel/types';
 
-	let { character } = $props<{
-		character?: EnrichedCharacter | null;
+	interface ProcessedClassFeature {
+		id: number;
+		name: string;
+		label: string;
+		description: string;
+		type: string;
+		level: number;
+		class_name: string;
+		is_archetype: boolean;
+		replaced_feature_ids: number[];
+		alterations: {
+			alteringFeature: {
+				id: number;
+				name: string;
+				label: string;
+			};
+		}[];
+		class_feature_benefit: {
+			id: number;
+			name: string;
+			label: string | null;
+			feature_level: number | null;
+			class_feature_benefit_bonus: {
+				id: number;
+				value: number;
+				bonus_type: {
+					name: string;
+				};
+				target_specifier: {
+					name: string;
+				};
+			}[];
+		}[];
+	}
+
+	let { character, kernel } = $props<{
+		character?: AssembledCharacter | null;
+		kernel?: GameKernel | null;
 	}>();
 
-	let featuresByLevel = $derived(() => {
-		if (!character?.processedClassFeatures) return new Map();
+	// Get class features using direct file operations
+	let featuresByLevel = $derived.by(async () => {
+		if (!character?.id || !kernel) return new Map<number, ProcessedClassFeature[]>();
 		
-		// Group features by their feature_level (when they were gained)
-		const grouped = new Map<number, ProcessedFeature[]>();
+		console.log('Processing features for grouping by level');
 		
-		// Process each feature and add it to the corresponding level group
-		for (const feature of character.processedClassFeatures) {
-			// Look through the game_character_class_feature array to find the actual feature_level
-			let featureLevel = feature.level; // Default to current level
-			
-			// First check if this is a class feature with a defined feature_level in class_feature_benefit
-			if (feature.class_feature_benefit && feature.class_feature_benefit.length > 0) {
-				for (const benefit of feature.class_feature_benefit) {
-					if (benefit.feature_level !== null) {
-						featureLevel = benefit.feature_level;
-						break;
-					}
-				}
-			} 
-			// If not in benefit, try to find it in the original class definition
-			else if (character.game_character_class_feature) {
-				const matchingFeature = character.game_character_class_feature.find(
-					(cf: any) => cf.class_feature && cf.class_feature.name === feature.name
-				);
-				
-				if (matchingFeature?.class_feature?.feature_level) {
-					featureLevel = matchingFeature.class_feature.feature_level;
-				}
-			}
-			
-			if (!grouped.has(featureLevel)) {
-				grouped.set(featureLevel, []);
-			}
-			grouped.get(featureLevel)?.push(feature);
+		// Get the entity ID
+		const entityId = `character-${character.id}`;
+		const entityPath = `/entity/${entityId}`;
+		
+		if (!kernel.exists(entityPath)) {
+			console.error(`Entity not found: ${entityPath}`);
+			return new Map<number, ProcessedClassFeature[]>();
 		}
 		
-		// Sort features within each level group by name for consistent display
-		grouped.forEach(features => {
-			features.sort((a, b) => a.label.localeCompare(b.label));
-		});
+		// Get the character entity
+		const fd = kernel.open(entityPath, OpenMode.READ);
 		
-		return grouped;
+		if (fd < 0) {
+			console.error(`Failed to open entity: ${entityPath}`);
+			return new Map<number, ProcessedClassFeature[]>();
+		}
+		
+		try {
+			// Read the entity
+			const entityBuffer: Entity = { id: entityId, properties: {}, capabilities: {} };
+			const [readResult] = kernel.read(fd, entityBuffer);
+			
+			if (readResult !== 0) {
+				console.error(`Failed to read entity: ${readResult}`);
+				return new Map<number, ProcessedClassFeature[]>();
+			}
+			
+			// Get class features from the entity's classes capability
+			const processedFeatures = 
+				entityBuffer.capabilities?.classes?.processedClassFeatures as ProcessedClassFeature[] || [];
+			
+			// Group features by their level
+			const grouped = new Map<number, ProcessedClassFeature[]>();
+			
+			// Check if features all have the same level (suggests incorrect data)
+			const allLevels = [...new Set(processedFeatures.map((f: ProcessedClassFeature) => f.level))];
+			const allSameLevel = allLevels.length === 1 && processedFeatures.length > 1;
+			const maxCharLevel = Math.max(
+				...(entityBuffer.capabilities?.classes?.characterClasses || []).map((c: any) => c.level || 0)
+			);
+			
+			console.log(`Feature levels detected: ${allLevels.join(', ')}`);
+			console.log(`All features have same level: ${allSameLevel}, Max character level: ${maxCharLevel}`);
+			
+			// If all features have the same level and it's the character's max level,
+			// we need to apply a fallback strategy
+			const needLevelFallback = allSameLevel && allLevels[0] === maxCharLevel && maxCharLevel > 1;
+			
+			// Process each feature and add it to the corresponding level group
+			for (const feature of processedFeatures) {
+				// Default to the feature's level
+				let featureLevel = feature.level;
+				
+				// If we suspect level data is wrong, try harder to get correct levels
+				if (needLevelFallback) {
+					console.log(`Applying fallback level detection for feature: ${feature.name}`);
+					
+					// First check feature_level in class_feature_benefit
+					if (feature.class_feature_benefit && feature.class_feature_benefit.length > 0) {
+						for (const benefit of feature.class_feature_benefit) {
+							if (benefit.feature_level !== null && benefit.feature_level > 0) {
+								featureLevel = benefit.feature_level;
+								console.log(`Found level ${featureLevel} in benefit for ${feature.name}`);
+								break;
+							}
+						}
+					}
+					
+					// If still at max level, use default levels for common features
+					if (featureLevel === maxCharLevel) {
+						// Apply some known default levels
+						const defaultLevels: Record<string, number> = {
+							'Weapon and Armor Proficiency': 1,
+							'Alchemy': 1,
+							'Bomb': 1,
+							'Mutagen': 1,
+							'Throw Anything': 1,
+							'Poison Resistance': 2,
+							'Poison Use': 2,
+							'Swift Alchemy': 3,
+							'Swift Poisoning': 6,
+							'Instant Alchemy': 4,
+							'Persistent Mutagen': 10,
+							// Add any others you know about
+						};
+						
+						if (defaultLevels[feature.name]) {
+							featureLevel = defaultLevels[feature.name];
+							console.log(`Using default level ${featureLevel} for ${feature.name}`);
+						}
+					}
+				}
+				
+				// Ensure feature level is a number and at least 1
+				featureLevel = Number(featureLevel) || 1;
+				
+				// Add to appropriate level group
+				if (!grouped.has(featureLevel)) {
+					grouped.set(featureLevel, []);
+				}
+				grouped.get(featureLevel)?.push(feature);
+			}
+			
+			// Sort features within each level group by name for consistent display
+			grouped.forEach(features => {
+				features.sort((a, b) => a.label.localeCompare(b.label));
+			});
+			
+			console.log(`Grouped features into ${grouped.size} different levels`);
+			return grouped;
+		} finally {
+			// Always close the file descriptor
+			kernel.close(fd);
+		}
 	});
 
 	let selectedFeature = $state<{ label: string; description: string } | null>(null);
 	let dialogOpen = $state(false);
 
 	function showFeatureDescription(feature: { label: string; description: string }) {
-		// console.log('Opening dialog with feature:', feature);
 		selectedFeature = feature;
 		dialogOpen = true;
 	}
-
-	$effect(() => {
-		if (character) {
-			// Debug logging to examine all properties in a feature
-			console.log('First feature complete object:', JSON.stringify(character.processedClassFeatures[0], null, 2));
-			
-			// Debug logging to check feature levels
-			console.log('Features with levels:', character.processedClassFeatures.map((f: ProcessedFeature) => ({
-				label: f.label,
-				level: f.level,
-				type: typeof f.level
-			})));
-			
-			// Convert Map to a plain object for better console logging
-			const groupedForLogging = Object.fromEntries(featuresByLevel());
-			console.log('Grouped Features:', groupedForLogging);
-		}
-	});
 </script>
 
 <Card.Root>
@@ -101,57 +198,69 @@
 		{/if}
 	</Card.Header>
 	<Card.Content>
-		{#if !character}
+		{#if !character || !kernel}
 			<div class="rounded-md border border-muted p-4">
 				<p class="text-muted-foreground">Loading class features...</p>
 			</div>
-		{:else if character.processedClassFeatures.length === 0}
-			<div class="rounded-md border border-muted p-4">
-				<p class="text-muted-foreground">No class features found.</p>
-			</div>
 		{:else}
-			<ScrollArea class="h-[calc(100vh-24rem)] min-h-[400px] max-h-[800px] pr-4">
-				<div class="space-y-4 sm:space-y-6">
-					{#each Array.from(featuresByLevel().entries()).sort((a, b) => a[0] - b[0]) as [level, features]}
-						<div class="feature-level-group">
-							<h3 class="text-base sm:text-lg font-semibold mb-2">Level {level}</h3>
-							<div class="space-y-2 sm:space-y-4">
-								{#each features as feature}
-									<button 
-										class="feature w-full text-left hover:bg-muted/50 p-2 sm:p-3 rounded-lg"
-										onclick={() => showFeatureDescription({ 
-											label: feature.label,
-											description: feature.description || 'No description available'
-										})}
-									>
-										<div class="flex flex-col gap-2">
-											<div class="flex items-center gap-2">
-												<h4 class="text-sm sm:text-base font-semibold">
-													{feature.label}
-												</h4>
-												{#if feature.type}
-													<Badge variant="outline">{feature.type}</Badge>
-												{/if}
-												{#if feature.is_archetype}
-													<Badge variant="secondary">Archetype</Badge>
-												{/if}
-												{#if feature.alterations && feature.alterations.length > 0}
-													<Badge variant="destructive">Altered</Badge>
-												{/if}
-											</div>
-											{#if feature.description}
-												<p class="text-sm text-muted-foreground line-clamp-2">
-													{feature.description}
-												</p>
-											{/if}
-										</div>
-									</button>
-								{/each}
-							</div>
-						</div>
-					{/each}
+			{#await featuresByLevel}
+				<div class="rounded-md border border-muted p-4">
+					<p class="text-muted-foreground">Loading class features...</p>
 				</div>
-			</ScrollArea>
+			{:then groupedFeatures}
+				{#if groupedFeatures.size === 0}
+					<div class="rounded-md border border-muted p-4">
+						<p class="text-muted-foreground">No class features found.</p>
+					</div>
+				{:else}
+					<ScrollArea class="h-[calc(100vh-24rem)] min-h-[400px] max-h-[800px] pr-4">
+						<div class="space-y-4 sm:space-y-6">
+							{#each Array.from(groupedFeatures.entries()).sort((a, b) => a[0] - b[0]) as [level, features]}
+								<div class="feature-level-group">
+									<h3 class="text-base sm:text-lg font-semibold mb-2">Level {level}</h3>
+									<div class="space-y-2 sm:space-y-4">
+										{#each features as feature}
+											<button 
+												class="feature w-full text-left hover:bg-muted/50 p-2 sm:p-3 rounded-lg"
+												onclick={() => showFeatureDescription({ 
+													label: feature.label,
+													description: feature.description || 'No description available'
+												})}
+											>
+												<div class="flex flex-col gap-2">
+													<div class="flex items-center gap-2">
+														<h4 class="text-sm sm:text-base font-semibold">
+															{feature.label}
+														</h4>
+														{#if feature.type}
+															<Badge variant="outline">{feature.type}</Badge>
+														{/if}
+														{#if feature.is_archetype}
+															<Badge variant="secondary">Archetype</Badge>
+														{/if}
+														{#if feature.alterations && feature.alterations.length > 0}
+															<Badge variant="destructive">Altered</Badge>
+														{/if}
+													</div>
+													{#if feature.description}
+														<p class="text-sm text-muted-foreground line-clamp-2">
+															{feature.description}
+														</p>
+													{/if}
+												</div>
+											</button>
+										{/each}
+									</div>
+								</div>
+							{/each}
+						</div>
+					</ScrollArea>
+				{/if}
+			{:catch error}
+				<div class="rounded-md border border-destructive p-4">
+					<p class="text-destructive">Error loading class features: {error.message}</p>
+				</div>
+			{/await}
 		{/if}
 	</Card.Content>
 </Card.Root>
@@ -185,5 +294,13 @@
 </Dialog.Root>
 
 <style lang="postcss">
-
-</style> 
+.feature {
+	border: 1px solid hsl(var(--border) / 0.2);
+	transition: all 0.2s ease;
+	
+	&:hover {
+		background-color: hsl(var(--muted) / 0.5);
+		border-color: hsl(var(--border) / 0.5);
+	}
+}
+</style>

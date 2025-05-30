@@ -1,0 +1,915 @@
+# YAML Anchor Definitions - Required for Cross-File References
+
+# This file must be loaded first when combining files
+anchors:
+  user_id: &user_id '9c4e4bb1-db8d-41df-b796-b9454622eed2'
+  target_specifier_ac_id: &target_specifier_ac_id 1 # only specify the most common target specifier, so if it targets all AC's, just specify AC
+  target_specifier_touch_ac_id: &target_specifier_touch_ac_id 2
+  target_specifier_flat_footed_ac_id: &target_specifier_flat_footed_ac_id 3
+  target_specifier_strength_id: &target_specifier_strength_id 4
+  target_specifier_dexterity_id: &target_specifier_dexterity_id 5
+  target_specifier_constitution_id: &target_specifier_constitution_id 6
+  target_specifier_intelligence_id: &target_specifier_intelligence_id 7
+  target_specifier_wisdom_id: &target_specifier_wisdom_id 8
+  target_specifier_charisma_id: &target_specifier_charisma_id 9
+  ability_str_id: &ability_str_id 401
+  ability_dex_id: &ability_dex_id 402
+  ability_con_id: &ability_con_id 403
+  ability_int_id: &ability_int_id 404
+  ability_wis_id: &ability_wis_id 405
+  ability_cha_id: &ability_cha_id 406
+  bonus_untyped_id: &bonus_untyped_id 1
+  bonus_circumstance_id: &bonus_circumstance_id 2
+  bonus_inherent_id: &bonus_inherent_id 3
+  bonus_enhancement_id: &bonus_enhancement_id 4
+  bonus_morale_id: &bonus_morale_id 5
+  bonus_dodge_id: &bonus_dodge_id 6
+  bonus_ancestral_id: &bonus_ancestral_id 7
+  bonus_natural_id: &bonus_natural_id 8
+  bonus_trait_id: &bonus_trait_id 400
+  legendary_gift_ability_id: &legendary_gift_ability_id 1300
+  legendary_gift_armor_id: &legendary_gift_armor_id 1301
+  legendary_gift_body_id: &legendary_gift_body_id 1302
+  legendary_gift_mind_id: &legendary_gift_mind_id 1303
+  legendary_gift_shield_id: &legendary_gift_shield_id 1304
+  legendary_gift_weapons_id: &legendary_gift_weapons_id 1305
+  abp_resistance_id: &abp_resistance_id 16
+  abp_armor_attunement_id: &abp_armor_attunement_id 17
+  abp_weapon_attunement_id: &abp_weapon_attunement_id 18
+  abp_deflection_id: &abp_deflection_id 19
+  abp_mental_prowess_int_id: &abp_mental_prowess_int_id 20
+  abp_mental_prowess_wis_id: &abp_mental_prowess_wis_id 21
+  abp_mental_prowess_cha_id: &abp_mental_prowess_cha_id 22
+  abp_physical_prowess_str_id: &abp_physical_prowess_str_id 23
+  abp_physical_prowess_dex_id: &abp_physical_prowess_dex_id 24
+  abp_physical_prowess_con_id: &abp_physical_prowess_con_id 25
+  abp_toughening_id: &abp_toughening_id 26
+  legendary_gift_ability_bonus_id: &legendary_gift_ability_bonus_id 1300
+  legendary_gift_armor_bonus_id: &legendary_gift_armor_bonus_id 1301
+  legendary_gift_body_bonus_id: &legendary_gift_body_bonus_id 1302
+  legendary_gift_mind_bonus_id: &legendary_gift_mind_bonus_id 1303
+  legendary_gift_shield_bonus_id: &legendary_gift_shield_bonus_id 1304
+  legendary_gift_weapons_bonus_id: &legendary_gift_weapons_bonus_id 1305
+  group_level_3_id: &group_level_3_id 1100
+  group_level_4_id: &group_level_4_id 1101
+  group_level_6_id: &group_level_6_id 1102
+  group_level_7_id: &group_level_7_id 1103
+  group_level_5_id: &group_level_5_id 1104
+  group_level_8_id: &group_level_8_id 1105
+  group_level_9_id: &group_level_9_id 1106
+  group_level_10_id: &group_level_10_id 1107
+  group_level_11_id: &group_level_11_id 1108
+  group_level_12_id: &group_level_12_id 1109
+  group_level_13_id: &group_level_13_id 1110
+  group_level_14_id: &group_level_14_id 1111
+  group_level_15_id: &group_level_15_id 1112
+  group_level_16_id: &group_level_16_id 1113
+  group_level_17_id: &group_level_17_id 1114
+  group_level_18_id: &group_level_18_id 1115
+  group_level_19_id: &group_level_19_id 1116
+  resistance_1_node_id: &resistance_1_node_id 1200
+  attunement_1_node_id: &attunement_1_node_id 1201
+  mental_prowess_int_node_id: &mental_prowess_int_node_id 1202
+  mental_prowess_wis_node_id: &mental_prowess_wis_node_id 1203
+  mental_prowess_cha_node_id: &mental_prowess_cha_node_id 1204
+  physical_prowess_str_node_id: &physical_prowess_str_node_id 1205
+  physical_prowess_dex_node_id: &physical_prowess_dex_node_id 1206
+  physical_prowess_con_node_id: &physical_prowess_con_node_id 1207
+  deflection_1_node_id: &deflection_1_node_id 1208
+  level_8_node_id: &level_8_node_id 1209
+  level_9_node_id: &level_9_node_id 1210
+  level_10_node_id: &level_10_node_id 1211
+  level_11_node_id: &level_11_node_id 1212
+  level_12_node_id: &level_12_node_id 1213
+  level_13_node_id: &level_13_node_id 1214
+  level_14_armor_split_node_id: &level_14_armor_split_node_id 1215
+  level_14_armor_single_node_id: &level_14_armor_single_node_id 1216
+  level_14_weapon_split_node_id: &level_14_weapon_split_node_id 1217
+  level_14_weapon_single_node_id: &level_14_weapon_single_node_id 1218
+  legendary_ability_node_id: &legendary_ability_node_id 1219
+  legendary_armor_node_id: &legendary_armor_node_id 1220
+  legendary_body_node_id: &legendary_body_node_id 1221
+  legendary_mind_node_id: &legendary_mind_node_id 1222
+  legendary_shield_node_id: &legendary_shield_node_id 1223
+  legendary_weapons_node_id: &legendary_weapons_node_id 1224
+  favored_hp_id: &favored_hp_id 25
+  favored_skill_id: &favored_skill_id 26
+  favored_other_id: &favored_other_id 27
+  equipment_alchemist_kit_id: &equipment_alchemist_kit_id 603
+  ancestry_tengu_id: &ancestry_tengu_id 119
+  ancestry_oread_id: &ancestry_oread_id 120
+  skill_acrobatics_id: &skill_acrobatics_id 28
+  skill_appraise_id: &skill_appraise_id 29
+  skill_bluff_id: &skill_bluff_id 30
+  skill_climb_id: &skill_climb_id 31
+  skill_craft_alchemy_id: &skill_craft_alchemy_id 32
+  skill_diplomacy_id: &skill_diplomacy_id 35
+  skill_disable_device_id: &skill_disable_device_id 36
+  skill_disguise_id: &skill_disguise_id 37
+  skill_escape_artist_id: &skill_escape_artist_id 38
+  skill_fly_id: &skill_fly_id 39
+  skill_handle_animal_id: &skill_handle_animal_id 40
+  skill_heal_id: &skill_heal_id 41
+  skill_intimidate_id: &skill_intimidate_id 42
+  skill_knowledge_arcana_id: &skill_knowledge_arcana_id 43
+  skill_knowledge_dungeoneering_id: &skill_knowledge_dungeoneering_id 44
+  skill_knowledge_engineering_id: &skill_knowledge_engineering_id 45
+  skill_knowledge_geography_id: &skill_knowledge_geography_id 46
+  skill_knowledge_history_id: &skill_knowledge_history_id 47
+  skill_knowledge_local_id: &skill_knowledge_local_id 48
+  skill_knowledge_nature_id: &skill_knowledge_nature_id 49
+  skill_knowledge_nobility_id: &skill_knowledge_nobility_id 50
+  skill_knowledge_planes_id: &skill_knowledge_planes_id 51
+  skill_knowledge_religion_id: &skill_knowledge_religion_id 52
+  skill_linguistics_id: &skill_linguistics_id 53
+  skill_perception_id: &skill_perception_id 54
+  skill_profession_id: &skill_profession_id 55
+  skill_ride_id: &skill_ride_id 56
+  skill_sense_motive_id: &skill_sense_motive_id 57
+  skill_sleight_of_hand_id: &skill_sleight_of_hand_id 58
+  skill_spellcraft_id: &skill_spellcraft_id 59
+  skill_stealth_id: &skill_stealth_id 60
+  skill_survival_id: &skill_survival_id 61
+  skill_swim_id: &skill_swim_id 62
+  skill_use_magic_device_id: &skill_use_magic_device_id 63
+  bonus_attack_progression_full_id: &bonus_attack_progression_full_id 1
+  bonus_attack_progression_three_quarters_id: &bonus_attack_progression_three_quarters_id 2
+  bonus_attack_progression_half_id: &bonus_attack_progression_half_id 3
+  class_alchemist_id: &class_alchemist_id 1
+  class_kineticist_id: &class_kineticist_id 2
+  class_monk_unchained_id: &class_monk_unchained_id 3
+  class_monk_core_id: &class_monk_core_id 4
+  class_cleric_core_id: &class_cleric_core_id 5
+  class_medium_id: &class_medium_id 6
+  class_occultist_id: &class_occultist_id 7
+  class_oracle_id: &class_oracle_id 8
+  class_psychic_id: &class_psychic_id 9
+  class_shaman_id: &class_shaman_id 10
+  class_spiritualist_id: &class_spiritualist_id 11
+  class_warpriest_id: &class_warpriest_id 12
+  class_witch_id: &class_witch_id 13
+  class_brawler_id: &class_brawler_id 14
+  spellcasting_type_divine_id: &spellcasting_type_divine_id 1
+  spellcasting_type_arcane_id: &spellcasting_type_arcane_id 2
+  spellcasting_type_psychic_id: &spellcasting_type_psychic_id 3
+  spell_progression_type_prepared_9_id: &spell_progression_type_prepared_9_id 1
+  spell_progression_type_spontaneous_9_id: &spell_progression_type_spontaneous_9_id 2
+  spell_progression_type_prepared_6_id: &spell_progression_type_prepared_6_id 3
+  spell_progression_type_spontaneous_6_id: &spell_progression_type_spontaneous_6_id 4
+  spell_progression_type_prepared_4_id: &spell_progression_type_prepared_4_id 5
+  spell_progression_type_spontaneous_4_id: &spell_progression_type_spontaneous_4_id 6
+  element_aether_id: &element_aether_id 2300
+  element_air_id: &element_air_id 2301
+  wild_talent_type_substance_infusion_id: &wild_talent_type_substance_infusion_id 1
+  wild_talent_type_form_infusion_id: &wild_talent_type_form_infusion_id 2
+  spell_school_divination_id: &spell_school_divination_id 1
+  spell_school_necromancy_id: &spell_school_necromancy_id 2
+  spell_school_enchantment_id: &spell_school_enchantment_id 3
+  spell_school_evocation_id: &spell_school_evocation_id 4
+  spell_school_illusion_id: &spell_school_illusion_id 5
+  spell_school_transmutation_id: &spell_school_transmutation_id 6
+  spell_school_abjuration_id: &spell_school_abjuration_id 7
+  spell_school_conjuration_id: &spell_school_conjuration_id 8
+  spell_school_universal_id: &spell_school_universal_id 9
+  qinggong_monk_ki_power_type_monk_ability_id: &qinggong_monk_ki_power_type_monk_ability_id 1
+  qinggong_monk_ki_power_type_spell_like_ability_id: &qinggong_monk_ki_power_type_spell_like_ability_id 2
+  qinggong_monk_ki_power_type_feat_ability_id: &qinggong_monk_ki_power_type_feat_ability_id 3
+  rule_spell_components_id: &rule_spell_components_id 1
+  spell_component_type_V_id: &spell_component_type_V_id 1
+  spell_component_type_S_id: &spell_component_type_S_id 2
+  spell_component_type_M_id: &spell_component_type_M_id 3
+  spell_component_type_F_id: &spell_component_type_F_id 4
+  spell_component_type_DF_id: &spell_component_type_DF_id 5
+  spell_component_V_id: &spell_component_V_id 1
+  spell_component_S_id: &spell_component_S_id 2
+  spell_component_incense_id: &spell_component_incense_id 3
+  spell_component_bones_id: &spell_component_bones_id 4
+  subdomain_fate_id: &subdomain_fate_id 1
+  sorcerer_bloodline_dreamspun_id: &sorcerer_bloodline_dreamspun_id 1
+  sorcerer_bloodline_harrow_id: &sorcerer_bloodline_harrow_id 2
+  spell_casting_time_1_minute_id: &spell_casting_time_1_minute_id 1
+  spell_range_personal_id: &spell_range_personal_id 1
+  spell_target_you_id: &spell_target_you_id 1
+  spell_duration_instantaneous_id: &spell_duration_instantaneous_id 1
+  spell_list_cleric_id: &spell_list_cleric_id 1
+  spell_list_medium_id: &spell_list_medium_id 2
+  spell_list_witch_id: &spell_list_witch_id 3
+  spell_list_oracle_id: &spell_list_oracle_id 4
+  spell_list_psychic_id: &spell_list_psychic_id 5
+  spell_list_occultist_divination_id: &spell_list_occultist_divination_id 6
+  spell_list_warpriest_id: &spell_list_warpriest_id 7
+  spell_list_shaman_id: &spell_list_shaman_id 8
+  spell_list_spiritualist_id: &spell_list_spiritualist_id 9
+  spell_list_sahir_afiyun_id: &spell_list_sahir_afiyun_id 10
+  spell_list_dreamspun_id: &spell_list_dreamspun_id 11
+  spell_list_harrow_id: &spell_list_harrow_id 12
+  spell_list_subdomain_fate_id: &spell_list_subdomain_fate_id 13
+  qualification_type_class_feature_id: &qualification_type_class_feature_id 1
+  qualification_type_fulfillment_id: &qualification_type_fulfillment_id 2
+  qualification_type_monk_unchained_ki_power_id: &qualification_type_monk_unchained_ki_power_id 3
+  qualification_type_wild_talent_id: &qualification_type_wild_talent_id 4
+  prerequisite_requirement_type_wild_talent_id: &prerequisite_requirement_type_wild_talent_id 1
+  prerequisite_requirement_type_monk_unchained_ki_power_id: &prerequisite_requirement_type_monk_unchained_ki_power_id 2
+  archetype_mindchemist_id: &archetype_mindchemist_id 801
+  archetype_hungry_ghost_monk_id: &archetype_hungry_ghost_monk_id 215
+  archetype_extra_bombs_id: &archetype_extra_bombs_id 221
+  archetype_elemental_ascetic_id: &archetype_elemental_ascetic_id 222
+  weapon_dagger_id: &weapon_dagger_id 1000
+  weapon_bastard_sword_id: &weapon_bastard_sword_id 1001
+  weapon_elven_curve_blade_id: &weapon_elven_curve_blade_id 1002
+  weapon_falchion_id: &weapon_falchion_id 1003
+  weapon_greatsword_id: &weapon_greatsword_id 1004
+  weapon_kukri_id: &weapon_kukri_id 1005
+  weapon_longsword_id: &weapon_longsword_id 1006
+  weapon_punching_dagger_id: &weapon_punching_dagger_id 1007
+  weapon_rapier_id: &weapon_rapier_id 1008
+  weapon_scimitar_id: &weapon_scimitar_id 1009
+  weapon_short_sword_id: &weapon_short_sword_id 1010
+  weapon_two_bladed_sword_id: &weapon_two_bladed_sword_id 1011
+  armor_mithral_chainshirt_id: &armor_mithral_chainshirt_id 800
+  bracers_of_armor_id: &bracers_of_armor_id 801
+  consumable_alchemist_fire_id: &consumable_alchemist_fire_id 900
+  consumable_acid_id: &consumable_acid_id 901
+  consumable_tanglefoot_bag_id: &consumable_tanglefoot_bag_id 902
+  ancestry_trait_tengu_ability_scores_id: &ancestry_trait_tengu_ability_scores_id 91
+  ancestry_trait_tengu_type_id: &ancestry_trait_tengu_type_id 92
+  ancestry_trait_tengu_size_id: &ancestry_trait_tengu_size_id 93
+  ancestry_trait_tengu_speed_id: &ancestry_trait_tengu_speed_id 94
+  ancestry_trait_tengu_languages_id: &ancestry_trait_tengu_languages_id 95
+  ancestry_trait_tengu_sneaky_id: &ancestry_trait_tengu_sneaky_id 96
+  ancestry_trait_tengu_gifted_linguist_id: &ancestry_trait_tengu_gifted_linguist_id 97
+  ancestry_trait_tengu_swordtrained_id: &ancestry_trait_tengu_swordtrained_id 98
+  ancestry_trait_tengu_natural_weapons_id: &ancestry_trait_tengu_natural_weapons_id 99
+  ancestry_trait_tengu_senses_id: &ancestry_trait_tengu_senses_id 100
+  ancestry_trait_oread_ability_scores_id: &ancestry_trait_oread_ability_scores_id 101
+  ancestry_trait_oread_type_id: &ancestry_trait_oread_type_id 102
+  ancestry_trait_oread_size_id: &ancestry_trait_oread_size_id 103
+  ancestry_trait_oread_speed_id: &ancestry_trait_oread_speed_id 104
+  ancestry_trait_oread_languages_id: &ancestry_trait_oread_languages_id 105
+  ancestry_trait_oread_energy_resistance_id: &ancestry_trait_oread_energy_resistance_id 106
+  ancestry_trait_oread_spell_like_ability_id: &ancestry_trait_oread_spell_like_ability_id 107
+  ancestry_trait_oread_darkvision_id: &ancestry_trait_oread_darkvision_id 108
+  ancestry_trait_oread_earth_affinity_id: &ancestry_trait_oread_earth_affinity_id 109
+  ancestry_alternate_trait_oread_crystalline_form_id: &ancestry_alternate_trait_oread_crystalline_form_id 6
+  ancestry_alternate_trait_oread_earth_insight_id: &ancestry_alternate_trait_oread_earth_insight_id 7
+  ancestry_alternate_trait_oread_ferrous_growth_id: &ancestry_alternate_trait_oread_ferrous_growth_id 8
+  ancestry_alternate_trait_oread_granite_skin_id: &ancestry_alternate_trait_oread_granite_skin_id 9
+  ancestry_alternate_trait_oread_mountain_born_id: &ancestry_alternate_trait_oread_mountain_born_id 10
+  ancestry_alternate_trait_oread_mostly_human_id: &ancestry_alternate_trait_oread_mostly_human_id 11
+  ancestry_alternate_trait_tengu_carrion_sense_id: &ancestry_alternate_trait_tengu_carrion_sense_id 1
+  ancestry_alternate_trait_tengu_claw_attack_id: &ancestry_alternate_trait_tengu_claw_attack_id 2
+  ancestry_alternate_trait_tengu_deft_swords_id: &ancestry_alternate_trait_tengu_deft_swords_id 3
+  ancestry_alternate_trait_tengu_exotic_weapon_training_id: &ancestry_alternate_trait_tengu_exotic_weapon_training_id 4
+  ancestry_alternate_trait_tengu_glide_id: &ancestry_alternate_trait_tengu_glide_id 5
+  ancestry_trait_benefit_tengu_ability_scores_id: &ancestry_trait_benefit_tengu_ability_scores_id 1
+  ancestry_trait_benefit_oread_ability_scores_id: &ancestry_trait_benefit_oread_ability_scores_id 2
+  class_feature_mastermind_id: &class_feature_mastermind_id 83
+  class_feature_noble_dead_id: &class_feature_noble_dead_id 84
+  class_feature_sunlight_resistance_id: &class_feature_sunlight_resistance_id 85
+  class_feature_swarm_form_id: &class_feature_swarm_form_id 86
+  class_feature_blood_drain_id: &class_feature_blood_drain_id 87
+  class_feature_children_of_night_id: &class_feature_children_of_night_id 88
+  class_feature_create_spawn_id: &class_feature_create_spawn_id 89
+  class_feature_brawlers_flurry_id: &class_feature_brawlers_flurry_id 4000
+  class_feature_alchemist_proficiencies_id: &class_feature_alchemist_proficiencies_id 4001
+  class_feature_alchemy_id: &class_feature_alchemy_id 4002
+  class_feature_bomb_id: &class_feature_bomb_id 4003
+  class_feature_brew_potion_id: &class_feature_brew_potion_id 4004
+  class_feature_mutagen_id: &class_feature_mutagen_id 5
+  class_feature_throw_anything_id: &class_feature_throw_anything_id 6
+  class_feature_discovery_id: &class_feature_discovery_id 7
+  class_feature_poison_resistance_id: &class_feature_poison_resistance_id 8
+  class_feature_poison_use_id: &class_feature_poison_use_id 9
+  class_feature_swift_alchemy_id: &class_feature_swift_alchemy_id 10
+  class_feature_swift_poisoning_id: &class_feature_swift_poisoning_id 11
+  class_feature_persistent_mutagen_id: &class_feature_persistent_mutagen_id 12
+  class_feature_instant_alchemy_id: &class_feature_instant_alchemy_id 13
+  class_feature_grand_discovery_id: &class_feature_grand_discovery_id 14
+  class_feature_cognatogen_id: &class_feature_cognatogen_id 15
+  class_feature_perfect_recall_id: &class_feature_perfect_recall_id 16
+  class_feature_mindchemist_bonus_feat_id: &class_feature_mindchemist_bonus_feat_id 17
+  class_feature_mindchemist_languages_id: &class_feature_mindchemist_languages_id 18
+  class_feature_kineticist_proficiencies_id: &class_feature_kineticist_proficiencies_id 19
+  class_feature_elemental_focus_id: &class_feature_elemental_focus_id 20
+  class_feature_wild_talents_id: &class_feature_wild_talents_id 21
+  class_feature_burn_id: &class_feature_burn_id 22
+  class_feature_kinetic_blast_id: &class_feature_kinetic_blast_id 23
+  class_feature_gather_power_id: &class_feature_gather_power_id 24
+  class_feature_infusion_id: &class_feature_infusion_id 25
+  class_feature_elemental_defense_id: &class_feature_elemental_defense_id 26
+  class_feature_elemental_overflow_id: &class_feature_elemental_overflow_id 27
+  class_feature_infusion_specialization_id: &class_feature_infusion_specialization_id 28
+  class_feature_metakinesis_id: &class_feature_metakinesis_id 29
+  class_feature_internal_buffer_id: &class_feature_internal_buffer_id 30
+  class_feature_expanded_element_id: &class_feature_expanded_element_id 31
+  class_feature_supercharge_id: &class_feature_supercharge_id 32
+  class_feature_composite_specialization_id: &class_feature_composite_specialization_id 33
+  class_feature_metakinetic_master_id: &class_feature_metakinetic_master_id 34
+  class_feature_omnikinesis_id: &class_feature_omnikinesis_id 35
+  class_feature_elemental_flurry_id: &class_feature_elemental_flurry_id 36
+  class_feature_elemental_wisdom_id: &class_feature_elemental_wisdom_id 37
+  class_feature_ac_bonus_ascetic_id: &class_feature_ac_bonus_ascetic_id 38
+  class_feature_powerful_fist_id: &class_feature_powerful_fist_id 39
+  class_feature_monk_unchained_proficiencies_id: &class_feature_monk_unchained_proficiencies_id 40
+  class_feature_monk_unchained_ac_bonus_id: &class_feature_monk_unchained_ac_bonus_id 41
+  class_feature_monk_unchained_bonus_feat_id: &class_feature_monk_unchained_bonus_feat_id 42
+  class_feature_monk_unchained_flurry_of_blows_id: &class_feature_monk_unchained_flurry_of_blows_id 43
+  class_feature_monk_unchained_stunning_fist_id: &class_feature_monk_unchained_stunning_fist_id 44
+  class_feature_monk_unchained_unarmed_strike_id: &class_feature_monk_unchained_unarmed_strike_id 45
+  class_feature_monk_unchained_evasion_id: &class_feature_monk_unchained_evasion_id 46
+  class_feature_monk_unchained_fast_movement_id: &class_feature_monk_unchained_fast_movement_id 47
+  class_feature_monk_unchained_ki_pool_id: &class_feature_monk_unchained_ki_pool_id 48
+  class_feature_monk_unchained_ki_powers_id: &class_feature_monk_unchained_ki_powers_id 49
+  class_feature_monk_unchained_still_mind_id: &class_feature_monk_unchained_still_mind_id 50
+  class_feature_monk_unchained_purity_of_body_id: &class_feature_monk_unchained_purity_of_body_id 51
+  class_feature_monk_unchained_style_strike_id: &class_feature_monk_unchained_style_strike_id 52
+  class_feature_monk_unchained_improved_evasion_id: &class_feature_monk_unchained_improved_evasion_id 53
+  class_feature_monk_unchained_tongue_of_sun_and_moon_id: &class_feature_monk_unchained_tongue_of_sun_and_moon_id 54
+  class_feature_monk_unchained_timeless_body_id: &class_feature_monk_unchained_timeless_body_id 55
+  class_feature_monk_unchained_flawless_mind_id: &class_feature_monk_unchained_flawless_mind_id 56
+  class_feature_monk_unchained_perfect_self_id: &class_feature_monk_unchained_perfect_self_id 57
+  class_feature_monk_core_proficiencies_id: &class_feature_monk_core_proficiencies_id 58
+  class_feature_monk_core_ac_bonus_id: &class_feature_monk_core_ac_bonus_id 59
+  class_feature_monk_core_flurry_of_blows_id: &class_feature_monk_core_flurry_of_blows_id 60
+  class_feature_monk_core_unarmed_strike_id: &class_feature_monk_core_unarmed_strike_id 61
+  class_feature_monk_core_bonus_feat_id: &class_feature_monk_core_bonus_feat_id 62
+  class_feature_monk_core_stunning_fist_id: &class_feature_monk_core_stunning_fist_id 63
+  class_feature_monk_core_evasion_id: &class_feature_monk_core_evasion_id 64
+  class_feature_monk_core_fast_movement_id: &class_feature_monk_core_fast_movement_id 65
+  class_feature_monk_core_maneuver_training_id: &class_feature_monk_core_maneuver_training_id 66
+  class_feature_monk_core_still_mind_id: &class_feature_monk_core_still_mind_id 67
+  class_feature_monk_core_ki_pool_id: &class_feature_monk_core_ki_pool_id 68
+  class_feature_monk_core_slow_fall_id: &class_feature_monk_core_slow_fall_id 69
+  class_feature_monk_core_high_jump_id: &class_feature_monk_core_high_jump_id 70
+  class_feature_monk_core_purity_of_body_id: &class_feature_monk_core_purity_of_body_id 71
+  class_feature_monk_core_wholeness_of_body_id: &class_feature_monk_core_wholeness_of_body_id 72
+  class_feature_monk_core_improved_evasion_id: &class_feature_monk_core_improved_evasion_id 73
+  class_feature_monk_core_diamond_body_id: &class_feature_monk_core_diamond_body_id 74
+  class_feature_monk_core_abundant_step_id: &class_feature_monk_core_abundant_step_id 75
+  class_feature_monk_core_diamond_soul_id: &class_feature_monk_core_diamond_soul_id 76
+  class_feature_monk_core_quivering_palm_id: &class_feature_monk_core_quivering_palm_id 77
+  class_feature_monk_core_timeless_body_id: &class_feature_monk_core_timeless_body_id 78
+  class_feature_monk_core_tongue_of_sun_and_moon_id: &class_feature_monk_core_tongue_of_sun_and_moon_id 79
+  class_feature_monk_core_empty_body_id: &class_feature_monk_core_empty_body_id 80
+  class_feature_monk_core_perfect_self_id: &class_feature_monk_core_perfect_self_id 81
+  class_feature_monk_core_qinggong_monk_ki_power_id: &class_feature_monk_core_qinggong_monk_ki_power_id 82
+  class_feature_cleric_spellcasting_id: &class_feature_cleric_spellcasting_id 3001
+  class_feature_witch_spellcasting_id: &class_feature_witch_spellcasting_id 3002
+  class_feature_warpriest_spellcasting_id: &class_feature_warpriest_spellcasting_id 3003
+  class_feature_spiritualist_spellcasting_id: &class_feature_spiritualist_spellcasting_id 3004
+  class_feature_shaman_spellcasting_id: &class_feature_shaman_spellcasting_id 3005
+  class_feature_medium_spellcasting_id: &class_feature_medium_spellcasting_id 3006
+  class_feature_psychic_spellcasting_id: &class_feature_psychic_spellcasting_id 3007
+  class_feature_oracle_spellcasting_id: &class_feature_oracle_spellcasting_id 3008
+  class_feature_occultist_spellcasting_id: &class_feature_occultist_spellcasting_id 3009
+  class_feature_benefit_occultist_divination_spellcasting_id: &class_feature_benefit_occultist_divination_spellcasting_id 1
+  class_feature_benefit_cleric_spellcasting_id: &class_feature_benefit_cleric_spellcasting_id 2
+  class_feature_benefit_medium_spellcasting_id: &class_feature_benefit_medium_spellcasting_id 3
+  class_feature_benefit_oracle_spellcasting_id: &class_feature_benefit_oracle_spellcasting_id 4
+  class_feature_benefit_psychic_spellcasting_id: &class_feature_benefit_psychic_spellcasting_id 5
+  class_feature_benefit_shaman_spellcasting_id: &class_feature_benefit_shaman_spellcasting_id 6
+  class_feature_benefit_warpriest_spellcasting_id: &class_feature_benefit_warpriest_spellcasting_id 7
+  class_feature_benefit_witch_spellcasting_id: &class_feature_benefit_witch_spellcasting_id 8
+  class_feature_benefit_spiritualist_spellcasting_id: &class_feature_benefit_spiritualist_spellcasting_id 9
+  class_feature_benefit_occultist_divination_spellcasting_level_1_id: &class_feature_benefit_occultist_divination_spellcasting_level_1_id 10
+  class_feature_benefit_occultist_divination_spellcasting_level_2_id: &class_feature_benefit_occultist_divination_spellcasting_level_2_id 11
+  class_feature_benefit_cleric_spellcasting_level_1_id: &class_feature_benefit_cleric_spellcasting_level_1_id 12
+  class_feature_benefit_cleric_spellcasting_level_2_id: &class_feature_benefit_cleric_spellcasting_level_2_id 13
+  class_feature_benefit_oracle_spellcasting_level_1_id: &class_feature_benefit_oracle_spellcasting_level_1_id 14
+  class_feature_benefit_oracle_spellcasting_level_2_id: &class_feature_benefit_oracle_spellcasting_level_2_id 15
+  class_feature_benefit_witch_spellcasting_level_1_id: &class_feature_benefit_witch_spellcasting_level_1_id 16
+  class_feature_benefit_witch_spellcasting_level_2_id: &class_feature_benefit_witch_spellcasting_level_2_id 17
+  class_feature_benefit_warpriest_spellcasting_level_1_id: &class_feature_benefit_warpriest_spellcasting_level_1_id 18
+  class_feature_benefit_warpriest_spellcasting_level_2_id: &class_feature_benefit_warpriest_spellcasting_level_2_id 19
+  class_feature_benefit_spiritualist_spellcasting_level_1_id: &class_feature_benefit_spiritualist_spellcasting_level_1_id 20
+  class_feature_benefit_spiritualist_spellcasting_level_2_id: &class_feature_benefit_spiritualist_spellcasting_level_2_id 21
+  class_feature_benefit_shaman_spellcasting_level_1_id: &class_feature_benefit_shaman_spellcasting_level_1_id 22
+  class_feature_benefit_shaman_spellcasting_level_2_id: &class_feature_benefit_shaman_spellcasting_level_2_id 23
+  class_feature_benefit_psychic_spellcasting_level_1_id: &class_feature_benefit_psychic_spellcasting_level_1_id 24
+  class_feature_benefit_psychic_spellcasting_level_2_id: &class_feature_benefit_psychic_spellcasting_level_2_id 25
+  class_feature_benefit_medium_spellcasting_level_1_id: &class_feature_benefit_medium_spellcasting_level_1_id 26
+  class_feature_benefit_medium_spellcasting_level_2_id: &class_feature_benefit_medium_spellcasting_level_2_id 27
+  class_feature_benefit_elemental_ascetic_ac_bonus_level_2_id: &class_feature_benefit_elemental_ascetic_ac_bonus_level_2_id 28
+  class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id: &class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id 29
+  class_feature_benefit_bonus_elemental_ascetic_ac_bonus_level_6_id: &class_feature_benefit_bonus_elemental_ascetic_ac_bonus_level_6_id 2
+  spellcasting_class_feature_cleric_id: &spellcasting_class_feature_cleric_id 1
+  spellcasting_class_feature_witch_id: &spellcasting_class_feature_witch_id 2
+  spellcasting_class_feature_warpriest_id: &spellcasting_class_feature_warpriest_id 3
+  spellcasting_class_feature_spiritualist_id: &spellcasting_class_feature_spiritualist_id 4
+  spellcasting_class_feature_shaman_id: &spellcasting_class_feature_shaman_id 5
+  spellcasting_class_feature_psychic_id: &spellcasting_class_feature_psychic_id 6
+  spellcasting_class_feature_medium_id: &spellcasting_class_feature_medium_id 7
+  spellcasting_class_feature_oracle_id: &spellcasting_class_feature_oracle_id 8
+  spellcasting_class_feature_occultist_id: &spellcasting_class_feature_occultist_id 9
+  spellcasting_class_feature_alchemist_id: &spellcasting_class_feature_alchemist_id 10
+  wild_talent_stylish_infusion_id: &wild_talent_stylish_infusion_id 1
+  wild_talent_kinetic_fist_id: &wild_talent_kinetic_fist_id 2
+  wild_talent_basic_geokinesis_id: &wild_talent_basic_geokinesis_id 300
+  wild_talent_earth_walk_id: &wild_talent_earth_walk_id 302
+  wild_talent_tremorsense_id: &wild_talent_tremorsense_id 303
+  monk_unchained_ki_power_abundant_step_id: &monk_unchained_ki_power_abundant_step_id 1
+  monk_unchained_ki_power_cobra_breath_id: &monk_unchained_ki_power_cobra_breath_id 2
+  monk_unchained_ki_power_diamond_body_id: &monk_unchained_ki_power_diamond_body_id 3
+  monk_unchained_ki_power_diamond_mind_id: &monk_unchained_ki_power_diamond_mind_id 4
+  monk_unchained_ki_power_diamond_resilience_id: &monk_unchained_ki_power_diamond_resilience_id 5
+  monk_unchained_ki_power_diamond_soul_id: &monk_unchained_ki_power_diamond_soul_id 6
+  monk_unchained_ki_power_elemental_fury_id: &monk_unchained_ki_power_elemental_fury_id 7
+  monk_unchained_ki_power_elemental_burst_id: &monk_unchained_ki_power_elemental_burst_id 8
+  monk_unchained_ki_power_empty_body_id: &monk_unchained_ki_power_empty_body_id 9
+  monk_unchained_ki_power_feather_balance_id: &monk_unchained_ki_power_feather_balance_id 10
+  monk_unchained_ki_power_formless_mastery_id: &monk_unchained_ki_power_formless_mastery_id 11
+  monk_unchained_ki_power_furious_defense_id: &monk_unchained_ki_power_furious_defense_id 12
+  monk_unchained_ki_power_high_jump_id: &monk_unchained_ki_power_high_jump_id 13
+  monk_unchained_ki_power_insightful_wisdom_id: &monk_unchained_ki_power_insightful_wisdom_id 14
+  monk_unchained_ki_power_ki_blocker_id: &monk_unchained_ki_power_ki_blocker_id 15
+  monk_unchained_ki_power_ki_hurricane_id: &monk_unchained_ki_power_ki_hurricane_id 16
+  monk_unchained_ki_power_ki_metabolism_id: &monk_unchained_ki_power_ki_metabolism_id 17
+  monk_unchained_ki_power_ki_mount_id: &monk_unchained_ki_power_ki_mount_id 18
+  monk_unchained_ki_power_ki_range_id: &monk_unchained_ki_power_ki_range_id 19
+  monk_unchained_ki_power_ki_visions_id: &monk_unchained_ki_power_ki_visions_id 20
+  monk_unchained_ki_power_ki_volley_id: &monk_unchained_ki_power_ki_volley_id 21
+  monk_unchained_ki_power_light_steps_id: &monk_unchained_ki_power_light_steps_id 22
+  monk_unchained_ki_power_one_touch_id: &monk_unchained_ki_power_one_touch_id 23
+  monk_unchained_ki_power_qinggong_power_id: &monk_unchained_ki_power_qinggong_power_id 24
+  monk_unchained_ki_power_quivering_palm_id: &monk_unchained_ki_power_quivering_palm_id 25
+  monk_unchained_ki_power_slow_fall_id: &monk_unchained_ki_power_slow_fall_id 26
+  monk_unchained_ki_power_sudden_speed_id: &monk_unchained_ki_power_sudden_speed_id 27
+  monk_unchained_ki_power_water_sprint_id: &monk_unchained_ki_power_water_sprint_id 28
+  monk_unchained_ki_power_wind_jump_id: &monk_unchained_ki_power_wind_jump_id 29
+  monk_unchained_ki_power_wholeness_of_body_id: &monk_unchained_ki_power_wholeness_of_body_id 30
+  monk_unchained_ki_power_ki_guardian_id: &monk_unchained_ki_power_ki_guardian_id 31
+  feat_tengu_wings_id: &feat_tengu_wings_id 1
+  feat_two_weapon_fighting_id: &feat_two_weapon_fighting_id 2
+  feat_rapid_shot_id: &feat_rapid_shot_id 3
+  feat_deadly_aim_id: &feat_deadly_aim_id 4
+  feat_extra_discovery_id: &feat_extra_discovery_id 5
+  feat_improved_unarmed_strike_id: &feat_improved_unarmed_strike_id 6
+  feat_power_attack_id: &feat_power_attack_id 7
+  feat_weapon_focus_unarmed_strike_id: &feat_weapon_focus_unarmed_strike_id 8
+  feat_dodge_id: &feat_dodge_id 9
+  feat_generally_educated_id: &feat_generally_educated_id 10
+  feat_acrobatic_steps_id: &feat_acrobatic_steps_id 11
+  feat_nimble_moves_id: &feat_nimble_moves_id 12
+  feat_adder_strike_id: &feat_adder_strike_id 13
+  feat_sahir_afiyun_id: &feat_sahir_afiyun_id 14
+  feat_spell_focus_id: &feat_spell_focus_id 15
+  feat_benefit_spell_focus_abjuration_id: &feat_benefit_spell_focus_abjuration_id 1
+  feat_benefit_spell_focus_conjuration_id: &feat_benefit_spell_focus_conjuration_id 2
+  feat_benefit_spell_focus_divination_id: &feat_benefit_spell_focus_divination_id 3
+  feat_benefit_spell_focus_enchantment_id: &feat_benefit_spell_focus_enchantment_id 4
+  feat_benefit_spell_focus_evocation_id: &feat_benefit_spell_focus_evocation_id 5
+  feat_benefit_spell_focus_illusion_id: &feat_benefit_spell_focus_illusion_id 6
+  feat_benefit_spell_focus_necromancy_id: &feat_benefit_spell_focus_necromancy_id 7
+  feat_benefit_spell_focus_transmutation_id: &feat_benefit_spell_focus_transmutation_id 8
+  spell_cure_light_wounds_id: &spell_cure_light_wounds_id 1000
+  spell_shield_id: &spell_shield_id 700
+  spell_enlarge_person_id: &spell_enlarge_person_id 702
+  spell_invisibility_id: &spell_invisibility_id 703
+  spell_bull_s_strength_id: &spell_bull_s_strength_id 704
+  spell_augury_id: &spell_augury_id 1
+  spell_consumable_potion_of_healing_id: &spell_consumable_potion_of_healing_id 1001
+  qinggong_monk_ki_power_acrobatic_steps_id: &qinggong_monk_ki_power_acrobatic_steps_id 1
+  qinggong_monk_ki_power_adder_strike_id: &qinggong_monk_ki_power_adder_strike_id 2
+  qinggong_monk_ki_power_augury_id: &qinggong_monk_ki_power_augury_id 3
+  qinggong_monk_ki_power_barkskin_id: &qinggong_monk_ki_power_barkskin_id 4
+  archetype_class_feature_mindchemist_cognatogen_id: &archetype_class_feature_mindchemist_cognatogen_id 1
+  archetype_class_feature_mindchemist_bonus_feat_id: &archetype_class_feature_mindchemist_bonus_feat_id 2
+  archetype_class_feature_mindchemist_perfect_recall_id: &archetype_class_feature_mindchemist_perfect_recall_id 3
+  archetype_class_feature_mindchemist_languages_id: &archetype_class_feature_mindchemist_languages_id 4
+  archetype_class_feature_elemental_ascetic_elemental_flurry_id: &archetype_class_feature_elemental_ascetic_elemental_flurry_id 5
+  archetype_class_feature_elemental_ascetic_elemental_wisdom_id: &archetype_class_feature_elemental_ascetic_elemental_wisdom_id 6
+  archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id: &archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id 7
+  archetype_class_feature_elemental_ascetic_powerful_fist_id: &archetype_class_feature_elemental_ascetic_powerful_fist_id 8
+  archetype_replacement_mindchemist_mutagen_id: &archetype_replacement_mindchemist_mutagen_id 1
+  archetype_replacement_mindchemist_poison_use_id: &archetype_replacement_mindchemist_poison_use_id 2
+  archetype_replacement_elemental_ascetic_elemental_overflow_id: &archetype_replacement_elemental_ascetic_elemental_overflow_id 3
+  archetype_replacement_elemental_ascetic_elemental_defense_id: &archetype_replacement_elemental_ascetic_elemental_defense_id 4
+  archetype_alteration_mindchemist_feat_id: &archetype_alteration_mindchemist_feat_id 1
+  archetype_alteration_mindchemist_lang_id: &archetype_alteration_mindchemist_lang_id 2
+  archetype_alteration_elemental_ascetic_blast_id: &archetype_alteration_elemental_ascetic_blast_id 3
+  archetype_alteration_elemental_ascetic_wild_talents_id: &archetype_alteration_elemental_ascetic_wild_talents_id 4
+  corruption_vampirism_id: &corruption_vampirism_id 113
+  manifestation_vampiric_grace_id: &manifestation_vampiric_grace_id 114
+  manifestation_fangs_id: &manifestation_fangs_id 115
+  manifestation_unlife_id: &manifestation_unlife_id 116
+  manifestation_greater_unlife_id: &manifestation_greater_unlife_id 117
+  manifestation_true_unlife_id: &manifestation_true_unlife_id 118
+  manifestation_allure_id: &manifestation_allure_id 501
+  manifestation_children_of_the_night_id: &manifestation_children_of_the_night_id 502
+  manifestation_dreadful_charm_id: &manifestation_dreadful_charm_id 503
+  manifestation_life_drain_id: &manifestation_life_drain_id 504
+  prerequisite_dreadful_charm_id: &prerequisite_dreadful_charm_id 1
+  prerequisite_true_unlife_id: &prerequisite_true_unlife_id 2
+  prerequisite_greater_unlife_id: &prerequisite_greater_unlife_id 3
+  discovery_precise_bombs_id: &discovery_precise_bombs_id 201
+  discovery_mutagen_id: &discovery_mutagen_id 202
+  discovery_explosive_bomb_id: &discovery_explosive_bomb_id 203
+  trait_pragmatic_activator_id: &trait_pragmatic_activator_id 3000
+  trait_clever_wordplay_diplomacy_id: &trait_clever_wordplay_diplomacy_id 3001
+  game_character_vardon_salvador_id: &game_character_vardon_salvador_id 1
+  game_character_killiq_said_id: &game_character_killiq_said_id 2
+  spell_slot_vardon_1_1: &spell_slot_vardon_1_1 1
+  spell_slot_vardon_1_2: &spell_slot_vardon_1_2 2
+  spell_slot_vardon_1_3: &spell_slot_vardon_1_3 3
+  spell_slot_vardon_1_4: &spell_slot_vardon_1_4 4
+  spell_slot_vardon_2_1: &spell_slot_vardon_2_1 5
+  spell_slot_vardon_2_2: &spell_slot_vardon_2_2 6
+  prerequisite_requirement_flurry_id: &prerequisite_requirement_flurry_id 1
+  prerequisite_requirement_kinetic_fist_id: &prerequisite_requirement_kinetic_fist_id 2
+  prerequisite_requirement_elemental_burst_id: &prerequisite_requirement_elemental_burst_id 5
+  prerequisite_requirement_cobra_breath_id: &prerequisite_requirement_cobra_breath_id 6
+  prerequisite_requirement_ki_hurricane_id: &prerequisite_requirement_ki_hurricane_id 7
+  prerequisite_requirement_ki_volley_id: &prerequisite_requirement_ki_volley_id 8
+  prerequisite_requirement_light_steps_id: &prerequisite_requirement_light_steps_id 9
+  prerequisite_requirement_wind_jump_id: &prerequisite_requirement_wind_jump_id 10
+  prerequisite_requirement_ki_guardian_id: &prerequisite_requirement_ki_guardian_id 11
+  fulfillment_flurry_id: &fulfillment_flurry_id 1
+  fulfillment_kinetic_fist_id: &fulfillment_kinetic_fist_id 2
+  fulfillment_monk_flurry_of_blows_id: &fulfillment_monk_flurry_of_blows_id 3
+  fulfillment_elemental_fury_id: &fulfillment_elemental_fury_id 4
+  fulfillment_diamond_body_id: &fulfillment_diamond_body_id 5
+  fulfillment_sudden_speed_id: &fulfillment_sudden_speed_id 6
+  fulfillment_diamond_soul_id: &fulfillment_diamond_soul_id 7
+  fulfillment_feather_balance_id: &fulfillment_feather_balance_id 8
+  fulfillment_high_jump_id: &fulfillment_high_jump_id 9
+  fulfillment_ki_metabolism_id: &fulfillment_ki_metabolism_id 10
+  prereq_type_ability_score_id: &prereq_type_ability_score_id 1
+  prereq_type_feat_id: &prereq_type_feat_id 2
+  prereq_type_skill_id: &prereq_type_skill_id 3
+  prereq_type_class_feature_id: &prereq_type_class_feature_id 4
+  class_feature_benefit_prerequisite_level_1_spells_id: &class_feature_benefit_prerequisite_level_1_spells_id 1
+  class_feature_benefit_prerequisite_level_2_spells_id: &class_feature_benefit_prerequisite_level_2_spells_id 2
+  class_feature_benefit_prerequisite_mapping_cleric_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_cleric_level_2_spells_id 1
+  class_feature_benefit_prerequisite_mapping_medium_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_medium_level_2_spells_id 2
+  class_feature_benefit_prerequisite_mapping_oracle_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_oracle_level_2_spells_id 3
+  class_feature_benefit_prerequisite_mapping_psychic_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_psychic_level_2_spells_id 4
+  class_feature_benefit_prerequisite_mapping_occultist_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_occultist_level_2_spells_id 5
+  class_feature_benefit_prerequisite_mapping_witch_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_witch_level_2_spells_id 6
+  class_feature_benefit_prerequisite_mapping_warpriest_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_warpriest_level_2_spells_id 7
+  class_feature_benefit_prerequisite_mapping_spiritualist_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_spiritualist_level_2_spells_id 8
+  class_feature_benefit_prerequisite_mapping_shaman_level_2_spells_id: &class_feature_benefit_prerequisite_mapping_shaman_level_2_spells_id 9
+  ability_prereq_dex13_id: &ability_prereq_dex13_id 2
+  ability_prereq_dex15_id: &ability_prereq_dex15_id 3
+  feat_prereq_nimble_moves_id: &feat_prereq_nimble_moves_id 1
+  feat_prereq_improved_unarmed_strike_id: &feat_prereq_improved_unarmed_strike_id 2
+  feat_prereq_craft_alchemy_1_id: &feat_prereq_craft_alchemy_1_id 3
+  feat_prereq_poison_use_id: &feat_prereq_poison_use_id 4
+  feat_prereq_spell_focus_id: &feat_prereq_spell_focus_id 5
+  feat_prereq_second_level_spells_id: &feat_prereq_second_level_spells_id 6
+
+# Reference counts
+references:
+  group_level_3_id: 1
+  group_level_4_id: 1
+  group_level_6_id: 5
+  group_level_7_id: 5
+  group_level_5_id: 1
+  group_level_8_id: 1
+  group_level_9_id: 1
+  group_level_10_id: 1
+  group_level_11_id: 1
+  group_level_12_id: 1
+  group_level_13_id: 1
+  group_level_14_id: 4
+  group_level_19_id: 6
+  resistance_1_node_id: 1
+  abp_resistance_id: 4
+  attunement_1_node_id: 2
+  abp_armor_attunement_id: 4
+  abp_weapon_attunement_id: 4
+  mental_prowess_int_node_id: 2
+  abp_mental_prowess_int_id: 2
+  mental_prowess_wis_node_id: 2
+  abp_mental_prowess_wis_id: 1
+  mental_prowess_cha_node_id: 1
+  abp_mental_prowess_cha_id: 1
+  physical_prowess_str_node_id: 2
+  abp_physical_prowess_str_id: 2
+  physical_prowess_dex_node_id: 2
+  abp_physical_prowess_dex_id: 1
+  physical_prowess_con_node_id: 1
+  abp_physical_prowess_con_id: 1
+  deflection_1_node_id: 1
+  abp_deflection_id: 2
+  level_8_node_id: 2
+  abp_toughening_id: 2
+  level_9_node_id: 2
+  level_10_node_id: 2
+  level_11_node_id: 1
+  level_12_node_id: 1
+  level_13_node_id: 2
+  level_14_armor_split_node_id: 1
+  level_14_armor_single_node_id: 1
+  level_14_weapon_split_node_id: 1
+  level_14_weapon_single_node_id: 1
+  legendary_ability_node_id: 1
+  legendary_gift_ability_id: 1
+  legendary_armor_node_id: 1
+  legendary_gift_armor_id: 1
+  legendary_body_node_id: 1
+  legendary_gift_body_id: 1
+  legendary_mind_node_id: 1
+  legendary_gift_mind_id: 1
+  legendary_shield_node_id: 1
+  legendary_gift_shield_id: 1
+  legendary_weapons_node_id: 1
+  legendary_gift_weapons_id: 1
+  bonus_circumstance_id: 1
+  ability_dex_id: 11
+  ability_int_id: 20
+  ability_cha_id: 10
+  ability_str_id: 4
+  ability_wis_id: 11
+  bonus_attack_progression_three_quarters_id: 10
+  bonus_attack_progression_full_id: 2
+  bonus_attack_progression_half_id: 2
+  spell_progression_type_prepared_9_id: 28
+  spell_progression_type_spontaneous_9_id: 37
+  spell_progression_type_prepared_6_id: 35
+  spell_progression_type_spontaneous_6_id: 32
+  spell_progression_type_prepared_4_id: 18
+  spell_progression_type_spontaneous_4_id: 14
+  spell_component_type_V_id: 1
+  spell_component_type_S_id: 1
+  spell_component_type_M_id: 1
+  spell_component_type_F_id: 1
+  class_alchemist_id: 50
+  skill_appraise_id: 1
+  skill_craft_alchemy_id: 9
+  skill_disable_device_id: 9
+  skill_fly_id: 7
+  skill_heal_id: 4
+  skill_knowledge_arcana_id: 7
+  skill_knowledge_nature_id: 7
+  skill_perception_id: 14
+  skill_profession_id: 3
+  skill_sleight_of_hand_id: 2
+  skill_spellcraft_id: 7
+  skill_survival_id: 5
+  skill_use_magic_device_id: 8
+  class_kineticist_id: 43
+  skill_acrobatics_id: 7
+  skill_intimidate_id: 2
+  skill_stealth_id: 8
+  ancestry_tengu_id: 16
+  ancestry_oread_id: 16
+  ancestry_trait_oread_type_id: 1
+  ancestry_alternate_trait_oread_mostly_human_id: 3
+  ancestry_trait_oread_languages_id: 1
+  ancestry_trait_oread_earth_affinity_id: 2
+  ancestry_alternate_trait_oread_crystalline_form_id: 1
+  ancestry_alternate_trait_oread_earth_insight_id: 1
+  ancestry_trait_oread_spell_like_ability_id: 2
+  ancestry_alternate_trait_oread_ferrous_growth_id: 1
+  ancestry_trait_oread_energy_resistance_id: 1
+  ancestry_alternate_trait_oread_granite_skin_id: 1
+  ancestry_alternate_trait_oread_mountain_born_id: 2
+  ancestry_trait_tengu_gifted_linguist_id: 2
+  ancestry_alternate_trait_tengu_carrion_sense_id: 1
+  ancestry_trait_tengu_swordtrained_id: 2
+  ancestry_alternate_trait_tengu_claw_attack_id: 1
+  ancestry_trait_tengu_sneaky_id: 1
+  ancestry_alternate_trait_tengu_deft_swords_id: 2
+  ancestry_trait_tengu_natural_weapons_id: 1
+  ancestry_alternate_trait_tengu_exotic_weapon_training_id: 1
+  ancestry_alternate_trait_tengu_glide_id: 2
+  ancestry_trait_tengu_ability_scores_id: 1
+  ancestry_trait_oread_ability_scores_id: 1
+  ancestry_trait_benefit_tengu_ability_scores_id: 3
+  target_specifier_dexterity_id: 1
+  bonus_ancestral_id: 6
+  target_specifier_wisdom_id: 2
+  target_specifier_constitution_id: 1
+  ancestry_trait_benefit_oread_ability_scores_id: 3
+  target_specifier_strength_id: 1
+  target_specifier_charisma_id: 1
+  class_brawler_id: 1
+  class_monk_unchained_id: 54
+  class_monk_core_id: 29
+  class_cleric_core_id: 1
+  class_witch_id: 1
+  class_warpriest_id: 1
+  class_spiritualist_id: 1
+  class_shaman_id: 1
+  class_medium_id: 1
+  class_psychic_id: 1
+  class_oracle_id: 1
+  class_occultist_id: 1
+  class_feature_occultist_spellcasting_id: 4
+  class_feature_cleric_spellcasting_id: 4
+  class_feature_medium_spellcasting_id: 4
+  class_feature_oracle_spellcasting_id: 4
+  class_feature_psychic_spellcasting_id: 4
+  class_feature_shaman_spellcasting_id: 4
+  class_feature_warpriest_spellcasting_id: 4
+  class_feature_witch_spellcasting_id: 4
+  class_feature_spiritualist_spellcasting_id: 4
+  class_feature_ac_bonus_ascetic_id: 3
+  class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id: 1
+  target_specifier_ac_id: 1
+  bonus_untyped_id: 1
+  spellcasting_type_divine_id: 4
+  spellcasting_type_arcane_id: 2
+  spellcasting_type_psychic_id: 4
+  class_feature_alchemy_id: 2
+  wild_talent_type_substance_infusion_id: 1
+  wild_talent_type_form_infusion_id: 1
+  feat_spell_focus_id: 9
+  spell_school_abjuration_id: 1
+  spell_school_conjuration_id: 1
+  spell_school_divination_id: 2
+  spell_school_enchantment_id: 1
+  spell_school_evocation_id: 1
+  spell_school_illusion_id: 1
+  spell_school_necromancy_id: 1
+  spell_school_transmutation_id: 1
+  spell_augury_id: 23
+  spell_duration_instantaneous_id: 1
+  spell_target_you_id: 1
+  spell_range_personal_id: 1
+  spell_casting_time_1_minute_id: 1
+  spell_component_V_id: 1
+  spell_component_S_id: 1
+  spell_component_incense_id: 1
+  spell_component_bones_id: 1
+  sorcerer_bloodline_dreamspun_id: 1
+  sorcerer_bloodline_harrow_id: 1
+  subdomain_fate_id: 1
+  spell_list_cleric_id: 2
+  class_feature_benefit_cleric_spellcasting_id: 1
+  spell_list_medium_id: 2
+  class_feature_benefit_medium_spellcasting_id: 1
+  spell_list_occultist_divination_id: 2
+  class_feature_benefit_occultist_divination_spellcasting_id: 1
+  spell_list_oracle_id: 2
+  class_feature_benefit_oracle_spellcasting_id: 1
+  spell_list_psychic_id: 2
+  class_feature_benefit_psychic_spellcasting_id: 1
+  spell_list_shaman_id: 2
+  class_feature_benefit_shaman_spellcasting_id: 1
+  spell_list_warpriest_id: 2
+  class_feature_benefit_warpriest_spellcasting_id: 1
+  spell_list_witch_id: 2
+  class_feature_benefit_witch_spellcasting_id: 1
+  spell_list_spiritualist_id: 2
+  class_feature_benefit_spiritualist_spellcasting_id: 1
+  spell_list_sahir_afiyun_id: 2
+  feat_sahir_afiyun_id: 3
+  spell_cure_light_wounds_id: 2
+  feat_acrobatic_steps_id: 3
+  qinggong_monk_ki_power_type_feat_ability_id: 2
+  feat_adder_strike_id: 4
+  qinggong_monk_ki_power_type_spell_like_ability_id: 2
+  archetype_mindchemist_id: 5
+  class_feature_cognatogen_id: 1
+  class_feature_mindchemist_bonus_feat_id: 1
+  class_feature_perfect_recall_id: 1
+  class_feature_mindchemist_languages_id: 1
+  archetype_hungry_ghost_monk_id: 5
+  archetype_extra_bombs_id: 1
+  archetype_elemental_ascetic_id: 5
+  class_feature_elemental_flurry_id: 1
+  class_feature_elemental_wisdom_id: 1
+  class_feature_powerful_fist_id: 1
+  class_feature_mutagen_id: 2
+  archetype_class_feature_mindchemist_cognatogen_id: 1
+  class_feature_poison_use_id: 3
+  archetype_class_feature_mindchemist_perfect_recall_id: 1
+  class_feature_elemental_overflow_id: 2
+  archetype_class_feature_elemental_ascetic_elemental_flurry_id: 2
+  class_feature_elemental_defense_id: 2
+  archetype_class_feature_elemental_ascetic_ac_bonus_ascetic_id: 1
+  class_feature_discovery_id: 3
+  archetype_class_feature_mindchemist_bonus_feat_id: 1
+  archetype_class_feature_mindchemist_languages_id: 1
+  class_feature_kinetic_blast_id: 2
+  class_feature_wild_talents_id: 1
+  archetype_class_feature_elemental_ascetic_elemental_wisdom_id: 1
+  corruption_vampirism_id: 11
+  manifestation_dreadful_charm_id: 2
+  manifestation_allure_id: 3
+  manifestation_true_unlife_id: 3
+  manifestation_greater_unlife_id: 4
+  manifestation_unlife_id: 3
+  user_id: 2
+  game_character_vardon_salvador_id: 131
+  ability_con_id: 2
+  game_character_killiq_said_id: 87
+  class_feature_bomb_id: 1
+  class_feature_brew_potion_id: 1
+  class_feature_throw_anything_id: 1
+  class_feature_swift_alchemy_id: 1
+  class_feature_swift_poisoning_id: 1
+  class_feature_poison_resistance_id: 1
+  class_feature_elemental_focus_id: 1
+  class_feature_burn_id: 1
+  class_feature_gather_power_id: 1
+  class_feature_infusion_specialization_id: 1
+  class_feature_metakinesis_id: 1
+  feat_rapid_shot_id: 1
+  feat_deadly_aim_id: 1
+  feat_power_attack_id: 2
+  feat_extra_discovery_id: 1
+  feat_two_weapon_fighting_id: 1
+  feat_dodge_id: 2
+  feat_generally_educated_id: 1
+  feat_improved_unarmed_strike_id: 2
+  feat_weapon_focus_unarmed_strike_id: 1
+  favored_skill_id: 7
+  favored_hp_id: 7
+  manifestation_vampiric_grace_id: 2
+  manifestation_fangs_id: 2
+  manifestation_children_of_the_night_id: 1
+  equipment_alchemist_kit_id: 1
+  consumable_alchemist_fire_id: 1
+  consumable_acid_id: 1
+  consumable_tanglefoot_bag_id: 1
+  wild_talent_basic_geokinesis_id: 1
+  wild_talent_kinetic_fist_id: 2
+  wild_talent_earth_walk_id: 1
+  wild_talent_tremorsense_id: 1
+  skill_knowledge_dungeoneering_id: 4
+  skill_knowledge_planes_id: 6
+  skill_knowledge_engineering_id: 6
+  skill_bluff_id: 7
+  skill_knowledge_geography_id: 1
+  skill_sense_motive_id: 4
+  armor_mithral_chainshirt_id: 1
+  bracers_of_armor_id: 1
+  trait_pragmatic_activator_id: 1
+  trait_clever_wordplay_diplomacy_id: 1
+  spell_shield_id: 1
+  spell_enlarge_person_id: 1
+  spell_invisibility_id: 1
+  spell_bull_s_strength_id: 1
+  discovery_precise_bombs_id: 1
+  discovery_mutagen_id: 1
+  discovery_explosive_bomb_id: 1
+  weapon_dagger_id: 1
+  weapon_kukri_id: 1
+  prerequisite_requirement_type_wild_talent_id: 2
+  wild_talent_stylish_infusion_id: 2
+  prerequisite_requirement_type_monk_unchained_ki_power_id: 7
+  monk_unchained_ki_power_elemental_burst_id: 1
+  monk_unchained_ki_power_cobra_breath_id: 1
+  monk_unchained_ki_power_ki_hurricane_id: 1
+  monk_unchained_ki_power_ki_volley_id: 1
+  monk_unchained_ki_power_light_steps_id: 1
+  monk_unchained_ki_power_wind_jump_id: 1
+  monk_unchained_ki_power_ki_guardian_id: 1
+  fulfillment_flurry_id: 4
+  qualification_type_fulfillment_id: 1
+  fulfillment_monk_flurry_of_blows_id: 2
+  qualification_type_class_feature_id: 3
+  class_feature_monk_core_flurry_of_blows_id: 1
+  class_feature_monk_unchained_flurry_of_blows_id: 1
+  class_feature_brawlers_flurry_id: 1
+  fulfillment_kinetic_fist_id: 2
+  qualification_type_wild_talent_id: 1
+  fulfillment_elemental_fury_id: 2
+  qualification_type_monk_unchained_ki_power_id: 7
+  monk_unchained_ki_power_elemental_fury_id: 1
+  fulfillment_diamond_body_id: 2
+  monk_unchained_ki_power_diamond_body_id: 1
+  fulfillment_sudden_speed_id: 2
+  monk_unchained_ki_power_sudden_speed_id: 1
+  fulfillment_diamond_soul_id: 2
+  monk_unchained_ki_power_diamond_soul_id: 1
+  fulfillment_feather_balance_id: 2
+  monk_unchained_ki_power_feather_balance_id: 1
+  fulfillment_high_jump_id: 2
+  monk_unchained_ki_power_high_jump_id: 1
+  fulfillment_ki_metabolism_id: 2
+  monk_unchained_ki_power_ki_metabolism_id: 1
+  prerequisite_requirement_flurry_id: 1
+  prerequisite_requirement_kinetic_fist_id: 1
+  prerequisite_requirement_elemental_burst_id: 1
+  prerequisite_requirement_cobra_breath_id: 1
+  prerequisite_requirement_ki_hurricane_id: 1
+  prerequisite_requirement_ki_volley_id: 1
+  prerequisite_requirement_light_steps_id: 1
+  prerequisite_requirement_wind_jump_id: 1
+  prerequisite_requirement_ki_guardian_id: 1
+  class_feature_benefit_prerequisite_level_2_spells_id: 10
+  class_feature_benefit_cleric_spellcasting_level_2_id: 1
+  class_feature_benefit_medium_spellcasting_level_2_id: 1
+  class_feature_benefit_oracle_spellcasting_level_2_id: 1
+  class_feature_benefit_psychic_spellcasting_level_2_id: 1
+  class_feature_benefit_occultist_divination_spellcasting_level_2_id: 1
+  class_feature_benefit_witch_spellcasting_level_2_id: 1
+  class_feature_benefit_warpriest_spellcasting_level_2_id: 1
+  class_feature_benefit_spiritualist_spellcasting_level_2_id: 1
+  class_feature_benefit_shaman_spellcasting_level_2_id: 1
+  prereq_type_ability_score_id: 4
+  prereq_type_feat_id: 6
+  feat_nimble_moves_id: 2
+  prereq_type_skill_id: 2
+  prereq_type_class_feature_id: 4
+  ability_prereq_dex15_id: 1
+  feat_prereq_nimble_moves_id: 1
+  ability_prereq_dex13_id: 1
+  feat_prereq_improved_unarmed_strike_id: 1
+  feat_prereq_craft_alchemy_1_id: 1
+  feat_prereq_poison_use_id: 1
+  feat_prereq_spell_focus_id: 1
+  feat_prereq_second_level_spells_id: 1

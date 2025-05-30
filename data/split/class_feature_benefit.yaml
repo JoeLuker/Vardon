@@ -1,0 +1,166 @@
+class_feature_benefit:
+- id: &class_feature_benefit_occultist_divination_spellcasting_id 1
+  class_feature_id: *class_feature_occultist_spellcasting_id
+  name: 'occultist_divination_spellcasting'
+  label: 'Divination Implement Spells'
+
+- id: &class_feature_benefit_cleric_spellcasting_id 2
+  class_feature_id: *class_feature_cleric_spellcasting_id
+  name: 'cleric_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_medium_spellcasting_id 3
+  class_feature_id: *class_feature_medium_spellcasting_id
+  name: 'medium_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_oracle_spellcasting_id 4
+  class_feature_id: *class_feature_oracle_spellcasting_id
+  name: 'oracle_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_psychic_spellcasting_id 5
+  class_feature_id: *class_feature_psychic_spellcasting_id
+  name: 'psychic_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_shaman_spellcasting_id 6
+  class_feature_id: *class_feature_shaman_spellcasting_id
+  name: 'shaman_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_warpriest_spellcasting_id 7
+  class_feature_id: *class_feature_warpriest_spellcasting_id
+  name: 'warpriest_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_witch_spellcasting_id 8
+  class_feature_id: *class_feature_witch_spellcasting_id
+  name: 'witch_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_spiritualist_spellcasting_id 9
+  class_feature_id: *class_feature_spiritualist_spellcasting_id
+  name: 'spiritualist_spellcasting'
+  label: 'Spells'
+
+- id: &class_feature_benefit_occultist_divination_spellcasting_level_1_id 10
+  class_feature_id: *class_feature_occultist_spellcasting_id
+  name: 'occultist_divination_spellcasting_level_1'
+  label: 'Level 1 Divination Implement Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_occultist_divination_spellcasting_level_2_id 11
+  class_feature_id: *class_feature_occultist_spellcasting_id
+  name: 'occultist_divination_spellcasting_level_2'
+  label: 'Level 2 Divination Implement Spells'
+  feature_level: 4
+
+- id: &class_feature_benefit_cleric_spellcasting_level_1_id 12
+  class_feature_id: *class_feature_cleric_spellcasting_id
+  name: 'cleric_spellcasting_level_1'
+  label: 'Level 1 Cleric Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_cleric_spellcasting_level_2_id 13
+  class_feature_id: *class_feature_cleric_spellcasting_id
+  name: 'cleric_spellcasting_level_2'
+  label: 'Level 2 Cleric Spells'
+  feature_level: 3
+
+- id: &class_feature_benefit_oracle_spellcasting_level_1_id 14
+  class_feature_id: *class_feature_oracle_spellcasting_id
+  name: 'oracle_spellcasting_level_1'
+  label: 'Level 1 Oracle Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_oracle_spellcasting_level_2_id 15
+  class_feature_id: *class_feature_oracle_spellcasting_id
+  name: 'oracle_spellcasting_level_2'
+  label: 'Level 2 Oracle Spells'
+  feature_level: 4
+
+- id: &class_feature_benefit_witch_spellcasting_level_1_id 16
+  class_feature_id: *class_feature_witch_spellcasting_id
+  name: 'witch_spellcasting_level_1'
+  label: 'Level 1 Witch Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_witch_spellcasting_level_2_id 17
+  class_feature_id: *class_feature_witch_spellcasting_id
+  name: 'witch_spellcasting_level_2'
+  label: 'Level 2 Witch Spells'
+  feature_level: 3
+
+- id: &class_feature_benefit_warpriest_spellcasting_level_1_id 18
+  class_feature_id: *class_feature_warpriest_spellcasting_id
+  name: 'warpriest_spellcasting_level_1'
+  label: 'Level 1 Warpriest Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_warpriest_spellcasting_level_2_id 19
+  class_feature_id: *class_feature_warpriest_spellcasting_id
+  name: 'warpriest_spellcasting_level_2'
+  label: 'Level 2 Warpriest Spells'
+  feature_level: 3
+
+- id: &class_feature_benefit_spiritualist_spellcasting_level_1_id 20
+  class_feature_id: *class_feature_spiritualist_spellcasting_id
+  name: 'spiritualist_spellcasting_level_1'
+  label: 'Level 1 Spiritualist Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_spiritualist_spellcasting_level_2_id 21
+  class_feature_id: *class_feature_spiritualist_spellcasting_id
+  name: 'spiritualist_spellcasting_level_2'
+  label: 'Level 2 Spiritualist Spells'
+  feature_level: 4
+
+- id: &class_feature_benefit_shaman_spellcasting_level_1_id 22
+  class_feature_id: *class_feature_shaman_spellcasting_id
+  name: 'shaman_spellcasting_level_1'
+  label: 'Level 1 Shaman Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_shaman_spellcasting_level_2_id 23
+  class_feature_id: *class_feature_shaman_spellcasting_id
+  name: 'shaman_spellcasting_level_2'
+  label: 'Level 2 Shaman Spells'
+  feature_level: 3
+
+- id: &class_feature_benefit_psychic_spellcasting_level_1_id 24
+  class_feature_id: *class_feature_psychic_spellcasting_id
+  name: 'psychic_spellcasting_level_1'
+  label: 'Level 1 Psychic Spells'
+  feature_level: 1
+
+- id: &class_feature_benefit_psychic_spellcasting_level_2_id 25
+  class_feature_id: *class_feature_psychic_spellcasting_id
+  name: 'psychic_spellcasting_level_2'
+  label: 'Level 2 Psychic Spells'
+  feature_level: 4
+
+- id: &class_feature_benefit_medium_spellcasting_level_1_id 26
+  class_feature_id: *class_feature_medium_spellcasting_id
+  name: 'medium_spellcasting_level_1'
+  label: 'Level 1 Medium Spells'
+  feature_level: 4
+
+- id: &class_feature_benefit_medium_spellcasting_level_2_id 27
+  class_feature_id: *class_feature_medium_spellcasting_id
+  name: 'medium_spellcasting_level_2'
+  label: 'Level 2 Medium Spells'
+  feature_level: 7
+
+- id: &class_feature_benefit_elemental_ascetic_ac_bonus_level_2_id 28
+  class_feature_id: *class_feature_ac_bonus_ascetic_id
+  name: 'elemental_ascetic_ac_bonus_level_2'
+  label: 'Level 2 Elemental Ascetic AC Bonus'
+  feature_level: 2
+
+- id: &class_feature_benefit_elemental_ascetic_ac_bonus_level_6_id 29
+  class_feature_id: *class_feature_ac_bonus_ascetic_id
+  name: 'elemental_ascetic_ac_bonus_level_6'
+  label: 'Level 6 Elemental Ascetic AC Bonus'
+  feature_level: 6
+

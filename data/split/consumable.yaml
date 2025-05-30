@@ -1,0 +1,11 @@
+consumable:
+- id: &consumable_alchemist_fire_id 900
+  name: 'alchemist_fire'
+  label: "Alchemist's Fire"
+- id: &consumable_acid_id 901
+  name: 'acid'
+  label: 'Acid'
+- id: &consumable_tanglefoot_bag_id 902
+  name: 'tanglefoot_bag'
+  label: 'Tanglefoot Bag'
+

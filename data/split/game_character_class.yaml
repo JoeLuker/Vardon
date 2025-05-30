@@ -1,0 +1,7 @@
+game_character_class:
+- game_character_id: *game_character_vardon_salvador_id
+  class_id: *class_alchemist_id
+  level: 7
+- game_character_id: *game_character_killiq_said_id
+  class_id: *class_kineticist_id
+  level: 7

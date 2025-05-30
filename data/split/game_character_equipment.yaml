@@ -1,0 +1,4 @@
+game_character_equipment:
+# Vardon's Equipment
+- game_character_id: *game_character_vardon_salvador_id
+  equipment_id: *equipment_alchemist_kit_id

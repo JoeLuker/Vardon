@@ -1,0 +1,17 @@
+archetype_class_feature_alteration:
+- id: &archetype_alteration_mindchemist_feat_id 1
+  altered_class_feature_id: *class_feature_discovery_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_bonus_feat_id
+
+- id: &archetype_alteration_mindchemist_lang_id 2
+  altered_class_feature_id: *class_feature_discovery_id
+  archetype_class_feature_id: *archetype_class_feature_mindchemist_languages_id
+
+- id: &archetype_alteration_elemental_ascetic_blast_id 3
+  altered_class_feature_id: *class_feature_kinetic_blast_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_elemental_flurry_id
+
+- id: &archetype_alteration_elemental_ascetic_wild_talents_id 4
+  altered_class_feature_id: *class_feature_wild_talents_id
+  archetype_class_feature_id: *archetype_class_feature_elemental_ascetic_elemental_wisdom_id
+

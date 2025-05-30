@@ -1,0 +1,32 @@
+ancestry_trait_benefit_bonus:
+# Bonus for Tengu Gifted Linguist
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_tengu_ability_scores_id
+  target_specifier_id: *target_specifier_dexterity_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_tengu_ability_scores_id
+  target_specifier_id: *target_specifier_wisdom_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_tengu_ability_scores_id
+  target_specifier_id: *target_specifier_constitution_id
+  bonus_type_id: *bonus_ancestral_id
+  value: -2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_oread_ability_scores_id
+  target_specifier_id: *target_specifier_strength_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_oread_ability_scores_id
+  target_specifier_id: *target_specifier_wisdom_id
+  bonus_type_id: *bonus_ancestral_id
+  value: 2
+
+- ancestry_trait_benefit_id: *ancestry_trait_benefit_oread_ability_scores_id
+  target_specifier_id: *target_specifier_charisma_id
+  bonus_type_id: *bonus_ancestral_id
+  value: -2
+

@@ -1,0 +1,49 @@
+spell_list_spell_mapping:
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_cleric_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_medium_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_occultist_divination_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_oracle_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_psychic_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_sahir_afiyun_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_shaman_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_spiritualist_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_warpriest_id
+  level: 2
+
+- spell_id: *spell_augury_id
+  spell_list_id: *spell_list_witch_id
+  level: 2
+# spell_consumable:
+# - id: &spell_consumable_potion_of_healing_id 1001
+#   name: 'potion_of_healing'
+#   label: 'Potion of Healing'
+#   spell_id: *spell_cure_light_wounds_id
+#   caster_level: 1
+#   cost: 100
+#   weight: 1
+

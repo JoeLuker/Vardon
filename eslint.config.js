@@ -56,7 +56,51 @@ export default [
 			'no-console': ['warn', { allow: ['warn', 'error'] }],
 			'no-debugger': 'warn',
 			'prefer-const': 'error',
-			'no-var': 'error'
+			'no-var': 'error',
+			
+			// Prevent direct access to database client
+			'no-restricted-properties': [
+				'error',
+				{
+					object: 'gameRulesAPI',
+					property: 'supabase',
+					message: 'Do not access supabase directly. Use kernel file operations (open, read, write, close) instead.'
+				},
+				{
+					object: 'gameRulesAPI',
+					property: 'originalClient',
+					message: 'Do not access the Supabase client directly. Use kernel file operations (open, read, write, close) instead.'
+				}
+			],
+
+			// Ensure consistent method access patterns
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "CallExpression[callee.object.name='abilityCapability'][callee.property.name='initializeAbilities']",
+					message: "Do not use 'initializeAbilities'. Use 'initialize(entity)' instead."
+				},
+				{
+					selector: "CallExpression[callee.object.name='skillCapability'][callee.property.name='initializeSkills']",
+					message: "Do not use 'initializeSkills'. Use 'initialize(entity)' instead."
+				},
+				{
+					selector: "CallExpression[callee.object.name='combatCapability'][callee.property.name='initializeCombatStats']",
+					message: "Do not use 'initializeCombatStats'. Use 'initialize(entity)' instead."
+				},
+				{
+					selector: "CallExpression[callee.object.name='gameRulesAPI'][callee.property.name='getInitialCharacterData']",
+					message: "Do not use 'getInitialCharacterData'. Use 'getCompleteCharacterData' instead."
+				},
+				{
+					selector: "CallExpression[callee.object.name='gameRulesAPI'][callee.property.name='getSupabaseClient']",
+					message: "The getSupabaseClient() method has been removed. Use kernel file operations (open, read, write, close) instead."
+				},
+				{
+					selector: "ImportDeclaration[source.value='$lib/db/supabaseClient']",
+					message: "Direct import of supabaseClient is not allowed. Use the Unix file operation methods instead."
+				}
+			]
 		}
 	},
 

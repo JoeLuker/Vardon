@@ -1,0 +1,40 @@
+qinggong_monk_ki_power:
+- id: &qinggong_monk_ki_power_acrobatic_steps_id 1
+  power_id: *feat_acrobatic_steps_id
+  power_type_id: *qinggong_monk_ki_power_type_feat_ability_id
+  class_id: *class_monk_core_id
+  type: 'Su'
+  min_level: 4
+  ki_cost: 1
+
+- id: &qinggong_monk_ki_power_adder_strike_id 2
+  power_id: *feat_adder_strike_id
+  power_type_id: *qinggong_monk_ki_power_type_feat_ability_id
+  class_id: *class_monk_core_id
+  type: 'Su'
+  min_level: 4
+  ki_cost: 1
+
+- id: &qinggong_monk_ki_power_augury_id 3
+  power_id: *spell_augury_id
+  power_type_id: *qinggong_monk_ki_power_type_spell_like_ability_id
+  class_id: *class_monk_core_id
+  type: 'Sp'
+  min_level: 4
+  ki_cost: 1
+# - id: &qinggong_monk_ki_power_barkskin_id 4
+#   power_id: *spell_barkskin_id
+#   power_type_id: *qinggong_monk_ki_power_type_spell_like_ability_id
+#   class_id: *class_monk_core_id
+#   type: 'Sp'
+#   min_level: 4
+#   ki_cost: 1
+
+
+
+
+
+
+
+
+

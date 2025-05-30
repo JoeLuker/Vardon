@@ -5,20 +5,23 @@
 	import ThemeToggle from '$lib/components/ui/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import {
-		characterList as multiCharStore,
-		initMultiCharWatchers,
-		loadAllCharacters,
-		cleanupMultiCharWatchers
-	} from '$lib/state/multiCharacterStore';
+	import { GameRulesAPI } from '$lib/db';
+	import type { CompleteCharacter } from '$lib/db/gameRules.api';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	// State for sidebar visibility
-	let isSidebarOpen = false;
+	// Get children prop for layout content
+	let { children } = $props();
 
-	// Add loading state
-	let isLoading = true;
+	// State for sidebar visibility
+	let isSidebarOpen = $state(false);
+
+	// State for character data
+	let characters = $state<CompleteCharacter[]>([]);
+	let isLoading = $state(true);
+
+	// Initialize GameRulesAPI without direct Supabase client
+	const gameRules = new GameRulesAPI();
 
 	// Close sidebar when clicking outside
 	function handleOutsideClick(event: MouseEvent | KeyboardEvent) {
@@ -33,23 +36,85 @@
 		goto(`/characters/${characterId.toString()}`);
 	}
 
+	// Helper function for logging with timestamps
+	function getTimestamp() {
+		const now = new Date();
+		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+	}
+	
+	// Load all characters
+	async function loadCharacters() {
+		try {
+			isLoading = true;
+			
+			// Get basic character list
+			console.log(`[${getTimestamp()}] [Layout] Fetching character list`);
+			const basicCharacters = await gameRules.getAllGameCharacter();
+			
+			if (!basicCharacters || basicCharacters.length === 0) {
+				console.log(`[${getTimestamp()}] [Layout] No characters found`);
+				characters = [];
+				isLoading = false;
+				return;
+			}
+			
+			// Get detailed character data
+			console.log(`[${getTimestamp()}] [Layout] Fetching detailed data for ${basicCharacters.length} characters`);
+			const characterIds = basicCharacters.map(char => char.id);
+			const detailedCharacters = await Promise.all(
+				characterIds.map(id => gameRules.getCompleteCharacterData(id))
+			);
+			
+			// Filter out null results
+			characters = detailedCharacters.filter((char): char is CompleteCharacter => char !== null);
+			console.log(`[${getTimestamp()}] [Layout] Successfully loaded ${characters.length} characters`);
+		} catch (err) {
+			console.error(`[${getTimestamp()}] [Layout] Error loading characters:`, err);
+		} finally {
+			isLoading = false;
+		}
+	}
+
 	// Initialize character list on mount
-	onMount(() => {
-		initMultiCharWatchers();
-
-		// Load characters and update loading state
-		loadAllCharacters()
-			.then(() => {
-				isLoading = false;
-			})
-			.catch((err) => {
-				console.error('Failed to load characters:', err);
-				isLoading = false;
-			});
-
-		return () => {
-			cleanupMultiCharWatchers();
-		};
+	onMount(async () => {
+		// Create required filesystem directories and characters
+		try {
+			const kernel = gameRules.getKernel();
+			if (kernel) {
+				// Create base directories first
+				if (!kernel.exists('/proc')) {
+					kernel.mkdir('/proc');
+				}
+				if (!kernel.exists('/proc/character')) {
+					kernel.mkdir('/proc/character');
+				}
+				
+				console.log(`[${getTimestamp()}] [Layout] Created base directories`);
+				
+				// Get basic character list
+				const basicChars = await gameRules.getAllGameCharacter();
+				
+				// Create character files immediately
+				if (basicChars && basicChars.length > 0) {
+					console.log(`[${getTimestamp()}] [Layout] Initializing ${basicChars.length} character files`);
+					
+					for (const char of basicChars) {
+						const charPath = `/proc/character/${char.id}`;
+						const charData = await gameRules.getCompleteCharacterData(char.id);
+						
+						if (!kernel.exists(charPath) && charData) {
+							console.log(`[${getTimestamp()}] [Layout] Creating character file: ${charPath}`);
+							kernel.create(charPath, charData);
+						}
+					}
+				}
+			}
+		} catch (err) {
+			console.error(`[${getTimestamp()}] [Layout] Error initializing filesystem:`, err);
+		}
+		
+		// Now load characters after files are created
+		loadCharacters();
 	});
 </script>
 
@@ -97,8 +162,8 @@
 		<nav class="space-y-2 p-4">
 			{#if isLoading}
 				<p class="px-4 py-2 text-muted-foreground">Loading characters...</p>
-			{:else if $multiCharStore?.length}
-				{#each $multiCharStore as character}
+			{:else if characters?.length}
+				{#each characters as character}
 					<button
 						class="block w-full rounded-md px-4 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 						onclick={() => handleCharacterClick(character.id)}
@@ -136,7 +201,7 @@
 				'prose-a:text-accent hover:prose-a:text-accent-foreground'
 			)}
 		>
-			<slot />
+			{@render children()}
 		</main>
 	</div>
 </div>

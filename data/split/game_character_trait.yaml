@@ -1,0 +1,6 @@
+game_character_trait:
+- game_character_id: *game_character_vardon_salvador_id
+  trait_id: *trait_pragmatic_activator_id
+- game_character_id: *game_character_vardon_salvador_id
+  trait_id: *trait_clever_wordplay_diplomacy_id
+

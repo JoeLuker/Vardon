@@ -1,0 +1,103 @@
+abp_node_group:
+- id: &group_level_3_id 1100
+  name: 'level_3_progression'
+  label: 'Level 3 Bonuses'
+  level: 3
+  requires_choice: false
+
+- id: &group_level_4_id 1101
+  name: 'level_4_progression'
+  label: 'Level 4 Bonuses'
+  level: 4
+  requires_choice: false
+
+- id: &group_level_6_id 1102
+  name: 'level_6_mental_prowess'
+  label: 'Level 6 Mental Prowess'
+  level: 6
+  requires_choice: true
+
+- id: &group_level_7_id 1103
+  name: 'level_7_physical_prowess'
+  label: 'Level 7 Physical Prowess'
+  level: 7
+  requires_choice: true
+
+- id: &group_level_5_id 1104
+  name: 'level_5_deflection'
+  label: 'Level 5 Deflection'
+  level: 5
+  requires_choice: false
+
+- id: &group_level_8_id 1105
+  name: 'level_8_progression'
+  label: 'Level 8 Bonuses'
+  level: 8
+  requires_choice: false
+
+- id: &group_level_9_id 1106
+  name: 'level_9_progression'
+  label: 'Level 9 Bonuses'
+  level: 9
+  requires_choice: false
+
+- id: &group_level_10_id 1107
+  name: 'level_10_progression'
+  label: 'Level 10 Bonuses'
+  level: 10
+  requires_choice: false
+
+- id: &group_level_11_id 1108
+  name: 'level_11_mental'
+  label: 'Level 11 Mental Increase'
+  level: 11
+  requires_choice: false
+
+- id: &group_level_12_id 1109
+  name: 'level_12_physical'
+  label: 'Level 12 Physical Increase'
+  level: 12
+  requires_choice: false
+
+- id: &group_level_13_id 1110
+  name: 'level_13_progression'
+  label: 'Level 13 Bonuses'
+  level: 13
+  requires_choice: false
+
+- id: &group_level_14_id 1111
+  name: 'level_14_attunement'
+  label: 'Level 14 Attunement Choice'
+  level: 14
+  requires_choice: true
+
+- id: &group_level_15_id 1112
+  name: 'level_15_progression'
+  label: 'Level 15 Bonuses'
+  level: 15
+  requires_choice: false
+
+- id: &group_level_16_id 1113
+  name: 'level_16_progression'
+  label: 'Level 16 Bonuses'
+  level: 16
+  requires_choice: false
+
+- id: &group_level_17_id 1114
+  name: 'level_17_progression'
+  label: 'Level 17 Bonuses'
+  level: 17
+  requires_choice: false
+
+- id: &group_level_18_id 1115
+  name: 'level_18_progression'
+  label: 'Level 18 Bonuses'
+  level: 18
+  requires_choice: false
+
+- id: &group_level_19_id 1116
+  name: 'level_19_legendary'
+  label: 'Level 19 Legendary Gifts'
+  level: 19
+  requires_choice: true
+

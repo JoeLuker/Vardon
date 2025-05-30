@@ -1,0 +1,13 @@
+ancestry_trait_benefit:
+# Benefits for Tengu Gifted Linguist
+- id: &ancestry_trait_benefit_tengu_ability_scores_id 1
+  ancestry_trait_id: *ancestry_trait_tengu_ability_scores_id
+  name: 'ability_score_modifiers'
+  label: 'Tengu Ability Score Modifiers'
+
+# Benefits for Oread Crystalline Form
+- id: &ancestry_trait_benefit_oread_ability_scores_id 2
+  ancestry_trait_id: *ancestry_trait_oread_ability_scores_id
+  name: 'ability_score_modifiers'
+  label: 'Oread Ability Score Modifiers'
+

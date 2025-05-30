@@ -1,0 +1,5 @@
+spell_subdomain_mapping:
+- spell_id: *spell_augury_id
+  subdomain_id: *subdomain_fate_id
+  level: 2
+

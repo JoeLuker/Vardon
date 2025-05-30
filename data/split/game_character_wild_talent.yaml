@@ -1,0 +1,15 @@
+game_character_wild_talent:
+# killiq's Wild Talents
+- game_character_id: *game_character_killiq_said_id
+  wild_talent_id: *wild_talent_basic_geokinesis_id
+  level_obtained: 1
+- game_character_id: *game_character_killiq_said_id
+  wild_talent_id: *wild_talent_kinetic_fist_id
+  level_obtained: 1
+- game_character_id: *game_character_killiq_said_id
+  wild_talent_id: *wild_talent_earth_walk_id
+  level_obtained: 2
+- game_character_id: *game_character_killiq_said_id
+  wild_talent_id: *wild_talent_tremorsense_id
+  level_obtained: 4
+

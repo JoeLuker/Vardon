@@ -1,12 +1,22 @@
 <script lang="ts">
-    import type { EnrichedCharacter } from '$lib/domain/characterCalculations';
-    import type { GameCharacterFeat, Feat } from '$lib/db/gameRules.types';
+    import type { AssembledCharacter } from '$lib/ui/types/CharacterTypes';
+    import type { GameRules } from '$lib/db/gameRules.api';
+    import { createEventDispatcher } from 'svelte';
+    
+    // Use the types from the GameRules namespace
+    type Feat = GameRules.Base.Row<'feat'>;
+    type GameCharacterFeat = GameRules.Base.Row<'game_character_feat'> & { feat: Feat };
     import * as Card from '$lib/components/ui/card';
     import { Badge } from '$lib/components/ui/badge';
     import { ScrollArea } from '$lib/components/ui/scroll-area';
     import * as Dialog from '$lib/components/ui/dialog';
     
-    let { character } = $props<{ character: EnrichedCharacter }>();
+    let { character } = $props<{ character: AssembledCharacter }>();
+    
+    // Create event dispatcher for feature activation
+    const dispatch = createEventDispatcher<{
+        activateFeature: { featureId: string, options: any };
+    }>();
 
     // Group feats by level
     let featsByLevel = $derived(() => {
@@ -31,17 +41,28 @@
     
     // Selected feat for dialog
     let selectedFeat = $state<{
+        id: string;
         label: string;
         description: string;
+        active?: boolean;
     } | null>(null);
     let dialogOpen = $state(false);
     
     function showFeatDetail(feat: Feat) {
         selectedFeat = {
+            id: feat.id.toString(),
             label: feat.label || feat.name || 'Unnamed Feat',
-            description: feat.description || 'No description available'
+            description: feat.description || 'No description available',
+            active: feat.active
         };
         dialogOpen = true;
+    }
+    
+    // Handle activating a feat
+    function activateFeat(featId: string, options: any = {}) {
+        // Convert to feature ID format (feat.name)
+        const featureId = `feat.${featId}`;
+        dispatch('activateFeature', { featureId, options });
     }
 </script>
 
@@ -104,8 +125,11 @@
         >
             {#if selectedFeat}
                 <Dialog.Header class="border-b bg-background p-6">
-                    <Dialog.Title class="text-xl font-semibold leading-none">
+                    <Dialog.Title class="text-xl font-semibold leading-none flex items-center">
                         {selectedFeat.label}
+                        {#if selectedFeat.active}
+                            <Badge variant="default" class="ml-2">Active</Badge>
+                        {/if}
                     </Dialog.Title>
                 </Dialog.Header>
 
@@ -115,7 +139,15 @@
                     </div>
                 </div>
 
-                <div class="border-t bg-background p-4">
+                <div class="border-t bg-background p-4 flex flex-col space-y-2">
+                    {#if selectedFeat.id && !selectedFeat.active}
+                        <button 
+                            class="w-full h-10 inline-flex items-center justify-center rounded-md bg-green-600 font-medium text-white hover:bg-green-700"
+                            onclick={() => activateFeat(selectedFeat.id)}
+                        >
+                            Activate Feat
+                        </button>
+                    {/if}
                     <Dialog.Close class="w-full h-10 inline-flex items-center justify-center rounded-md bg-primary font-medium text-primary-foreground hover:bg-primary/90">
                         Close
                     </Dialog.Close>
