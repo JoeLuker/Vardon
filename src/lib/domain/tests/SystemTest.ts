@@ -1,13 +1,14 @@
 /**
  * System Test
- * 
+ *
  * This file tests the full system architecture, including capabilities, plugins,
  * game engine, and application initialization.
+ *
+ * UPDATED: No longer uses direct supabaseClient import, follows Unix architecture
  */
 
 import { initializeApplication } from '../application';
 import { GameRulesAPI } from '$lib/db/gameRules.api';
-import { supabase } from '$lib/db/supabaseClient';
 import type { Entity } from '../kernel/types';
 import type { BonusCapability } from '../capabilities/bonus/types';
 import type { AbilityCapability } from '../capabilities/ability/types';
@@ -22,10 +23,10 @@ const TEST_CHARACTER_ID = 1; // Change this to a valid character ID in your data
  */
 async function testApplicationInitialization() {
   console.log('=== Testing Application Initialization ===');
-  
-  // Create a direct database API
-  const dbAPI = new GameRulesAPI(supabase);
-  
+
+  // Create a direct database API - no longer requires Supabase client
+  const dbAPI = new GameRulesAPI();
+
   // Initialize application
   console.log('Initializing application...');
   const app = await initializeApplication({ gameAPI: dbAPI });

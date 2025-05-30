@@ -1,22 +1,23 @@
 /**
  * Directory Existence Test
- * 
+ *
  * This test ensures that the required directories are created properly
  * when the GameRulesAPI is initialized.
+ *
+ * UPDATED: No longer uses direct supabaseClient import, follows Unix architecture
  */
 
 import { initializeApplication } from '../application';
 import { GameRulesAPI } from '../../db/gameRules.api';
 import { createGameRulesAPI } from '../../db/index';
-import { supabaseClient } from '../../db/supabaseClient';
 
 export async function runDirectoryExistenceTest(): Promise<string> {
   console.log('Running Directory Existence Test');
-  
+
   try {
-    // Create a standalone GameRulesAPI instance
+    // Create a standalone GameRulesAPI instance - no longer needs Supabase client
     console.log('Creating GameRulesAPI instance...');
-    const dbAPI = createGameRulesAPI(supabaseClient, { debug: true });
+    const dbAPI = createGameRulesAPI({ debug: true });
     
     // Get kernel to check directories
     const kernel = dbAPI.getKernel();

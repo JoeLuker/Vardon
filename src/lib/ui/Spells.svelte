@@ -7,10 +7,15 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Search } from 'lucide-svelte';
 	import { Input } from '$lib/components/ui/input';
+	// Unix architecture imports
+	import { OpenMode } from '$lib/domain/kernel/types';
+	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import type { Entity } from '$lib/domain/kernel/types';
 
 	// Props
-	let { character } = $props<{
+	let { character, kernel } = $props<{
 		character?: AssembledCharacter | null;
+		kernel?: GameKernel | null;
 	}>();
 
 	// Local state
@@ -28,18 +33,68 @@
 	} | null>(null);
 	let dialogOpen = $state(false);
 
-	// Access character spells safely
+	// Spells data
+	let characterSpells = $state<any[]>([]);
 	let spellsByLevel = $state(new Map<number, any[]>());
 	let filteredSpells = $state<any[]>([]);
 
-	// Update data when character changes
-	$effect(() => {
-		if (!character) return;
+	// Load spells using Unix file operations
+	async function loadSpells() {
+		if (!character?.id || !kernel) return;
 		
-		// Group spells by level
-		const grouped = new Map<number, any[]>();
-		if (character.game_character_spell) {
-			for (const spellData of character.game_character_spell) {
+		// Ensure /proc directory exists
+		if (!kernel.exists('/proc')) {
+			console.log('Creating /proc directory');
+			const procResult = kernel.mkdir('/proc');
+			if (!procResult.success) {
+				console.error(`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`);
+				return;
+			}
+		}
+		
+		// Ensure /proc/character directory exists
+		if (!kernel.exists('/proc/character')) {
+			console.log('Creating /proc/character directory');
+			const charDirResult = kernel.mkdir('/proc/character');
+			if (!charDirResult.success) {
+				console.error(`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`);
+				return;
+			}
+		}
+		
+		// Get the entity path
+		const entityPath = `/proc/character/${character.id}`;
+		
+		if (!kernel.exists(entityPath)) {
+			console.error(`Entity not found: ${entityPath}`);
+			return;
+		}
+		
+		// Open the entity file
+		const fd = kernel.open(entityPath, OpenMode.READ);
+		
+		if (fd < 0) {
+			console.error(`Failed to open entity: ${entityPath}`);
+			return;
+		}
+		
+		try {
+			// Read the entity
+			const entityBuffer: Entity = { id: entityPath, properties: {}, capabilities: {} };
+			const [readResult] = kernel.read(fd, entityBuffer);
+			
+			if (readResult !== 0) {
+				console.error(`Failed to read entity: ${readResult}`);
+				return;
+			}
+			
+			// Get spells from the entity
+			const spells = entityBuffer.capabilities?.spellcasting?.game_character_spell || [];
+			characterSpells = spells;
+			
+			// Group spells by level
+			const grouped = new Map<number, any[]>();
+			for (const spellData of spells) {
 				if (!grouped.has(spellData.level)) {
 					grouped.set(spellData.level, []);
 				}
@@ -48,11 +103,21 @@
 					spellsAtLevel.push(spellData);
 				}
 			}
+			spellsByLevel = grouped;
+			
+			// Initialize filtered spells
+			updateFilteredSpells();
+		} finally {
+			// Always close the file
+			kernel.close(fd);
 		}
-		spellsByLevel = grouped;
-		
-		// Initialize filtered spells
-		updateFilteredSpells();
+	}
+
+	// Update data when character changes
+	$effect(() => {
+		if (character?.id && kernel) {
+			loadSpells();
+		}
 	});
 
 	// Update filtered spells when search or level selection changes
@@ -61,12 +126,12 @@
 	});
 
 	function updateFilteredSpells() {
-		if (!character?.game_character_spell) {
+		if (characterSpells.length === 0) {
 			filteredSpells = [];
 			return;
 		}
 		
-		let result = [...character.game_character_spell];
+		let result = [...characterSpells];
 		
 		// Filter by level if needed
 		if (selectedSpellLevel !== 'all') {
@@ -133,6 +198,102 @@
 		dialogOpen = true;
 	}
 
+	// Update spell prepared/used status using Unix file operations
+	async function updateSpellStatus(spellId: number, prepared: number | null = null, used: number | null = null) {
+		if (!character?.id || !kernel) return;
+		
+		// Ensure /proc directory exists
+		if (!kernel.exists('/proc')) {
+			console.log('Creating /proc directory');
+			const procResult = kernel.mkdir('/proc');
+			if (!procResult.success) {
+				console.error(`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`);
+				return;
+			}
+		}
+		
+		// Ensure /proc/character directory exists
+		if (!kernel.exists('/proc/character')) {
+			console.log('Creating /proc/character directory');
+			const charDirResult = kernel.mkdir('/proc/character');
+			if (!charDirResult.success) {
+				console.error(`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`);
+				return;
+			}
+		}
+		
+		// Get the entity path
+		const entityPath = `/proc/character/${character.id}`;
+		
+		if (!kernel.exists(entityPath)) {
+			console.error(`Entity not found: ${entityPath}`);
+			return;
+		}
+		
+		// Open the entity file for reading and writing
+		const fd = kernel.open(entityPath, OpenMode.READ_WRITE);
+		
+		if (fd < 0) {
+			console.error(`Failed to open entity: ${entityPath}`);
+			return;
+		}
+		
+		try {
+			// Read the entity
+			const entityBuffer: Entity = { id: entityPath, properties: {}, capabilities: {} };
+			const [readResult] = kernel.read(fd, entityBuffer);
+			
+			if (readResult !== 0) {
+				console.error(`Failed to read entity: ${readResult}`);
+				return;
+			}
+			
+			// Update the spell's prepared/used count
+			const spells = entityBuffer.capabilities?.spellcasting?.game_character_spell || [];
+			const spellIndex = spells.findIndex((s: any) => s.id === spellId);
+			
+			if (spellIndex >= 0) {
+				// Update prepared count if provided
+				if (prepared !== null) {
+					spells[spellIndex].prepared = prepared;
+				}
+				
+				// Update used count if provided
+				if (used !== null) {
+					spells[spellIndex].used = used;
+				}
+				
+				// Write the updated entity
+				const writeResult = kernel.write(fd, entityBuffer);
+				
+				if (writeResult !== 0) {
+					console.error(`Failed to write entity: ${writeResult}`);
+					return;
+				}
+				
+				// Update local state
+				const spell = characterSpells.find(s => s.id === spellId);
+				if (spell) {
+					if (prepared !== null) {
+						spell.prepared = prepared;
+					}
+					if (used !== null) {
+						spell.used = used;
+					}
+					
+					// Force reactivity update
+					characterSpells = [...characterSpells];
+					
+					// Update filtered spells
+					updateFilteredSpells();
+				}
+			}
+		} finally {
+			// Always close the file
+			kernel.close(fd);
+		}
+	}
+
 	function getPreparedStatusLabel(spell: any): string {
 		if (!spell.prepared && !spell.used) return 'Not Prepared';
 		
@@ -156,6 +317,25 @@
 		if (available > 0) return 'default';
 		return 'outline';
 	}
+	
+	// Handle badge click to toggle spell prepared/cast status
+	function handleSpellStatusClick(spell: any, event: MouseEvent) {
+		event.stopPropagation();
+		
+		const preparedCount = spell.prepared || 0;
+		const usedCount = spell.used || 0;
+		
+		if (preparedCount === 0) {
+			// If not prepared, prepare it
+			updateSpellStatus(spell.id, 1, 0);
+		} else if (usedCount < preparedCount) {
+			// If prepared but not fully cast, mark one as used
+			updateSpellStatus(spell.id, null, usedCount + 1);
+		} else {
+			// If fully cast, reset to not prepared
+			updateSpellStatus(spell.id, 0, 0);
+		}
+	}
 </script>
 
 <Card.Root>
@@ -171,11 +351,11 @@
 	</Card.Header>
 	
 	<Card.Content>
-		{#if !character}
+		{#if !character || !kernel}
 			<div class="rounded-md border border-muted p-4">
 				<p class="text-muted-foreground">Loading spells...</p>
 			</div>
-		{:else if !character.game_character_spell || character.game_character_spell.length === 0}
+		{:else if characterSpells.length === 0}
 			<div class="rounded-md border border-muted p-4">
 				<p class="text-muted-foreground">No spells found. Add spells from the character edit page.</p>
 			</div>
@@ -225,7 +405,11 @@
 												</h4>
 												<Badge variant="secondary">Level {spellData.level}</Badge>
 											</div>
-											<Badge variant={getStatusVariant(spellData)}>
+											<Badge 
+												variant={getStatusVariant(spellData)}
+												class="cursor-pointer"
+												onclick={(e) => handleSpellStatusClick(spellData, e)}
+											>
 												{getPreparedStatusLabel(spellData)}
 											</Badge>
 										</div>
@@ -309,3 +493,14 @@
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
+
+<style lang="postcss">
+.spell-item {
+	transition: all 0.2s ease-in-out;
+	
+	&:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	}
+}
+</style>

@@ -27,3 +27,4 @@ export * from './bonus';
 export * from './skill';
 export * from './combat';
 export * from './condition';
+export * from './database';

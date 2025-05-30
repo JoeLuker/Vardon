@@ -6,7 +6,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { GameRulesAPI } from '$lib/db';
-	import { supabase } from '$lib/db/supabaseClient';
 	import type { CompleteCharacter } from '$lib/db/gameRules.api';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -21,8 +20,8 @@
 	let characters = $state<CompleteCharacter[]>([]);
 	let isLoading = $state(true);
 
-	// Initialize GameRulesAPI
-	const gameRules = new GameRulesAPI(supabase);
+	// Initialize GameRulesAPI without direct Supabase client
+	const gameRules = new GameRulesAPI();
 
 	// Close sidebar when clicking outside
 	function handleOutsideClick(event: MouseEvent | KeyboardEvent) {
@@ -77,7 +76,44 @@
 	}
 
 	// Initialize character list on mount
-	onMount(() => {
+	onMount(async () => {
+		// Create required filesystem directories and characters
+		try {
+			const kernel = gameRules.getKernel();
+			if (kernel) {
+				// Create base directories first
+				if (!kernel.exists('/proc')) {
+					kernel.mkdir('/proc');
+				}
+				if (!kernel.exists('/proc/character')) {
+					kernel.mkdir('/proc/character');
+				}
+				
+				console.log(`[${getTimestamp()}] [Layout] Created base directories`);
+				
+				// Get basic character list
+				const basicChars = await gameRules.getAllGameCharacter();
+				
+				// Create character files immediately
+				if (basicChars && basicChars.length > 0) {
+					console.log(`[${getTimestamp()}] [Layout] Initializing ${basicChars.length} character files`);
+					
+					for (const char of basicChars) {
+						const charPath = `/proc/character/${char.id}`;
+						const charData = await gameRules.getCompleteCharacterData(char.id);
+						
+						if (!kernel.exists(charPath) && charData) {
+							console.log(`[${getTimestamp()}] [Layout] Creating character file: ${charPath}`);
+							kernel.create(charPath, charData);
+						}
+					}
+				}
+			}
+		} catch (err) {
+			console.error(`[${getTimestamp()}] [Layout] Error initializing filesystem:`, err);
+		}
+		
+		// Now load characters after files are created
 		loadCharacters();
 	});
 </script>

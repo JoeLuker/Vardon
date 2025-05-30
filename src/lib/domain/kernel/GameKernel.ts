@@ -77,6 +77,9 @@ export class GameKernel {
   
   // Event system (like signals in Unix)
   public readonly events: EventEmitter;
+
+  // Map of mounted devices (initialized as empty Map to prevent undefined errors)
+  public devices: Map<string, Capability> = new Map();
   
   // Signal handlers for inter-plugin communication
   private readonly signalHandlers: Map<string, (signal: number, source: string, data?: any) => void> = new Map();
@@ -295,15 +298,24 @@ export class GameKernel {
       }
     }
     
-    // Mount the device
+    // Mount the device in both mountPoints and devices maps
     this.mountPoints.set(path, device);
-    
+
+    // Ensure devices map exists and populate it
+    if (!this.devices) {
+      this.devices = new Map();
+    }
+
+    // Store in the devices map - extracting the device name from the path
+    const deviceName = path.startsWith('/dev/') ? path : path.split('/').pop() || path;
+    this.devices.set(deviceName, device);
+
+    this.log(`Mounted device ${device.id} at ${path}, device name: ${deviceName}`);
+
     // Only emit event if not disabled
     if (!this.noFsEvents) {
       this.events.emit('fs:mount', { path, device: device.id });
     }
-    
-    this.log(`Mounted device ${device.id} at ${path}`);
     
     // Call device's onMount handler
     if (device.onMount) {
@@ -702,29 +714,60 @@ export class GameKernel {
    * @param arg Argument
    * @returns 0 on success, error code on failure
    */
-  ioctl(fd: number, request: number, arg: any): number {
+  async ioctl(fd: number, request: number, arg: any): Promise<number> {
     const descriptor = this.fileDescriptors.get(fd);
     if (!descriptor) {
       this.error(`Invalid file descriptor: ${fd}`);
       return ErrorCode.EBADF;
     }
-    
+
     // Only works on device files
     const device = this.mountPoints.get(descriptor.path);
     if (!device) {
       this.error(`Not a device file: ${descriptor.path}`);
       return ErrorCode.ENOTTY;
     }
-    
+
     if (!device.ioctl) {
       this.error(`Device does not support ioctl: ${descriptor.path}`);
       return ErrorCode.ENOTTY;
     }
-    
+
     try {
-      return device.ioctl(fd, request, arg);
+      // Call device's ioctl method and handle Promise if returned
+      const result = device.ioctl(fd, request, arg);
+
+      // If the result is a Promise, await it
+      if (result instanceof Promise) {
+        try {
+          const awaitedResult = await result;
+          this.log(`Async ioctl result for ${descriptor.path}: ${awaitedResult}`);
+          return awaitedResult;
+        } catch (asyncError) {
+          this.error(`Async error in ioctl for device: ${descriptor.path}`, asyncError);
+          // Attach error details to the argument for debugging
+          if (arg) {
+            arg.errorDetails = {
+              message: asyncError.message || 'Unknown async error',
+              stack: asyncError.stack,
+              error: String(asyncError)
+            };
+          }
+          return ErrorCode.EIO;
+        }
+      }
+
+      return result;
     } catch (error) {
       this.error(`Error in ioctl for device: ${descriptor.path}`, error);
+      // Attach error details to the argument for debugging
+      if (arg) {
+        arg.errorDetails = {
+          message: error.message || 'Unknown error',
+          stack: error.stack,
+          error: String(error)
+        };
+      }
       return ErrorCode.EIO;
     }
   }

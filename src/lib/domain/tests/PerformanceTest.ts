@@ -1,6 +1,6 @@
 import { initializeApplication } from '../application';
 import type { Entity } from '../types/EntityTypes';
-import { SampleCharacters } from '../config/SampleCharacters';
+// Import removed
 
 // Set up mock game data
 const gameData = {
@@ -19,13 +19,26 @@ async function runPerformanceTests() {
   // Get a batch of characters for testing
   const characters: Entity[] = [];
   
-  // Create 100 characters (20 of each type)
-  for (let i = 0; i < 20; i++) {
-    characters.push(SampleCharacters.getFighter());
-    characters.push(SampleCharacters.getRogue());
-    characters.push(SampleCharacters.getBarbarian());
-    characters.push(SampleCharacters.getCleric());
-    characters.push(SampleCharacters.getMulticlass());
+  // Create test characters
+  for (let i = 0; i < 10; i++) {
+    // Create simple character entities for testing
+    characters.push({
+      id: `test-character-${i}`,
+      type: 'character',
+      name: `Test Character ${i}`,
+      properties: {
+        id: i,
+        name: `Test Character ${i}`,
+        max_hp: 50,
+        current_hp: 50,
+        abilities: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 }
+      },
+      metadata: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1
+      }
+    });
   }
   
   console.log(`Created ${characters.length} characters for testing`);

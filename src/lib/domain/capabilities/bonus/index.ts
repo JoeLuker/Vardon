@@ -1,9 +1,10 @@
 /**
  * Bonus Capability
- * 
- * This module exports the bonus capability types and provider
+ *
+ * This module exports the bonus capability types and implementation
+ * using the Unix-style composition-based approach.
  */
-export type { 
+export type {
   BonusCapability,
   BonusSource,
   BonusTarget,
@@ -14,9 +15,6 @@ export {
   BonusType,
   StackingRule
 } from './types';
-
-// Export the class-based implementation (legacy)
-export { BonusCapabilityProvider } from './BonusCapabilityProvider';
 
 // Export the composition-based implementation (Unix-style)
 export { createBonusCapability, STACKING_TYPES } from './BonusCapabilityComposed';

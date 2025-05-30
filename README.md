@@ -1,572 +1,299 @@
-# Vardon - Pathfinder Character Management System
+# Vardon
 
-A Unix-inspired architecture for Pathfinder RPG character management.
+A Unix-inspired character management system for Pathfinder 1e that treats game entities as files in a virtual filesystem.
 
-## Table of Contents
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![SvelteKit](https://img.shields.io/badge/SvelteKit-2.0-orange)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
 
-1. [Project Overview](#project-overview)
-2. [Project Structure](#project-structure)
-3. [Getting Started](#getting-started)
-4. [Unix Architecture](#unix-architecture)
-5. [Core Philosophy](#core-philosophy)
-6. [Key Components](#key-components)
-7. [Database Integration](#database-integration)
-8. [Naming Conventions](#naming-conventions)
-9. [MVP Requirements](#mvp-requirements)
-10. [Best Practices](#best-practices)
+## Features
 
-## Project Overview
+- 🎲 **Complete Pathfinder 1e Character Management** - Full support for characters, classes, feats, spells, and more
+- 🗂️ **Unix-Inspired Architecture** - Everything is a "file" with capabilities attached, following Unix design principles
+- 🔌 **Plugin System** - Extensible architecture for adding new game features
+- 💾 **Dual Storage** - Local browser storage with Supabase cloud sync
+- 🎯 **Type-Safe** - Full TypeScript implementation with generated types from database schema
+- 📊 **Real-time Calculations** - Automatic calculation of ability modifiers, saving throws, AC, and more
 
-Vardon is a character management system for the Pathfinder tabletop RPG, built with a Unix-inspired architecture. It focuses on:
+## Quick Start
 
-- **Unix-inspired Architecture**: Small, focused components that do one thing well
-- **Composition over Inheritance**: Build systems through composition of small, focused functions
-- **Everything is a File**: Resources are managed through a filesystem-like interface
-- **Database Integration**: Supabase database for storing character data
-- **YAML Data Management**: Tools for managing game data with preserved anchors/aliases
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Architecture Overview
+
+Vardon implements a Unix-inspired architecture where game entities are treated as files in a virtual filesystem:
+
+```
+/characters/{id}              # Character entities
+/characters/{id}/abilities    # Ability scores
+/characters/{id}/skills       # Skills
+/characters/{id}/combat       # Combat stats
+/templates/                   # Character templates
+/data/                       # Game rules data
+```
+
+### Core Concepts
+
+1. **Kernel** - The core system that manages the virtual filesystem and capabilities
+2. **Capabilities** - "Device drivers" that provide specific functionality (abilities, skills, combat)
+3. **Entities** - Game objects stored as "files" with metadata and properties
+4. **Plugins** - Extensible features that can be composed to create complex behaviors
+
+### Example: Unix-Style Operations
+
+```typescript
+// Open a character file
+const fd = kernel.open('/characters/123', OpenMode.READ_WRITE);
+try {
+  // Read character data
+  const [result, character] = kernel.read(fd);
+  if (result === ErrorCode.SUCCESS) {
+    // Modify character
+    character.properties.level += 1;
+    // Write changes back
+    kernel.write(fd, character);
+  }
+} finally {
+  // Always close file descriptors
+  kernel.close(fd);
+}
+```
 
 ## Project Structure
 
 ```
-/
-   data/             # YAML data files
-   scripts/          # Database and utility scripts
-   src/              # Source code
-      lib/
-          components/   # UI components
-          db/           # Database connectivity
-          domain/       # Core game logic
-             capabilities/  # Device drivers in filesystem
-             kernel/        # Core Unix-like filesystem
-             plugins/       # Process-like feature implementations
-          ui/           # UI components for character sheet
-   supabase/         # Supabase database migrations
-   yaml-tools/       # YAML management utilities
+vardon/
+├── src/
+│   ├── lib/
+│   │   ├── domain/          # Core business logic
+│   │   │   ├── kernel/      # Unix-like kernel implementation
+│   │   │   ├── capabilities/ # System capabilities (devices)
+│   │   │   ├── plugins/     # Feature plugins
+│   │   │   └── character/   # Character management
+│   │   ├── db/             # Database access layer
+│   │   └── ui/             # Svelte components
+│   └── routes/             # SvelteKit routes
+├── data/                   # Game data in YAML format
+├── scripts/               # Utility scripts
+└── supabase/             # Database migrations
 ```
 
-## Getting Started
+## Development
 
-1. **Install Dependencies**:
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start dev server
+npm run build           # Build for production
+npm run preview         # Preview production build
+
+# Testing
+npm run test            # Run all tests
+npm run test:unit       # Run unit tests only
+
+# Code Quality
+npm run lint            # Run ESLint
+npm run check           # TypeScript type checking
+npm run format          # Format with Prettier
+
+# Data Management
+npm run yaml:split      # Split game data into multiple files
+npm run yaml:combine    # Combine data files
+npm run yaml:load       # Load YAML data to database
+npm run types:generate  # Generate TypeScript types from DB
+```
+
+### Running Tests
+
+The project includes comprehensive test suites:
+
+```bash
+# Run all tests
+node src/lib/domain/tests/TestRunner.ts
+
+# Run specific test suite
+node src/lib/domain/tests/UnixArchitectureTest.ts
+
+# Run with verbose output
+DEBUG=true node src/lib/domain/tests/TestRunner.ts
+```
+
+### Database Setup
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Copy your project URL and anon key to `.env`
+3. Run database migrations:
    ```bash
-   npm install
+   npx supabase db push
+   ```
+4. Load initial game data:
+   ```bash
+   npm run yaml:load
    ```
 
-2. **Run the Development Server**:
-   ```bash
-   npm run dev
-   ```
+## Usage
 
-3. **Manage YAML Data**:
-   ```bash
-   # Split pathfinder_data.yaml into multiple files
-   npm run yaml:split
-   
-   # Combine split files back into a single file
-   npm run yaml:combine
-   
-   # Run the complete YAML pipeline
-   npm run yaml:pipeline
-   ```
-
-## Unix Architecture
-
-The Vardon Character Engine follows Unix architecture principles. This implementation replaces class-based inheritance with a more flexible composition-based approach.
-
-### Core Unix Philosophy Principles Applied
-
-1. **Everything is a File**: All game entities are treated as files in a filesystem
-2. **Do One Thing Well**: Each component has a single, clear responsibility
-3. **Small, Sharp Tools**: The system is composed of small, focused components
-4. **Composition over Inheritance**: Build systems through composition rather than inheritance
-5. **Explicit Resource Management**: Open, read, write, close pattern for all resources
-
-### Core System Components
-
-#### 1. GameKernel
-
-The `GameKernel` implements a Unix-like filesystem where:
-
-- `/dev/` contains device drivers (capabilities)
-- `/entity/` contains game entities (characters, etc.)
-- System calls (open, read, write, close) for accessing resources
-- Reference counting through file descriptors
+### Creating a Character
 
 ```typescript
-// Create an entity file
-const entity = {
-  id: 'character-1',
-  type: 'character',
-  name: 'Warrior',
-  properties: { strength: 18, dexterity: 14 },
-  metadata: { createdAt: Date.now(), updatedAt: Date.now(), version: 1 }
-};
+import { GameKernel } from '$lib/domain/kernel';
+import { CharacterAssembler } from '$lib/domain/character';
 
-const entityPath = `/entity/${entity.id}`;
-kernel.create(entityPath, entity);
+// Initialize the kernel
+const kernel = new GameKernel();
 
-// Access the entity (by any component)
-const fd = kernel.open(entityPath, OpenMode.READ);
-try {
-  const buffer = {};
-  kernel.read(fd, buffer);
-  console.log(buffer.name); // "Warrior"
-} finally {
-  kernel.close(fd); // Always close file descriptors
-}
+// Create a character using the assembler
+const character = await CharacterAssembler.createCharacter(kernel, {
+  name: 'Aragorn',
+  level: 5,
+  className: 'Ranger',
+  ancestry: 'Human'
+});
+
+// Access character capabilities
+const abilities = character.getCapability(AbilityCapability);
+const strength = abilities.getAbilityScore(character, 'strength');
 ```
 
-#### 2. CapabilityKit
-
-The `CapabilityKit` provides utilities for implementing capabilities using composition:
+### Working with Capabilities
 
 ```typescript
-export function createCapability(options: CapabilityOptions): any {
-  // Create shared context for all operations
-  const context: CapabilityContext = {
-    id: options.id,
-    debug: options.debug || false,
-    version: options.version || '1.0.0',
-    kernel: null,
-    storage: new Map(),
-    openFiles: new Map()
-  };
-  
-  return {
-    // Standard capability operations
-    onMount(kernel: any): void { /* ... */ },
-    read(fd: number, buffer: any): number { /* ... */ },
-    write(fd: number, buffer: any): number { /* ... */ },
-    ioctl(fd: number, request: number, arg: any): number { /* ... */ },
-    async shutdown(): Promise<void> { /* ... */ }
-  };
-}
+// Get capability from entity
+const combat = entity.getCapability(CombatCapability);
+
+// Calculate armor class
+const ac = combat.getArmorClass(entity);
+
+// Get saving throws
+const saves = combat.getSavingThrows(entity);
 ```
 
-#### 3. withEntity Pattern
-
-The `withEntity` pattern provides safe resource management for entity operations:
+### Using the Plugin System
 
 ```typescript
-export async function withEntity<T>(
-  context: CapabilityContext, 
-  entityId: string,
-  operation: (entity: Entity, fd: number) => Promise<T>
-): Promise<T | null> {
-  const fd = kernel.open(`/entity/${entityId}`, OpenMode.READ_WRITE);
-  if (fd < 0) return null;
-  
-  try {
-    const [result, entity] = kernel.read(fd);
-    if (result !== 0) return null;
-    return await operation(entity as Entity, fd);
-  } finally {
-    kernel.close(fd); // Always close the file descriptor
-  }
-}
+// Register a plugin
+kernel.pluginManager.register(new SkillFocusPlugin());
+
+// Activate plugin for an entity
+kernel.pluginManager.activate('skill-focus', entity.id, {
+  skill: 'perception'
+});
 ```
 
-#### 4. Composed Capabilities
+## API Documentation
 
-All capabilities use a composition pattern:
+### Kernel API
 
-```typescript
-export function createAbilityCapability(
-  bonusCapability: BonusCapability,
-  options: AbilityCapabilityOptions = {}
-): AbilityCapability {
-  // Create shared context
-  const context = {
-    id: 'ability',
-    debug: options.debug || false,
-    // ...other context properties
-  };
-  
-  // Create base capability
-  const capability = createCapability({/*...*/});
-  
-  // Add domain-specific methods
-  return Object.assign(capability, {
-    getAbilityScore: (entity, ability) => 
-      getAbilityScore(context, entity, ability),
-    // Additional domain methods...
-  });
-}
-```
+The kernel provides Unix-like file operations:
 
-### System Architecture Diagram
+- `open(path, mode)` - Open a file/entity
+- `read(fd, buffer)` - Read data from file descriptor
+- `write(fd, data)` - Write data to file descriptor
+- `close(fd)` - Close file descriptor
+- `create(path, data)` - Create new file/entity
+- `unlink(path)` - Delete file/entity
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           CLIENT UI                                  │
-│  (Svelte Components, Character Sheet, Feature UI, etc.)              │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                          UnixGameAPI                                 │
-│  (Main interface between UI and Unix architecture)                   │
-└───────────┬─────────────────────┬──────────────────────┬────────────┘
-            │                     │                      │
-            ▼                     ▼                      ▼
-┌───────────────────┐  ┌────────────────────┐  ┌──────────────────────┐
-│    GameKernel     │  │   PluginManager    │  │     GameRulesAPI     │
-│  (Core system)    │  │ (Manages plugins)  │  │ (Database interface) │
-└─────────┬─────────┘  └─────────┬──────────┘  └──────────┬───────────┘
-          │                      │                        │
-          ▼                      ▼                        ▼
-┌─────────────────────────────────────────────┐  ┌────────────────────┐
-│              CAPABILITIES                    │  │     Database       │
-│  (Ability, Bonus, Skill, Combat, Condition)  │  │ (Supabase/Postgres)│
-└──────────────────────┬──────────────────────┘  └────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────┐
-│                PLUGINS                       │
-│  (Feats, Class Features, Spells, etc.)       │
-└─────────────────────────────────────────────┘
-```
+### Capability API
 
-## Core Philosophy
+Each capability provides domain-specific operations:
 
-The Unix Philosophy for Pathfinder Character Engine emphasizes building simple, modular, and composable components that work together via well-defined interfaces:
+- **AbilityCapability** - Manage ability scores and modifiers
+- **SkillCapability** - Handle skill ranks and calculations
+- **CombatCapability** - Calculate AC, saves, and combat stats
+- **BonusCapability** - Manage bonus stacking rules
 
-> *Build small, focused components that do one thing well, compose them through clean interfaces, and maintain explicit dependencies between systems.*
+### GameRulesAPI
 
-### Key Principles
+Database access layer for game rules:
 
-#### 1. Everything is a Capability
-
-In Unix, "everything is a file" provides a universal interface. In our system, "everything is a capability" means all functionality is accessed through well-defined capability interfaces.
-
-#### 2. Explicit Dependencies
-
-Components declare their dependencies explicitly. No global state, no implicit dependencies, no service locators.
-
-```typescript
-// Good - Explicit dependency injection
-class DamageResolver {
-  constructor(
-    private abilityCapability: AbilityCapability,
-    private effectsCapability: EffectsCapability
-  ) {}
-}
-
-// Bad - Implicit dependency
-class DamageResolver {
-  resolveAttack() {
-    const ability = globalAbilityEngine.getModifier(...);
-  }
-}
-```
-
-#### 3. Separation of Mechanism from Policy
-
-Separate the mechanisms (how things work) from policies (what should be done).
-
-#### 4. Compose Simple Components
-
-Complex behaviors emerge from combining simple, focused components.
-
-#### 5. Data-Driven Where Possible, Code Where Necessary
-
-Use data to configure behavior when possible. Use code for logic that data can't express.
-
-## Key Components
-
-### Kernel
-
-The kernel is the core of the system, responsible for:
-
-- Managing capabilities (device drivers)
-- Executing plugins (processes)
-- Tracking entities
-- Providing an event system (signals)
-
-### Capabilities
-
-Capabilities are interfaces to system functionality, similar to Unix device drivers:
-
-- They expose a specific set of functionality
-- They hide implementation details
-- They enforce access controls
-- They represent the primary way plugins interact with the system
-
-All capabilities follow a composition-based implementation pattern:
-
-1. **BonusCapabilityComposed.ts**
-2. **AbilityCapabilityComposed.ts**
-3. **SkillCapabilityComposed.ts**
-4. **CombatCapabilityComposed.ts**
-5. **ConditionCapabilityComposed.ts**
-
-### Plugins
-
-Plugins are executable components that implement game features:
-
-- Each plugin does one thing well
-- Plugins declare their capability requirements
-- Plugins operate on entities via capabilities, not directly
-- Plugins can be composed to create complex behaviors
-
-### Events
-
-Events allow loose coupling between components:
-
-- Components emit events when state changes
-- Other components can subscribe to relevant events
-- Similar to Unix signals
-
-## Database Integration
-
-The database integration follows Unix philosophy principles:
-
-### Key Components
-
-#### 1. Storage Drivers
-
-The storage system uses the driver pattern to abstract storage mechanisms:
-
-- `StorageDriver` interface - Common interface for all storage mechanisms
-- `LocalStorageDriver` - Handles browser local storage
-- `SupabaseStorageDriver` - Handles database storage via Supabase
-- `DualStorageDriver` - Combines local and database storage for offline capability
-
-#### 2. Feature Initialization
-
-The feature initialization system loads features from the database:
-
-- `DatabaseFeatureInitializer` - Loads and applies features from database records
-- `CharacterAssembler` - Enhanced to use database features when available
-
-#### 3. Database Schema Support
-
-The implementation works with the existing database schema:
-
-- Entity-based storage in `entity` table
-- Character data in `game_character` and related tables
-- Feature activation status in `active_feature` table
-
-### Data Flow
-
-```
-Database -> GameRulesAPI -> CharacterAssembler -> Entity with Features -> UI Components
-```
-
-## Naming Conventions
-
-The project uses a mapping between traditional Unix concepts and domain-specific game engine terminology.
-
-### Core Concept Mapping
-
-| Unix Concept | Game Engine Concept | Description |
-|--------------|---------------------|-------------|
-| Kernel | `GameEngine` | Central system that manages resources |
-| Device | `Subsystem` | Controlled interface to functionality |
-| Process | `Feature` | Executable component with specific functionality |
-| File | `Entity` | Primary data structure for game objects |
-| Signal | `GameEvent` | System-wide notification |
-| Pipe | `DataFlow` | Connection between components |
-| Mount | `Register` | Connecting a subsystem to the engine |
-
-### Operation/Method Mapping
-
-| Unix Operation | Game Engine Method | Purpose |
-|----------------|-------------------|---------|
-| `exec` | `activate` | Execute a feature |
-| `kill` | `deactivate` | Stop a feature |
-| `mount` | `registerSubsystem` | Register a subsystem |
-| `umount` | `unregisterSubsystem` | Unregister a subsystem |
-| `read` | `getValue` | Get a value from a subsystem |
-| `write` | `setValue` | Set a value in a subsystem |
-
-## MVP Requirements
-
-### Character Stats & Calculations
-
-- **Ability Scores**: Calculate total scores with all bonuses
-- **Saving Throws**: Base save + ability modifier + bonuses
-- **Armor Class**: Calculate normal AC, touch AC, and flat-footed AC
-- **Attack Bonuses**: Melee, ranged, and iterative attacks
-- **Combat Maneuvers**: CMB and CMD calculations
-- **Initiative**: Dexterity-based with additional bonuses
-- **Size Modifiers**: Support for size changes and their effects
-
-### Skills System
-
-- **Skill Calculations**: Base ranks + ability mod + class skill bonus + other bonuses
-- **Skill Points Management**: Track available and spent skill points per level
-- **Class Skills**: Check if skills are class skills for bonus purposes
-- **Skill Rank Allocation**: Support adding/removing ranks at specific levels
-
-### Spellcasting
-
-- **Spell Slots**: Calculate available spell slots per level with bonus slots
-- **Spellcasting Class Features**: Track different spellcasting types
-- **Ability Score Requirements**: Enforce minimum ability scores for spell levels
-
-### Bonus System
-
-- **Bonus Stacking Rules**: Implement Pathfinder rules for stacking/non-stacking bonuses
-- **Bonus Sources**: Track the source of each bonus for display and calculation
-- **Typed vs. Untyped Bonuses**: Handle different bonus types
-
-### Character Features
-
-- **Class Features**: Apply effects from class features
-- **Feats**: Apply effects from feats
-- **Traits**: Apply effects from character traits
-- **Ancestry Traits**: Apply racial/ancestry bonuses to appropriate stats
-- **Corruption System**: Support for vampire corruption and manifestations
-- **Equipment**: Apply armor, weapon, and other equipment bonuses
+- `getCompleteCharacterData(id)` - Load full character data
+- `getClassData(id)` - Get class information
+- `getFeatData(id)` - Get feat details
+- `getSpellData(id)` - Get spell information
 
 ## Best Practices
 
-When working with the Unix architecture, follow these best practices:
-
-### TypeScript Import Practices
+### TypeScript Imports
 
 ```typescript
-// Use import type for interfaces
+// Use type imports for interfaces
 import type { Entity, Capability } from './types';
 
-// Regular imports for classes and functions
-import { createCapability } from './CapabilityKit';
+// Regular imports for classes
+import { BaseCapability } from './BaseCapability';
 ```
 
 ### Resource Management
 
 ```typescript
-// Always use try/finally for resource cleanup
+// Always use try/finally for cleanup
 const fd = kernel.open(path, OpenMode.READ);
 try {
-  // Use the resource
   const [result, data] = kernel.read(fd);
   // Process data
 } finally {
-  // Always clean up
   kernel.close(fd);
 }
 ```
 
 ### Error Handling
 
-Use Unix-style error codes for consistent error handling:
-
 ```typescript
-// Standard error pattern
-try {
-  // Operation
-} catch (err) {
-  error(context, `Operation failed: ${err}`);
-  return ErrorCode.EIO; // I/O error
-}
-```
-
-### Path Structure
-
-Follow consistent path structures:
-- `/dev/{capability}` for capabilities
-- `/entity/{id}` for entities
-- `/entity/{id}/{resource}/{resourceId}` for entity resources
-
-### Database Access
-
-Always use the GameRulesAPI for database access, never access Supabase directly:
-
-```typescript
-// Correct
-const characterData = await gameRulesAPI.getCompleteCharacterData(characterId);
-
-// Incorrect - direct database access
-const { data } = await supabase.from('game_character').select('*');
-```
-
-### Composition Over Inheritance
-
-Build systems using composition of small, focused functions instead of inheritance hierarchies:
-
-```typescript
-// Good - Composition
-function createFeature(dependencies) {
-  return {
-    activate: (entity) => activateFeature(dependencies, entity),
-    deactivate: (entity) => deactivateFeature(dependencies, entity)
-  };
-}
-
-// Bad - Inheritance
-class Feature extends BaseFeature {
-  constructor(dependencies) {
-    super();
-    this.dependencies = dependencies;
-  }
-  
-  activate(entity) {
-    // Implementation
+// Use Result type for operations that can fail
+function loadCharacter(id: string): Result<Character> {
+  try {
+    const character = kernel.readFile(`/characters/${id}`);
+    return { ok: true, value: character };
+  } catch (error) {
+    return { ok: false, error };
   }
 }
 ```
 
-### Common Utility Patterns
+## Contributing
 
-The architecture provides several high-level utility patterns to promote DRY principles:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-#### Entity Operation Pattern
+Please ensure:
+- All tests pass (`npm run test`)
+- Code is linted (`npm run lint`)
+- Types are correct (`npm run check`)
 
-Use `performEntityOperation` for consistent entity file operations:
+## License
 
-```typescript
-// Common pattern for entity operations that avoids duplication
-function doSomethingWithEntity(context, entityPath, params) {
-  return performEntityOperation(context, entityPath, (entity) => {
-    // Your operation logic here
-    entity.properties.someProp = params.value;
-  });
-}
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-#### Modifier Calculator Pattern
+## Acknowledgments
 
-Use `calculateModifiedValue` for consistent bonus calculations:
+- Inspired by Unix design philosophy
+- Built for the Pathfinder 1e community
+- Special thanks to all contributors
 
-```typescript
-// Calculate a value with proper bonus stacking rules
-function calculateAttackBonus(entity) {
-  const baseAttack = entity.properties.baseAttackBonus;
-  const modifiers = getAllAttackModifiers(entity);
-  
-  const result = calculateModifiedValue(baseAttack, modifiers);
-  return result.total;
-}
-```
+## Support
 
-#### IOCTL Handler Pattern
+- 📚 [Documentation](docs/)
+- 🐛 [Issue Tracker](https://github.com/yourusername/vardon/issues)
+- 💬 [Discussions](https://github.com/yourusername/vardon/discussions)
 
-Use `createIoctlHandler` to standardize IOCTL operations:
+---
 
-```typescript
-// Define operation handlers with a consistent pattern
-const operationHandlers = {
-  initialize: (context, entityPath, args) => {
-    return handleInitializeOperation(context, entityPath, entity => {
-      initializeEntity(context, entity);
-    });
-  },
-  setValue: (context, entityPath, args) => {
-    return performEntityOperation(context, entityPath, entity => {
-      entity.properties[args.key] = args.value;
-    });
-  }
-};
-
-// Create a standardized IOCTL handler
-const ioctlHandler = createIoctlHandler(context, operationHandlers);
-```
-
-## Conclusion
-
-The Unix-style architecture implementation provides a more modular, testable, and maintainable codebase. By following Unix principles and using composition over inheritance, we've created a system that is more flexible and easier to evolve over time.
-
-The addition of utility patterns like `performEntityOperation`, `calculateModifiedValue`, and `createIoctlHandler` further enhances the DRY principles in the codebase by extracting common patterns into reusable utilities.
-
-This architecture aligns well with modern functional programming practices while honoring the time-tested Unix design philosophy that has proven its value over decades.
+Made with ❤️ by the Vardon team

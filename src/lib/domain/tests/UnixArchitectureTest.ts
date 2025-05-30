@@ -1,269 +1,128 @@
 /**
  * Unix Architecture Test
  * 
- * This module tests the Unix-style architecture implementation.
+ * This test script demonstrates the new Unix-like architecture with persistent filesystem.
  */
 
-import { GameKernel } from '../kernel/GameKernel';
-import { EventBus } from '../kernel/EventBus';
-import { OpenMode, ErrorCode } from '../kernel/types';
-import { BaseCapability } from '../capabilities/BaseCapability';
+import { Kernel, FileSystem, FileType } from '../kernel';
+import { ErrorCode, OpenMode } from '../kernel/types';
 
 /**
- * Simple test capability
+ * Run a basic test of the Unix architecture
  */
-class TestCapability extends BaseCapability {
-  public readonly id = 'test-capability';
-  private testData: any = {};
+export async function runUnixArchitectureTest(): Promise<void> {
+  console.log("==== Unix Architecture Test Starting ====");
   
-  onMount(kernel: any): void {
-    super.onMount(kernel);
-    this.log('Test capability mounted');
-    
-    // Initialize with some test data
-    this.testData = {
-      value: 42,
-      name: 'test-data'
-    };
-  }
+  // Create a new kernel with debug logging
+  const kernel = new Kernel({ debug: true });
   
-  read(fd: number, buffer: any): number {
-    this.log(`Reading from fd ${fd}`);
-    
-    if (typeof buffer !== 'object') {
-      return ErrorCode.EINVAL;
-    }
-    
-    // Copy test data to buffer
-    Object.assign(buffer, this.testData);
-    return ErrorCode.SUCCESS;
-  }
+  console.log("\n=== Creating and navigating filesystem structure ===");
   
-  write(fd: number, buffer: any): number {
-    this.log(`Writing to fd ${fd}`);
-    
-    if (typeof buffer !== 'object') {
-      return ErrorCode.EINVAL;
-    }
-    
-    // Update test data
-    this.testData = { ...buffer };
-    return ErrorCode.SUCCESS;
-  }
+  // Create a test directory
+  const mkdirResult = kernel.mkdir('/test');
+  console.log(`Create /test directory: ${mkdirResult.success ? 'success' : mkdirResult.errorMessage}`);
   
-  ioctl(fd: number, request: number, arg: any): number {
-    this.log(`IOCTL on fd ${fd}, request ${request}`);
-    
-    // Simple operations
-    if (request === 1) {
-      // Get value
-      if (typeof arg === 'object') {
-        arg.value = this.testData.value;
-        return ErrorCode.SUCCESS;
-      }
-    } else if (request === 2) {
-      // Set value
-      if (typeof arg === 'number') {
-        this.testData.value = arg;
-        return ErrorCode.SUCCESS;
-      }
-    }
-    
-    return ErrorCode.EINVAL;
-  }
-}
-
-/**
- * Simple test plugin
- */
-const TestPlugin = {
-  id: 'test-plugin',
-  name: 'Test Plugin',
-  description: 'A test plugin for the Unix architecture',
-  requiredDevices: ['/dev/test-capability'],
+  // Create a test file
+  const createResult = kernel.create('/test/hello.txt', { message: 'Hello, Unix world!' });
+  console.log(`Create test file: ${createResult.success ? 'success' : createResult.errorMessage}`);
   
-  async execute(kernel: any, entityPath: string, options: any = {}): Promise<number> {
-    console.log(`[TestPlugin] Executing on ${entityPath}`);
-    
-    // Open entity file
-    const entityFd = kernel.open(entityPath, OpenMode.READ_WRITE);
-    if (entityFd < 0) {
-      console.error(`[TestPlugin] Failed to open entity file: ${entityPath}`);
-      return 1;
-    }
-    
-    // Open device
-    const deviceFd = kernel.open('/dev/test-capability', OpenMode.READ_WRITE);
-    if (deviceFd < 0) {
-      console.error(`[TestPlugin] Failed to open device: /dev/test-capability`);
-      kernel.close(entityFd);
-      return 2;
-    }
-    
-    try {
-      // Read entity data
-      const entity = {};
-      const readResult = kernel.read(entityFd, entity);
-      if (readResult !== 0) {
-        console.error(`[TestPlugin] Failed to read entity: ${readResult}`);
-        return 3;
-      }
-      
-      // Read device data
-      const deviceData = {};
-      const deviceReadResult = kernel.read(deviceFd, deviceData);
-      if (deviceReadResult !== 0) {
-        console.error(`[TestPlugin] Failed to read device: ${deviceReadResult}`);
-        return 4;
-      }
-      
-      console.log(`[TestPlugin] Entity data:`, entity);
-      console.log(`[TestPlugin] Device data:`, deviceData);
-      
-      // Modify entity based on device data
-      (entity as any).properties.testValue = deviceData.value;
-      (entity as any).properties.testName = deviceData.name;
-      
-      // Write back to entity
-      const writeResult = kernel.write(entityFd, entity);
-      if (writeResult !== 0) {
-        console.error(`[TestPlugin] Failed to write entity: ${writeResult}`);
-        return 5;
-      }
-      
-      // Use IOCTL to update device
-      if (options.setValue !== undefined) {
-        const ioctlResult = kernel.ioctl(deviceFd, 2, options.setValue);
-        if (ioctlResult !== 0) {
-          console.error(`[TestPlugin] IOCTL failed: ${ioctlResult}`);
-          return 6;
-        }
-      }
-      
-      return 0; // Success
-    } finally {
-      // Always close file descriptors
-      kernel.close(entityFd);
-      kernel.close(deviceFd);
-    }
-  }
-};
-
-/**
- * Run the Unix architecture test
- * @returns Test result message
- */
-export async function runUnixArchitectureTest(): Promise<string> {
-  console.log('Running Unix Architecture Test');
-  
-  // Create kernel
-  const eventBus = new EventBus(true);
-  const kernel = new GameKernel({ 
-    eventEmitter: eventBus,
-    debug: true
+  // List files in the /test directory
+  const [lsResult, entries] = kernel.readdir('/test');
+  console.log(`List /test directory (${entries.length} entries):`);
+  entries.forEach((entry) => {
+    console.log(`  - ${entry.name} (${entry.type})`);
   });
   
-  try {
-    // Mount test capability
-    const capability = new TestCapability({ debug: true });
-    kernel.mount(`/dev/${capability.id}`, capability);
+  console.log("\n=== Working with file descriptors ===");
+  
+  // Open the file
+  const fd = kernel.open('/test/hello.txt', OpenMode.READ);
+  console.log(`Open file descriptor: ${fd}`);
+  
+  // Read from file descriptor
+  const [readResult, data] = kernel.read(fd);
+  console.log(`Read result: ${readResult === ErrorCode.SUCCESS ? 'success' : readResult}`);
+  console.log(`File content: ${JSON.stringify(data)}`);
+  
+  // Close file descriptor
+  const closeResult = kernel.close(fd);
+  console.log(`Close file: ${closeResult === ErrorCode.SUCCESS ? 'success' : closeResult}`);
+  
+  console.log("\n=== Testing device mounting ===");
+  
+  // Create a test device
+  const testDevice = {
+    id: 'test-device',
+    version: '1.0.0',
     
-    // Register test plugin
-    kernel.registerPlugin(TestPlugin);
+    onMount(kernel: any): void {
+      console.log("Test device mounted");
+    },
     
-    // Create test entity
-    const entityId = 'test-entity';
-    const entityPath = `/entity/${entityId}`;
+    read(fd: number, buffer: any): number {
+      console.log(`Device read from fd ${fd}`);
+      buffer.deviceData = { message: "Reading from test device" };
+      return ErrorCode.SUCCESS;
+    },
     
-    const entity = {
-      id: entityId,
-      type: 'test',
-      name: 'Test Entity',
-      properties: {
-        value: 0
-      },
-      metadata: {
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        version: 1
-      }
-    };
-    
-    const createResult = kernel.create(entityPath, entity);
-    if (!createResult.success) {
-      throw new Error(`Failed to create entity: ${createResult.errorMessage}`);
+    write(fd: number, buffer: any): number {
+      console.log(`Device write to fd ${fd}: ${JSON.stringify(buffer)}`);
+      return ErrorCode.SUCCESS;
     }
-    
-    // Execute test plugin
-    const options = { setValue: 100 };
-    await kernel.executePlugin('test-plugin', entityId, options);
-    
-    // Open and read updated entity
-    const fd = kernel.open(entityPath, OpenMode.READ);
-    if (fd < 0) {
-      throw new Error(`Failed to open entity file: ${entityPath}`);
-    }
-    
-    try {
-      const updatedEntity = {};
-      const result = kernel.read(fd, updatedEntity);
-      
-      if (result !== 0) {
-        throw new Error(`Failed to read entity: ${result}`);
-      }
-      
-      console.log('Updated entity:', updatedEntity);
-      
-      // Verify updates
-      const properties = (updatedEntity as any).properties;
-      if (properties.testValue === 42 && properties.testName === 'test-data') {
-        console.log('✅ Entity correctly updated from device');
-      } else {
-        console.error('❌ Entity not updated correctly');
-      }
-      
-      // Reopen device to verify it was updated by IOCTL
-      const deviceFd = kernel.open('/dev/test-capability', OpenMode.READ);
-      if (deviceFd < 0) {
-        throw new Error('Failed to open device');
-      }
-      
-      try {
-        const deviceData = {};
-        const deviceResult = kernel.read(deviceFd, deviceData);
-        
-        if (deviceResult !== 0) {
-          throw new Error(`Failed to read device: ${deviceResult}`);
-        }
-        
-        console.log('Updated device data:', deviceData);
-        
-        if (deviceData.value === 100) {
-          console.log('✅ Device correctly updated by IOCTL');
-        } else {
-          console.error('❌ Device not updated correctly');
-        }
-      } finally {
-        kernel.close(deviceFd);
-      }
-    } finally {
-      kernel.close(fd);
-    }
-    
-    return 'Unix Architecture Test completed successfully';
-  } catch (error) {
-    console.error('Unix Architecture Test failed:', error);
-    return `Unix Architecture Test failed: ${error.message}`;
-  } finally {
-    // Clean up
-    await kernel.shutdown();
+  };
+  
+  // Mount the device
+  const mountResult = kernel.mount('/dev/test', testDevice);
+  console.log(`Mount device: ${mountResult.success ? 'success' : mountResult.errorMessage}`);
+  
+  // Open the device file
+  const deviceFd = kernel.open('/dev/test', OpenMode.READ_WRITE);
+  console.log(`Open device fd: ${deviceFd}`);
+  
+  // Read from device
+  const deviceBuffer = {};
+  const [deviceReadResult, deviceData] = kernel.read(deviceFd);
+  console.log(`Device read result: ${deviceReadResult === ErrorCode.SUCCESS ? 'success' : deviceReadResult}`);
+  console.log(`Device data: ${JSON.stringify(deviceData)}`);
+  
+  // Write to device
+  const deviceWriteResult = kernel.write(deviceFd, { command: "test" });
+  console.log(`Device write result: ${deviceWriteResult === ErrorCode.SUCCESS ? 'success' : deviceWriteResult}`);
+  
+  // Close device
+  kernel.close(deviceFd);
+  
+  console.log("\n=== Persistence test ===");
+  
+  // Unmount filesystem (this saves to localStorage)
+  await kernel.shutdown();
+  console.log("Kernel shutdown complete");
+  
+  // Create a new kernel instance (should restore from localStorage)
+  console.log("\nCreating new kernel instance (should restore state)...");
+  const kernel2 = new Kernel({ debug: true });
+  
+  // Check if our test file is still there
+  const fileExists = kernel2.exists('/test/hello.txt');
+  console.log(`Test file still exists: ${fileExists}`);
+  
+  if (fileExists) {
+    // Read the file to verify contents
+    const fd2 = kernel2.open('/test/hello.txt', OpenMode.READ);
+    const [readResult2, data2] = kernel2.read(fd2);
+    console.log(`Read from restored file: ${JSON.stringify(data2)}`);
+    kernel2.close(fd2);
   }
+  
+  // Shut down the second kernel
+  await kernel2.shutdown();
+  
+  console.log("\n==== Unix Architecture Test Complete ====");
 }
 
-// Allow running directly
-if (typeof window === 'undefined' && require.main === module) {
-  runUnixArchitectureTest().then(
-    result => console.log(result),
-    error => console.error('Test error:', error)
-  );
+// Auto-run the test if this file is executed directly
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    runUnixArchitectureTest().catch(console.error);
+  });
 }

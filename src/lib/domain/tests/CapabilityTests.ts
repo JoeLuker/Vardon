@@ -1,6 +1,6 @@
 /**
  * Capability System Tests
- * 
+ *
  * This module demonstrates the Unix-style architecture of the capability system.
  * It shows how capabilities are composed together with explicit dependencies
  * and how plugins can use these capabilities to implement game features.
@@ -11,11 +11,6 @@ import { Entity } from '../kernel/types';
 import { createBonusCapability } from '../capabilities/bonus/BonusCapabilityComposed';
 import { createAbilityCapability } from '../capabilities/ability/AbilityCapabilityComposed';
 import { createSkillCapability } from '../capabilities/skill/SkillCapabilityComposed';
-
-// Legacy class-based imports (for comparison)
-// import { BonusCapabilityProvider } from '../capabilities/bonus/BonusCapabilityProvider';
-// import { AbilityCapabilityProvider } from '../capabilities/ability/AbilityCapabilityProvider';
-// import { SkillCapabilityProvider } from '../capabilities/skill/SkillCapabilityProvider';
 
 /**
  * Run a capability system test

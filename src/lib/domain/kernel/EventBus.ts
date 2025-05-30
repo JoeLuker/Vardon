@@ -15,23 +15,41 @@ export class EventBus implements EventEmitter {
   }
   
   /**
+   * Check if an event has any listeners
+   * @param event Event name
+   * @returns True if the event has at least one listener
+   */
+  hasListeners(event: string): boolean {
+    const listeners = this.eventListeners.get(event);
+    return !!listeners && listeners.size > 0;
+  }
+  
+  /**
    * Emit an event to all subscribers
    * @param event Event name
    * @param data Event data
    */
   emit(event: string, data: any): void {
+    // Check if there are any listeners first to avoid unnecessary work
+    // Only log the emission if there are listeners or debugging is enabled
+    const hasListeners = this.hasListeners(event);
+    
     if (this.debug) {
       console.log(`[EventBus] Emitting event: ${event}`, data);
+      
+      // Only log "No listeners" message in debug mode
+      if (!hasListeners) {
+        console.log(`[EventBus] No listeners for event: ${event}`);
+      }
+    }
+    
+    // Skip further processing if no listeners
+    if (!hasListeners) {
+      return;
     }
     
     // Get all subscription IDs for this event
-    const subscriptionIds = this.eventListeners.get(event);
-    if (!subscriptionIds || subscriptionIds.size === 0) {
-      if (this.debug) {
-        console.log(`[EventBus] No listeners for event: ${event}`);
-      }
-      return;
-    }
+    const subscriptionIds = this.eventListeners.get(event)!;
     
     // Call each listener
     for (const id of subscriptionIds) {

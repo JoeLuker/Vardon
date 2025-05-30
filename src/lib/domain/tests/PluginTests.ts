@@ -1,15 +1,15 @@
 /**
  * Plugin System Tests
- * 
+ *
  * This module demonstrates the Unix-style architecture of the plugin system.
  * It shows how plugins can be registered, loaded and applied to entities.
  */
 
 import type { Entity } from '../kernel/types';
-import { BonusCapabilityProvider } from '../capabilities/bonus/BonusCapabilityProvider';
-import { AbilityCapabilityProvider } from '../capabilities/ability/AbilityCapabilityProvider';
-import { SkillCapabilityProvider } from '../capabilities/skill/SkillCapabilityProvider';
-import { PluginManager } from '../plugins/PluginManager';
+import { createBonusCapability } from '../capabilities/bonus/BonusCapabilityComposed';
+import { createAbilityCapability } from '../capabilities/ability/AbilityCapabilityComposed';
+import { createSkillCapability } from '../capabilities/skill/SkillCapabilityComposed';
+import { PluginManagerComposed } from '../plugins/PluginManagerComposed';
 import { SkillFocusPlugin } from '../plugins/feats/SkillFocusPlugin';
 
 /**
@@ -32,20 +32,20 @@ export async function runPluginTest() {
   };
   
   // Create the plugin manager
-  const pluginManager = new PluginManager({ debug: true });
-  
+  const pluginManager = new PluginManagerComposed({ debug: true });
+
   // Create and register capabilities
   console.log('\nRegistering capabilities...');
-  
+
   // 1. Bonus capability (no dependencies)
-  const bonusCapability = new BonusCapabilityProvider({
+  const bonusCapability = createBonusCapability({
     debug: true,
     stackSameType: false
   });
   pluginManager.registerCapability(bonusCapability);
-  
+
   // 2. Ability capability (depends on bonus capability)
-  const abilityCapability = new AbilityCapabilityProvider(
+  const abilityCapability = createAbilityCapability(
     bonusCapability,
     {
       debug: true,
@@ -53,9 +53,9 @@ export async function runPluginTest() {
     }
   );
   pluginManager.registerCapability(abilityCapability);
-  
+
   // 3. Skill capability (depends on ability and bonus capabilities)
-  const skillCapability = new SkillCapabilityProvider(
+  const skillCapability = createSkillCapability(
     abilityCapability,
     bonusCapability,
     {

@@ -6,13 +6,23 @@
 
 import { runCharacterTest } from './CharacterTest';
 import { runSystemTest } from './SystemTest';
+import { runDatabaseCapabilityTest } from './DatabaseCapabilityTest';
+import { runErrorHandlingTests } from './ErrorHandlingTest';
 
 /**
  * Test suites available to run
  */
 const TEST_SUITES: Record<string, () => Promise<void>> = {
   character: runCharacterTest,
-  system: runSystemTest
+  system: runSystemTest,
+  database: async () => {
+    const result = await runDatabaseCapabilityTest();
+    console.log(result);
+  },
+  errorHandling: async () => {
+    const result = await runErrorHandlingTests();
+    console.log(`Error handling tests ${result ? 'PASSED' : 'FAILED'}`);
+  }
 };
 
 /**

@@ -166,13 +166,13 @@ function initialize(context: CombatCapabilityContext, entity: Entity): void {
   }
   
   // Initialize base attack bonus from classes if available
-  if (entity.properties.legacyData?.character?.classes && Array.isArray(entity.properties.legacyData.character.classes)) {
+  if (entity.properties.classes && Array.isArray(entity.properties.classes)) {
     let totalBAB = 0;
-    for (const characterClass of entity.properties.legacyData.character.classes) {
+    for (const characterClass of entity.properties.classes) {
       // Simple BAB calculation based on class and level
       const classLevel = characterClass.level || 0;
       let classBAB = 0;
-      
+
       // Full BAB progression classes (fighter, barbarian, etc.)
       if (['fighter', 'barbarian', 'paladin', 'ranger'].includes(characterClass.id)) {
         classBAB = classLevel;
@@ -185,28 +185,28 @@ function initialize(context: CombatCapabilityContext, entity: Entity): void {
       else {
         classBAB = Math.floor(classLevel * 0.5);
       }
-      
+
       totalBAB += classBAB;
     }
-    
+
     entity.properties.combat.baseAttackBonus = totalBAB;
   }
   
   // Initialize saves based on classes if available
-  if (entity.properties.legacyData?.character?.classes && Array.isArray(entity.properties.legacyData.character.classes)) {
+  if (entity.properties.classes && Array.isArray(entity.properties.classes)) {
     let totalFort = 0;
     let totalRef = 0;
     let totalWill = 0;
-    
-    for (const characterClass of entity.properties.legacyData.character.classes) {
+
+    for (const characterClass of entity.properties.classes) {
       const classLevel = characterClass.level || 0;
-      
+
       // Good save progression (2 + level/2)
       const goodSave = Math.floor(2 + classLevel / 2);
-      
+
       // Poor save progression (level/3)
       const poorSave = Math.floor(classLevel / 3);
-      
+
       // Apply based on class
       switch (characterClass.id) {
         case 'fighter':
@@ -237,7 +237,7 @@ function initialize(context: CombatCapabilityContext, entity: Entity): void {
           totalWill += poorSave;
       }
     }
-    
+
     entity.properties.combat.saves.fortitude.base = totalFort;
     entity.properties.combat.saves.reflex.base = totalRef;
     entity.properties.combat.saves.will.base = totalWill;

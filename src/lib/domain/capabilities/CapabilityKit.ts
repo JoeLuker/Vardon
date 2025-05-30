@@ -1,16 +1,63 @@
 /**
- * Capability Kit
- * 
- * This module provides a set of utilities for implementing capabilities
+ * Capability Kit - Unix Edition
+ *
+ * This module provides a set of utilities for implementing Unix-style capabilities
  * using composition rather than inheritance. This approach follows Unix principles
  * of composing small, focused tools into larger systems.
- * 
+ *
  * Instead of inheriting from a base class, capabilities can compose operations
  * from independent utility functions and specialized services.
  */
 
 import type { Entity } from '../kernel/types';
 import { ErrorCode, OpenMode } from '../kernel/types';
+import {
+  createError,
+  failure,
+  success,
+  withFile,
+  withResource,
+  processErrorCode,
+  createErrorLogger,
+  type Result,
+  type SystemError,
+  type ErrorContext
+} from '../kernel/ErrorHandler';
+
+/**
+ * Log a debug message
+ * @param context Capability context
+ * @param message Message to log
+ * @param data Optional data to include
+ */
+export function log(context: CapabilityContext, message: string, data?: any): void {
+  if (context.debug) {
+    if (data !== undefined) {
+      console.log(`[${context.id}] ${message}`, data);
+    } else {
+      console.log(`[${context.id}] ${message}`);
+    }
+  }
+}
+
+/**
+ * Log an error message
+ * @param context Capability context
+ * @param message Error message
+ * @param error Optional error object
+ * @param errorContext Optional error context
+ */
+export function error(context: CapabilityContext, message: string, error?: any, errorContext?: ErrorContext): void {
+  if (error !== undefined) {
+    console.error(`[${context.id}] ${message}`, error);
+  } else {
+    console.error(`[${context.id}] ${message}`);
+  }
+
+  if (context.logger) {
+    context.logger.error(message, error, errorContext);
+  }
+}
 
 /**
  * Options for creating a capability
@@ -26,7 +73,7 @@ export interface CapabilityOptions {
   version?: string;
   
   /** Optional on-mount handler */
-  onMount?: (kernel: any) => void;
+  onMount?: (kernel: any) => Result<void> | void;
   
   /** Optional read handler */
   onRead?: (fd: number, buffer: any, context: CapabilityContext) => number;
@@ -38,7 +85,7 @@ export interface CapabilityOptions {
   onIoctl?: (fd: number, request: number, arg: any, context: CapabilityContext) => number;
   
   /** Optional shutdown handler */
-  onShutdown?: (context: CapabilityContext) => Promise<void>;
+  onShutdown?: (context: CapabilityContext) => Promise<Result<void>>;
 }
 
 /**
@@ -63,6 +110,9 @@ export interface CapabilityContext {
   /** Open file descriptors */
   openFiles: Map<number, { path: string, buffer: any }>;
   
+  /** Error logger */
+  logger: ReturnType<typeof createErrorLogger>;
+  
   /** Custom context data */
   [key: string]: any;
 }
@@ -80,7 +130,8 @@ export function createCapability(options: CapabilityOptions): any {
     version: options.version || '1.0.0',
     kernel: null,
     storage: new Map(),
-    openFiles: new Map()
+    openFiles: new Map(),
+    logger: createErrorLogger(options.id)
   };
   
   return {
@@ -91,91 +142,120 @@ export function createCapability(options: CapabilityOptions): any {
     // Standard capability operations
     onMount(kernel: any): void {
       context.kernel = kernel;
-      log(context, 'Device mounted');
+      context.logger.info('Device mounted');
       
       // Call custom onMount handler if provided
       if (options.onMount) {
-        options.onMount(kernel);
+        const result = options.onMount(kernel);
+        if (result && typeof result === 'object' && 'success' in result && !result.success) {
+          context.logger.error(`Mount error: ${result.errorMessage}`, null, {
+            operation: 'onMount',
+            errorCode: result.errorCode
+          });
+        }
       }
     },
     
     read(fd: number, buffer: any): number {
-      log(context, `Read from fd ${fd}`);
+      context.logger.debug(`Read from fd ${fd}`);
       
       // Use custom read handler if provided, otherwise return error
       if (options.onRead) {
-        return options.onRead(fd, buffer, context);
+        try {
+          return options.onRead(fd, buffer, context);
+        } catch (error) {
+          const sysError = createError(
+            ErrorCode.EIO,
+            `Unhandled exception in read operation: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              component: context.id,
+              operation: 'read',
+              fd
+            }
+          );
+          context.logger.error(sysError.message, error);
+          return ErrorCode.EIO;
+        }
       }
       
       return ErrorCode.EINVAL;
     },
     
     write(fd: number, buffer: any): number {
-      log(context, `Write to fd ${fd}`);
+      context.logger.debug(`Write to fd ${fd}`);
       
       // Use custom write handler if provided, otherwise return error
       if (options.onWrite) {
-        return options.onWrite(fd, buffer, context);
+        try {
+          return options.onWrite(fd, buffer, context);
+        } catch (error) {
+          const sysError = createError(
+            ErrorCode.EIO,
+            `Unhandled exception in write operation: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              component: context.id,
+              operation: 'write',
+              fd
+            }
+          );
+          context.logger.error(sysError.message, error);
+          return ErrorCode.EIO;
+        }
       }
       
       return ErrorCode.EINVAL;
     },
     
     ioctl(fd: number, request: number, arg: any): number {
-      log(context, `IOCTL on fd ${fd}, request ${request}`);
+      context.logger.debug(`IOCTL on fd ${fd}, request ${request}`);
       
       // Use custom ioctl handler if provided, otherwise return error
       if (options.onIoctl) {
-        return options.onIoctl(fd, request, arg, context);
+        try {
+          return options.onIoctl(fd, request, arg, context);
+        } catch (error) {
+          const sysError = createError(
+            ErrorCode.EIO,
+            `Unhandled exception in ioctl operation: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              component: context.id,
+              operation: 'ioctl',
+              fd,
+              request
+            }
+          );
+          context.logger.error(sysError.message, error);
+          return ErrorCode.EIO;
+        }
       }
       
       return ErrorCode.EINVAL;
     },
     
     async shutdown(): Promise<void> {
-      log(context, 'Device unmounting');
+      context.logger.info('Device unmounting');
       
       // Call custom shutdown handler if provided
       if (options.onShutdown) {
-        await options.onShutdown(context);
+        try {
+          const result = await options.onShutdown(context);
+          if (!result.success) {
+            context.logger.error(`Shutdown error: ${result.errorMessage}`, null, {
+              operation: 'shutdown',
+              errorCode: result.errorCode
+            });
+          }
+        } catch (error) {
+          context.logger.error('Unhandled exception during shutdown', error);
+        }
       }
       
       // Standard cleanup
       context.storage.clear();
       context.openFiles.clear();
-      log(context, 'Device unmounted');
+      context.logger.info('Device unmounted');
     }
   };
-}
-
-/**
- * Log a debug message for a capability
- * @param context Capability context
- * @param message Message to log
- * @param data Optional data to log
- */
-export function log(context: CapabilityContext, message: string, data?: any): void {
-  if (context.debug) {
-    if (data !== undefined) {
-      console.log(`[${context.id}] ${message}`, data);
-    } else {
-      console.log(`[${context.id}] ${message}`);
-    }
-  }
-}
-
-/**
- * Log an error message for a capability
- * @param context Capability context
- * @param message Error message
- * @param error Optional error object
- */
-export function error(context: CapabilityContext, message: string, error?: any): void {
-  if (error !== undefined) {
-    console.error(`[${context.id}] ${message}`, error);
-  } else {
-    console.error(`[${context.id}] ${message}`);
-  }
 }
 
 /**
@@ -189,11 +269,73 @@ export async function withEntity<T>(
   context: CapabilityContext, 
   entityId: string,
   operation: (entity: Entity, fd: number) => Promise<T>
-): Promise<T | null> {
+): Promise<Result<T>> {
   const kernel = context.kernel;
   if (!kernel) {
-    error(context, 'Kernel not available');
-    return null;
+    return failure(
+      ErrorCode.ENODEV,
+      'Kernel not available',
+      {
+        component: context.id,
+        operation: 'withEntity'
+      }
+    );
+  }
+  
+  // Path to the entity file
+  const entityPath = `/entity/${entityId}`;
+  
+  // Use withFile from ErrorHandler to manage file descriptor
+  return withFile(
+    kernel,
+    entityPath,
+    OpenMode.READ_WRITE,
+    async (fd) => {
+      // Read entity data
+      const [result, entity] = kernel.read(fd);
+      
+      if (result !== 0) {
+        return failure(
+          result,
+          `Failed to read entity: ${entityPath}`,
+          {
+            component: context.id,
+            operation: 'withEntity.read',
+            path: entityPath,
+            fd
+          }
+        );
+      }
+      
+      // Perform the operation with the entity
+      return await operation(entity as Entity, fd);
+    }
+  );
+}
+
+/**
+ * Synchronous version of withEntity
+ * Performs an entity file operation with proper resource management
+ * @param context Capability context
+ * @param entityId Entity ID
+ * @param operation Synchronous operation function that performs the actual work
+ * @returns Result of the operation
+ */
+export function withEntitySync<T>(
+  context: CapabilityContext, 
+  entityId: string,
+  operation: (entity: Entity, fd: number) => T
+): Result<T> {
+  const kernel = context.kernel;
+  if (!kernel) {
+    return failure(
+      ErrorCode.ENODEV,
+      'Kernel not available',
+      {
+        component: context.id,
+        operation: 'withEntitySync'
+      }
+    );
   }
   
   // Path to the entity file
@@ -201,31 +343,66 @@ export async function withEntity<T>(
   
   // Verify entity exists
   if (!kernel.exists(entityPath)) {
-    error(context, `Entity not found: ${entityPath}`);
-    return null;
-  }
-  
-  // Open the entity file
-  const fd = kernel.open(entityPath, OpenMode.READ_WRITE);
-  if (fd < 0) {
-    error(context, `Failed to open entity file: ${entityPath}`);
-    return null;
+    return failure(
+      ErrorCode.ENOENT,
+      `Entity not found: ${entityPath}`,
+      {
+        component: context.id,
+        operation: 'withEntitySync',
+        path: entityPath
+      }
+    );
   }
   
   try {
-    // Read entity data
-    const [result, entity] = kernel.read(fd);
-    
-    if (result !== 0) {
-      error(context, `Failed to read entity: ${entityPath}, error code: ${result}`);
-      return null;
+    // Open the entity file
+    const fd = kernel.open(entityPath, OpenMode.READ_WRITE);
+    if (fd < 0) {
+      return failure(
+        ErrorCode.EBADF,
+        `Failed to open entity file: ${entityPath}`,
+        {
+          component: context.id,
+          operation: 'withEntitySync.open',
+          path: entityPath
+        }
+      );
     }
     
-    // Perform the operation with the entity
-    return await operation(entity as Entity, fd);
-  } finally {
-    // Always close the file descriptor
-    kernel.close(fd);
+    try {
+      // Read entity data
+      const [result, entity] = kernel.read(fd);
+      
+      if (result !== 0) {
+        return failure(
+          result,
+          `Failed to read entity: ${entityPath}`,
+          {
+            component: context.id,
+            operation: 'withEntitySync.read',
+            path: entityPath,
+            fd
+          }
+        );
+      }
+      
+      // Perform the operation with the entity
+      const operationResult = operation(entity as Entity, fd);
+      return success(operationResult);
+    } finally {
+      // Always close the file descriptor
+      kernel.close(fd);
+    }
+  } catch (error) {
+    return failure(
+      ErrorCode.EIO,
+      `Unhandled exception: ${error instanceof Error ? error.message : String(error)}`,
+      {
+        component: context.id,
+        operation: 'withEntitySync',
+        path: entityPath
+      }
+    );
   }
 }
 
@@ -235,43 +412,53 @@ export async function withEntity<T>(
  * @param context Capability context
  * @param entity The entity to initialize
  * @param initializer Function that performs initialization
- * @returns The updated entity or null if error
+ * @returns Result with the updated entity
  */
 export async function initializeEntity(
   context: CapabilityContext,
   entity: Entity,
   initializer: (entity: Entity) => void
-): Promise<Entity | null> {
+): Promise<Result<Entity>> {
   try {
     // Call the provided initializer
     initializer(entity);
     
     // Update entity in filesystem
     const entityPath = `/entity/${entity.id}`;
-    const fd = context.kernel.open(entityPath, OpenMode.WRITE);
     
-    if (fd < 0) {
-      error(context, `Failed to open entity for writing: ${entityPath}`);
-      return null;
-    }
-    
-    try {
-      // Write updated entity
-      const writeResult = context.kernel.write(fd, entity);
-      
-      if (writeResult !== 0) {
-        error(context, `Failed to write entity: ${entityPath}, error code: ${writeResult}`);
-        return null;
+    return withFile(
+      context.kernel,
+      entityPath,
+      OpenMode.WRITE,
+      (fd) => {
+        // Write updated entity
+        const writeResult = context.kernel.write(fd, entity);
+        
+        if (writeResult !== 0) {
+          return failure(
+            writeResult,
+            `Failed to write entity: ${entityPath}`,
+            {
+              component: context.id,
+              operation: 'initializeEntity.write',
+              path: entityPath,
+              fd
+            }
+          );
+        }
+        
+        return success(entity);
       }
-      
-      return entity;
-    } finally {
-      // Always close the file descriptor
-      context.kernel.close(fd);
-    }
+    );
   } catch (err) {
-    error(context, `Error initializing entity ${entity.id}:`, err);
-    return null;
+    return failure(
+      ErrorCode.EIO,
+      `Error initializing entity ${entity.id}: ${err instanceof Error ? err.message : String(err)}`,
+      {
+        component: context.id,
+        operation: 'initializeEntity'
+      }
+    );
   }
 }
 
@@ -304,15 +491,21 @@ export function performEntityOperation(
   try {
     const kernel = context.kernel;
     if (!kernel) {
-      error(context, 'Kernel not available');
+      context.logger.error('Kernel not available', null, {
+        operation: 'performEntityOperation'
+      });
       return ErrorCode.ENODEV;
     }
     
     // Open the entity file
     const fd = kernel.open(entityPath, mode);
     if (fd < 0) {
-      error(context, `Failed to open entity file: ${entityPath}`);
-      return ErrorCode.ENOENT;
+      context.logger.error(`Failed to open entity file: ${entityPath}`, null, {
+        operation: 'performEntityOperation.open',
+        path: entityPath,
+        errorCode: -fd
+      });
+      return -fd as ErrorCode;
     }
     
     try {
@@ -320,7 +513,12 @@ export function performEntityOperation(
       const [result, entity] = kernel.read(fd);
       
       if (result !== 0) {
-        error(context, `Failed to read entity: ${entityPath}, error code: ${result}`);
+        context.logger.error(`Failed to read entity: ${entityPath}`, null, {
+          operation: 'performEntityOperation.read',
+          path: entityPath,
+          fd,
+          errorCode: result
+        });
         return result;
       }
       
@@ -336,7 +534,12 @@ export function performEntityOperation(
       const writeResult = kernel.write(fd, entity);
       
       if (writeResult !== 0) {
-        error(context, `Failed to write entity: ${entityPath}, error code: ${writeResult}`);
+        context.logger.error(`Failed to write entity: ${entityPath}`, null, {
+          operation: 'performEntityOperation.write',
+          path: entityPath,
+          fd,
+          errorCode: writeResult
+        });
         return writeResult;
       }
       
@@ -346,7 +549,10 @@ export function performEntityOperation(
       kernel.close(fd);
     }
   } catch (err) {
-    error(context, `Error processing entity operation: ${err}`);
+    context.logger.error(`Error processing entity operation: ${err instanceof Error ? err.message : String(err)}`, err, {
+      operation: 'performEntityOperation',
+      path: entityPath
+    });
     return ErrorCode.EIO;
   }
 }
@@ -500,7 +706,11 @@ export function createIoctlHandler(
   return (fd: number, request: number, arg: any): number => {
     // Basic validation
     if (!arg || typeof arg !== 'object' || !arg.operation) {
-      error(context, 'Invalid IOCTL arguments: missing operation');
+      context.logger.error('Invalid IOCTL arguments: missing operation', null, {
+        operation: 'createIoctlHandler',
+        fd,
+        request
+      });
       return ErrorCode.EINVAL;
     }
     
@@ -508,21 +718,34 @@ export function createIoctlHandler(
     
     // Check if we have a handler for this operation
     if (!operationHandlers[operation]) {
-      error(context, `Unknown operation: ${operation}`);
+      context.logger.error(`Unknown operation: ${operation}`, null, {
+        operation: 'createIoctlHandler',
+        fd,
+        request
+      });
       return ErrorCode.EINVAL;
     }
     
     try {
       // Most operations require an entity path
       if (!arg.entityPath && operation !== 'getConfig' && operation !== 'setConfig') {
-        error(context, `Missing entityPath for operation: ${operation}`);
+        context.logger.error(`Missing entityPath for operation: ${operation}`, null, {
+          operation: 'createIoctlHandler',
+          fd,
+          request
+        });
         return ErrorCode.EINVAL;
       }
       
       // Call the operation handler
       return operationHandlers[operation](context, arg.entityPath, arg);
     } catch (err) {
-      error(context, `Error in IOCTL operation ${operation}:`, err);
+      context.logger.error(`Error in IOCTL operation ${operation}:`, err, {
+        operation: 'createIoctlHandler',
+        fd,
+        request,
+        ioctl_op: operation
+      });
       return ErrorCode.EIO;
     }
   };

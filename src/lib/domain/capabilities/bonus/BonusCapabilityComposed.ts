@@ -10,7 +10,8 @@
 import type { Entity } from '../../kernel/types';
 import { ErrorCode } from '../../kernel/types';
 import type { BonusCapability, BonusCapabilityOptions, BonusBreakdown, Bonus, BonusType } from './types';
-import { createCapability, log, error, withEntity, type CapabilityContext } from '../CapabilityKit';
+import { createCapability, withEntity, log, error, type CapabilityContext } from '../CapabilityKit';
+import { createErrorLogger } from '../../kernel/ErrorHandler';
 
 /**
  * Types that stack by default
@@ -113,7 +114,11 @@ function initialize(context: any, entity: Entity): void {
     entity.properties.bonuses = {};
   }
   
-  log(context, `Initialized bonus system for entity: ${entity.id}`);
+  // Create logger function
+  const logger = createErrorLogger('bonus');
+  if (context.debug) {
+    logger.debug(`Initialized bonus system for entity: ${entity.id}`);
+  }
 }
 
 /**
@@ -133,7 +138,10 @@ function addBonus(
   type: string,
   source: string
 ): void {
-  log(context, `Adding bonus to '${target}' for entity ${entity.id}:`, { value, type, source });
+  const logger = createErrorLogger('bonus');
+  if (context.debug) {
+    logger.debug(`Adding bonus to '${target}' for entity ${entity.id}: ${value} ${type} from ${source}`);
+  }
   
   // Ensure the bonuses property exists
   if (!entity.properties.bonuses) {
@@ -178,7 +186,10 @@ function addBonus(
  * @param source Source of the bonus to remove
  */
 function removeBonus(context: any, entity: Entity, target: string, source: string): void {
-  log(context, `Removing bonus from '${target}' for entity ${entity.id}:`, { source });
+  const logger = createErrorLogger('bonus');
+  if (context.debug) {
+    logger.debug(`Removing bonus from '${target}' for entity ${entity.id}: ${source}`);
+  }
   
   // Ensure the bonuses property exists
   if (!entity.properties.bonuses) {

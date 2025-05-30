@@ -18,17 +18,47 @@ export type {
   PluginValidationResult,
   EntityRequest,
   EntityAccessResult,
-  OpenMode,
   FileDescriptor,
   Inode,
   MountOptions,
   PathResult,
-  Stats,
+  Stats
+} from './types';
+
+// Export enums
+export {
+  OpenMode,
   ErrorCode
 } from './types';
 
 // Export EventBus implementation
 export { EventBus } from './EventBus';
 
-// Export GameKernel
-export { GameKernel } from './GameKernel';
+// Export Kernels
+export { GameKernel } from './GameKernel'; // Legacy kernel
+export { Kernel } from './Kernel'; // New Unix-style kernel with persistent filesystem
+export { FileSystem, FileType } from './FileSystem'; // Filesystem implementation
+
+// Export error handling utilities
+export {
+  createError,
+  getErrorDescription,
+  success,
+  failure,
+  processErrorCode,
+  formatError,
+  withResource,
+  withResourceSync,
+  withFile,
+  withDevice,
+  tryWithResources,
+  mapJsErrorToSystemError,
+  createErrorLogger
+} from './ErrorHandler';
+
+// Export error handling types
+export type {
+  ErrorContext,
+  SystemError,
+  Result
+} from './ErrorHandler';

@@ -1,5 +1,4 @@
 import { initializeApplication } from '../application';
-import { SampleCharacters } from './mocks/SampleCharacters';
 
 // Set up mock game data
 const gameData = {
@@ -16,17 +15,38 @@ async function runApiTests() {
   // Initialize application
   const { gameAPI } = initializeApplication(gameData);
   
-  // Create sample character data using the mock
-  const sampleCharacters = {
-    fighter: SampleCharacters.getFighter()
-  };
-  
   // Test saving characters
   console.log('\n=== Testing character saving ===');
   
   try {
-    // Save the fighter
-    const saveResult = await gameAPI.saveCharacter(sampleCharacters.fighter);
+    // Create a simple test character
+    const testCharacter = {
+      id: 'test-character-1',
+      type: 'character',
+      name: 'Test Character',
+      properties: {
+        id: 1,
+        name: 'Test Character',
+        max_hp: 50,
+        current_hp: 50,
+        abilities: {
+          strength: 16,
+          dexterity: 14,
+          constitution: 14,
+          intelligence: 10,
+          wisdom: 12,
+          charisma: 8
+        }
+      },
+      metadata: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1
+      }
+    };
+    
+    // Save the test character
+    const saveResult = await gameAPI.saveCharacter(testCharacter);
     console.log('Save result:', saveResult);
     
     // List characters
@@ -46,13 +66,13 @@ async function runApiTests() {
   console.log('\n=== Testing feature application ===');
   
   try {
-    // Apply Power Attack to the fighter
-    const fighterId = sampleCharacters.fighter.id;
-    const powerAttackResult = gameAPI.applyFeature(fighterId, 'feat.power_attack', { penalty: 2 });
+    // Use a character ID for testing
+    const testCharacterId = 'test-character-1';
+    const powerAttackResult = gameAPI.applyFeature(testCharacterId, 'feat.power_attack', { penalty: 2 });
     console.log('Power Attack result:', powerAttackResult);
     
     // Get character report
-    const reportResult = gameAPI.getCharacterReport(fighterId);
+    const reportResult = gameAPI.getCharacterReport(testCharacterId);
     console.log('Character report success:', reportResult.success);
     
     if (reportResult.success && reportResult.data) {
@@ -67,8 +87,37 @@ async function runApiTests() {
   console.log('\n=== Testing condition application ===');
   
   try {
-    // Apply fatigued condition to the barbarian
-    const barbarianId = sampleCharacters.barbarian.id;
+    // Create a test character for condition testing
+    const testConditionCharacter = {
+      id: 'test-barbarian',
+      type: 'character',
+      name: 'Test Barbarian',
+      properties: {
+        id: 2,
+        name: 'Test Barbarian',
+        max_hp: 60,
+        current_hp: 60,
+        abilities: {
+          strength: 18,
+          dexterity: 12,
+          constitution: 16,
+          intelligence: 8,
+          wisdom: 10,
+          charisma: 12
+        }
+      },
+      metadata: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1
+      }
+    };
+    
+    // Save the test barbarian character
+    await gameAPI.saveCharacter(testConditionCharacter);
+    
+    // Apply fatigued condition to the test character
+    const barbarianId = 'test-barbarian';
     const conditionResult = gameAPI.applyCondition(barbarianId, 'fatigued', 3);
     console.log('Apply condition result:', conditionResult);
     

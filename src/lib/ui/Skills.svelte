@@ -5,12 +5,32 @@
 	import * as Card from '$lib/components/ui/card';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import type { AssembledCharacter, ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
-	import type { SkillWithRanks } from '$lib/domain/character/characterTypes';
-	import type { GameRules, GameRulesAPI } from '$lib/db/gameRules.api';
+	import type { ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
+	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
+	import { OpenMode } from '$lib/domain/kernel/types';
+
+	// File paths and device constants
+	const PATHS = {
+		DEV_SKILL: '/dev/skill',
+		PROC_CHARACTER: '/proc/character'
+	};
+
+	// Skill device IOCTL request codes
+	const SKILL_REQUEST = {
+		GET_SKILLS: 1001,
+		GET_SKILL_RANKS: 1002,
+		ADD_SKILL_RANK: 1003,
+		REMOVE_SKILL_RANK: 1004
+	};
+
 	// Use the type from the GameRules namespace
-	type GameCharacterSkillRank = GameRules.Base.Row<'game_character_skill_rank'>;
-	import _ from 'lodash';
+	type GameCharacterSkillRank = {
+		id: number;
+		game_character_id: number;
+		skill_id: number;
+		applied_at_level: number;
+	};
 
 	interface ProcessedSkill {	
 		id: number;
@@ -32,26 +52,20 @@
 		};
 	}
 
-	// Accept parent-managed pending operations and errors
+	// Accept parent-managed components
 	let { 
 		character, 
-		rules, 
+		kernel,
 		onSelectValue = () => {},
-		onUpdateDB = async () => {},
 		pendingOperations = null,
 		operationErrors = null,
 		optimisticRanks = null,
 		optimisticPoints = null,
 		isOperationPending = null,
 	} = $props<{
-		character?: AssembledCharacter | null;
-		rules?: GameRulesAPI | null;
+		character?: any | null;
+		kernel?: GameKernel | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
-		onUpdateDB?: (
-			skillId: number,
-			level: number,
-			isAdding: boolean
-		) => Promise<void>;
 		pendingOperations?: Map<string, { type: string; timestamp: number }> | null;
 		operationErrors?: Map<string, { message: string; expiresAt: number }> | null;
 		optimisticRanks?: Map<string, boolean> | null;
@@ -65,12 +79,13 @@
 	let viewMode = $state<'ability' | 'alphabetical'>('ability');
 	let error = $state<string | null>(null);
 	let filterTimestamp = $state(Date.now());
+	let isLoading = $state(false);
+	
+	// Track open file descriptors for cleanup
+	let openFileDescriptors = $state<number[]>([]);
 	
 	// Function to toggle visibility with a forced refresh
 	function toggleUnusableSkills() {
-		console.log('Toggle unusable skills called, before change:', showUnusableSkills);
-		
-		// Set directly to force state change
 		showUnusableSkills = !showUnusableSkills;
 		
 		// Force reactivity by updating timestamp and clearing cache
@@ -78,13 +93,12 @@
 		skillCalculationCache = new Map();
 		
 		// Force recalculation of the filtered skills
+		// Use updateSkillsData to avoid state_unsafe_mutation
 		if (baseSkillsDataResolved) {
-			console.log('Manually rebuilding filtered skills list with showUnusableSkills =', showUnusableSkills);
-			// This will trigger a UI update since we're assigning to a variable used in the template
-			baseSkillsDataResolved = {...baseSkillsDataResolved};
+			// Create a new object reference to trigger reactivity
+			const updatedData = {...baseSkillsDataResolved};
+			updateSkillsData(updatedData);
 		}
-		
-		console.log('Toggle complete, new value:', showUnusableSkills, 'timestamp:', filterTimestamp);
 	}
 
 	// Helper function to get key for skill-level pair
@@ -96,11 +110,42 @@
 		Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1)
 	);
 
-	// Add this helper function near the top of the script section
-	function getTimestamp() {
-		const now = new Date();
-		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+	// Helper function to manage file descriptors
+	function registerFd(fd: number) {
+		if (fd > 0) {
+			openFileDescriptors = [...openFileDescriptors, fd];
+		}
+		return fd;
 	}
+
+	// Helper to close a file descriptor and remove from tracking
+	function closeFd(fd: number) {
+		if (fd > 0 && kernel) {
+			try {
+				kernel.close(fd);
+			} catch (e) {
+				console.error(`Error closing fd ${fd}:`, e);
+			}
+			openFileDescriptors = openFileDescriptors.filter(openFd => openFd !== fd);
+		}
+	}
+
+	// Always close file descriptors when component is destroyed
+	$effect(() => {
+		// Return a cleanup function that will be called when the effect is destroyed
+		return () => {
+			openFileDescriptors.forEach(fd => {
+				if (kernel) {
+					try {
+						kernel.close(fd);
+					} catch (e) {
+						// Ignore errors during cleanup
+					}
+				}
+			});
+			openFileDescriptors = [];
+		};
+	});
 
 	// Add a cache for skill calculations to prevent recalculating on every state change
 	let skillCalculationCache = $state<Map<number, { total: number, ranks: number }>>(new Map());
@@ -148,62 +193,96 @@
 			ranks: newRanks
 		});
 	}
-	
-	// Base skill data - only recomputed when character/rules change
+
+	// Base skill data - only recomputed when character/kernel change
 	let baseSkillsData = $derived.by(async () => {
-		if (!rules || !character) return {
+		if (!kernel || !character) return {
 			byAbility: {},
 			allSkills: []
 		};
 
+		isLoading = true;
+		error = null;
+		
 		try {
-			const allSkills = await rules.getAllSkill();
-			const byAbility: Record<string, ProcessedSkill[]> = {};
-			const processedSkills: ProcessedSkill[] = [];
-
-			for (const baseSkill of allSkills) {
-				const skillId = baseSkill.id;
-				const skillData = character.skills[skillId];
-				
-				if (!skillData) continue;
-
-				const baseAbility = baseSkill.ability;
-				// Use override if it exists, otherwise use the base ability
-				const abilityName = (skillData.overrides?.ability?.override ?? 
-					baseAbility?.label ?? 
-					'MISC').toUpperCase();
-
-				const skillWithRanks = character.skillsWithRanks?.find(
-					(s: SkillWithRanks) => s.skillId === baseSkill.id
-				);
-
-				const processed: ProcessedSkill = {
-					id: baseSkill.id,
-					name: baseSkill.name,
-					label: baseSkill.label,
-					ability: abilityName,
-					total: skillData.total,
-					ranks: getSkillRanksCount(baseSkill.id),
-					trainedOnly: skillData.overrides?.trained_only ?? baseSkill.trained_only,
-					isClassSkill: skillWithRanks?.isClassSkill ?? false,
-					ranksByLevel: skillWithRanks?.skillRanks?.map(
-						(sr: { level: number; rank: number }) => sr.rank
-					) ?? [],
-					overrides: skillData.overrides
-				};
-
-				if (!byAbility[abilityName]) byAbility[abilityName] = [];
-				byAbility[abilityName].push(processed);
-				processedSkills.push(processed);
+			// Open the skill device
+			const skillFd = registerFd(kernel.open(PATHS.DEV_SKILL, OpenMode.READ_WRITE));
+			if (skillFd < 0) {
+				throw new Error(`Failed to open skill device: ${ErrorCode[-skillFd]}`);
 			}
+			
+			// Directory creation is now handled by the GameKernel
 
+			const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
+			
+			try {
+				// Get skills using ioctl
+				const buffer: any = { entityPath };
+				const result = kernel.ioctl(skillFd, SKILL_REQUEST.GET_SKILLS, buffer);
+				
+				if (result !== ErrorCode.SUCCESS) {
+					throw new Error(`Failed to get skills: ${ErrorCode[result]}`);
+				}
+				
+				const allSkills = buffer.skills || [];
+				const skillsWithRanks = buffer.skillsWithRanks || [];
+				
+				// Process skills by ability
+				const byAbility: Record<string, ProcessedSkill[]> = {};
+				const processedSkills: ProcessedSkill[] = [];
+				
+				for (const baseSkill of allSkills) {
+					const skillId = baseSkill.id;
+					const skillData = character.skills[skillId];
+					
+					if (!skillData) continue;
+
+					const baseAbility = baseSkill.ability;
+					// Use override if it exists, otherwise use the base ability
+					const abilityName = (skillData.overrides?.ability?.override ?? 
+						baseAbility?.label ?? 
+						'MISC').toUpperCase();
+
+					const skillWithRanks = skillsWithRanks.find(
+						(s: any) => s.skillId === baseSkill.id
+					);
+
+					const processed: ProcessedSkill = {
+						id: baseSkill.id,
+						name: baseSkill.name,
+						label: baseSkill.label,
+						ability: abilityName,
+						total: skillData.total,
+						ranks: getSkillRanksCount(baseSkill.id),
+						trainedOnly: skillData.overrides?.trained_only ?? baseSkill.trained_only,
+						isClassSkill: skillWithRanks?.isClassSkill ?? false,
+						ranksByLevel: skillWithRanks?.skillRanks?.map(
+							(sr: { level: number; rank: number }) => sr.rank
+						) ?? [],
+						overrides: skillData.overrides
+					};
+
+					if (!byAbility[abilityName]) byAbility[abilityName] = [];
+					byAbility[abilityName].push(processed);
+					processedSkills.push(processed);
+				}
+				
+				isLoading = false;
+				return {
+					byAbility,
+					allSkills: processedSkills
+				};
+			} finally {
+				// Always close the file descriptor
+				closeFd(skillFd);
+			}
+		} catch (err: any) {
+			error = `Failed to load skills: ${err.message}`;
+			isLoading = false;
 			return {
-				byAbility,
-				allSkills: processedSkills
+				byAbility: {},
+				allSkills: []
 			};
-		} catch (error) {
-			console.error('Failed to load skills:', error);
-			throw new Error('Failed to load skills. Please try again.');
 		}
 	});
 
@@ -252,7 +331,6 @@
 		
 		// Include timestamp to force reactivity
 		const timestamp = filterTimestamp;
-		console.log(`[${timestamp}] Recalculating filteredSkillsByAbility with showUnusableSkills=${showUnusableSkills}`);
 		
 		// Don't filter based on visibility - let the template handle that
 		for (const [ability, skills] of Object.entries(baseData.byAbility)) {
@@ -268,7 +346,6 @@
 		
 		// Include timestamp to force reactivity
 		const timestamp = filterTimestamp;
-		console.log(`[${timestamp}] Recalculating filteredSkillsAlphabetical with showUnusableSkills=${showUnusableSkills}`);
 		
 		// Don't filter based on visibility - let the template handle that
 		return baseData.allSkills
@@ -293,24 +370,6 @@
 		const optimisticExists = optimisticRanks?.has(skillLevelKey) ?? false;
 		const optimisticValue = optimisticExists ? optimisticRanks.get(skillLevelKey) : null;
 		
-		// Debug logging for tracking Bluff skill
-		if (skillId === 30 && isDebugMode) {
-			console.log(`[${getTimestamp()}] [UI DEBUG] Checking rank for Bluff ${skillLevelKey}:`, {
-				optimisticExists,
-				optimisticValue,
-				serverHasRank: !!(character?.game_character_skill_rank?.some(
-					(rank: GameCharacterSkillRank) => rank.skill_id === skillId && rank.applied_at_level === level
-				)),
-				pendingOperations: pendingOperations ? Object.fromEntries(pendingOperations) : 'null',
-				isPending: isOperationPendingLocal(skillId, level),
-				returnValue: optimisticExists 
-					? optimisticValue 
-					: !!(character?.game_character_skill_rank?.some(
-						(rank: GameCharacterSkillRank) => rank.skill_id === skillId && rank.applied_at_level === level
-					))
-			});
-		}
-		
 		// Use the optimistic value if it exists, otherwise fall back to the server value
 		if (optimisticExists) {
 			return optimisticValue!;
@@ -322,28 +381,16 @@
 		));
 	}
 
-	// Add debug mode flag that can be turned on/off
-	const isDebugMode = false;
-	
 	// Improved function to check if an operation is pending
 	function isOperationPendingLocal(skillId: number, level: number): boolean {
-		const skillLevelKey = getSkillLevelKey(skillId, level);
-		
 		// Use parent function if available
 		if (typeof isOperationPending === 'function') {
-			const isPending = isOperationPending(skillId, level);
-			if (skillId === 30 && isDebugMode) {
-				console.log(`[${getTimestamp()}] [UI DEBUG] Checking pending operation from parent for Bluff ${skillLevelKey}:`, { isPending });
-			}
-			return isPending;
+			return isOperationPending(skillId, level);
 		}
 		
 		// Fall back to local check
-		const isPending = pendingOperations?.has(skillLevelKey) ?? false;
-		if (skillId === 30 && isDebugMode) {
-			console.log(`[${getTimestamp()}] [UI DEBUG] Checking pending operation locally for Bluff ${skillLevelKey}:`, { isPending });
-		}
-		return isPending;
+		const skillLevelKey = getSkillLevelKey(skillId, level);
+		return pendingOperations?.has(skillLevelKey) ?? false;
 	}
 
 	// Function to get remaining points for a level, considering optimistic state
@@ -369,82 +416,88 @@
 	}
 
 	// Override the baseSkillsData derived calculation to use the cache for optimizations
-	let baseSkillsDataResolved: { byAbility: Record<string, ProcessedSkill[]>; allSkills: ProcessedSkill[] } | null = null;
+	let baseSkillsDataResolved = $state<{ byAbility: Record<string, ProcessedSkill[]>; allSkills: ProcessedSkill[] } | null>(null);
+	
+	// Helper function to update state outside of derived contexts
+	function updateSkillsData(data: { byAbility: Record<string, ProcessedSkill[]>; allSkills: ProcessedSkill[] }) {
+		baseSkillsDataResolved = data;
+	}
 	
 	$effect(() => {
-		if (!rules || !character) return;
+		if (!kernel || !character) return;
 		
-		// Set up the async processing in a self-executing async function
+		// Use immediately-invoked async function to handle the promise
 		(async () => {
 			try {
 				// Wait for baseSkillsData to be resolved
 				const resolved = await baseSkillsData;
-				baseSkillsDataResolved = resolved;
-				
-				// Only recalculate everything if we don't have data yet
-				if (!resolved || !resolved.allSkills || resolved.allSkills.length === 0) {
-					// Let the derived calculation handle it
-				} else {
-					// Update just the changed skills - called whenever optimisticRanks changes
-					// This is a performance optimization to avoid full recalculation
-				}
+				// Schedule state update to avoid state_unsafe_mutation error
+				setTimeout(() => updateSkillsData(resolved), 0);
 			} catch (error) {
 				console.error('Error in skills effect:', error);
 			}
 		})();
 	});
 
-	// Improved function to handle skill rank cell clicks with efficient updates and local caching
-	async function handleCellClick(skillId: number, level: number) {
-		if (!character) {
-			console.error(`[${getTimestamp()}] [UI DEBUG] Cannot update skill - character is null`);
-			return;
+	// Add or remove a skill rank using file-based operations
+	async function updateSkillRank(characterId: number, skillId: number, level: number, isAdding: boolean): Promise<boolean> {
+		if (!kernel) {
+			error = "Kernel not available";
+			return false;
 		}
-
-		// Only log for skill ID 30 (Bluff) if debug mode is on
-		const isBluff = skillId === 30 && isDebugMode;
-		const skillLevelKey = getSkillLevelKey(skillId, level);
 		
-		if (isBluff) {
-			console.log(`[${getTimestamp()}] [UI DEBUG] Bluff cell clicked for ${skillLevelKey}`, {
+		// Open the skill device
+		const skillFd = registerFd(kernel.open(PATHS.DEV_SKILL, OpenMode.READ_WRITE));
+		if (skillFd < 0) {
+			error = `Failed to open skill device: ${ErrorCode[-skillFd]}`;
+			return false;
+		}
+		
+		try {
+			// Directory creation is now handled by the GameKernel
+
+			const entityPath = `${PATHS.PROC_CHARACTER}/${characterId}`;
+			
+			// Use ioctl to update skill rank
+			const requestCode = isAdding ? SKILL_REQUEST.ADD_SKILL_RANK : SKILL_REQUEST.REMOVE_SKILL_RANK;
+			const result = kernel.ioctl(skillFd, requestCode, {
+				entityPath,
 				skillId,
-				level,
-				hasSkillRank: hasSkillRank(skillId, level),
-				isOperationPending: isOperationPendingLocal(skillId, level),
-				optimisticRanks: optimisticRanks ? Object.fromEntries(optimisticRanks) : 'null'
+				level
 			});
+			
+			if (result !== ErrorCode.SUCCESS) {
+				error = `Failed to ${isAdding ? 'add' : 'remove'} skill rank: ${ErrorCode[result]}`;
+				return false;
+			}
+			
+			return true;
+		} finally {
+			// Always close the file descriptor
+			closeFd(skillFd);
+		}
+	}
+
+	// Improved function to handle skill rank cell clicks
+	async function handleCellClick(skillId: number, level: number) {
+		if (!character || !kernel) {
+			error = "Cannot update skill - character or kernel is missing";
+			return;
 		}
 
 		// Check if the operation is already pending
 		if (isOperationPendingLocal(skillId, level)) {
-			if (isBluff) {
-				console.log(`[${getTimestamp()}] [UI DEBUG] Operation already pending for Bluff ${skillLevelKey}, ignoring click`);
-			}
 			return;
 		}
 
 		// Determine whether we're adding or removing a rank
 		const isAdding = !hasSkillRank(skillId, level);
-		
-		if (isBluff) {
-			console.log(`[${getTimestamp()}] [UI DEBUG] Operation type for Bluff ${skillLevelKey}:`, { 
-				isAdding, 
-				currentHasRank: hasSkillRank(skillId, level)
-			});
-		}
 
 		// If adding a rank, check if the character has enough remaining skill points for this level
 		if (isAdding) {
 			const remainingPoints = getRemainingPoints(level);
-			
-			if (isBluff) {
-				console.log(`[${getTimestamp()}] [UI DEBUG] Checking remaining points for Bluff at level ${level}:`, { remainingPoints });
-			}
-			
 			if (remainingPoints <= 0) {
-				if (isBluff) {
-					console.log(`[${getTimestamp()}] [UI DEBUG] Not enough points to add Bluff rank at level ${level}`);
-				}
+				error = "Not enough skill points remaining";
 				return;
 			}
 		}
@@ -452,28 +505,24 @@
 		// Update the local cache optimistically
 		updateSkillInCache(skillId, isAdding);
 
-		// Call the provided onUpdateDB function if available
-		if (typeof onUpdateDB === 'function') {
-			if (isBluff) {
-				console.log(`[${getTimestamp()}] [UI DEBUG] Calling onUpdateDB for Bluff ${skillLevelKey}`, { isAdding });
-			}
+		// Update using file-based operations
+		try {
+			const success = await updateSkillRank(character.id, skillId, level, isAdding);
 			
-			try {
-				// Call parent update function and properly await it
-				await onUpdateDB(skillId, level, isAdding);
-				
-				if (isBluff) {
-					console.log(`[${getTimestamp()}] [UI DEBUG] OptimisticRanks after update for Bluff:`, optimisticRanks ? Object.fromEntries(optimisticRanks) : 'null');
-				}
-			} catch (error) {
-				if (isBluff) {
-					console.error(`[${getTimestamp()}] [UI DEBUG] Error calling onUpdateDB for Bluff:`, error);
-				}
+			if (!success) {
 				// Rollback the local cache update on error
 				updateSkillInCache(skillId, !isAdding);
+			} else {
+				// Clear error on success
+				error = null;
+				
+				// Clear cache to force recalculation
+				skillCalculationCache = new Map();
 			}
-		} else if (isBluff) {
-			console.log(`[${getTimestamp()}] [UI DEBUG] onUpdateDB function not available for Bluff update`);
+		} catch (err: any) {
+			// Rollback the local cache update on error
+			updateSkillInCache(skillId, !isAdding);
+			error = `Error updating skill rank: ${err.message}`;
 		}
 	}
 	
@@ -587,9 +636,13 @@
 		{/if}
 
 		<Tabs.Content value="ability">
-			{#if !character}
+			{#if isLoading}
 				<div class="rounded-md border border-muted p-4">
 					<p class="text-muted-foreground">Loading skills...</p>
+				</div>
+			{:else if !character || !kernel}
+				<div class="rounded-md border border-muted p-4">
+					<p class="text-muted-foreground">Character or kernel not available</p>
 				</div>
 			{:else}
 				{#await filteredSkillsByAbility}
@@ -673,18 +726,22 @@
 							{/if}
 						{/each}
 					</div>
-				{:catch error}
+				{:catch err}
 					<div class="rounded-md border border-destructive p-4">
-						<p class="text-destructive">Error loading skills: {error.message}</p>
+						<p class="text-destructive">Error loading skills: {err.message}</p>
 					</div>
 				{/await}
 			{/if}
 		</Tabs.Content>
 
 		<Tabs.Content value="alphabetical">
-			{#if !character}
+			{#if isLoading}
 				<div class="rounded-md border border-muted p-4">
 					<p class="text-muted-foreground">Loading skills...</p>
+				</div>
+			{:else if !character || !kernel}
+				<div class="rounded-md border border-muted p-4">
+					<p class="text-muted-foreground">Character or kernel not available</p>
 				</div>
 			{:else}
 				{#await filteredSkillsAlphabetical}
@@ -762,9 +819,9 @@
 							</div>
 						</Card.Content>
 					</Card.Root>
-				{:catch error}
+				{:catch err}
 					<div class="rounded-md border border-destructive p-4">
-						<p class="text-destructive">Error loading skills: {error.message}</p>
+						<p class="text-destructive">Error loading skills: {err.message}</p>
 					</div>
 				{/await}
 			{/if}
@@ -821,8 +878,6 @@
 			background-color: hsl(var(--muted) / 0.5);
 			border-color: hsl(var(--border) / 0.1);
 			transform: none;
-			/* Don't hide by default - let shouldShowSkill control this */
-			/* display: none; */
 
 			&:hover {
 				background-color: hsl(var(--muted) / 0.5);

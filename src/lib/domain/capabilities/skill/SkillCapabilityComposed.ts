@@ -45,6 +45,36 @@ interface SkillCapabilityContext extends CapabilityContext {
 }
 
 /**
+ * Ensures that /proc and /proc/character directories exist
+ * Creating them if necessary
+ * @param context Capability context
+ */
+function ensureProcDirectories(context: CapabilityContext): void {
+  if (!context.kernel) {
+    error(context, "Cannot ensure proc directories: kernel not available");
+    return;
+  }
+
+  // Check if /proc exists
+  if (!context.kernel.exists('/proc')) {
+    log(context, "Creating /proc directory");
+    const result = context.kernel.mkdir('/proc');
+    if (result !== ErrorCode.SUCCESS) {
+      error(context, `Failed to create /proc directory: ${result}`);
+    }
+  }
+
+  // Check if /proc/character exists
+  if (!context.kernel.exists('/proc/character')) {
+    log(context, "Creating /proc/character directory");
+    const result = context.kernel.mkdir('/proc/character');
+    if (result !== ErrorCode.SUCCESS) {
+      error(context, `Failed to create /proc/character directory: ${result}`);
+    }
+  }
+}
+
+/**
  * Create a skill capability
  * @param abilityCapability Ability capability to use
  * @param bonusCapability Bonus capability to use
@@ -80,6 +110,8 @@ export function createSkillCapability(
     // Mount handler
     onMount(kernel) {
       context.kernel = kernel;
+      // Ensure /proc and /proc/character directories exist on mount
+      ensureProcDirectories(context);
     },
     
     // Device operations
@@ -157,6 +189,9 @@ function initialize(context: SkillCapabilityContext, entity: Entity): void {
   if (!entity.properties.classSkills) {
     entity.properties.classSkills = [];
   }
+  
+  // Ensure /proc directory exists
+  ensureProcDirectories(context);
   
   // Initialize skill ranks from character data
   if (entity.properties.character?.game_character_skill_rank) {
@@ -519,6 +554,9 @@ function getInvestedSkillPoints(
  * @returns Error code
  */
 function handleRead(fd: number, buffer: any, context: SkillCapabilityContext): number {
+  // Ensure /proc and /proc/character directories exist
+  ensureProcDirectories(context);
+  
   // Check if this is a file descriptor for a skill
   const fileInfo = context.openFiles.get(fd);
   if (!fileInfo) {
@@ -565,6 +603,9 @@ function handleRead(fd: number, buffer: any, context: SkillCapabilityContext): n
  * @returns Error code
  */
 function handleWrite(fd: number, buffer: any, context: SkillCapabilityContext): number {
+  // Ensure /proc and /proc/character directories exist
+  ensureProcDirectories(context);
+  
   // Check if this is a file descriptor for a skill
   const fileInfo = context.openFiles.get(fd);
   if (!fileInfo) {
@@ -631,6 +672,9 @@ function handleWrite(fd: number, buffer: any, context: SkillCapabilityContext): 
  * @returns Error code
  */
 function handleIoctl(fd: number, request: number, arg: any, context: SkillCapabilityContext): number {
+  // Ensure /proc and /proc/character directories exist
+  ensureProcDirectories(context);
+  
   // Check if this is an initialization request
   if (arg && arg.operation === 'initialize' && arg.entityPath) {
     return handleInitializeOperation(arg.entityPath, context);
@@ -659,6 +703,9 @@ function handleIoctl(fd: number, request: number, arg: any, context: SkillCapabi
  */
 function handleInitializeOperation(entityPath: string, context: SkillCapabilityContext): number {
   try {
+    // Ensure /proc and /proc/character directories exist
+    ensureProcDirectories(context);
+    
     // Extract entity ID from path
     const entityId = entityPath.substring('/entity/'.length);
     
@@ -687,6 +734,9 @@ function handleGetAvailableSkillPoints(
   context: SkillCapabilityContext
 ): number {
   try {
+    // Ensure /proc and /proc/character directories exist
+    ensureProcDirectories(context);
+    
     // Extract entity ID from path
     const entityId = entityPath.substring('/entity/'.length);
     
@@ -719,6 +769,9 @@ function handleGetInvestedSkillPoints(
   context: SkillCapabilityContext
 ): number {
   try {
+    // Ensure /proc and /proc/character directories exist
+    ensureProcDirectories(context);
+    
     // Extract entity ID from path
     const entityId = entityPath.substring('/entity/'.length);
     

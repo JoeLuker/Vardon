@@ -1,7 +1,7 @@
 /**
  * Ability Capability
  * 
- * This module exports the ability capability types and provider
+ * This module exports the ability capability types and provider using Unix architecture
  */
 export type { 
   AbilityCapability,
@@ -11,11 +11,19 @@ export type {
 
 export { AbilityType } from './types';
 
-// Export the class-based implementation (legacy)
-export { AbilityCapabilityProvider } from './AbilityCapabilityProvider';
-
-// Export the composition-based implementation (Unix-style)
+// Export implementation constants
 export { 
-  createAbilityCapability,
-  STANDARD_ABILITIES 
+  STANDARD_ABILITIES,
+  ABILITY_PATHS,
+  ABILITY_REQUEST
+} from './AbilityCapabilityImpl';
+
+// Export the old Unix implementation
+export { 
+  createUnixAbilityDevice
+} from './AbilityCapabilityImpl';
+
+// Export the new composed implementation
+export { 
+  createAbilityCapability
 } from './AbilityCapabilityComposed';
