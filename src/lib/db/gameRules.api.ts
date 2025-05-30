@@ -1446,30 +1446,9 @@ export class GameRulesAPI {
         }
       }
 
-      // Try direct Supabase client if available
-      if (this.dbCapability && (this.dbCapability as any).driver && (this.dbCapability as any).driver.client) {
-        console.log(`[GameRulesAPI] Using Supabase client directly to get character ${characterId}`);
-        try {
-          const { data, error } = await (this.dbCapability as any).driver.client
-            .from('game_character')
-            .select(this.queries.completeCharacter)
-            .eq('id', characterId)
-            .single();
-
-          if (error) {
-            console.error(`[GameRulesAPI] Supabase error: ${error.message}`);
-            return null;
-          }
-
-          if (data) {
-            return data as CompleteCharacter;
-          }
-        } catch (clientError) {
-          console.error(`[GameRulesAPI] Supabase client error: ${clientError}`);
-        }
-      }
-
-      console.error(`[GameRulesAPI] All database access methods failed for character ${characterId}`);
+      // The Unix Way: No direct database access
+      // All database operations must go through file operations
+      console.error(`[GameRulesAPI] Database driver method failed for character ${characterId} - Unix file operations should be used instead`);
       return null;
     } catch (error) {
       console.error(`[GameRulesAPI] Database fetch error: ${error}`);
@@ -2059,24 +2038,9 @@ export class GameRulesAPI {
         }
       }
 
-      // Try to use direct Supabase client if available
-      try {
-        if (this.dbCapability && (this.dbCapability as any).driver && (this.dbCapability as any).driver.client) {
-          console.log(`[GameRulesAPI] Using direct Supabase client`);
-          const { data, error } = await (this.dbCapability as any).driver.client
-            .from('game_character')
-            .select('*');
-
-          if (error) {
-            console.error(`[GameRulesAPI] Supabase query error:`, error);
-          } else if (data && data.length > 0) {
-            console.log(`[GameRulesAPI] Found ${data.length} characters via direct Supabase client`);
-            return data;
-          }
-        }
-      } catch (innerError) {
-        console.error(`[GameRulesAPI] Error with direct Supabase access:`, innerError);
-      }
+      // The Unix Way: No direct database access
+      // All database operations must go through file operations
+      console.error(`[GameRulesAPI] Database operations must use Unix file operations, not direct client access`);
 
       // No data found yet, check if device path is available
       const devicePath = '/dev/db';

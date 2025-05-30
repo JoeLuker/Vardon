@@ -441,28 +441,12 @@ export class CharacterCapability implements Capability {
           // Try multiple approaches to fetch character data from the database
           let characterData;
 
-          // First try: Direct getCharacterById if available
+          // The Unix Way: Use only approved database driver methods
           if (typeof this.databaseDriver.getCharacterById === 'function') {
             console.log(`[CharacterCapability] Using direct getCharacterById method`);
             characterData = await this.databaseDriver.getCharacterById(characterId, 'complete');
           }
-          // Second try: If driver has a client property (Supabase driver), try direct query
-          else if ((this.databaseDriver as any).client) {
-            console.log(`[CharacterCapability] Using driver.client.from method`);
-            const { data, error } = await (this.databaseDriver as any).client
-              .from('game_character')
-              .select('*, game_character_ability(*, ability(*))')
-              .eq('id', characterId)
-              .single();
-
-            if (error) {
-              console.error(`[CharacterCapability] Supabase query error:`, error);
-              throw error;
-            }
-
-            characterData = data;
-          }
-          // Third try: If driver has a query method, use that
+          // Try query method if available
           else if (typeof (this.databaseDriver as any).query === 'function') {
             console.log(`[CharacterCapability] Using driver.query method`);
             const results = await (this.databaseDriver as any).query('game_character', { id: characterId }, '*');
@@ -470,7 +454,8 @@ export class CharacterCapability implements Capability {
           }
           // No proper method found
           else {
-            throw new Error(`Database driver doesn't have valid method to get character data`);
+            // The Unix Way: No direct database access allowed
+            throw new Error(`Database operations must use Unix file operations - direct client access not allowed`);
           }
 
           // If we got character data, process it

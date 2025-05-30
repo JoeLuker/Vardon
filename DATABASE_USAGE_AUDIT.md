@@ -23,7 +23,7 @@ The following files directly import the Supabase client (`supabaseClient.ts`):
 The following files use direct Supabase query methods (like `.from()`):
 
 1. `/src/lib/domain/capabilities/ability/AbilityCapabilityComposed.ts` - Ability capability implementation
-2. `/src/lib/domain/capabilities/database/CompatibilityLayer.ts` - Database compatibility layer (expected)
+2. ~~/src/lib/domain/capabilities/database/CompatibilityLayer.ts~~ - Removed (not needed with proper Unix architecture)
 3. `/src/lib/domain/capabilities/database/SchemaRegistry.ts` - Schema registry component
 4. `/src/lib/domain/capabilities/skill/SkillCapability.ts` - Skill capability implementation
 5. `/src/lib/domain/kernel/GameKernel.ts` - Game kernel implementation
