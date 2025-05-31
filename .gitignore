@@ -20,6 +20,11 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 .svelte-kit/
 
 package-lock.json

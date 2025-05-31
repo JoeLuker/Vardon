@@ -34,6 +34,7 @@ import {
 } from './MessageQueue';
 import { EventBus } from './EventBus';
 import { FileSystem, type DirectoryEntry, FileType } from './FileSystem';
+import { InvariantChecker, UnixInvariants } from './InvariantChecker';
 
 // Plugin filesystem paths
 const PLUGIN_PATHS = {
@@ -113,10 +114,19 @@ export class Kernel {
   // Device mapping (capability id -> mount path)
   private readonly devicePaths: Map<string, string> = new Map();
   
+  // Invariant checker for runtime validation
+  private readonly invariants: InvariantChecker;
+  
+  // Maximum allowed open file descriptors
+  private readonly maxOpenFds = 1024;
+  
   constructor(options: KernelOptions = {}) {
     this.debug = options.debug || false;
     this.noFsEvents = options.noFsEvents || false;
     this.events = options.eventEmitter || new EventBus(this.debug);
+    
+    // Initialize invariant checker
+    this.invariants = new InvariantChecker(this.debug);
     
     // Initialize filesystem with persistence
     this.fs = new FileSystem({ debug: this.debug });
@@ -129,6 +139,8 @@ export class Kernel {
     
     if (this.debug) {
       this.log('Kernel initialized with persistent filesystem');
+      // Run initial system invariant checks
+      this.checkSystemInvariants();
     }
   }
   
@@ -231,6 +243,18 @@ export class Kernel {
    * @returns Path result
    */
   mount(path: string, device: Capability, options: MountOptions = {}): PathResult {
+    const context = { component: 'Kernel', operation: 'mount', path };
+    
+    // Invariant: Path must be valid for capabilities
+    this.invariants.checkCapabilityPath(path, context);
+    
+    // Invariant: Check for mount point conflicts
+    this.invariants.checkMountPointConflict(
+      this.devicePaths.get(device.id),
+      path,
+      { ...context, entity: device.id }
+    );
+    
     // Store device path in map
     const devicePath = path;
     this.devicePaths.set(device.id, devicePath);
@@ -265,6 +289,20 @@ export class Kernel {
    * @returns Path result
    */
   create(path: string, data: any, createParentDirs: boolean = true): PathResult {
+    const context = { component: 'Kernel', operation: 'create', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
+    // Invariant: Parent directory must exist (unless creating parent dirs)
+    if (!createParentDirs) {
+      this.invariants.check(
+        UnixInvariants.parentExists(path, this.fs),
+        `Parent directory does not exist for path: ${path}`,
+        context
+      );
+    }
+    
     const result = this.fs.create(path, data, createParentDirs);
     
     // Only emit event if not disabled
@@ -318,6 +356,11 @@ export class Kernel {
    * @returns File descriptor number, or -1 if error
    */
   open(path: string, mode: OpenMode = OpenMode.READ): number {
+    const context = { component: 'Kernel', operation: 'open', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
     if (!path.startsWith('/')) {
       this.error(`Invalid path: ${path}`);
       return -1;
@@ -328,6 +371,13 @@ export class Kernel {
       this.error(`Path not found: ${path}`);
       return -1;
     }
+    
+    // Invariant: Check for file descriptor leak
+    this.invariants.checkFileDescriptorLeak(
+      this.fileDescriptors.size,
+      this.maxOpenFds,
+      context
+    );
     
     // Create file descriptor
     const fd = this.nextFd++;
@@ -351,11 +401,23 @@ export class Kernel {
    * @returns [Error code, data] where error code is 0 for success
    */
   read(fd: number): [ErrorCode, any] {
+    const context = { component: 'Kernel', operation: 'read', fd };
+    
+    // Invariant: File descriptor must be valid
+    this.invariants.checkFileDescriptor(fd, context);
+    
     const descriptor = this.fileDescriptors.get(fd);
     if (!descriptor) {
       this.error(`Invalid file descriptor: ${fd}`);
       return [ErrorCode.EBADF, null];
     }
+    
+    // Invariant: Check read permission
+    this.invariants.check(
+      UnixInvariants.hasPermission(descriptor.mode, OpenMode.READ),
+      `File descriptor ${fd} not opened for reading`,
+      { ...context, path: descriptor.path, mode: descriptor.mode }
+    );
     
     // Check read permission
     if (descriptor.mode !== OpenMode.READ && descriptor.mode !== OpenMode.READ_WRITE) {
@@ -393,11 +455,23 @@ export class Kernel {
    * @returns 0 on success, error code on failure
    */
   write(fd: number, buffer: any): number {
+    const context = { component: 'Kernel', operation: 'write', fd };
+    
+    // Invariant: File descriptor must be valid
+    this.invariants.checkFileDescriptor(fd, context);
+    
     const descriptor = this.fileDescriptors.get(fd);
     if (!descriptor) {
       this.error(`Invalid file descriptor: ${fd}`);
       return ErrorCode.EBADF;
     }
+    
+    // Invariant: Check write permission
+    this.invariants.check(
+      UnixInvariants.hasPermission(descriptor.mode, OpenMode.WRITE),
+      `File descriptor ${fd} not opened for writing`,
+      { ...context, path: descriptor.path, mode: descriptor.mode }
+    );
     
     // Check write permission
     if (descriptor.mode !== OpenMode.WRITE && descriptor.mode !== OpenMode.READ_WRITE) {
@@ -441,10 +515,22 @@ export class Kernel {
    * @returns 0 on success, error code on failure
    */
   close(fd: number): number {
+    const context = { component: 'Kernel', operation: 'close', fd };
+    
+    // Invariant: File descriptor must be valid
+    this.invariants.checkFileDescriptor(fd, context);
+    
     // Skip standard file descriptors
     if (fd <= 2) {
       return ErrorCode.SUCCESS;
     }
+    
+    // Invariant: FD must exist to be closed
+    this.invariants.check(
+      this.fileDescriptors.has(fd),
+      `Attempting to close non-existent file descriptor: ${fd}`,
+      context
+    );
     
     const descriptor = this.fileDescriptors.get(fd);
     if (!descriptor) {
@@ -1129,6 +1215,82 @@ export class Kernel {
   }
   
   /**
+   * Check system-wide invariants
+   * Called periodically in debug mode
+   */
+  private checkSystemInvariants(): void {
+    if (!this.debug) return;
+    
+    const context = { component: 'Kernel', operation: 'checkSystemInvariants' };
+    
+    // Check for file descriptor leaks
+    this.invariants.checkFileDescriptorLeak(
+      this.fileDescriptors.size,
+      this.maxOpenFds,
+      context
+    );
+    
+    // Check that all open FDs point to existing paths
+    for (const [fd, descriptor] of this.fileDescriptors) {
+      if (fd > 2) { // Skip standard descriptors
+        this.invariants.check(
+          this.exists(descriptor.path) || descriptor.path.startsWith('/dev/'),
+          `File descriptor ${fd} points to non-existent path: ${descriptor.path}`,
+          { ...context, fd, path: descriptor.path }
+        );
+      }
+    }
+    
+    // Check filesystem consistency
+    const rootStats = this.fs.stat('/');
+    this.invariants.check(
+      rootStats !== undefined && rootStats.isDirectory,
+      'Root directory / must exist and be a directory',
+      context
+    );
+    
+    // Check standard directories exist
+    const standardDirs = ['/dev', '/proc', '/entity', '/etc', '/var', '/tmp', '/bin'];
+    for (const dir of standardDirs) {
+      const stats = this.fs.stat(dir);
+      this.invariants.check(
+        stats !== undefined && stats.isDirectory,
+        `Standard directory ${dir} must exist`,
+        { ...context, path: dir }
+      );
+    }
+    
+    // Check mount points consistency
+    for (const [deviceId, mountPath] of this.devicePaths) {
+      this.invariants.check(
+        this.exists(mountPath),
+        `Mount point ${mountPath} for device ${deviceId} does not exist`,
+        { ...context, path: mountPath, entity: deviceId }
+      );
+    }
+    
+    // Check message queue consistency
+    for (const [queuePath, queue] of this.messageQueues) {
+      this.invariants.check(
+        this.exists(queuePath),
+        `Message queue path ${queuePath} does not exist in filesystem`,
+        { ...context, path: queuePath }
+      );
+    }
+    
+    // Report violations if any
+    if (this.invariants.hasViolations()) {
+      const violations = this.invariants.getViolations();
+      this.error(`System invariant check found ${violations.length} violations`);
+      if (this.debug) {
+        violations.forEach(v => {
+          console.error(`  - ${v.message}`, v.context);
+        });
+      }
+    }
+  }
+  
+  /**
    * Shut down the kernel gracefully
    */
   async shutdown(): Promise<void> {
@@ -1178,6 +1340,12 @@ export class Kernel {
       
       // Clear event listeners
       this.events.removeAllListeners();
+      
+      // Final invariant check
+      if (this.debug) {
+        this.log('Running final system invariant checks');
+        this.checkSystemInvariants();
+      }
       
       this.log('Kernel shutdown complete');
     } catch (error) {

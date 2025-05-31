@@ -13,3 +13,4 @@ export { runPluginTests } from './PluginTests';
 export { runCapabilityTests } from './CapabilityTests';
 export { runPerformanceTest } from './PerformanceTest';
 export { runConsoleTest } from './ConsoleTest';
+export { runInvariantCheckingTest } from './InvariantCheckingTest';

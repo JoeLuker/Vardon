@@ -9,6 +9,7 @@
  */
 
 import type { Capability, Entity, ErrorCode } from '../kernel/types';
+import { InvariantChecker } from '../kernel/InvariantChecker';
  
 /**
  * Base capability options
@@ -48,9 +49,13 @@ export abstract class BaseCapability implements Capability {
   /** Open file descriptors for this device */
   protected readonly openFiles: Map<number, { path: string, buffer: any }> = new Map();
   
+  /** Invariant checker for runtime validation */
+  protected readonly invariants: InvariantChecker;
+  
   constructor(options: BaseCapabilityOptions = {}) {
     this.debug = options.debug || false;
     this.version = options.version || '1.0.0';
+    this.invariants = new InvariantChecker(this.debug);
   }
   
   /**
@@ -60,6 +65,15 @@ export abstract class BaseCapability implements Capability {
    * @param kernel Reference to the kernel
    */
   onMount(kernel: any): void {
+    const context = { component: `Capability:${this.id}`, operation: 'onMount' };
+    
+    // Invariant: Kernel must be provided
+    this.invariants.check(
+      kernel !== null && kernel !== undefined,
+      'Kernel reference must be provided on mount',
+      context
+    );
+    
     this.kernel = kernel;
     this.log('Device mounted');
   }
@@ -72,6 +86,18 @@ export abstract class BaseCapability implements Capability {
    * @returns 0 on success, error code on failure
    */
   read(fd: number, buffer: any): number {
+    const context = { component: `Capability:${this.id}`, operation: 'read', fd };
+    
+    // Invariant: Must be mounted before read
+    this.invariants.check(
+      this.kernel !== null && this.kernel !== undefined,
+      'Capability must be mounted before read operations',
+      context
+    );
+    
+    // Invariant: File descriptor must be valid
+    this.invariants.checkFileDescriptor(fd, context);
+    
     this.log(`Read from fd ${fd}`);
     return ErrorCode.EINVAL; // Subclasses should override
   }
@@ -84,6 +110,18 @@ export abstract class BaseCapability implements Capability {
    * @returns 0 on success, error code on failure
    */
   write(fd: number, buffer: any): number {
+    const context = { component: `Capability:${this.id}`, operation: 'write', fd };
+    
+    // Invariant: Must be mounted before write
+    this.invariants.check(
+      this.kernel !== null && this.kernel !== undefined,
+      'Capability must be mounted before write operations',
+      context
+    );
+    
+    // Invariant: File descriptor must be valid
+    this.invariants.checkFileDescriptor(fd, context);
+    
     this.log(`Write to fd ${fd}`);
     return ErrorCode.EINVAL; // Subclasses should override
   }

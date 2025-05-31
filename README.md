@@ -103,8 +103,19 @@ npm run build           # Build for production
 npm run preview         # Preview production build
 
 # Testing
-npm run test            # Run all tests
-npm run test:unit       # Run unit tests only
+npm run test            # Run automated tests with Playwright
+npm run test:ui         # Run tests with interactive UI
+npm run test:headed     # Run tests in headed browser mode
+npm run test:debug      # Debug tests step by step
+npm run test:report     # Show HTML test report
+npm run test:unix       # Run Unix architecture tests only
+npm run test:system     # Run system tests only
+
+# Manual Testing
+npm run test:manual     # Instructions for manual testing
+# 1. Start dev server: npm run dev
+# 2. Open http://localhost:5173/diagnostics
+# 3. Tests run automatically or use console functions
 
 # Code Quality
 npm run lint            # Run ESLint
@@ -123,14 +134,23 @@ npm run types:generate  # Generate TypeScript types from DB
 The project includes comprehensive test suites:
 
 ```bash
-# Run all tests
-node src/lib/domain/tests/TestRunner.ts
+# Automated testing with Playwright
+npm run test             # Run all tests automatically
+npm run test:ui          # Interactive test UI
+npm run test:debug       # Debug tests step-by-step
 
-# Run specific test suite
-node src/lib/domain/tests/UnixArchitectureTest.ts
+# Generate new tests
+npm run test:codegen     # Record browser actions as tests
 
-# Run with verbose output
-DEBUG=true node src/lib/domain/tests/TestRunner.ts
+# Manual testing in browser
+npm run dev              # Start the development server
+# Navigate to: http://localhost:5173/diagnostics
+
+# Browser console functions:
+runTests()               # Run all available tests
+runUnixArchitectureTest() # Test Unix file system
+runCharacterTest()       # Test character system
+runApiTests()           # Test API layer
 ```
 
 ### Database Setup

@@ -12,6 +12,7 @@
 
 import { ErrorCode } from './types';
 import { BrowserStorage, StorageAdapter } from './BrowserStorage';
+import { InvariantChecker, UnixInvariants } from './InvariantChecker';
 
 // Filesystem storage keys
 const FS_INODES_KEY = 'inodes';
@@ -146,9 +147,15 @@ export class FileSystem {
   // Storage adapter
   private storage: StorageAdapter;
   
+  // Invariant checker
+  private invariants: InvariantChecker;
+  
   constructor(options: FilesystemOptions = {}) {
     this.debug = options.debug ?? false;
     this.readOnly = options.readOnly ?? false;
+    
+    // Initialize invariant checker
+    this.invariants = new InvariantChecker(this.debug);
     
     // Use provided storage adapter or create a new browser storage
     this.storage = options.storage ?? new BrowserStorage();
@@ -606,6 +613,11 @@ export class FileSystem {
    * @returns Path result
    */
   async mkdir(path: string, recursive: boolean = true): Promise<PathResult> {
+    const context = { component: 'FileSystem', operation: 'mkdir', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
     if (!this.mounted) {
       return {
         success: false,
@@ -709,6 +721,11 @@ export class FileSystem {
    * @returns Path result
    */
   async create(path: string, data: any = null, createParent: boolean = true): Promise<PathResult> {
+    const context = { component: 'FileSystem', operation: 'create', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
     if (!this.mounted) {
       return {
         success: false,
@@ -728,6 +745,15 @@ export class FileSystem {
     }
     
     const normalized = this.normalizePath(path);
+    
+    // Invariant: Parent directory must exist (unless creating parent dirs)
+    if (!createParent) {
+      this.invariants.check(
+        UnixInvariants.parentExists(normalized, this),
+        `Parent directory does not exist for path: ${normalized}`,
+        context
+      );
+    }
     
     // Check if file already exists
     const existingInode = this.getInode(normalized);
@@ -839,6 +865,11 @@ export class FileSystem {
    * @returns [Error code, data] tuple
    */
   read(path: string): [ErrorCode, any] {
+    const context = { component: 'FileSystem', operation: 'read', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
     if (!this.mounted) {
       return [ErrorCode.ENODEV, null];
     }
@@ -880,6 +911,11 @@ export class FileSystem {
    * @returns Error code
    */
   write(path: string, data: any): ErrorCode {
+    const context = { component: 'FileSystem', operation: 'write', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
     if (!this.mounted) {
       return ErrorCode.ENODEV;
     }
@@ -940,6 +976,11 @@ export class FileSystem {
    * @returns Error code
    */
   unlink(path: string): ErrorCode {
+    const context = { component: 'FileSystem', operation: 'unlink', path };
+    
+    // Invariant: Path must be absolute
+    this.invariants.checkPath(path, context);
+    
     if (!this.mounted) {
       return ErrorCode.ENODEV;
     }
@@ -1393,5 +1434,84 @@ export class FileSystem {
         path: '/'
       };
     }
+  }
+  
+  /**
+   * Check filesystem consistency
+   * Called periodically in debug mode to validate filesystem state
+   */
+  checkFilesystemConsistency(): void {
+    if (!this.debug || !this.mounted) return;
+    
+    const context = { component: 'FileSystem', operation: 'checkConsistency' };
+    
+    // Check that all inodes have corresponding directory entries
+    for (const [path, inode] of this.inodes) {
+      if (path === '/') continue; // Skip root
+      
+      const parentPath = path.substring(0, path.lastIndexOf('/')) || '/';
+      const filename = path.substring(path.lastIndexOf('/') + 1);
+      const parentEntries = this.directories.get(parentPath);
+      
+      this.invariants.check(
+        parentEntries !== undefined,
+        `Parent directory ${parentPath} missing for inode ${path}`,
+        { ...context, path }
+      );
+      
+      if (parentEntries) {
+        this.invariants.check(
+          parentEntries.some(e => e.name === filename),
+          `Directory entry missing for inode ${path} in parent ${parentPath}`,
+          { ...context, path, parentPath }
+        );
+      }
+    }
+    
+    // Check that all directory entries have corresponding inodes
+    for (const [dirPath, entries] of this.directories) {
+      for (const entry of entries) {
+        const fullPath = dirPath === '/' ? `/${entry.name}` : `${dirPath}/${entry.name}`;
+        
+        this.invariants.check(
+          this.inodes.has(fullPath),
+          `Inode missing for directory entry ${fullPath}`,
+          { ...context, path: fullPath }
+        );
+      }
+    }
+    
+    // Check mount points consistency
+    for (const [mountPath, deviceId] of this.mountPoints) {
+      const inode = this.inodes.get(mountPath);
+      
+      this.invariants.check(
+        inode !== undefined,
+        `Mount point ${mountPath} has no inode`,
+        { ...context, path: mountPath, entity: deviceId }
+      );
+      
+      if (inode) {
+        this.invariants.check(
+          inode.type === FileType.DEVICE,
+          `Mount point ${mountPath} is not a device (type: ${inode.type})`,
+          { ...context, path: mountPath, entity: deviceId }
+        );
+      }
+    }
+    
+    // Check root directory exists
+    this.invariants.check(
+      this.inodes.has('/'),
+      'Root directory inode missing',
+      context
+    );
+    
+    // Check root directory entries exist
+    this.invariants.check(
+      this.directories.has('/'),
+      'Root directory entries missing',
+      context
+    );
   }
 }
