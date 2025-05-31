@@ -148,17 +148,19 @@
 
 	<!-- Value breakdown dialog -->
 	{#if isBreakdownOpen && selectedValue}
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_interactive_supports_focus -->
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 			role="dialog"
 			aria-modal="true"
+			tabindex="-1"
 			onclick={() => (isBreakdownOpen = false)}
 			onkeydown={(e) => e.key === 'Escape' && (isBreakdownOpen = false)}
 		>
-			<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<div
 				class="m-4 w-full max-w-md rounded-lg bg-card p-6 shadow-lg"
 				role="document"
