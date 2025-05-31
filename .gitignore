@@ -58,7 +58,7 @@ src/lib/domain/state/active/MessageQueueSessionState.ts
 src/lib/domain/state/data/DataStream.ts
 src/lib/domain/state/data/StreamDataDriver.ts
 src/lib/domain/state/data/StreamDatabase.ts
-src/lib/domain/utils/
+# src/lib/domain/utils/
 src/lib/domain/plugins/initialization/
 src/lib/domain/plugins/feats/SkillFocusProcessPlugin.ts
 
