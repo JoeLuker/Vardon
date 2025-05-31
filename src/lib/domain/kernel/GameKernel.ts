@@ -10,16 +10,15 @@ import type {
 	PathResult,
 	Stats,
 	Message
-} from './types.js';
-import { OpenMode, ErrorCode } from './types.js';
+} from './types';
+import { OpenMode, ErrorCode } from './types';
 import {
 	MessageQueue,
 	MessagePriority,
 	type MessageQueueAttributes,
 	type MessageSelector
-} from './MessageQueue.js';
-import { PipeEventSystem } from './PipeEventSystem.js';
-import { EventBus } from './EventBus.js';
+} from './MessageQueue';
+import { EventBus } from './EventBus';
 
 // Plugin filesystem paths
 const PLUGIN_PATHS = {
