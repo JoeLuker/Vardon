@@ -5,4 +5,4 @@
  */
 export * from './FeatPlugin';
 export * from './SkillFocusPlugin';
-export * from './SkillFocusProcessPlugin';
+// export * from './SkillFocusProcessPlugin'; // Experimental - not yet in repository
