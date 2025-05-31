@@ -148,12 +148,20 @@
 
 	<!-- Value breakdown dialog -->
 	{#if isBreakdownOpen && selectedValue}
+		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+			role="dialog"
+			aria-modal="true"
 			onclick={() => (isBreakdownOpen = false)}
+			onkeydown={(e) => e.key === 'Escape' && (isBreakdownOpen = false)}
 		>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div
 				class="m-4 w-full max-w-md rounded-lg bg-card p-6 shadow-lg"
+				role="document"
 				onclick={(e) => e.stopPropagation()}
 			>
 				<h3 class="mb-4 text-xl font-bold">{selectedValue.label} Breakdown</h3>

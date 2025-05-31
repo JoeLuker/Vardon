@@ -836,7 +836,8 @@
 		</div>
 	</div>
 {:else if character}
-	<slot />
+	<!-- svelte-ignore slot_element_deprecated -->
+	<slot></slot>
 {:else}
 	<div class="rounded-md bg-yellow-100 p-4 text-yellow-800">
 		<p>No character data available.</p>
