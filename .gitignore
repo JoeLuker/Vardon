@@ -51,9 +51,9 @@ supabase/migrations/2024-12-29_init.sql
 old/
 **/.claude/settings.local.json
 
-# Experimental Unix architecture files
-src/lib/domain/kernel/MessageQueue.ts
-src/lib/domain/kernel/PipeEventSystem.ts
+# Experimental Unix architecture files (currently in use - do not ignore)
+# src/lib/domain/kernel/MessageQueue.ts
+# src/lib/domain/kernel/PipeEventSystem.ts
 src/lib/domain/state/active/MessageQueueSessionState.ts
 src/lib/domain/state/data/DataStream.ts
 src/lib/domain/state/data/StreamDataDriver.ts
