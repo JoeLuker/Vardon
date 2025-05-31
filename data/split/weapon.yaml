@@ -1,87 +1,86 @@
 weapon:
-# TODO: NEED TO DOUBLE CHECK THESE
-- id: &weapon_dagger_id 1000
-  name: 'dagger'
-  label: 'Dagger'
-  damage_die_count: 1
-  damage_die_size: 4
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_bastard_sword_id 1001
-  name: 'bastard_sword'
-  label: 'Bastard Sword'
-  damage_die_count: 1
-  damage_die_size: 8
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_elven_curve_blade_id 1002
-  name: 'elven_curve_blade'
-  label: 'Elven Curve Blade'
-  damage_die_count: 1
-  damage_die_size: 6
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_falchion_id 1003
-  name: 'falchion'
-  label: 'Falchion'
-  damage_die_count: 1
-  damage_die_size: 8
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_greatsword_id 1004
-  name: 'greatsword'
-  label: 'Greatsword'
-  damage_die_count: 2
-  damage_die_size: 6
-  crit_range: 20
-  crit_mult: 2
-- id: &weapon_kukri_id 1005
-  name: 'kukri'
-  label: 'Kukri'
-  damage_die_count: 1
-  damage_die_size: 6
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_longsword_id 1006
-  name: 'longsword'
-  label: 'Longsword'
-  damage_die_count: 1
-  damage_die_size: 8
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_punching_dagger_id 1007
-  name: 'punching_dagger'
-  label: 'Punching Dagger'
-  damage_die_count: 1
-  damage_die_size: 4
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_rapier_id 1008
-  name: 'rapier'
-  label: 'Rapier'
-  damage_die_count: 1
-  damage_die_size: 6
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_scimitar_id 1009
-  name: 'scimitar'
-  label: 'Scimitar'
-  damage_die_count: 1
-  damage_die_size: 6
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_short_sword_id 1010
-  name: 'short_sword'
-  label: 'Short Sword'
-  damage_die_count: 1
-  damage_die_size: 6
-  crit_range: 19
-  crit_mult: 2
-- id: &weapon_two_bladed_sword_id 1011
-  name: 'two_bladed_sword'
-  label: 'Two-Bladed Sword'
-  damage_die_count: 1
-  damage_die_size: 6
-  crit_range: 19
-  crit_mult: 2
-
+  # TODO: NEED TO DOUBLE CHECK THESE
+  - id: &weapon_dagger_id 1000
+    name: 'dagger'
+    label: 'Dagger'
+    damage_die_count: 1
+    damage_die_size: 4
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_bastard_sword_id 1001
+    name: 'bastard_sword'
+    label: 'Bastard Sword'
+    damage_die_count: 1
+    damage_die_size: 8
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_elven_curve_blade_id 1002
+    name: 'elven_curve_blade'
+    label: 'Elven Curve Blade'
+    damage_die_count: 1
+    damage_die_size: 6
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_falchion_id 1003
+    name: 'falchion'
+    label: 'Falchion'
+    damage_die_count: 1
+    damage_die_size: 8
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_greatsword_id 1004
+    name: 'greatsword'
+    label: 'Greatsword'
+    damage_die_count: 2
+    damage_die_size: 6
+    crit_range: 20
+    crit_mult: 2
+  - id: &weapon_kukri_id 1005
+    name: 'kukri'
+    label: 'Kukri'
+    damage_die_count: 1
+    damage_die_size: 6
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_longsword_id 1006
+    name: 'longsword'
+    label: 'Longsword'
+    damage_die_count: 1
+    damage_die_size: 8
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_punching_dagger_id 1007
+    name: 'punching_dagger'
+    label: 'Punching Dagger'
+    damage_die_count: 1
+    damage_die_size: 4
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_rapier_id 1008
+    name: 'rapier'
+    label: 'Rapier'
+    damage_die_count: 1
+    damage_die_size: 6
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_scimitar_id 1009
+    name: 'scimitar'
+    label: 'Scimitar'
+    damage_die_count: 1
+    damage_die_size: 6
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_short_sword_id 1010
+    name: 'short_sword'
+    label: 'Short Sword'
+    damage_die_count: 1
+    damage_die_size: 6
+    crit_range: 19
+    crit_mult: 2
+  - id: &weapon_two_bladed_sword_id 1011
+    name: 'two_bladed_sword'
+    label: 'Two-Bladed Sword'
+    damage_die_count: 1
+    damage_die_size: 6
+    crit_range: 19
+    crit_mult: 2

@@ -1,8 +1,8 @@
 <!-- FILE: src/lib/ui/Saves.svelte -->
 <script lang="ts">
 	import type { ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
-	import type { GameKernel } from "$lib/domain/kernel/GameKernel";
-import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
+	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 
 	// Constants for file paths and ioctl requests
 	const PATHS = {
@@ -31,10 +31,10 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 	 * - kernel: GameKernel instance
 	 * - onSelectValue: callback that receives the breakdown of the selected save
 	 */
-	let { 
-		character = null, 
+	let {
+		character = null,
 		kernel = null,
-		onSelectValue = () => {} 
+		onSelectValue = () => {}
 	} = $props<{
 		character: any;
 		kernel: GameKernel | null;
@@ -71,7 +71,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 	async function loadSavesData() {
 		isLoading = true;
 		error = null;
-		
+
 		// Ensure /proc directory exists
 		if (!kernel.exists('/proc')) {
 			console.log('Creating /proc directory');
@@ -82,7 +82,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 				return;
 			}
 		}
-		
+
 		// Ensure /proc/character directory exists
 		if (!kernel.exists('/proc/character')) {
 			console.log('Creating /proc/character directory');
@@ -93,10 +93,10 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 				return;
 			}
 		}
-		
+
 		// Get entity path for current character
 		const entityPath = `/proc/character/${character.id}`;
-		
+
 		// Open combat device
 		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
 		if (fd < 0) {
@@ -104,22 +104,21 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			isLoading = false;
 			return;
 		}
-		
+
 		try {
 			// Get all saves
 			const savesResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_ALL_SAVES, {
 				entityPath
 			});
-			
+
 			if (savesResult.errorCode !== ErrorCode.SUCCESS) {
 				error = `Failed to get saves: ${savesResult.errorMessage}`;
 				isLoading = false;
 				return;
 			}
-			
+
 			// Update local state
 			saves = savesResult.data;
-			
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);
@@ -134,50 +133,53 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 		if (!kernel || !character) {
 			return null;
 		}
-		
+
 		// Ensure /proc directory exists
 		if (!kernel.exists('/proc')) {
 			console.log('Creating /proc directory');
 			const procResult = kernel.mkdir('/proc');
 			if (!procResult.success) {
-				console.error(`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`);
+				console.error(
+					`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`
+				);
 				return null;
 			}
 		}
-		
+
 		// Ensure /proc/character directory exists
 		if (!kernel.exists('/proc/character')) {
 			console.log('Creating /proc/character directory');
 			const charDirResult = kernel.mkdir('/proc/character');
 			if (!charDirResult.success) {
-				console.error(`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`);
+				console.error(
+					`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`
+				);
 				return null;
 			}
 		}
-		
+
 		const entityPath = `/proc/character/${character.id}`;
-		
+
 		// Open combat device
 		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
 		if (fd < 0) {
 			console.error(`Failed to open combat device: error ${fd}`);
 			return null;
 		}
-		
+
 		try {
 			// Get specific save
 			const saveResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_SAVE, {
 				entityPath,
 				saveType
 			});
-			
+
 			if (saveResult.errorCode !== ErrorCode.SUCCESS) {
 				console.error(`Failed to get save breakdown: ${saveResult.errorMessage}`);
 				return null;
 			}
-			
+
 			return saveResult.data;
-			
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);
@@ -195,7 +197,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 				return;
 			}
 		}
-		
+
 		// Use local data if available
 		if (saves[saveType]) {
 			onSelectValue(saves[saveType]);
@@ -210,7 +212,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 
 {#if isLoading}
 	<div class="card">
-		<div class="flex items-center justify-center space-x-2 text-primary/70 p-4">
+		<div class="flex items-center justify-center space-x-2 p-4 text-primary/70">
 			<div
 				class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
 			></div>
@@ -222,20 +224,14 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 		<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
 			{error}
 		</div>
-		<button class="text-sm text-primary hover:underline" onclick={loadSavesData}>
-			Retry
-		</button>
+		<button class="text-sm text-primary hover:underline" onclick={loadSavesData}> Retry </button>
 	</div>
 {:else}
 	<div class="card space-y-6">
 		<div class="grid grid-cols-3 gap-6">
 			{#each saveKeys as key}
 				{#if saves[key]}
-					<button
-						class="save-card"
-						type="button"
-						onclick={() => handleSelectSave(key)}
-					>
+					<button class="save-card" type="button" onclick={() => handleSelectSave(key)}>
 						<div class="card-inner">
 							<div class="save-name">{saveLabels[key]}</div>
 							<div class="primary-value">
@@ -258,16 +254,16 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 
 <style lang="postcss">
 	.save-card {
-		@apply relative w-full text-left rounded-lg border bg-card shadow-sm transition-transform duration-200;
+		@apply relative w-full rounded-lg border bg-card text-left shadow-sm transition-transform duration-200;
 		border-color: hsl(var(--border) / 0.2);
 
 		&:hover {
 			@apply scale-105;
 		}
 	}
-	
+
 	.save-card-placeholder {
-		@apply relative w-full text-left rounded-lg border bg-card shadow-sm opacity-70;
+		@apply relative w-full rounded-lg border bg-card text-left opacity-70 shadow-sm;
 		border-color: hsl(var(--border) / 0.2);
 	}
 

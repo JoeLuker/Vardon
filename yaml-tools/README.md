@@ -13,18 +13,15 @@ The tools in this directory solve the challenge of working with YAML anchors and
    npm run yaml:split
    ```
    This creates split files in `data/split` directory with preserved anchors/aliases.
-   
 2. **Edit your split files**:
    Edit the files while maintaining the anchor/alias syntax:
    - Anchors look like: `&anchor_name`
    - Aliases look like: `*anchor_name`
-   
 3. **Combine your files**:
    ```bash
    npm run yaml:combine
    ```
    This combines the files back into `data/pathfinder_data.yaml` with all anchor/alias relationships intact.
-   
 4. **Load to database**:
    ```bash
    npm run yaml:load
@@ -33,6 +30,7 @@ The tools in this directory solve the challenge of working with YAML anchors and
 ## Complete Pipeline
 
 For a guided experience, use the pipeline script:
+
 ```bash
 npm run yaml:pipeline
 ```

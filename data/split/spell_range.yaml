@@ -1,5 +1,4 @@
 spell_range:
-- id: &spell_range_personal_id 1
-  name: 'personal'
-  label: 'Personal'
-
+  - id: &spell_range_personal_id 1
+    name: 'personal'
+    label: 'Personal'

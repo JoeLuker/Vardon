@@ -1,9 +1,8 @@
 wild_talent_type:
-- id: &wild_talent_type_substance_infusion_id 1
-  name: 'substance_infusion'
-  label: 'Substance Infusion'
+  - id: &wild_talent_type_substance_infusion_id 1
+    name: 'substance_infusion'
+    label: 'Substance Infusion'
 
-- id: &wild_talent_type_form_infusion_id 2
-  name: 'form_infusion'
-  label: 'Form Infusion'
-
+  - id: &wild_talent_type_form_infusion_id 2
+    name: 'form_infusion'
+    label: 'Form Infusion'

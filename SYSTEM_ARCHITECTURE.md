@@ -51,12 +51,12 @@ System-level error handling is implemented with standard error codes:
 
 ```typescript
 enum ErrorCode {
-  SUCCESS = 0,
-  PERMISSION_DENIED = 1,
-  FILE_NOT_FOUND = 2,
-  INVALID_ARGUMENT = 3,
-  IO_ERROR = 4,
-  // ...
+	SUCCESS = 0,
+	PERMISSION_DENIED = 1,
+	FILE_NOT_FOUND = 2,
+	INVALID_ARGUMENT = 3,
+	IO_ERROR = 4
+	// ...
 }
 ```
 
@@ -64,11 +64,11 @@ Results are returned using a Result type:
 
 ```typescript
 interface Result<T> {
-  success: boolean;
-  errorCode: ErrorCode;
-  errorMessage?: string;
-  errorContext?: ErrorContext;
-  data?: T;
+	success: boolean;
+	errorCode: ErrorCode;
+	errorMessage?: string;
+	errorContext?: ErrorContext;
+	data?: T;
 }
 ```
 
@@ -77,15 +77,10 @@ interface Result<T> {
 Resources are properly managed with the `withFile` pattern:
 
 ```typescript
-return withFile(
-  kernel,
-  path,
-  OpenMode.READ_WRITE,
-  async (fd) => {
-    // File operations using the file descriptor
-    // File is automatically closed when the function completes
-  }
-);
+return withFile(kernel, path, OpenMode.READ_WRITE, async (fd) => {
+	// File operations using the file descriptor
+	// File is automatically closed when the function completes
+});
 ```
 
 ## UI Integration
@@ -105,12 +100,13 @@ The following components are implemented with file-based architecture:
 - [x] CharacterLoader.svelte - Character loading
 - [x] AbilityScores.svelte - Ability scores UI
 - [x] HPTracker.svelte - HP tracking UI
-- [x] Saves.svelte - Saving throws UI 
+- [x] Saves.svelte - Saving throws UI
 - [x] ACStats.svelte - Armor class UI
 - [x] CharacterSheet.svelte - Main character sheet
 - [x] CharacterPage.svelte - Character page wrapper
 
 Components pending implementation:
+
 - [ ] Skills.svelte - Skills UI
 - [ ] Feats.svelte - Feats UI
 - [ ] ClassFeatures.svelte - Class features UI

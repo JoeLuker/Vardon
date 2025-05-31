@@ -3,6 +3,7 @@
 ## Problem Statement
 
 Currently, we have two parallel implementations for database access:
+
 1. The original `GameRulesAPI` in `gameRules.api.ts`
 2. The `EnhancedGameRulesAPI` in `gameRules.api.new.ts`
 
@@ -13,6 +14,7 @@ This violates our architecture principle of having a single canonical way to per
 ### Phase 1: Preparation (Current Sprint)
 
 1. **Document Architecture Principles**
+
    - ✅ Create ARCHITECTURE_PRINCIPLES.md
    - ✅ Add architecture validation script
 
@@ -23,11 +25,13 @@ This violates our architecture principle of having a single canonical way to per
 ### Phase 2: Consolidation (Next Sprint)
 
 1. **Merge Implementations**
+
    - Update the original `GameRulesAPI` to use DatabaseCapability internally
    - Ensure all methods from both implementations are preserved
    - Keep backward compatibility within the same file
 
 2. **Remove Duplicate File**
+
    - After the merge is complete, remove `gameRules.api.new.ts`
    - Update imports to use the single implementation
 
@@ -38,6 +42,7 @@ This violates our architecture principle of having a single canonical way to per
 ### Phase 3: Migration Support (Following Sprint)
 
 1. **Create Migration Utilities**
+
    - Add helper methods for migrating from direct Supabase access
    - Provide examples in documentation
 
@@ -48,6 +53,7 @@ This violates our architecture principle of having a single canonical way to per
 ### Phase 4: Cleanup (Final Sprint)
 
 1. **Remove Compatibility Layers**
+
    - Once all code has migrated, remove the compatibility methods
    - Keep only the Unix-style database access
 
@@ -69,6 +75,7 @@ When consolidating the implementations:
 ### Naming Convention
 
 After consolidation, we will have:
+
 - ✅ One class named `GameRulesAPI`
 - ✅ No "Enhanced" prefixes
 - ✅ No "New" suffixes

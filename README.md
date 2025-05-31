@@ -59,17 +59,17 @@ Vardon implements a Unix-inspired architecture where game entities are treated a
 // Open a character file
 const fd = kernel.open('/characters/123', OpenMode.READ_WRITE);
 try {
-  // Read character data
-  const [result, character] = kernel.read(fd);
-  if (result === ErrorCode.SUCCESS) {
-    // Modify character
-    character.properties.level += 1;
-    // Write changes back
-    kernel.write(fd, character);
-  }
+	// Read character data
+	const [result, character] = kernel.read(fd);
+	if (result === ErrorCode.SUCCESS) {
+		// Modify character
+		character.properties.level += 1;
+		// Write changes back
+		kernel.write(fd, character);
+	}
 } finally {
-  // Always close file descriptors
-  kernel.close(fd);
+	// Always close file descriptors
+	kernel.close(fd);
 }
 ```
 
@@ -91,6 +91,40 @@ vardon/
 ├── scripts/               # Utility scripts
 └── supabase/             # Database migrations
 ```
+
+## Data Management
+
+### YAML Anchor/Alias System
+
+Vardon uses a sophisticated YAML data management system that preserves complex cross-references across multiple files. Unlike standard YAML processing, this system allows anchors and aliases to work across file boundaries.
+
+**How it works:**
+- `data/split/00-anchors.yaml` - Contains ALL anchor definitions (the "symbol table")
+- `data/split/*.yaml` - Individual data sections with alias references (`*anchor_name`)
+- Split files are intentionally "incomplete" YAML that reference the anchor file
+- The system combines files back into valid YAML with all relationships intact
+
+**Important:** The split YAML files will show "anchor not found" errors in linters - this is expected and correct behavior. These files are intermediate artifacts designed to work together, not as standalone YAML.
+
+```bash
+# Split main data file into manageable sections
+npm run yaml:split
+
+# Edit individual files while preserving relationships
+# (Edit data/split/*.yaml files as needed)
+
+# Combine back into single valid YAML
+npm run yaml:combine
+
+# Load combined data to database
+npm run yaml:load
+```
+
+This approach allows you to:
+- ✅ Edit large datasets in manageable chunks
+- ✅ Preserve complex ID relationships across files  
+- ✅ Maintain referential integrity
+- ✅ Work with files that would be unwieldy as a single document
 
 ## Development
 
@@ -184,10 +218,10 @@ const kernel = new GameKernel();
 
 // Create a character using the assembler
 const character = await CharacterAssembler.createCharacter(kernel, {
-  name: 'Aragorn',
-  level: 5,
-  className: 'Ranger',
-  ancestry: 'Human'
+	name: 'Aragorn',
+	level: 5,
+	className: 'Ranger',
+	ancestry: 'Human'
 });
 
 // Access character capabilities
@@ -216,7 +250,7 @@ kernel.pluginManager.register(new SkillFocusPlugin());
 
 // Activate plugin for an entity
 kernel.pluginManager.activate('skill-focus', entity.id, {
-  skill: 'perception'
+	skill: 'perception'
 });
 ```
 
@@ -269,10 +303,10 @@ import { BaseCapability } from './BaseCapability';
 // Always use try/finally for cleanup
 const fd = kernel.open(path, OpenMode.READ);
 try {
-  const [result, data] = kernel.read(fd);
-  // Process data
+	const [result, data] = kernel.read(fd);
+	// Process data
 } finally {
-  kernel.close(fd);
+	kernel.close(fd);
 }
 ```
 
@@ -281,12 +315,12 @@ try {
 ```typescript
 // Use Result type for operations that can fail
 function loadCharacter(id: string): Result<Character> {
-  try {
-    const character = kernel.readFile(`/characters/${id}`);
-    return { ok: true, value: character };
-  } catch (error) {
-    return { ok: false, error };
-  }
+	try {
+		const character = kernel.readFile(`/characters/${id}`);
+		return { ok: true, value: character };
+	} catch (error) {
+		return { ok: false, error };
+	}
 }
 ```
 
@@ -299,6 +333,7 @@ function loadCharacter(id: string): Result<Character> {
 5. Open a Pull Request
 
 Please ensure:
+
 - All tests pass (`npm run test`)
 - Code is linted (`npm run lint`)
 - Types are correct (`npm run check`)

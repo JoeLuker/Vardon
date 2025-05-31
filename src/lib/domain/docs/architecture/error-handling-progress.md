@@ -3,6 +3,7 @@
 ## Completed Tasks
 
 1. **Core Error Handling Module**
+
    - Created `ErrorHandler.ts` with Unix-style error handling utilities
    - Implemented ErrorCode enum mapping to standard Unix errno values
    - Created SystemError and Result types for structured error handling
@@ -10,18 +11,21 @@
    - Added error logging facility with context tracking
 
 2. **Error Code Integration**
+
    - Updated kernel exports to include error handling utilities
    - Added error handling imports to affected components
    - Modified function signatures to use Result return type where appropriate
    - Ensured consistent error code handling across components
 
 3. **Updated AbilityCapabilityUnix**
+
    - Converted to use the new error handling system
    - Replaced direct error logging with structured logger
    - Implemented proper try/catch blocks for error handling
    - Updated resource management with withFile utility
 
 4. **Documentation**
+
    - Created comprehensive documentation in unix-error-handling.md
    - Documented best practices for error handling
    - Added migration guide for converting legacy code
@@ -36,11 +40,13 @@
 ## In Progress Tasks
 
 1. **Implement Error Handling in All Components**
+
    - Converting remaining capability implementations to use the new error handling
    - Updating UI components to handle structured errors
    - Applying consistent error handling patterns across the codebase
 
 2. **Resource Management Improvements**
+
    - Adding try/finally blocks to all file descriptor operations
    - Implementing proper file descriptor tracking
    - Ensuring resources are properly closed in all scenarios
@@ -53,11 +59,13 @@
 ## Next Steps
 
 1. **Continue Component Updates**
+
    - Update additional capabilities with new error handling
    - Apply consistent error handling to UI components
    - Ensure proper error propagation through the system
 
 2. **Implement Error Display**
+
    - Create user-friendly error messages in the UI
    - Implement error notification system
    - Add detailed error reporting for developers

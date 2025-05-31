@@ -1,13 +1,12 @@
 spellcasting_type:
-- id: &spellcasting_type_divine_id 1
-  name: 'divine'
-  label: 'Divine'
+  - id: &spellcasting_type_divine_id 1
+    name: 'divine'
+    label: 'Divine'
 
-- id: &spellcasting_type_arcane_id 2
-  name: 'arcane'
-  label: 'Arcane'
+  - id: &spellcasting_type_arcane_id 2
+    name: 'arcane'
+    label: 'Arcane'
 
-- id: &spellcasting_type_psychic_id 3
-  name: 'psychic'
-  label: 'Psychic'
-
+  - id: &spellcasting_type_psychic_id 3
+    name: 'psychic'
+    label: 'Psychic'

@@ -78,20 +78,20 @@ const entityPath = `/entity/${entityId}`;
 
 // Check if entity exists
 if (kernel.exists(entityPath)) {
-  // Open the entity file
-  const fd = kernel.open(entityPath, OpenMode.READ);
-  
-  try {
-    // Read entity data
-    const [result, entity] = kernel.read(fd);
-    
-    if (result === 0) {
-      // Process entity...
-    }
-  } finally {
-    // Always close file descriptor
-    kernel.close(fd);
-  }
+	// Open the entity file
+	const fd = kernel.open(entityPath, OpenMode.READ);
+
+	try {
+		// Read entity data
+		const [result, entity] = kernel.read(fd);
+
+		if (result === 0) {
+			// Process entity...
+		}
+	} finally {
+		// Always close file descriptor
+		kernel.close(fd);
+	}
 }
 ```
 
@@ -114,18 +114,18 @@ const exitCode = await kernel.execute(pluginPath, entityPath, { penalty: 3 });
 const bonusDeviceFd = kernel.open('/dev/bonus', OpenMode.READ_WRITE);
 
 try {
-  // Use ioctl to control the device
-  const result = kernel.ioctl(bonusDeviceFd, 0, {
-    operation: 'addBonus',
-    entityPath: `/entity/${entityId}`,
-    target: 'melee_attack',
-    value: -3,
-    type: 'power_attack',
-    source: 'Power Attack'
-  });
+	// Use ioctl to control the device
+	const result = kernel.ioctl(bonusDeviceFd, 0, {
+		operation: 'addBonus',
+		entityPath: `/entity/${entityId}`,
+		target: 'melee_attack',
+		value: -3,
+		type: 'power_attack',
+		source: 'Power Attack'
+	});
 } finally {
-  // Always close the device file descriptor
-  kernel.close(bonusDeviceFd);
+	// Always close the device file descriptor
+	kernel.close(bonusDeviceFd);
 }
 ```
 
@@ -137,40 +137,40 @@ To create a new plugin:
 
 ```typescript
 const myPlugin = {
-  id: 'my-plugin',
-  name: 'My Plugin',
-  description: 'Does something useful',
-  requiredDevices: ['/dev/bonus', '/dev/ability'],
-  
-  // Plugin execution
-  async execute(kernel: GameKernel, targetPath: string, options: any = {}): Promise<number> {
-    // Open the entity file
-    const fd = kernel.open(targetPath, OpenMode.READ_WRITE);
-    if (fd < 0) return 1;
-    
-    try {
-      // Read entity data
-      const [readResult, entityData] = kernel.read(fd);
-      if (readResult !== 0) return 2;
-      
-      // Modify entity...
-      
-      // Write updated entity
-      const writeResult = kernel.write(fd, entityData);
-      if (writeResult !== 0) return 3;
-      
-      return 0; // Success
-    } finally {
-      // Always close file descriptor
-      kernel.close(fd);
-    }
-  },
-  
-  // Validation
-  canApply(entity: Entity): { valid: boolean; reason?: string } {
-    // Check prerequisites...
-    return { valid: true };
-  }
+	id: 'my-plugin',
+	name: 'My Plugin',
+	description: 'Does something useful',
+	requiredDevices: ['/dev/bonus', '/dev/ability'],
+
+	// Plugin execution
+	async execute(kernel: GameKernel, targetPath: string, options: any = {}): Promise<number> {
+		// Open the entity file
+		const fd = kernel.open(targetPath, OpenMode.READ_WRITE);
+		if (fd < 0) return 1;
+
+		try {
+			// Read entity data
+			const [readResult, entityData] = kernel.read(fd);
+			if (readResult !== 0) return 2;
+
+			// Modify entity...
+
+			// Write updated entity
+			const writeResult = kernel.write(fd, entityData);
+			if (writeResult !== 0) return 3;
+
+			return 0; // Success
+		} finally {
+			// Always close file descriptor
+			kernel.close(fd);
+		}
+	},
+
+	// Validation
+	canApply(entity: Entity): { valid: boolean; reason?: string } {
+		// Check prerequisites...
+		return { valid: true };
+	}
 };
 ```
 

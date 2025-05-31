@@ -105,22 +105,22 @@ Devices (capabilities) can be implemented and mounted in the filesystem:
 
 ```typescript
 const myDevice = {
-  id: 'mydevice',
-  version: '1.0.0',
-  
-  onMount(kernel) {
-    console.log('Device mounted');
-  },
-  
-  read(fd, buffer) {
-    buffer.data = 'Device data';
-    return ErrorCode.SUCCESS;
-  },
-  
-  write(fd, buffer) {
-    console.log('Write to device:', buffer);
-    return ErrorCode.SUCCESS;
-  }
+	id: 'mydevice',
+	version: '1.0.0',
+
+	onMount(kernel) {
+		console.log('Device mounted');
+	},
+
+	read(fd, buffer) {
+		buffer.data = 'Device data';
+		return ErrorCode.SUCCESS;
+	},
+
+	write(fd, buffer) {
+		console.log('Write to device:', buffer);
+		return ErrorCode.SUCCESS;
+	}
 };
 
 // Mount the device

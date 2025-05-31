@@ -1,12 +1,11 @@
 prerequisite_fulfillment:
-- id: &fulfillment_flurry_id 1
-- id: &fulfillment_kinetic_fist_id 2
-- id: &fulfillment_monk_flurry_of_blows_id 3
-- id: &fulfillment_elemental_fury_id 4
-- id: &fulfillment_diamond_body_id 5
-- id: &fulfillment_sudden_speed_id 6
-- id: &fulfillment_diamond_soul_id 7
-- id: &fulfillment_feather_balance_id 8
-- id: &fulfillment_high_jump_id 9
-- id: &fulfillment_ki_metabolism_id 10
-
+  - id: &fulfillment_flurry_id 1
+  - id: &fulfillment_kinetic_fist_id 2
+  - id: &fulfillment_monk_flurry_of_blows_id 3
+  - id: &fulfillment_elemental_fury_id 4
+  - id: &fulfillment_diamond_body_id 5
+  - id: &fulfillment_sudden_speed_id 6
+  - id: &fulfillment_diamond_soul_id 7
+  - id: &fulfillment_feather_balance_id 8
+  - id: &fulfillment_high_jump_id 9
+  - id: &fulfillment_ki_metabolism_id 10

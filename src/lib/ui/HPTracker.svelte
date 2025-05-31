@@ -3,14 +3,14 @@
 	// UI components
 	import { Button } from '$lib/components/ui/button';
 	import { Progress } from '$lib/components/ui/progress';
-	
+
 	// File system imports
-	import type { GameKernel } from "$lib/domain/kernel/GameKernel";
+	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
 	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
-	import { 
-		PATHS, 
-		ensureCharacterParentDirectoriesExist, 
-		fixCharacterPath 
+	import {
+		PATHS,
+		ensureCharacterParentDirectoriesExist,
+		fixCharacterPath
 	} from '$lib/domain/utils/FilesystemUtils';
 
 	const COMBAT_REQUEST = {
@@ -29,10 +29,7 @@
 	/**
 	 * Component props
 	 */
-	let { 
-		character = null, 
-		kernel = null
-	} = $props<{
+	let { character = null, kernel = null } = $props<{
 		character: any;
 		kernel: GameKernel | null;
 	}>();
@@ -72,24 +69,24 @@
 	async function loadHPData() {
 		isLoading = true;
 		error = null;
-		
+
 		// Clear any pending values
 		pendingHP = null;
 		if (updateTimer) clearTimeout(updateTimer);
-		
+
 		// Ensure parent directories exist and character paths are files, not directories
 		if (!ensureCharacterParentDirectoriesExist(kernel, character.id)) {
 			error = 'Failed to ensure parent directories exist';
 			isLoading = false;
 			return;
 		}
-		
+
 		// Fix character path in case it was incorrectly created as a directory
 		fixCharacterPath(kernel, character.id);
-		
+
 		// Get entity path for current character
 		const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
-		
+
 		// Open combat device
 		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ_WRITE);
 		if (fd < 0) {
@@ -97,42 +94,41 @@
 			isLoading = false;
 			return;
 		}
-		
+
 		try {
 			// Get current HP
 			const currentHPResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_CURRENT_HP, {
 				entityPath
 			});
-			
+
 			if (currentHPResult.errorCode !== ErrorCode.SUCCESS) {
 				error = `Failed to get current HP: ${currentHPResult.errorMessage}`;
 				isLoading = false;
 				return;
 			}
-			
+
 			// Get max HP
 			const maxHPResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_MAX_HP, {
 				entityPath
 			});
-			
+
 			if (maxHPResult.errorCode !== ErrorCode.SUCCESS) {
 				error = `Failed to get max HP: ${maxHPResult.errorMessage}`;
 				isLoading = false;
 				return;
 			}
-			
+
 			// Update local state
 			current_hp = currentHPResult.data;
 			max_hp = maxHPResult.data;
 			sliderValue = current_hp;
-			
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);
 			isLoading = false;
 		}
 	}
-	
+
 	/**
 	 * Unix-style file operation to update HP
 	 */
@@ -140,37 +136,36 @@
 		if (!kernel || !character) {
 			throw new Error('Kernel or character not available');
 		}
-		
+
 		// Ensure parent directories exist and character paths are files, not directories
 		if (!ensureCharacterParentDirectoriesExist(kernel, character.id)) {
 			throw new Error('Failed to ensure parent directories exist');
 		}
-		
+
 		// Fix character path in case it was incorrectly created as a directory
 		fixCharacterPath(kernel, character.id);
-		
+
 		const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
-		
+
 		// Open combat device
 		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ_WRITE);
 		if (fd < 0) {
 			throw new Error(`Failed to open combat device: error ${fd}`);
 		}
-		
+
 		try {
 			// Update current HP
 			const updateResult = kernel.ioctl(fd, COMBAT_REQUEST.SET_CURRENT_HP, {
 				entityPath,
 				value: newHP
 			});
-			
+
 			if (updateResult.errorCode !== ErrorCode.SUCCESS) {
 				throw new Error(`Failed to update HP: ${updateResult.errorMessage}`);
 			}
-			
+
 			// Update local state on success
 			current_hp = newHP;
-			
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);
@@ -197,14 +192,14 @@
 	const DEBOUNCE_MS = 400;
 
 	/**
-	 * queueHPUpdate: 
+	 * queueHPUpdate:
 	 * - sets pendingHP
-	 * - applies local optimistic UI 
+	 * - applies local optimistic UI
 	 * - schedules flush with setTimeout
 	 */
 	function queueHPUpdate(newHP: number) {
 		const boundedHP = Math.max(0, Math.min(max_hp, newHP));
-		
+
 		// Save to pending
 		pendingHP = boundedHP;
 
@@ -267,16 +262,16 @@
 
 <!-- Template -->
 {#if isLoading}
-	<div class="card space-y-6 animate-pulse">
+	<div class="card animate-pulse space-y-6">
 		<h2 class="section-title">Hit Points</h2>
-		<div class="h-4 bg-muted rounded"></div>
+		<div class="h-4 rounded bg-muted"></div>
 		<div class="grid grid-cols-4 gap-3">
 			{#each Array(4) as _}
-				<div class="h-9 bg-muted rounded"></div>
+				<div class="h-9 rounded bg-muted"></div>
 			{/each}
 		</div>
 		<div class="flex items-baseline justify-center gap-2">
-			<div class="h-10 w-16 bg-muted rounded"></div>
+			<div class="h-10 w-16 rounded bg-muted"></div>
 		</div>
 	</div>
 {:else if error}
@@ -285,9 +280,7 @@
 		<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
 			{error}
 		</div>
-		<Button variant="outline" onclick={loadHPData}>
-			Retry
-		</Button>
+		<Button variant="outline" onclick={loadHPData}>Retry</Button>
 	</div>
 {:else}
 	<div class="card space-y-6" class:border-destructive={updateStatus === 'error'}>

@@ -32,7 +32,7 @@
 		applied_at_level: number;
 	};
 
-	interface ProcessedSkill {	
+	interface ProcessedSkill {
 		id: number;
 		name: string;
 		label: string;
@@ -53,15 +53,15 @@
 	}
 
 	// Accept parent-managed components
-	let { 
-		character, 
+	let {
+		character,
 		kernel,
 		onSelectValue = () => {},
 		pendingOperations = null,
 		operationErrors = null,
 		optimisticRanks = null,
 		optimisticPoints = null,
-		isOperationPending = null,
+		isOperationPending = null
 	} = $props<{
 		character?: any | null;
 		kernel?: GameKernel | null;
@@ -80,23 +80,23 @@
 	let error = $state<string | null>(null);
 	let filterTimestamp = $state(Date.now());
 	let isLoading = $state(false);
-	
+
 	// Track open file descriptors for cleanup
 	let openFileDescriptors = $state<number[]>([]);
-	
+
 	// Function to toggle visibility with a forced refresh
 	function toggleUnusableSkills() {
 		showUnusableSkills = !showUnusableSkills;
-		
+
 		// Force reactivity by updating timestamp and clearing cache
 		filterTimestamp = Date.now();
 		skillCalculationCache = new Map();
-		
+
 		// Force recalculation of the filtered skills
 		// Use updateSkillsData to avoid state_unsafe_mutation
 		if (baseSkillsDataResolved) {
 			// Create a new object reference to trigger reactivity
-			const updatedData = {...baseSkillsDataResolved};
+			const updatedData = { ...baseSkillsDataResolved };
 			updateSkillsData(updatedData);
 		}
 	}
@@ -106,9 +106,7 @@
 		return `${skillId}-${level}`;
 	}
 
-	let levelNumbers = $derived(
-		Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1)
-	);
+	let levelNumbers = $derived(Array.from({ length: character?.totalLevel ?? 0 }, (_, i) => i + 1));
 
 	// Helper function to manage file descriptors
 	function registerFd(fd: number) {
@@ -126,7 +124,7 @@
 			} catch (e) {
 				console.error(`Error closing fd ${fd}:`, e);
 			}
-			openFileDescriptors = openFileDescriptors.filter(openFd => openFd !== fd);
+			openFileDescriptors = openFileDescriptors.filter((openFd) => openFd !== fd);
 		}
 	}
 
@@ -134,7 +132,7 @@
 	$effect(() => {
 		// Return a cleanup function that will be called when the effect is destroyed
 		return () => {
-			openFileDescriptors.forEach(fd => {
+			openFileDescriptors.forEach((fd) => {
 				if (kernel) {
 					try {
 						kernel.close(fd);
@@ -148,45 +146,45 @@
 	});
 
 	// Add a cache for skill calculations to prevent recalculating on every state change
-	let skillCalculationCache = $state<Map<number, { total: number, ranks: number }>>(new Map());
-	
+	let skillCalculationCache = $state<Map<number, { total: number; ranks: number }>>(new Map());
+
 	// Function to get skill data with caching
-	function getSkillData(skillId: number): { total: number, ranks: number } | undefined {
+	function getSkillData(skillId: number): { total: number; ranks: number } | undefined {
 		// Return from cache if available and not invalidated
 		if (skillCalculationCache.has(skillId)) {
 			return skillCalculationCache.get(skillId);
 		}
-		
+
 		// Calculate if not in cache
 		if (character?.skills?.[skillId]) {
 			const skillData = character.skills[skillId];
 			const ranks = getSkillRanksCount(skillId);
-			
+
 			// Store in cache
 			skillCalculationCache.set(skillId, {
 				total: skillData.total,
 				ranks: ranks
 			});
-			
+
 			return skillCalculationCache.get(skillId);
 		}
-		
+
 		return undefined;
 	}
-	
+
 	// Function to update a skill in the local cache without full recalculation
 	function updateSkillInCache(skillId: number, isAdding: boolean): void {
 		if (!character?.skills?.[skillId]) return;
-		
+
 		// Get current cached data or calculate
 		const currentData = getSkillData(skillId);
 		if (!currentData) return;
-		
+
 		// Apply the change
 		const rankChange = isAdding ? 1 : -1;
 		const newRanks = currentData.ranks + rankChange;
 		const newTotal = currentData.total + rankChange;
-		
+
 		// Update the cache
 		skillCalculationCache.set(skillId, {
 			total: newTotal,
@@ -196,56 +194,57 @@
 
 	// Base skill data - only recomputed when character/kernel change
 	let baseSkillsData = $derived.by(async () => {
-		if (!kernel || !character) return {
-			byAbility: {},
-			allSkills: []
-		};
+		if (!kernel || !character)
+			return {
+				byAbility: {},
+				allSkills: []
+			};
 
 		isLoading = true;
 		error = null;
-		
+
 		try {
 			// Open the skill device
 			const skillFd = registerFd(kernel.open(PATHS.DEV_SKILL, OpenMode.READ_WRITE));
 			if (skillFd < 0) {
 				throw new Error(`Failed to open skill device: ${ErrorCode[-skillFd]}`);
 			}
-			
+
 			// Directory creation is now handled by the GameKernel
 
 			const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
-			
+
 			try {
 				// Get skills using ioctl
 				const buffer: any = { entityPath };
 				const result = kernel.ioctl(skillFd, SKILL_REQUEST.GET_SKILLS, buffer);
-				
+
 				if (result !== ErrorCode.SUCCESS) {
 					throw new Error(`Failed to get skills: ${ErrorCode[result]}`);
 				}
-				
+
 				const allSkills = buffer.skills || [];
 				const skillsWithRanks = buffer.skillsWithRanks || [];
-				
+
 				// Process skills by ability
 				const byAbility: Record<string, ProcessedSkill[]> = {};
 				const processedSkills: ProcessedSkill[] = [];
-				
+
 				for (const baseSkill of allSkills) {
 					const skillId = baseSkill.id;
 					const skillData = character.skills[skillId];
-					
+
 					if (!skillData) continue;
 
 					const baseAbility = baseSkill.ability;
 					// Use override if it exists, otherwise use the base ability
-					const abilityName = (skillData.overrides?.ability?.override ?? 
-						baseAbility?.label ?? 
-						'MISC').toUpperCase();
+					const abilityName = (
+						skillData.overrides?.ability?.override ??
+						baseAbility?.label ??
+						'MISC'
+					).toUpperCase();
 
-					const skillWithRanks = skillsWithRanks.find(
-						(s: any) => s.skillId === baseSkill.id
-					);
+					const skillWithRanks = skillsWithRanks.find((s: any) => s.skillId === baseSkill.id);
 
 					const processed: ProcessedSkill = {
 						id: baseSkill.id,
@@ -256,9 +255,9 @@
 						ranks: getSkillRanksCount(baseSkill.id),
 						trainedOnly: skillData.overrides?.trained_only ?? baseSkill.trained_only,
 						isClassSkill: skillWithRanks?.isClassSkill ?? false,
-						ranksByLevel: skillWithRanks?.skillRanks?.map(
-							(sr: { level: number; rank: number }) => sr.rank
-						) ?? [],
+						ranksByLevel:
+							skillWithRanks?.skillRanks?.map((sr: { level: number; rank: number }) => sr.rank) ??
+							[],
 						overrides: skillData.overrides
 					};
 
@@ -266,7 +265,7 @@
 					byAbility[abilityName].push(processed);
 					processedSkills.push(processed);
 				}
-				
+
 				isLoading = false;
 				return {
 					byAbility,
@@ -289,27 +288,29 @@
 	// Improved function to get skill ranks count considering optimistic state
 	function getSkillRanksCount(skillId: number): number {
 		if (!character) return 0;
-		
+
 		// Count from actual character data
-		const baseCount = character.game_character_skill_rank?.filter(
-			(rank: GameCharacterSkillRank) => rank.skill_id === skillId
-		).length ?? 0;
-		
+		const baseCount =
+			character.game_character_skill_rank?.filter(
+				(rank: GameCharacterSkillRank) => rank.skill_id === skillId
+			).length ?? 0;
+
 		// Adjust for optimistic changes
 		let delta = 0;
 		if (optimisticRanks) {
 			for (let level = 1; level <= (character.totalLevel ?? 0); level++) {
 				const key = getSkillLevelKey(skillId, level);
 				// Check if we have this rank in server data
-				const serverHasRank = character.game_character_skill_rank?.some(
-					(rank: GameCharacterSkillRank) => 
-						rank.skill_id === skillId && rank.applied_at_level === level
-				) ?? false;
-				
+				const serverHasRank =
+					character.game_character_skill_rank?.some(
+						(rank: GameCharacterSkillRank) =>
+							rank.skill_id === skillId && rank.applied_at_level === level
+					) ?? false;
+
 				// Check if we have an optimistic update for this key
 				if (optimisticRanks.has(key)) {
 					const optimisticValue = optimisticRanks.get(key);
-					
+
 					if (optimisticValue && !serverHasRank) {
 						// We want a rank that server doesn't have
 						delta++;
@@ -320,7 +321,7 @@
 				}
 			}
 		}
-		
+
 		return baseCount + delta;
 	}
 
@@ -328,28 +329,27 @@
 	let filteredSkillsByAbility = $derived.by(async () => {
 		const baseData = await baseSkillsData;
 		const result: Record<string, ProcessedSkill[]> = {};
-		
+
 		// Include timestamp to force reactivity
 		const timestamp = filterTimestamp;
-		
+
 		// Don't filter based on visibility - let the template handle that
 		for (const [ability, skills] of Object.entries(baseData.byAbility)) {
 			result[ability] = skills;
 		}
-		
+
 		return result;
 	});
 
 	// Filtered and sorted skills for alphabetical view
 	let filteredSkillsAlphabetical = $derived.by(async () => {
 		const baseData = await baseSkillsData;
-		
+
 		// Include timestamp to force reactivity
 		const timestamp = filterTimestamp;
-		
+
 		// Don't filter based on visibility - let the template handle that
-		return baseData.allSkills
-			.sort((a, b) => a.name.localeCompare(b.name));
+		return baseData.allSkills.sort((a, b) => a.name.localeCompare(b.name));
 	});
 
 	function isSkillUnusable(skill: ProcessedSkill): boolean {
@@ -364,21 +364,21 @@
 	// Enhanced function to check if a skill has a rank, considering optimistic state
 	function hasSkillRank(skillId: number, level: number): boolean {
 		if (!character) return false;
-		
+
 		// Check the optimistic value first
 		const skillLevelKey = getSkillLevelKey(skillId, level);
 		const optimisticExists = optimisticRanks?.has(skillLevelKey) ?? false;
 		const optimisticValue = optimisticExists ? optimisticRanks.get(skillLevelKey) : null;
-		
+
 		// Use the optimistic value if it exists, otherwise fall back to the server value
 		if (optimisticExists) {
 			return optimisticValue!;
 		}
 
 		// Otherwise check if the rank exists in the character data
-		return !!(character?.game_character_skill_rank?.some(
+		return !!character?.game_character_skill_rank?.some(
 			(rank: GameCharacterSkillRank) => rank.skill_id === skillId && rank.applied_at_level === level
-		));
+		);
 	}
 
 	// Improved function to check if an operation is pending
@@ -387,7 +387,7 @@
 		if (typeof isOperationPending === 'function') {
 			return isOperationPending(skillId, level);
 		}
-		
+
 		// Fall back to local check
 		const skillLevelKey = getSkillLevelKey(skillId, level);
 		return pendingOperations?.has(skillLevelKey) ?? false;
@@ -396,12 +396,12 @@
 	// Function to get remaining points for a level, considering optimistic state
 	function getRemainingPoints(level: number): number {
 		if (!character?.skillPoints?.remaining) return 0;
-		
+
 		// If we have an optimistic value for this level, use it
 		if (optimisticPoints?.has(level)) {
 			return optimisticPoints.get(level) as number;
 		}
-		
+
 		// Otherwise use actual data
 		return character.skillPoints.remaining[level] ?? 0;
 	}
@@ -409,23 +409,29 @@
 	// Get error for operation if any
 	function getOperationError(skillId: number, level: number): string | null {
 		if (!operationErrors) return null;
-		
+
 		const key = getSkillLevelKey(skillId, level);
 		const errorInfo = operationErrors.get(key);
 		return errorInfo?.message ?? null;
 	}
 
 	// Override the baseSkillsData derived calculation to use the cache for optimizations
-	let baseSkillsDataResolved = $state<{ byAbility: Record<string, ProcessedSkill[]>; allSkills: ProcessedSkill[] } | null>(null);
-	
+	let baseSkillsDataResolved = $state<{
+		byAbility: Record<string, ProcessedSkill[]>;
+		allSkills: ProcessedSkill[];
+	} | null>(null);
+
 	// Helper function to update state outside of derived contexts
-	function updateSkillsData(data: { byAbility: Record<string, ProcessedSkill[]>; allSkills: ProcessedSkill[] }) {
+	function updateSkillsData(data: {
+		byAbility: Record<string, ProcessedSkill[]>;
+		allSkills: ProcessedSkill[];
+	}) {
 		baseSkillsDataResolved = data;
 	}
-	
+
 	$effect(() => {
 		if (!kernel || !character) return;
-		
+
 		// Use immediately-invoked async function to handle the promise
 		(async () => {
 			try {
@@ -440,24 +446,29 @@
 	});
 
 	// Add or remove a skill rank using file-based operations
-	async function updateSkillRank(characterId: number, skillId: number, level: number, isAdding: boolean): Promise<boolean> {
+	async function updateSkillRank(
+		characterId: number,
+		skillId: number,
+		level: number,
+		isAdding: boolean
+	): Promise<boolean> {
 		if (!kernel) {
-			error = "Kernel not available";
+			error = 'Kernel not available';
 			return false;
 		}
-		
+
 		// Open the skill device
 		const skillFd = registerFd(kernel.open(PATHS.DEV_SKILL, OpenMode.READ_WRITE));
 		if (skillFd < 0) {
 			error = `Failed to open skill device: ${ErrorCode[-skillFd]}`;
 			return false;
 		}
-		
+
 		try {
 			// Directory creation is now handled by the GameKernel
 
 			const entityPath = `${PATHS.PROC_CHARACTER}/${characterId}`;
-			
+
 			// Use ioctl to update skill rank
 			const requestCode = isAdding ? SKILL_REQUEST.ADD_SKILL_RANK : SKILL_REQUEST.REMOVE_SKILL_RANK;
 			const result = kernel.ioctl(skillFd, requestCode, {
@@ -465,12 +476,12 @@
 				skillId,
 				level
 			});
-			
+
 			if (result !== ErrorCode.SUCCESS) {
 				error = `Failed to ${isAdding ? 'add' : 'remove'} skill rank: ${ErrorCode[result]}`;
 				return false;
 			}
-			
+
 			return true;
 		} finally {
 			// Always close the file descriptor
@@ -481,7 +492,7 @@
 	// Improved function to handle skill rank cell clicks
 	async function handleCellClick(skillId: number, level: number) {
 		if (!character || !kernel) {
-			error = "Cannot update skill - character or kernel is missing";
+			error = 'Cannot update skill - character or kernel is missing';
 			return;
 		}
 
@@ -497,7 +508,7 @@
 		if (isAdding) {
 			const remainingPoints = getRemainingPoints(level);
 			if (remainingPoints <= 0) {
-				error = "Not enough skill points remaining";
+				error = 'Not enough skill points remaining';
 				return;
 			}
 		}
@@ -508,14 +519,14 @@
 		// Update using file-based operations
 		try {
 			const success = await updateSkillRank(character.id, skillId, level, isAdding);
-			
+
 			if (!success) {
 				// Rollback the local cache update on error
 				updateSkillInCache(skillId, !isAdding);
 			} else {
 				// Clear error on success
 				error = null;
-				
+
 				// Clear cache to force recalculation
 				skillCalculationCache = new Map();
 			}
@@ -525,7 +536,7 @@
 			error = `Error updating skill rank: ${err.message}`;
 		}
 	}
-	
+
 	// Listen for character changes to refresh the cache
 	$effect(() => {
 		if (character) {
@@ -533,7 +544,7 @@
 			skillCalculationCache = new Map();
 		}
 	});
-	
+
 	// Function to get display total for a skill, using cache
 	function getSkillDisplayTotal(skillId: number): number {
 		const cached = getSkillData(skillId);
@@ -551,12 +562,16 @@
 		</Alert>
 	{/if}
 
-	<Tabs.Root value={viewMode} onValueChange={(v) => viewMode = v as typeof viewMode} class="w-full">
+	<Tabs.Root
+		value={viewMode}
+		onValueChange={(v) => (viewMode = v as typeof viewMode)}
+		class="w-full"
+	>
 		<div class="tabs-header">
 			<Tabs.List class="grid h-12 w-full grid-cols-[1fr_1fr_2px_auto_auto]">
 				<Tabs.Trigger value="ability">By Ability</Tabs.Trigger>
 				<Tabs.Trigger value="alphabetical">Alphabetical</Tabs.Trigger>
-				<div class="pill-divider"></div>	
+				<div class="pill-divider"></div>
 				<Button
 					variant="secondary"
 					size="icon"
@@ -592,38 +607,38 @@
 			<Card.Root class="mb-4">
 				<Card.Header>
 					<Card.Title>Skill Points Per Level</Card.Title>
-					<Card.Description>Remaining skill points and allocated skills at each level</Card.Description>
+					<Card.Description
+						>Remaining skill points and allocated skills at each level</Card.Description
+					>
 				</Card.Header>
 				<Card.Content class="py-3">
 					<div class="skill-points-grid">
 						{#each levelNumbers as level}
 							{@const totalPoints = character?.skillPoints?.total[level]?.total ?? 0}
 							{@const remainingPoints = getRemainingPoints(level)}
-							{@const ranksAtLevel = character?.game_character_skill_rank?.filter(
-								(rank: GameCharacterSkillRank) => rank.applied_at_level === level
-							) ?? []}
+							{@const ranksAtLevel =
+								character?.game_character_skill_rank?.filter(
+									(rank: GameCharacterSkillRank) => rank.applied_at_level === level
+								) ?? []}
 							{@const usedPoints = totalPoints - remainingPoints}
 							{@const percentUsed = totalPoints > 0 ? (usedPoints / totalPoints) * 100 : 0}
-							
-							<button 
-								class="flex flex-col p-3 rounded-md border border-muted hover:bg-muted/50 transition-colors"
+
+							<button
+								class="flex flex-col rounded-md border border-muted p-3 transition-colors hover:bg-muted/50"
 								onclick={() => onSelectValue?.(character?.skillPoints?.total[level])}
 								type="button"
 							>
-								<div class="flex justify-between items-center mb-1">
+								<div class="mb-1 flex items-center justify-between">
 									<span class="font-medium">Level {level}</span>
-									<Badge variant={remainingPoints > 0 ? "outline" : "secondary"}>
+									<Badge variant={remainingPoints > 0 ? 'outline' : 'secondary'}>
 										{remainingPoints} point{remainingPoints !== 1 ? 's' : ''} left
 									</Badge>
 								</div>
-								
-								<div class="w-full bg-muted/30 rounded-full h-2 mb-1">
-									<div 
-										class="bg-primary h-2 rounded-full" 
-										style="width: {percentUsed}%"
-									></div>
+
+								<div class="mb-1 h-2 w-full rounded-full bg-muted/30">
+									<div class="h-2 rounded-full bg-primary" style="width: {percentUsed}%"></div>
 								</div>
-								
+
 								<div class="flex justify-between text-xs text-muted-foreground">
 									<span>{usedPoints}/{totalPoints} used</span>
 									<span>{ranksAtLevel.length} skills</span>
@@ -662,7 +677,8 @@
 											{#each skillList as skill}
 												<!-- Check visibility within the template -->
 												{@const isUnusable = isSkillUnusable(skill)}
-												{@const shouldBeVisible = !isUnusable || showUnusableSkills || showRankAllocation}
+												{@const shouldBeVisible =
+													!isUnusable || showUnusableSkills || showRankAllocation}
 												{#if shouldBeVisible}
 													<button
 														class="skill"
@@ -676,13 +692,17 @@
 															{#if viewMode === 'alphabetical' || skill.overrides?.ability}
 																<Badge variant="secondary" class="ability-badge">
 																	{#if skill.overrides?.ability}
-																		<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
+																		<span class="text-xs opacity-50"
+																			>({skill.overrides.ability.source})</span
+																		>
 																	{/if}
 																</Badge>
 															{/if}
-															<span class="modifier">{formatModifier(getSkillDisplayTotal(skill.id))}</span>
+															<span class="modifier"
+																>{formatModifier(getSkillDisplayTotal(skill.id))}</span
+															>
 														</div>
-														
+
 														{#if showRankAllocation}
 															<div class="rank-grid">
 																{#each levelNumbers as level}
@@ -690,12 +710,14 @@
 																	{@const canAdd = !hasRank && getRemainingPoints(level) > 0}
 																	{@const isPending = isOperationPendingLocal(skill.id, level)}
 																	{@const error = getOperationError(skill.id, level)}
-																	
+
 																	<div class="button-container">
 																		<Button
 																			variant="outline"
 																			size="sm"
-																			class="h-8 w-8 {isPending ? 'pending' : ''} {error ? 'error' : ''}"
+																			class="h-8 w-8 {isPending ? 'pending' : ''} {error
+																				? 'error'
+																				: ''}"
 																			title={isPending ? 'Operation in progress...' : error || ''}
 																			disabled={isPending}
 																			onclick={(e: MouseEvent) => {
@@ -770,15 +792,19 @@
 													<Badge variant="secondary" class="ability-badge">
 														{#if skill.overrides?.ability}
 															{skill.overrides.ability.override.slice(0, 3).toUpperCase()}
-															<span class="text-xs opacity-50">({skill.overrides.ability.source})</span>
+															<span class="text-xs opacity-50"
+																>({skill.overrides.ability.source})</span
+															>
 														{:else}
 															{skill.ability.slice(0, 3).toUpperCase()}
 														{/if}
 													</Badge>
 												{/if}
-												<span class="modifier">{formatModifier(getSkillDisplayTotal(skill.id))}</span>
+												<span class="modifier"
+													>{formatModifier(getSkillDisplayTotal(skill.id))}</span
+												>
 											</div>
-											
+
 											{#if showRankAllocation}
 												<div class="rank-grid">
 													{#each levelNumbers as level}
@@ -786,7 +812,7 @@
 														{@const canAdd = !hasRank && getRemainingPoints(level) > 0}
 														{@const isPending = isOperationPendingLocal(skill.id, level)}
 														{@const error = getOperationError(skill.id, level)}
-														
+
 														<div class="button-container">
 															<Button
 																variant="outline"
@@ -887,7 +913,7 @@
 	}
 
 	.skill-info {
-		@apply flex items-center justify-between w-full p-4;
+		@apply flex w-full items-center justify-between p-4;
 	}
 
 	.skill-name {
@@ -956,18 +982,36 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 0.7; }
-		50% { opacity: 0.4; }
+		0%,
+		100% {
+			opacity: 0.7;
+		}
+		50% {
+			opacity: 0.4;
+		}
 	}
 
 	@keyframes shake {
-		0%, 100% { transform: translateX(0); }
-		20%, 60% { transform: translateX(-2px); }
-		40%, 80% { transform: translateX(2px); }
+		0%,
+		100% {
+			transform: translateX(0);
+		}
+		20%,
+		60% {
+			transform: translateX(-2px);
+		}
+		40%,
+		80% {
+			transform: translateX(2px);
+		}
 	}
 </style>

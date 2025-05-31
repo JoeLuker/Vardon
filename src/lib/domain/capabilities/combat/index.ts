@@ -5,12 +5,7 @@
  * Unix-style composition-based approach and related types.
  */
 
-export type {
-  CombatCapability,
-  AttackRoll,
-  DamageRoll,
-  CombatStats
-} from './types';
+export type { CombatCapability, AttackRoll, DamageRoll, CombatStats } from './types';
 
 // Export the composition-based implementation (Unix-style)
 export { createCombatCapability } from './CombatCapabilityComposed';

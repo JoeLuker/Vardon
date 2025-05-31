@@ -1,5 +1,4 @@
 spell_duration:
-- id: &spell_duration_instantaneous_id 1
-  name: 'instantaneous'
-  label: 'Instantaneous'
-
+  - id: &spell_duration_instantaneous_id 1
+    name: 'instantaneous'
+    label: 'Instantaneous'

@@ -4,9 +4,12 @@ import { Database } from '../../database.types';
 /**
  * Shorthand for accessing table types
  */
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
-export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+export type Tables<T extends keyof Database['public']['Tables']> =
+	Database['public']['Tables'][T]['Row'];
+export type TablesInsert<T extends keyof Database['public']['Tables']> =
+	Database['public']['Tables'][T]['Insert'];
+export type TablesUpdate<T extends keyof Database['public']['Tables']> =
+	Database['public']['Tables'][T]['Update'];
 
 /**
  * Character-related types
@@ -33,26 +36,26 @@ export type Spell = Tables<'spell'>;
  * Complete character data type with joined relations
  */
 export interface CompleteCharacter extends Character {
-  game_character_ability: (CharacterAbility & {
-    ability: Ability
-  })[];
-  game_character_class: (CharacterClass & {
-    class: Class & {
-      class_feature?: ClassFeature[]
-    }
-  })[];
-  game_character_ancestry: (CharacterAncestry & {
-    ancestry: Ancestry
-  })[];
-  game_character_feat?: (CharacterFeat & {
-    feat: Feat
-  })[];
-  game_character_skill_rank?: (CharacterSkill & {
-    skill: Skill & {
-      ability: Ability
-    }
-  })[];
-  // Add other relevant character relations as needed
+	game_character_ability: (CharacterAbility & {
+		ability: Ability;
+	})[];
+	game_character_class: (CharacterClass & {
+		class: Class & {
+			class_feature?: ClassFeature[];
+		};
+	})[];
+	game_character_ancestry: (CharacterAncestry & {
+		ancestry: Ancestry;
+	})[];
+	game_character_feat?: (CharacterFeat & {
+		feat: Feat;
+	})[];
+	game_character_skill_rank?: (CharacterSkill & {
+		skill: Skill & {
+			ability: Ability;
+		};
+	})[];
+	// Add other relevant character relations as needed
 }
 
 /**

@@ -1,109 +1,110 @@
 feat:
-- id: &feat_tengu_wings_id 1
-  name: 'tengu_wings'
-  label: 'Tengu Wings'
-  feat_type: 'racial'
-- id: &feat_two_weapon_fighting_id 2
-  name: 'two_weapon_fighting'
-  label: 'Two-Weapon Fighting'
-  feat_type: 'combat'
-  is_toggleable: true
-- id: &feat_rapid_shot_id 3
-  name: 'rapid_shot'
-  label: 'Rapid Shot'
-  feat_type: 'combat'
-  is_toggleable: true
-- id: &feat_deadly_aim_id 4
-  name: 'deadly_aim'
-  label: 'Deadly Aim'
-  feat_type: 'combat'
-  is_toggleable: true
-- id: &feat_extra_discovery_id 5
-  name: 'extra_discovery'
-  label: 'Extra Discovery'
-  feat_type: 'general'
-  is_toggleable: false
-- id: &feat_improved_unarmed_strike_id 6
-  name: 'improved_unarmed_strike'
-  label: 'Improved Unarmed Strike'
-  feat_type: 'combat'
-  is_toggleable: false
-- id: &feat_power_attack_id 7
-  name: 'power_attack'
-  label: 'Power Attack'
-  feat_type: 'combat'
-  is_toggleable: true
-- id: &feat_weapon_focus_unarmed_strike_id 8
-  name: 'weapon_focus_unarmed_strike'
-  label: 'Weapon Focus (Unarmed Strike)'
-  feat_type: 'combat'
-  is_toggleable: false
-- id: &feat_dodge_id 9
-  name: 'dodge'
-  label: 'Dodge'
-  feat_type: 'combat'
-  is_toggleable: false
-- id: &feat_generally_educated_id 10
-  name: 'generally_educated'
-  label: 'Generally Educated'
-  feat_type: 'general'
-  is_toggleable: false
-  description: |
-    +2 bonus on all Knowledge skill checks and can make checks with those skills untrained
+  - id: &feat_tengu_wings_id 1
+    name: 'tengu_wings'
+    label: 'Tengu Wings'
+    feat_type: 'racial'
+  - id: &feat_two_weapon_fighting_id 2
+    name: 'two_weapon_fighting'
+    label: 'Two-Weapon Fighting'
+    feat_type: 'combat'
+    is_toggleable: true
+  - id: &feat_rapid_shot_id 3
+    name: 'rapid_shot'
+    label: 'Rapid Shot'
+    feat_type: 'combat'
+    is_toggleable: true
+  - id: &feat_deadly_aim_id 4
+    name: 'deadly_aim'
+    label: 'Deadly Aim'
+    feat_type: 'combat'
+    is_toggleable: true
+  - id: &feat_extra_discovery_id 5
+    name: 'extra_discovery'
+    label: 'Extra Discovery'
+    feat_type: 'general'
+    is_toggleable: false
+  - id: &feat_improved_unarmed_strike_id 6
+    name: 'improved_unarmed_strike'
+    label: 'Improved Unarmed Strike'
+    feat_type: 'combat'
+    is_toggleable: false
+  - id: &feat_power_attack_id 7
+    name: 'power_attack'
+    label: 'Power Attack'
+    feat_type: 'combat'
+    is_toggleable: true
+  - id: &feat_weapon_focus_unarmed_strike_id 8
+    name: 'weapon_focus_unarmed_strike'
+    label: 'Weapon Focus (Unarmed Strike)'
+    feat_type: 'combat'
+    is_toggleable: false
+  - id: &feat_dodge_id 9
+    name: 'dodge'
+    label: 'Dodge'
+    feat_type: 'combat'
+    is_toggleable: false
+  - id: &feat_generally_educated_id 10
+    name: 'generally_educated'
+    label: 'Generally Educated'
+    feat_type: 'general'
+    is_toggleable: false
+    description: |
+      +2 bonus on all Knowledge skill checks and can make checks with those skills untrained
 
-- id: &feat_acrobatic_steps_id 11
-  name: 'acrobatic_steps'
-  label: 'Acrobatic Steps'
-  feat_type: 'general'
-  is_toggleable: false
-  description: |
-    Whenever you move, you may move through up to 15 feet of difficult terrain each round as if it were normal terrain. The effects of this feat stack with those provided by Nimble Moves (allowing you to move normally through a total of 20 feet of difficult terrain each round).
+  - id: &feat_acrobatic_steps_id 11
+    name: 'acrobatic_steps'
+    label: 'Acrobatic Steps'
+    feat_type: 'general'
+    is_toggleable: false
+    description: |
+      Whenever you move, you may move through up to 15 feet of difficult terrain each round as if it were normal terrain. The effects of this feat stack with those provided by Nimble Moves (allowing you to move normally through a total of 20 feet of difficult terrain each round).
 
-- id: &feat_nimble_moves_id 12
-  name: 'nimble_moves'
-  label: 'Nimble Moves'
-  feat_type: 'general'
-  is_toggleable: false
-  description: |
-    Whenever you move, you may move through 5 feet of difficult terrain each round as if it were normal terrain. This feat allows you to take a 5-foot step into difficult terrain.
+  - id: &feat_nimble_moves_id 12
+    name: 'nimble_moves'
+    label: 'Nimble Moves'
+    feat_type: 'general'
+    is_toggleable: false
+    description: |
+      Whenever you move, you may move through 5 feet of difficult terrain each round as if it were normal terrain. This feat allows you to take a 5-foot step into difficult terrain.
 
-- id: &feat_adder_strike_id 13
-  name: 'adder_strike'
-  label: 'Adder Strike'
-  feat_type: 'combat'
-  is_toggleable: false
-  description: |
-    As a swift action, you can apply one dose of contact or injury poison to two body parts that you use for unarmed strikes. You must still protect yourself against exposure to contact poisons you apply in this way.
+  - id: &feat_adder_strike_id 13
+    name: 'adder_strike'
+    label: 'Adder Strike'
+    feat_type: 'combat'
+    is_toggleable: false
+    description: |
+      As a swift action, you can apply one dose of contact or injury poison to two body parts that you use for unarmed strikes. You must still protect yourself against exposure to contact poisons you apply in this way.
 
-- id: &feat_sahir_afiyun_id 14
-  name: 'sahir_afiyun'
-  label: 'Sahir-Afiyun'
-  feat_type: 'general'
-  is_toggleable: false
-  description: |
-    When you consume keif, you take 1 fewer point of Constitution or Wisdom damage (your choice). In addition, you add spells from the sahir-afiyun spells listed below to your own class spell list or list of spells known.
+  - id: &feat_sahir_afiyun_id 14
+    name: 'sahir_afiyun'
+    label: 'Sahir-Afiyun'
+    feat_type: 'general'
+    is_toggleable: false
+    description: |
+      When you consume keif, you take 1 fewer point of Constitution or Wisdom damage (your choice). In addition, you add spells from the sahir-afiyun spells listed below to your own class spell list or list of spells known.
 
-    You can add one spell from the highest level you can cast; you can instead add two spells to your list of spells known, but both of these spells must be at least 1 level lower than the highest-level spell you can cast for that class. If you have more than one spellcasting class, choose one and add the sahir-afiyun spell or spells listed below to that class's spell list or list of spells known.
+      You can add one spell from the highest level you can cast; you can instead add two spells to your list of spells known, but both of these spells must be at least 1 level lower than the highest-level spell you can cast for that class. If you have more than one spellcasting class, choose one and add the sahir-afiyun spell or spells listed below to that class's spell list or list of spells known.
 
-    1st—alleviate addiction, lesser confusion, night blindness, keif vigor, ray of sickening, remove fear, sleep.
-    2nd—augury, calm emotions, euphoric cloud.
-    3rd—contact high, deep slumber, imbue with addiction.
-    4th—absorbing inhalation, confusion, divination.
-    5th—symbol of sleep.
+      1st—alleviate addiction, lesser confusion, night blindness, keif vigor, ray of sickening, remove fear, sleep.
+      2nd—augury, calm emotions, euphoric cloud.
+      3rd—contact high, deep slumber, imbue with addiction.
+      4th—absorbing inhalation, confusion, divination.
+      5th—symbol of sleep.
 
-    All sahir-afiyun spells require 1 dose of keif as a material component, either replacing the existing material component, or as part of the material component if the existing component costs more.
+      All sahir-afiyun spells require 1 dose of keif as a material component, either replacing the existing material component, or as part of the material component if the existing component costs more.
 
-    Special: You can gain this feat multiple times. Its effects do not stack. Each time you take the feat, add one or more sahir-afiyun spells to your spell list.
+      Special: You can gain this feat multiple times. Its effects do not stack. Each time you take the feat, add one or more sahir-afiyun spells to your spell list.
 
-- id: &feat_spell_focus_id 15
-  name: 'spell_focus'
-  label: 'Spell Focus'
-  feat_type: 'general'
-  is_toggleable: false
-  description: |
-    Choose a school of magic. Any spells you cast of that school are more difficult to resist.
+  - id: &feat_spell_focus_id 15
+    name: 'spell_focus'
+    label: 'Spell Focus'
+    feat_type: 'general'
+    is_toggleable: false
+    description: |
+      Choose a school of magic. Any spells you cast of that school are more difficult to resist.
 
-    Add +1 to the Difficulty Class for all saving throws against spells from the school of magic you select.
+      Add +1 to the Difficulty Class for all saving throws against spells from the school of magic you select.
 
-    Special: You can gain this feat multiple times. Its effects do not stack. Each time you take the feat, it applies to a new school of magic.
+      Special: You can gain this feat multiple times. Its effects do not stack. Each time you take the feat, it applies to a new school of magic.
+
 # Feat Benefits table to track specific benefits granted by feats

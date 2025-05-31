@@ -11,19 +11,19 @@ const kernel = gameRules.getKernel();
 export async function load({ params }: { params: Record<string, string> }) {
 	try {
 		const numericId = Number(params.id);
-		
+
 		if (isNaN(numericId)) {
 			throw error(400, 'Invalid character ID');
 		}
-		
+
 		// Get complete character data from GameRulesAPI
 		// This now correctly handles creating files (not directories) for characters
 		const character = await gameRules.getCompleteCharacterData(numericId);
-		
+
 		if (!character) {
 			throw error(404, 'Character not found');
 		}
-		
+
 		// Return data for the client
 		return {
 			id: numericId,
@@ -33,10 +33,10 @@ export async function load({ params }: { params: Record<string, string> }) {
 	} catch (err) {
 		// If it's already a SvelteKit error, rethrow it
 		if (err && typeof err === 'object' && 'status' in err) throw err;
-		
+
 		// Log error details for debugging
 		console.error('Error loading character:', err);
-		
+
 		// Return a generic 500
 		throw error(500, 'Failed to load character data');
 	}

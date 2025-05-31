@@ -44,12 +44,14 @@ console.log(buffer.name);
 ## AVOID These Anti-patterns
 
 ❌ **Direct Supabase access**
+
 ```typescript
 // This is DEPRECATED - DO NOT USE
 const { data } = await supabase.from('game_character').select('*');
 ```
 
 ❌ **Using GameRulesAPI with Supabase passthrough**
+
 ```typescript
 // This is DEPRECATED - DO NOT USE
 const supabaseClient = gameRulesAPI.getSupabaseClient();
@@ -72,26 +74,26 @@ All database tables have a schema descriptor that explicitly maps database field
 
 ```typescript
 const CharacterSchema: SchemaDescriptor = {
-  tableName: 'game_character',
-  primaryKey: 'id',
-  fields: [
-    {
-      dbField: 'id',
-      property: 'id',
-      required: true
-    },
-    {
-      dbField: 'name',
-      property: 'name',
-      required: true
-    },
-    {
-      dbField: 'value', // Database field name
-      property: 'score', // Application property name
-      defaultValue: 10,
-      alternativeFields: ['score'] // Alternative field names
-    }
-  ]
+	tableName: 'game_character',
+	primaryKey: 'id',
+	fields: [
+		{
+			dbField: 'id',
+			property: 'id',
+			required: true
+		},
+		{
+			dbField: 'name',
+			property: 'name',
+			required: true
+		},
+		{
+			dbField: 'value', // Database field name
+			property: 'score', // Application property name
+			defaultValue: 10,
+			alternativeFields: ['score'] // Alternative field names
+		}
+	]
 };
 ```
 

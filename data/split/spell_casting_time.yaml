@@ -1,5 +1,4 @@
 spell_casting_time:
-- id: &spell_casting_time_1_minute_id 1
-  name: '1 minute'
-  label: '1 minute'
-
+  - id: &spell_casting_time_1_minute_id 1
+    name: '1 minute'
+    label: '1 minute'

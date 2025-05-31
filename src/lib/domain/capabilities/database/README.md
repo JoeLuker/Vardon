@@ -42,18 +42,18 @@ const path = '/db/character/1';
 const fd = kernel.open(path, OpenMode.READ);
 
 if (fd >= 0) {
-  try {
-    // Read the character data
-    const buffer: any = {};
-    const [result, data] = kernel.read(fd, buffer);
-    
-    if (result === 0) {
-      console.log('Character data:', data);
-    }
-  } finally {
-    // Always close the file descriptor
-    kernel.close(fd);
-  }
+	try {
+		// Read the character data
+		const buffer: any = {};
+		const [result, data] = kernel.read(fd, buffer);
+
+		if (result === 0) {
+			console.log('Character data:', data);
+		}
+	} finally {
+		// Always close the file descriptor
+		kernel.close(fd);
+	}
 }
 ```
 
@@ -65,26 +65,26 @@ const path = '/db/character/1';
 const fd = kernel.open(path, OpenMode.READ_WRITE);
 
 if (fd >= 0) {
-  try {
-    // Read the current data
-    const buffer: any = {};
-    const [readResult] = kernel.read(fd, buffer);
-    
-    if (readResult === 0) {
-      // Modify the data
-      buffer.name = 'Updated Name';
-      
-      // Write it back
-      const writeResult = kernel.write(fd, buffer);
-      
-      if (writeResult === 0) {
-        console.log('Character updated successfully');
-      }
-    }
-  } finally {
-    // Always close the file descriptor
-    kernel.close(fd);
-  }
+	try {
+		// Read the current data
+		const buffer: any = {};
+		const [readResult] = kernel.read(fd, buffer);
+
+		if (readResult === 0) {
+			// Modify the data
+			buffer.name = 'Updated Name';
+
+			// Write it back
+			const writeResult = kernel.write(fd, buffer);
+
+			if (writeResult === 0) {
+				console.log('Character updated successfully');
+			}
+		}
+	} finally {
+		// Always close the file descriptor
+		kernel.close(fd);
+	}
 }
 ```
 
@@ -96,18 +96,18 @@ const path = '/db/character/1/ability/strength';
 const fd = kernel.open(path, OpenMode.READ);
 
 if (fd >= 0) {
-  try {
-    // Read the ability score
-    const buffer: any = {};
-    const [result] = kernel.read(fd, buffer);
-    
-    if (result === 0) {
-      console.log('Strength score:', buffer.score);
-    }
-  } finally {
-    // Always close the file descriptor
-    kernel.close(fd);
-  }
+	try {
+		// Read the ability score
+		const buffer: any = {};
+		const [result] = kernel.read(fd, buffer);
+
+		if (result === 0) {
+			console.log('Strength score:', buffer.score);
+		}
+	} finally {
+		// Always close the file descriptor
+		kernel.close(fd);
+	}
 }
 ```
 
@@ -123,15 +123,15 @@ const dbCapability = new DatabaseCapability({ debug: true });
 const entity = await dbCapability.loadEntity('character-1');
 
 if (entity) {
-  console.log('Loaded entity:', entity);
-  
-  // Modify and save
-  entity.name = 'Updated Name';
-  const success = await dbCapability.saveEntity(entity);
-  
-  if (success) {
-    console.log('Entity saved successfully');
-  }
+	console.log('Loaded entity:', entity);
+
+	// Modify and save
+	entity.name = 'Updated Name';
+	const success = await dbCapability.saveEntity(entity);
+
+	if (success) {
+		console.log('Entity saved successfully');
+	}
 }
 ```
 
@@ -149,26 +149,26 @@ Schema descriptors provide a declarative way to define database schemas and fiel
 
 ```typescript
 const CharacterSchema: SchemaDescriptor = {
-  tableName: 'game_character',
-  primaryKey: 'id',
-  fields: [
-    {
-      dbField: 'id',
-      property: 'id',
-      required: true
-    },
-    {
-      dbField: 'name',
-      property: 'name',
-      required: true
-    },
-    {
-      dbField: 'value',
-      property: 'score',
-      defaultValue: 10,
-      alternativeFields: ['score']
-    }
-  ]
+	tableName: 'game_character',
+	primaryKey: 'id',
+	fields: [
+		{
+			dbField: 'id',
+			property: 'id',
+			required: true
+		},
+		{
+			dbField: 'name',
+			property: 'name',
+			required: true
+		},
+		{
+			dbField: 'value',
+			property: 'score',
+			defaultValue: 10,
+			alternativeFields: ['score']
+		}
+	]
 };
 ```
 

@@ -41,33 +41,37 @@
 		const now = new Date();
 		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
 	}
-	
+
 	// Load all characters
 	async function loadCharacters() {
 		try {
 			isLoading = true;
-			
+
 			// Get basic character list
 			console.log(`[${getTimestamp()}] [Layout] Fetching character list`);
 			const basicCharacters = await gameRules.getAllGameCharacter();
-			
+
 			if (!basicCharacters || basicCharacters.length === 0) {
 				console.log(`[${getTimestamp()}] [Layout] No characters found`);
 				characters = [];
 				isLoading = false;
 				return;
 			}
-			
+
 			// Get detailed character data
-			console.log(`[${getTimestamp()}] [Layout] Fetching detailed data for ${basicCharacters.length} characters`);
-			const characterIds = basicCharacters.map(char => char.id);
-			const detailedCharacters = await Promise.all(
-				characterIds.map(id => gameRules.getCompleteCharacterData(id))
+			console.log(
+				`[${getTimestamp()}] [Layout] Fetching detailed data for ${basicCharacters.length} characters`
 			);
-			
+			const characterIds = basicCharacters.map((char) => char.id);
+			const detailedCharacters = await Promise.all(
+				characterIds.map((id) => gameRules.getCompleteCharacterData(id))
+			);
+
 			// Filter out null results
 			characters = detailedCharacters.filter((char): char is CompleteCharacter => char !== null);
-			console.log(`[${getTimestamp()}] [Layout] Successfully loaded ${characters.length} characters`);
+			console.log(
+				`[${getTimestamp()}] [Layout] Successfully loaded ${characters.length} characters`
+			);
 		} catch (err) {
 			console.error(`[${getTimestamp()}] [Layout] Error loading characters:`, err);
 		} finally {
@@ -88,20 +92,22 @@
 				if (!kernel.exists('/proc/character')) {
 					kernel.mkdir('/proc/character');
 				}
-				
+
 				console.log(`[${getTimestamp()}] [Layout] Created base directories`);
-				
+
 				// Get basic character list
 				const basicChars = await gameRules.getAllGameCharacter();
-				
+
 				// Create character files immediately
 				if (basicChars && basicChars.length > 0) {
-					console.log(`[${getTimestamp()}] [Layout] Initializing ${basicChars.length} character files`);
-					
+					console.log(
+						`[${getTimestamp()}] [Layout] Initializing ${basicChars.length} character files`
+					);
+
 					for (const char of basicChars) {
 						const charPath = `/proc/character/${char.id}`;
 						const charData = await gameRules.getCompleteCharacterData(char.id);
-						
+
 						if (!kernel.exists(charPath) && charData) {
 							console.log(`[${getTimestamp()}] [Layout] Creating character file: ${charPath}`);
 							kernel.create(charPath, charData);
@@ -112,7 +118,7 @@
 		} catch (err) {
 			console.error(`[${getTimestamp()}] [Layout] Error initializing filesystem:`, err);
 		}
-		
+
 		// Now load characters after files are created
 		loadCharacters();
 	});

@@ -1,6 +1,6 @@
 /**
  * System Exports
- * 
+ *
  * This module exports the core components of the system.
  * It provides a clean, focused interface to the rest of the application.
  */
@@ -30,17 +30,17 @@ export { SkillFocusPlugin } from './plugins/feats/SkillFocusPlugin';
 
 // Database type exports
 export type {
-  Character,
-  CompleteCharacter,
-  Ability,
-  Class,
-  ClassFeature,
-  Feat,
-  Skill,
-  Ancestry,
-  Tables,
-  TablesInsert,
-  TablesUpdate
+	Character,
+	CompleteCharacter,
+	Ability,
+	Class,
+	ClassFeature,
+	Feat,
+	Skill,
+	Ancestry,
+	Tables,
+	TablesInsert,
+	TablesUpdate
 } from '../types/supabase';
 
 // API exports

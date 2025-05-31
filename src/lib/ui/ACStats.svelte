@@ -1,9 +1,9 @@
 <!-- FILE: src/lib/ui/ACStats.svelte -->
 <script lang="ts">
-	import type { GameKernel } from "$lib/domain/kernel/GameKernel";
-import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
+	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 	import { Shield } from 'lucide-svelte';
-	
+
 	// Constants for file paths and ioctl requests
 	const PATHS = {
 		DEV_COMBAT: '/dev/combat',
@@ -40,10 +40,10 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 	 * - kernel: GameKernel instance
 	 * - onSelectValue: callback for clicking an AC breakdown
 	 */
-	let { 
-		character = null, 
+	let {
+		character = null,
 		kernel = null,
-		onSelectValue = () => {} 
+		onSelectValue = () => {}
 	} = $props<{
 		character: any;
 		kernel: GameKernel | null;
@@ -82,7 +82,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 	async function loadCombatStats() {
 		isLoading = true;
 		error = null;
-		
+
 		// Ensure /proc directory exists
 		if (!kernel.exists('/proc')) {
 			console.log('Creating /proc directory');
@@ -93,7 +93,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 				return;
 			}
 		}
-		
+
 		// Ensure /proc/character directory exists
 		if (!kernel.exists('/proc/character')) {
 			console.log('Creating /proc/character directory');
@@ -104,10 +104,10 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 				return;
 			}
 		}
-		
+
 		// Get entity path for current character
 		const entityPath = `/proc/character/${character.id}`;
-		
+
 		// Open combat device
 		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
 		if (fd < 0) {
@@ -115,22 +115,21 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			isLoading = false;
 			return;
 		}
-		
+
 		try {
 			// Get all combat stats
 			const statsResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_ALL_COMBAT_STATS, {
 				entityPath
 			});
-			
+
 			if (statsResult.errorCode !== ErrorCode.SUCCESS) {
 				error = `Failed to get combat stats: ${statsResult.errorMessage}`;
 				isLoading = false;
 				return;
 			}
-			
+
 			// Update local state
 			combatStats = statsResult.data;
-			
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);
@@ -145,29 +144,33 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 		if (!kernel || !character) {
 			return null;
 		}
-		
+
 		// Ensure /proc directory exists
 		if (!kernel.exists('/proc')) {
 			console.log('Creating /proc directory');
 			const procResult = kernel.mkdir('/proc');
 			if (!procResult.success) {
-				console.error(`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`);
+				console.error(
+					`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`
+				);
 				return null;
 			}
 		}
-		
+
 		// Ensure /proc/character directory exists
 		if (!kernel.exists('/proc/character')) {
 			console.log('Creating /proc/character directory');
 			const charDirResult = kernel.mkdir('/proc/character');
 			if (!charDirResult.success) {
-				console.error(`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`);
+				console.error(
+					`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`
+				);
 				return null;
 			}
 		}
-		
+
 		const entityPath = `/proc/character/${character.id}`;
-		
+
 		// Map stat type to ioctl request
 		const requestMap = {
 			ac: COMBAT_REQUEST.GET_AC,
@@ -177,33 +180,32 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			cmd: COMBAT_REQUEST.GET_CMD,
 			initiative: COMBAT_REQUEST.GET_INITIATIVE
 		};
-		
+
 		const requestCode = requestMap[statType];
 		if (!requestCode) {
 			console.error(`Unknown stat type: ${statType}`);
 			return null;
 		}
-		
+
 		// Open combat device
 		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
 		if (fd < 0) {
 			console.error(`Failed to open combat device: error ${fd}`);
 			return null;
 		}
-		
+
 		try {
 			// Get specific stat
 			const statResult = kernel.ioctl(fd, requestCode, {
 				entityPath
 			});
-			
+
 			if (statResult.errorCode !== ErrorCode.SUCCESS) {
 				console.error(`Failed to get stat breakdown: ${statResult.errorMessage}`);
 				return null;
 			}
-			
+
 			return statResult.data;
-			
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);
@@ -221,7 +223,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 				return;
 			}
 		}
-		
+
 		// Use local data if available
 		if (combatStats[statType]) {
 			onSelectValue(combatStats[statType]);
@@ -233,31 +235,29 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 </script>
 
 {#if isLoading}
-	<div class="space-y-2 w-full animate-pulse">
-		<div class="h-10 bg-muted rounded-md"></div>
-		<div class="h-24 flex justify-center items-center">
-			<div class="w-20 h-20 bg-muted rounded-full"></div>
+	<div class="w-full animate-pulse space-y-2">
+		<div class="h-10 rounded-md bg-muted"></div>
+		<div class="flex h-24 items-center justify-center">
+			<div class="h-20 w-20 rounded-full bg-muted"></div>
 		</div>
 		<div class="grid grid-cols-2 gap-2">
-			<div class="h-10 bg-muted rounded-md"></div>
-			<div class="h-10 bg-muted rounded-md"></div>
+			<div class="h-10 rounded-md bg-muted"></div>
+			<div class="h-10 rounded-md bg-muted"></div>
 		</div>
 	</div>
 {:else if error}
-	<div class="space-y-2 w-full">
+	<div class="w-full space-y-2">
 		<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
 			{error}
 		</div>
-		<button class="text-sm text-primary hover:underline" onclick={loadCombatStats}>
-			Retry
-		</button>
+		<button class="text-sm text-primary hover:underline" onclick={loadCombatStats}> Retry </button>
 	</div>
 {:else}
-	<div class="space-y-2 w-full">
+	<div class="w-full space-y-2">
 		<!-- Initiative -->
 		<button
 			type="button"
-			class="flex w-full justify-between items-center p-2 rounded-md hover:bg-accent transition bg-accent/20 border border-accent/40"
+			class="flex w-full items-center justify-between rounded-md border border-accent/40 bg-accent/20 p-2 transition hover:bg-accent"
 			onclick={() => handleSelectStat('initiative')}
 		>
 			<div class="font-bold">Initiative</div>
@@ -265,16 +265,16 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 		</button>
 
 		<!-- AC Layout -->
-		<div class="flex justify-center items-end relative h-24">
+		<div class="relative flex h-24 items-end justify-center">
 			<!-- Normal AC -->
 			<button
 				type="button"
-				class="absolute z-20 hover:bg-accent/10 rounded-full transition"
+				class="absolute z-20 rounded-full transition hover:bg-accent/10"
 				onclick={() => handleSelectStat('ac')}
 			>
-				<div class="relative w-20 h-20">
-					<Shield class="w-full h-full" />
-					<div class="absolute inset-0 flex items-center justify-center font-bold text-xl">
+				<div class="relative h-20 w-20">
+					<Shield class="h-full w-full" />
+					<div class="absolute inset-0 flex items-center justify-center text-xl font-bold">
 						{combatStats.ac?.total ?? 10}
 					</div>
 				</div>
@@ -283,14 +283,14 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			<!-- Touch AC -->
 			<button
 				type="button"
-				class="absolute left-12 bottom-0 z-10 hover:bg-accent/10 rounded-full transition"
+				class="absolute bottom-0 left-12 z-10 rounded-full transition hover:bg-accent/10"
 				onclick={() => handleSelectStat('touch_ac')}
 			>
 				<div class="flex flex-col items-center">
-					<div class="text-xs font-medium text-blue-400 mb-1">Touch</div>
-					<div class="relative w-10 h-10">
-						<Shield class="w-full h-full text-blue-400" />
-						<div class="absolute inset-0 flex items-center justify-center font-bold text-sm">
+					<div class="mb-1 text-xs font-medium text-blue-400">Touch</div>
+					<div class="relative h-10 w-10">
+						<Shield class="h-full w-full text-blue-400" />
+						<div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
 							{combatStats.touch_ac?.total ?? 10}
 						</div>
 					</div>
@@ -300,14 +300,14 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			<!-- Flat-Footed AC -->
 			<button
 				type="button"
-				class="absolute right-12 bottom-0 z-10 hover:bg-accent/10 rounded-full transition"
+				class="absolute bottom-0 right-12 z-10 rounded-full transition hover:bg-accent/10"
 				onclick={() => handleSelectStat('flat_footed_ac')}
 			>
 				<div class="flex flex-col items-center">
-					<div class="text-xs font-medium text-amber-400 mb-1">Flat-Footed</div>
-					<div class="relative w-10 h-10">
-						<Shield class="w-full h-full text-amber-400" />
-						<div class="absolute inset-0 flex items-center justify-center font-bold text-sm">
+					<div class="mb-1 text-xs font-medium text-amber-400">Flat-Footed</div>
+					<div class="relative h-10 w-10">
+						<Shield class="h-full w-full text-amber-400" />
+						<div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
 							{combatStats.flat_footed_ac?.total ?? 10}
 						</div>
 					</div>
@@ -320,7 +320,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			<!-- CMB -->
 			<button
 				type="button"
-				class="flex justify-between items-center p-2 rounded-md hover:bg-accent transition"
+				class="flex items-center justify-between rounded-md p-2 transition hover:bg-accent"
 				onclick={() => handleSelectStat('cmb')}
 			>
 				<div class="font-semibold">CMB</div>
@@ -330,7 +330,7 @@ import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 			<!-- CMD -->
 			<button
 				type="button"
-				class="flex justify-between items-center p-2 rounded-md hover:bg-accent transition"
+				class="flex items-center justify-between rounded-md p-2 transition hover:bg-accent"
 				onclick={() => handleSelectStat('cmd')}
 			>
 				<div class="font-semibold">CMD</div>

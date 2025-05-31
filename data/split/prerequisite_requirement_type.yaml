@@ -1,9 +1,8 @@
 prerequisite_requirement_type:
-- id: &prerequisite_requirement_type_wild_talent_id 1
-  name: 'wild_talent'
-  label: 'Wild Talent'
+  - id: &prerequisite_requirement_type_wild_talent_id 1
+    name: 'wild_talent'
+    label: 'Wild Talent'
 
-- id: &prerequisite_requirement_type_monk_unchained_ki_power_id 2
-  name: 'monk_unchained_ki_power'
-  label: 'Unchained Monk Ki Power'
-
+  - id: &prerequisite_requirement_type_monk_unchained_ki_power_id 2
+    name: 'monk_unchained_ki_power'
+    label: 'Unchained Monk Ki Power'

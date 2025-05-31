@@ -1,6 +1,6 @@
 /**
  * Database Capability Index
- * 
+ *
  * This module exports the database capability components for use in the application.
  */
 
@@ -24,31 +24,33 @@ import { supabaseClient } from '$lib/db/supabaseClient';
  * @param options Options for the database capability
  * @returns A configured database capability
  */
-export function createDatabaseCapability(options: DatabaseCapabilityOptions = {}): DatabaseCapability {
-  // Extract debug setting to pass to driver
-  const debug = options.debug || false;
+export function createDatabaseCapability(
+	options: DatabaseCapabilityOptions = {}
+): DatabaseCapability {
+	// Extract debug setting to pass to driver
+	const debug = options.debug || false;
 
-  // Create driver with Supabase client
-  // Note: We can't pass kernel yet because the DatabaseCapability hasn't been mounted
-  // but we'll set it later in the onMount method
-  const driver = new SupabaseDatabaseDriver(supabaseClient, null, debug);
+	// Create driver with Supabase client
+	// Note: We can't pass kernel yet because the DatabaseCapability hasn't been mounted
+	// but we'll set it later in the onMount method
+	const driver = new SupabaseDatabaseDriver(supabaseClient, null, debug);
 
-  // Create capability with driver
-  const capability = new DatabaseCapability({
-    ...options,
-    driver
-  });
+	// Create capability with driver
+	const capability = new DatabaseCapability({
+		...options,
+		driver
+	});
 
-  // Override the onMount method to set the kernel in the driver
-  const originalOnMount = capability.onMount;
-  capability.onMount = function(kernel: any): void {
-    // Call the original onMount method
-    originalOnMount.call(this, kernel);
+	// Override the onMount method to set the kernel in the driver
+	const originalOnMount = capability.onMount;
+	capability.onMount = function (kernel: any): void {
+		// Call the original onMount method
+		originalOnMount.call(this, kernel);
 
-    // Set the kernel in the driver
-    (driver as any).kernel = kernel;
-    console.log('[DatabaseCapability] Driver kernel initialized');
-  };
+		// Set the kernel in the driver
+		(driver as any).kernel = kernel;
+		console.log('[DatabaseCapability] Driver kernel initialized');
+	};
 
-  return capability;
+	return capability;
 }

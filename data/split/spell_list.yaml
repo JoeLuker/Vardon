@@ -1,53 +1,52 @@
 spell_list:
-- id: &spell_list_cleric_id 1
-  name: 'cleric_spell_list'
-  label: 'Cleric Spell List'
+  - id: &spell_list_cleric_id 1
+    name: 'cleric_spell_list'
+    label: 'Cleric Spell List'
 
-- id: &spell_list_medium_id 2
-  name: 'medium_spell_list'
-  label: 'Medium Spell List'
+  - id: &spell_list_medium_id 2
+    name: 'medium_spell_list'
+    label: 'Medium Spell List'
 
-- id: &spell_list_witch_id 3
-  name: 'witch_spell_list'
-  label: 'Witch Spell List'
+  - id: &spell_list_witch_id 3
+    name: 'witch_spell_list'
+    label: 'Witch Spell List'
 
-- id: &spell_list_oracle_id 4
-  name: 'oracle_spell_list'
-  label: 'Oracle Spell List'
+  - id: &spell_list_oracle_id 4
+    name: 'oracle_spell_list'
+    label: 'Oracle Spell List'
 
-- id: &spell_list_psychic_id 5
-  name: 'psychic_spell_list'
-  label: 'Psychic Spell List'
+  - id: &spell_list_psychic_id 5
+    name: 'psychic_spell_list'
+    label: 'Psychic Spell List'
 
-- id: &spell_list_occultist_divination_id 6
-  name: 'occultist_divination_spell_list'
-  label: 'Occultist Divination Spell List'
+  - id: &spell_list_occultist_divination_id 6
+    name: 'occultist_divination_spell_list'
+    label: 'Occultist Divination Spell List'
 
-- id: &spell_list_warpriest_id 7
-  name: 'warpriest_spell_list'
-  label: 'Warpriest Spell List'
+  - id: &spell_list_warpriest_id 7
+    name: 'warpriest_spell_list'
+    label: 'Warpriest Spell List'
 
-- id: &spell_list_shaman_id 8
-  name: 'shaman_spell_list'
-  label: 'Shaman Spell List'
+  - id: &spell_list_shaman_id 8
+    name: 'shaman_spell_list'
+    label: 'Shaman Spell List'
 
-- id: &spell_list_spiritualist_id 9
-  name: 'spiritualist_spell_list'
-  label: 'Spiritualist Spell List'
+  - id: &spell_list_spiritualist_id 9
+    name: 'spiritualist_spell_list'
+    label: 'Spiritualist Spell List'
 
-- id: &spell_list_sahir_afiyun_id 10
-  name: 'sahir_afiyun_spell_list'
-  label: 'Sahir-Afiyun Spell List'
+  - id: &spell_list_sahir_afiyun_id 10
+    name: 'sahir_afiyun_spell_list'
+    label: 'Sahir-Afiyun Spell List'
 
-- id: &spell_list_dreamspun_id 11
-  name: 'dreamspun_sorcerer_spell_list'
-  label: 'Dreamspun Sorcerer Spell List'
+  - id: &spell_list_dreamspun_id 11
+    name: 'dreamspun_sorcerer_spell_list'
+    label: 'Dreamspun Sorcerer Spell List'
 
-- id: &spell_list_harrow_id 12
-  name: 'harrow_sorcerer_spell_list'
-  label: 'Harrow Sorcerer Spell List'
+  - id: &spell_list_harrow_id 12
+    name: 'harrow_sorcerer_spell_list'
+    label: 'Harrow Sorcerer Spell List'
 
-- id: &spell_list_subdomain_fate_id 13
-  name: 'subdomain_fate_spell_list'
-  label: 'Subdomain Fate Spell List'
-
+  - id: &spell_list_subdomain_fate_id 13
+    name: 'subdomain_fate_spell_list'
+    label: 'Subdomain Fate Spell List'

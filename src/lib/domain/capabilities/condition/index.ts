@@ -6,12 +6,12 @@
  */
 
 export type {
-  ConditionCapability,
-  ConditionType,
-  Condition,
-  ConditionEffect,
-  ConditionStateUpdate,
-  ApplyConditionOptions
+	ConditionCapability,
+	ConditionType,
+	Condition,
+	ConditionEffect,
+	ConditionStateUpdate,
+	ApplyConditionOptions
 } from './types';
 
 // Export the composition-based implementation (Unix-style)

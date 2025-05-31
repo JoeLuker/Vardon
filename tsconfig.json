@@ -15,15 +15,15 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"allowArbitraryExtensions": true,
-		
+
 		// Enforce strict import rules
-				"verbatimModuleSyntax": true,
-		
+		"verbatimModuleSyntax": true,
+
 		// Enable strict property initialization
 		"strictPropertyInitialization": true,
-		
+
 		// Path aliases are now defined in svelte.config.js
-		
+
 		// Enable additional strict checking
 		"noImplicitThis": true,
 		"alwaysStrict": true,

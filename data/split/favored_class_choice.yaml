@@ -1,11 +1,10 @@
 favored_class_choice:
-- id: &favored_hp_id 25
-  name: 'hp'
-  label: 'Hit Points'
-- id: &favored_skill_id 26
-  name: 'skill'
-  label: 'Skill Ranks'
-- id: &favored_other_id 27
-  name: 'other'
-  label: 'Other'
-
+  - id: &favored_hp_id 25
+    name: 'hp'
+    label: 'Hit Points'
+  - id: &favored_skill_id 26
+    name: 'skill'
+    label: 'Skill Ranks'
+  - id: &favored_other_id 27
+    name: 'other'
+    label: 'Other'

@@ -64,7 +64,7 @@ export interface FavoredClassData {
 }
 
 // Enriched character data
-export interface AssembledCharacter extends GameRules.Complete.Character  {
+export interface AssembledCharacter extends GameRules.Complete.Character {
 	// Ability scores with breakdown
 	strength: ValueWithBreakdown;
 	dexterity: ValueWithBreakdown;
@@ -115,12 +115,12 @@ export interface AssembledCharacter extends GameRules.Complete.Character  {
 		total: Record<number, ValueWithBreakdown>;
 		remaining: Record<number, number>;
 	};
-	
+
 	// Character data
 	totalLevel: number;
 	skillsWithRanks: SkillWithRanks[];
 	processedClassFeatures: ProcessedClassFeature[];
-	
+
 	// Spellcasting data
 	spellcastingClasses?: {
 		classId: number;
@@ -131,14 +131,14 @@ export interface AssembledCharacter extends GameRules.Complete.Character  {
 			isSpontaneous: boolean;
 			progression: string;
 			maxSpellLevel: number;
-		}
+		};
 	}[];
 	preparedSpells: Record<number, Record<number, any[]>>;
 	spellSlots: Record<number, Record<number, SpellSlotData>>;
-	
+
 	// ABP data
 	abpData: AbpData;
-	
+
 	// Favored Class Bonus data
 	favoredClassData: FavoredClassData;
 }
@@ -210,10 +210,10 @@ export interface SizeData {
 
 // Attack bonuses
 export interface AttackBonuses {
-    baseAttackBonus: number;
-    weaponAttunement: number;
-    enhancement: number;
-    iterativeAttacks: number[];
+	baseAttackBonus: number;
+	weaponAttunement: number;
+	enhancement: number;
+	iterativeAttacks: number[];
 }
 
 // Combat maneuver parts
@@ -247,6 +247,4 @@ export interface ACParts {
 export interface SkillRanksByLevel {
 	skillId: number;
 	ranksByLevel: Array<number>;
-} 
-
-
+}

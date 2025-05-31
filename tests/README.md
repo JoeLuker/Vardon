@@ -18,6 +18,7 @@ This directory contains comprehensive CLI tests for the Vardon Unix-inspired Pat
 ### Test Framework
 
 The CLI test framework (`cli-runner.ts`) provides:
+
 - Colorized output with ANSI codes
 - Assertion helpers for common test patterns
 - Performance timing and measurement
@@ -27,16 +28,19 @@ The CLI test framework (`cli-runner.ts`) provides:
 ## Running Tests
 
 ### All Tests
+
 ```bash
 npm run test:cli
 ```
 
 ### Verbose Output
+
 ```bash
 npm run test:cli:verbose
 ```
 
 ### Specific Test Suites
+
 ```bash
 npm run test:cli:unix         # Unix architecture
 npm run test:cli:character    # Character system
@@ -49,6 +53,7 @@ npm run test:cli:integration  # Integration tests
 ```
 
 ### Filter Tests
+
 ```bash
 npm run test:cli filesystem   # Any suite containing "filesystem"
 npm run test:cli:verbose performance  # Performance tests with verbose output
@@ -57,7 +62,9 @@ npm run test:cli:verbose performance  # Performance tests with verbose output
 ## Test Categories
 
 ### 🔧 Unix Architecture Tests
+
 Validates core Unix principles:
+
 - Absolute path enforcement
 - File descriptor management
 - Standard directory structure (/dev, /proc, /entity, etc.)
@@ -66,7 +73,9 @@ Validates core Unix principles:
 - Path normalization and resolution
 
 ### 👤 Character System Tests
+
 Tests character mechanics:
+
 - Character entity creation and modification
 - Ability score calculations and modifiers
 - Skill rank and bonus calculations
@@ -75,7 +84,9 @@ Tests character mechanics:
 - Character templates and validation
 
 ### 💾 Database Tests
+
 Validates database integration:
+
 - Database capability mounting
 - Schema registration and validation
 - Query execution through filesystem
@@ -84,7 +95,9 @@ Validates database integration:
 - Metadata queries
 
 ### 📁 Filesystem Tests
+
 Tests virtual filesystem:
+
 - File creation and persistence
 - Directory hierarchy persistence
 - Storage size limits and optimization
@@ -93,7 +106,9 @@ Tests virtual filesystem:
 - Cross-session data persistence
 
 ### ⚙️ Capability Tests
+
 Tests capability composition:
+
 - Capability mounting and unmounting
 - Device file operations (read/write)
 - Multiple capability composition
@@ -102,7 +117,9 @@ Tests capability composition:
 - Performance optimization
 
 ### 🔌 Plugin Tests
+
 Tests plugin system:
+
 - Plugin registration and discovery
 - Plugin execution and error handling
 - Skill Focus feat application
@@ -110,7 +127,9 @@ Tests plugin system:
 - Options validation and lifecycle
 
 ### ⚡ Performance Tests
+
 Benchmarks system performance:
+
 - Filesystem operation throughput
 - Kernel syscall performance
 - Character calculation speed
@@ -119,7 +138,9 @@ Benchmarks system performance:
 - Large data processing
 
 ### 🔗 Integration Tests
+
 End-to-end system validation:
+
 - Complete character creation workflow
 - Character progression and leveling
 - Combat damage and healing
@@ -130,6 +151,7 @@ End-to-end system validation:
 ## Test Output
 
 ### Success Example
+
 ```
 🚀 Starting Vardon CLI Tests...
 
@@ -147,6 +169,7 @@ Unix Architecture: 10 passed, 0 failed (245.1ms)
 ```
 
 ### Failure Example
+
 ```
 Running Character System Tests
 Tests for character entities, abilities, skills, and combat calculations
@@ -162,31 +185,33 @@ Character System: 9 passed, 1 failed (198.3ms)
 ## Writing New Tests
 
 ### Basic Test Structure
+
 ```typescript
 import { registerTestSuite, TestContext, results } from './cli-runner';
 
 registerTestSuite({
-  name: 'My Test Suite',
-  description: 'Tests for my feature',
-  tags: ['feature', 'unit'],
-  run: async () => {
-    const ctx = new TestContext('My Tests');
-    
-    ctx.test('should do something', () => {
-      ctx.assertEquals(1 + 1, 2, '1 + 1 should equal 2');
-    });
-    
-    await ctx.asyncTest('should do async thing', async () => {
-      const result = await someAsyncOperation();
-      ctx.assertNotNull(result, 'Should return a result');
-    });
-    
-    results.push(ctx.getResults());
-  }
+	name: 'My Test Suite',
+	description: 'Tests for my feature',
+	tags: ['feature', 'unit'],
+	run: async () => {
+		const ctx = new TestContext('My Tests');
+
+		ctx.test('should do something', () => {
+			ctx.assertEquals(1 + 1, 2, '1 + 1 should equal 2');
+		});
+
+		await ctx.asyncTest('should do async thing', async () => {
+			const result = await someAsyncOperation();
+			ctx.assertNotNull(result, 'Should return a result');
+		});
+
+		results.push(ctx.getResults());
+	}
 });
 ```
 
 ### Assertion Methods
+
 - `assertEquals(actual, expected, message?)`
 - `assertNotEquals(actual, expected, message?)`
 - `assertTrue(value, message?)`
@@ -205,14 +230,14 @@ registerTestSuite({
 
 The performance tests provide baseline measurements:
 
-| Operation | Target | Typical |
-|-----------|---------|---------|
-| File Creation | >100/sec | ~500/sec |
-| File Reading | >1000/sec | ~2000/sec |
-| Syscalls | >1000/sec | ~1500/sec |
-| Character Creation | >10/sec | ~25/sec |
-| Character Loading | >100/sec | ~200/sec |
-| Capability Calculations | >50/sec | ~100/sec |
+| Operation               | Target    | Typical   |
+| ----------------------- | --------- | --------- |
+| File Creation           | >100/sec  | ~500/sec  |
+| File Reading            | >1000/sec | ~2000/sec |
+| Syscalls                | >1000/sec | ~1500/sec |
+| Character Creation      | >10/sec   | ~25/sec   |
+| Character Loading       | >100/sec  | ~200/sec  |
+| Capability Calculations | >50/sec   | ~100/sec  |
 
 ## CI/CD Integration
 
@@ -222,7 +247,7 @@ Tests are designed for automated CI/CD:
 # Example GitHub Actions
 - name: Run CLI Tests
   run: npm run test:cli
-  
+
 - name: Run Performance Tests
   run: npm run test:cli:performance
 ```
@@ -237,6 +262,7 @@ Tests are designed for automated CI/CD:
 ## Test Environment
 
 Tests run in Node.js with:
+
 - TypeScript compilation via ts-node
 - Mock localStorage for browser APIs
 - Unix-style path handling

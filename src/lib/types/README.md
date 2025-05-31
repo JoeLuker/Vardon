@@ -29,7 +29,7 @@ const character: CompleteCharacter = await databaseDriver.getCharacterById(1);
 
 // Type-safe access to character attributes
 console.log(character.name);
-console.log(character.game_character_ability.map(a => a.ability.name));
+console.log(character.game_character_ability.map((a) => a.ability.name));
 ```
 
 ## Regenerating Types

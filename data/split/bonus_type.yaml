@@ -1,32 +1,32 @@
 bonus_type:
-- id: &bonus_untyped_id 1
-  name: 'untyped'
-  label: 'Untyped'
-  stacking: true
-- id: &bonus_circumstance_id 2
-  name: 'circumstance'
-  label: 'Circumstance'
-  stacking: true
-- id: &bonus_inherent_id 3
-  name: 'inherent'
-  label: 'Inherent'
-- id: &bonus_enhancement_id 4
-  name: 'enhancement'
-  label: 'Enhancement'
-- id: &bonus_morale_id 5
-  name: 'morale'
-  label: 'Morale'
-- id: &bonus_dodge_id 6
-  name: 'dodge'
-  label: 'Dodge'
-  stacking: true
-- id: &bonus_ancestral_id 7
-  name: 'ancestral'
-  label: 'Ancestral'
-- id: &bonus_natural_id 8
-  name: 'natural_armor'
-  label: 'Natural Armor'
-- id: &bonus_trait_id 400
-  name: 'trait'
-  label: 'Trait'
+  - id: &bonus_untyped_id 1
+    name: 'untyped'
+    label: 'Untyped'
+    stacking: true
+  - id: &bonus_circumstance_id 2
+    name: 'circumstance'
+    label: 'Circumstance'
+    stacking: true
+  - id: &bonus_inherent_id 3
+    name: 'inherent'
+    label: 'Inherent'
+  - id: &bonus_enhancement_id 4
+    name: 'enhancement'
+    label: 'Enhancement'
+  - id: &bonus_morale_id 5
+    name: 'morale'
+    label: 'Morale'
+  - id: &bonus_dodge_id 6
+    name: 'dodge'
+    label: 'Dodge'
+    stacking: true
+  - id: &bonus_ancestral_id 7
+    name: 'ancestral'
+    label: 'Ancestral'
+  - id: &bonus_natural_id 8
+    name: 'natural_armor'
+    label: 'Natural Armor'
+  - id: &bonus_trait_id 400
+    name: 'trait'
+    label: 'Trait'
 # Add new reference table for legendary gifts

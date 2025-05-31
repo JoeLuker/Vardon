@@ -22,16 +22,16 @@ Similar to Unix `errno.h`, we define a standard set of error codes in `kernel/ty
 
 ```typescript
 export enum ErrorCode {
-  /** Success */
-  SUCCESS = 0,
-  
-  /** Operation not permitted */
-  EPERM = 1,
-  
-  /** No such file or directory */
-  ENOENT = 2,
-  
-  // Additional error codes...
+	/** Success */
+	SUCCESS = 0,
+
+	/** Operation not permitted */
+	EPERM = 1,
+
+	/** No such file or directory */
+	ENOENT = 2
+
+	// Additional error codes...
 }
 ```
 
@@ -41,26 +41,26 @@ Error context provides details about where and why an error occurred:
 
 ```typescript
 export interface ErrorContext {
-  /** Component where the error occurred */
-  component: string;
-  
-  /** Operation being performed */
-  operation: string;
-  
-  /** Path being operated on (if applicable) */
-  path?: string;
-  
-  /** File descriptor being used (if applicable) */
-  fd?: number;
-  
-  /** Additional contextual data */
-  data?: Record<string, any>;
-  
-  /** Stack trace (if available) */
-  stack?: string;
-  
-  /** Timestamp when error occurred */
-  timestamp: number;
+	/** Component where the error occurred */
+	component: string;
+
+	/** Operation being performed */
+	operation: string;
+
+	/** Path being operated on (if applicable) */
+	path?: string;
+
+	/** File descriptor being used (if applicable) */
+	fd?: number;
+
+	/** Additional contextual data */
+	data?: Record<string, any>;
+
+	/** Stack trace (if available) */
+	stack?: string;
+
+	/** Timestamp when error occurred */
+	timestamp: number;
 }
 ```
 
@@ -70,14 +70,14 @@ A structured error object that combines an error code with context:
 
 ```typescript
 export interface SystemError {
-  /** Error code (mapped to Unix errno) */
-  code: ErrorCode;
-  
-  /** Human-readable error message */
-  message: string;
-  
-  /** Context about where the error occurred */
-  context: ErrorContext;
+	/** Error code (mapped to Unix errno) */
+	code: ErrorCode;
+
+	/** Human-readable error message */
+	message: string;
+
+	/** Context about where the error occurred */
+	context: ErrorContext;
 }
 ```
 
@@ -87,20 +87,20 @@ A generic result type that can contain either success data or error information:
 
 ```typescript
 export interface Result<T> {
-  /** Success status */
-  success: boolean;
-  
-  /** Error code if operation failed */
-  errorCode: ErrorCode;
-  
-  /** Error message if operation failed */
-  errorMessage?: string;
-  
-  /** Error context if operation failed */
-  errorContext?: ErrorContext;
-  
-  /** Result data if operation succeeded */
-  data?: T;
+	/** Success status */
+	success: boolean;
+
+	/** Error code if operation failed */
+	errorCode: ErrorCode;
+
+	/** Error message if operation failed */
+	errorMessage?: string;
+
+	/** Error context if operation failed */
+	errorContext?: ErrorContext;
+
+	/** Result data if operation succeeded */
+	data?: T;
 }
 ```
 
@@ -112,10 +112,10 @@ Creates a structured error object:
 
 ```typescript
 export function createError(
-  code: ErrorCode,
-  message: string,
-  context: Partial<ErrorContext>
-): SystemError
+	code: ErrorCode,
+	message: string,
+	context: Partial<ErrorContext>
+): SystemError;
 ```
 
 ### success / failure
@@ -123,8 +123,12 @@ export function createError(
 Helper functions to create standardized result objects:
 
 ```typescript
-export function success<T>(data: T): Result<T>
-export function failure<T>(code: ErrorCode, message?: string, context?: Partial<ErrorContext>): Result<T>
+export function success<T>(data: T): Result<T>;
+export function failure<T>(
+	code: ErrorCode,
+	message?: string,
+	context?: Partial<ErrorContext>
+): Result<T>;
 ```
 
 ### withResource
@@ -133,10 +137,10 @@ Pattern for resource management that ensures cleanup:
 
 ```typescript
 export async function withResource<T, R>(
-  allocator: () => Promise<T> | T,
-  releaser: (resource: T) => Promise<void> | void,
-  operation: (resource: T) => Promise<R> | R
-): Promise<Result<R>>
+	allocator: () => Promise<T> | T,
+	releaser: (resource: T) => Promise<void> | void,
+	operation: (resource: T) => Promise<R> | R
+): Promise<Result<R>>;
 ```
 
 ### withFile
@@ -145,11 +149,11 @@ Higher-level utility for file operations with automatic descriptor management:
 
 ```typescript
 export async function withFile<R>(
-  kernel: any,
-  path: string,
-  mode: any,
-  operation: (fd: number) => Promise<R> | R
-): Promise<Result<R>>
+	kernel: any,
+	path: string,
+	mode: any,
+	operation: (fd: number) => Promise<R> | R
+): Promise<Result<R>>;
 ```
 
 ### Error Logger
@@ -175,16 +179,16 @@ Device capabilities should use error handling consistently:
 
 ```typescript
 function handleRead(fd: number, buffer: any, context: any): number {
-  try {
-    // Operation implementation
-    return ErrorCode.SUCCESS;
-  } catch (err) {
-    context.logger.error(`Error in read operation: ${err}`, err, {
-      operation: 'handleRead',
-      fd
-    });
-    return ErrorCode.EIO;
-  }
+	try {
+		// Operation implementation
+		return ErrorCode.SUCCESS;
+	} catch (err) {
+		context.logger.error(`Error in read operation: ${err}`, err, {
+			operation: 'handleRead',
+			fd
+		});
+		return ErrorCode.EIO;
+	}
 }
 ```
 
@@ -194,23 +198,18 @@ Always use proper resource cleanup patterns:
 
 ```typescript
 // GOOD: Using withFile for automatic cleanup
-return withFile(
-  kernel,
-  entityPath,
-  OpenMode.READ_WRITE,
-  (fd) => {
-    // File operations with fd
-    return ErrorCode.SUCCESS;
-  }
-);
+return withFile(kernel, entityPath, OpenMode.READ_WRITE, (fd) => {
+	// File operations with fd
+	return ErrorCode.SUCCESS;
+});
 
 // BAD: Manual cleanup with risk of leaks
 const fd = kernel.open(entityPath, OpenMode.READ_WRITE);
 try {
-  // File operations with fd
-  return ErrorCode.SUCCESS;
+	// File operations with fd
+	return ErrorCode.SUCCESS;
 } finally {
-  kernel.close(fd); // Easy to forget or miss in complex code
+	kernel.close(fd); // Easy to forget or miss in complex code
 }
 ```
 
@@ -220,30 +219,21 @@ Return structured results for higher-level functions:
 
 ```typescript
 async function loadEntity(entityId: string): Promise<Result<Entity>> {
-  const entityPath = `/entity/${entityId}`;
-  
-  return withFile(
-    kernel,
-    entityPath,
-    OpenMode.READ,
-    (fd) => {
-      const [result, entity] = kernel.read(fd);
-      
-      if (result !== ErrorCode.SUCCESS) {
-        return failure(
-          result,
-          `Failed to read entity: ${entityPath}`,
-          {
-            operation: 'loadEntity.read',
-            path: entityPath,
-            fd
-          }
-        );
-      }
-      
-      return success(entity);
-    }
-  );
+	const entityPath = `/entity/${entityId}`;
+
+	return withFile(kernel, entityPath, OpenMode.READ, (fd) => {
+		const [result, entity] = kernel.read(fd);
+
+		if (result !== ErrorCode.SUCCESS) {
+			return failure(result, `Failed to read entity: ${entityPath}`, {
+				operation: 'loadEntity.read',
+				path: entityPath,
+				fd
+			});
+		}
+
+		return success(entity);
+	});
 }
 ```
 
@@ -253,22 +243,22 @@ UI components should handle errors gracefully:
 
 ```typescript
 async function loadData() {
-  try {
-    const result = await api.loadEntity(entityId);
-    
-    if (!result.success) {
-      // Handle error in UI
-      errorMessage = result.errorMessage || 'Unknown error';
-      return;
-    }
-    
-    // Use result.data
-    entity = result.data;
-  } catch (err) {
-    // Handle unexpected errors
-    errorMessage = 'Unexpected error occurred';
-    console.error(err);
-  }
+	try {
+		const result = await api.loadEntity(entityId);
+
+		if (!result.success) {
+			// Handle error in UI
+			errorMessage = result.errorMessage || 'Unknown error';
+			return;
+		}
+
+		// Use result.data
+		entity = result.data;
+	} catch (err) {
+		// Handle unexpected errors
+		errorMessage = 'Unexpected error occurred';
+		console.error(err);
+	}
 }
 ```
 

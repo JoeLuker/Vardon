@@ -1,12 +1,11 @@
 trait:
-- id: &trait_pragmatic_activator_id 3000
-  name: 'trait_pragmatic_activator'
-  label: 'Pragmatic Activator'
-  trait_type: 'Magic'
-  description: 'Use INT instead of CHA for Use Magic Device.'
-- id: &trait_clever_wordplay_diplomacy_id 3001
-  name: 'trait_clever_wordplay_diplomacy'
-  label: 'Clever Wordplay (Diplomacy)'
-  trait_type: 'Social'
-  description: 'Use INT instead of CHA for one chosen Cha-based skill. (Diplomacy)'
-
+  - id: &trait_pragmatic_activator_id 3000
+    name: 'trait_pragmatic_activator'
+    label: 'Pragmatic Activator'
+    trait_type: 'Magic'
+    description: 'Use INT instead of CHA for Use Magic Device.'
+  - id: &trait_clever_wordplay_diplomacy_id 3001
+    name: 'trait_clever_wordplay_diplomacy'
+    label: 'Clever Wordplay (Diplomacy)'
+    trait_type: 'Social'
+    description: 'Use INT instead of CHA for one chosen Cha-based skill. (Diplomacy)'

@@ -29,7 +29,11 @@
 	};
 
 	// Props with proper typing
-	let { character, onSelectValue = () => {}, kernel } = $props<{
+	let {
+		character,
+		onSelectValue = () => {},
+		kernel
+	} = $props<{
 		character?: AssembledCharacter | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 		kernel?: any;
@@ -161,7 +165,10 @@
 						newScores.push({
 							name: ability.name,
 							value: charAbility?.total || 10,
-							mod: character[`${ability.key.substring(0, 3)}Mod` as keyof AssembledCharacter] as number || 0,
+							mod:
+								(character[
+									`${ability.key.substring(0, 3)}Mod` as keyof AssembledCharacter
+								] as number) || 0,
 							path: `${entityPath}/abilities/${ability.key}`
 						});
 					}
@@ -175,12 +182,15 @@
 			}
 		} else {
 			// Fallback to character props if device not available
-			const newScores: AbilityScore[] = abilityNames.map(ability => {
+			const newScores: AbilityScore[] = abilityNames.map((ability) => {
 				const charAbility = character[ability.key as keyof AssembledCharacter];
 				return {
 					name: ability.name,
 					value: charAbility?.total || 10,
-					mod: character[`${ability.key.substring(0, 3)}Mod` as keyof AssembledCharacter] as number || 0,
+					mod:
+						(character[
+							`${ability.key.substring(0, 3)}Mod` as keyof AssembledCharacter
+						] as number) || 0,
 					path: `${entityPath}/abilities/${ability.key}`
 				};
 			});
@@ -203,7 +213,9 @@
 			console.log(`Creating ${ABILITY_PATHS.PROC} directory`);
 			const procResult = kernel.mkdir(ABILITY_PATHS.PROC);
 			if (!procResult.success) {
-				console.error(`Failed to create ${ABILITY_PATHS.PROC} directory: ${procResult.errorMessage || 'Unknown error'}`);
+				console.error(
+					`Failed to create ${ABILITY_PATHS.PROC} directory: ${procResult.errorMessage || 'Unknown error'}`
+				);
 				return;
 			}
 		}
@@ -213,7 +225,9 @@
 			console.log(`Creating ${ABILITY_PATHS.PROC_CHARACTER} directory`);
 			const charDirResult = kernel.mkdir(ABILITY_PATHS.PROC_CHARACTER);
 			if (!charDirResult.success) {
-				console.error(`Failed to create ${ABILITY_PATHS.PROC_CHARACTER} directory: ${charDirResult.errorMessage || 'Unknown error'}`);
+				console.error(
+					`Failed to create ${ABILITY_PATHS.PROC_CHARACTER} directory: ${charDirResult.errorMessage || 'Unknown error'}`
+				);
 				return;
 			}
 		}
@@ -303,7 +317,9 @@
 {#if isLoading}
 	<div class="card">
 		<div class="flex items-center justify-center space-x-2 text-primary/70">
-			<div class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"></div>
+			<div
+				class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
+			></div>
 			<p>Loading attributes...</p>
 		</div>
 	</div>
@@ -333,11 +349,7 @@
 			</div>
 			<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
 				{#each abilityScores as ability}
-					<button
-						class="attribute-card"
-						type="button"
-						onclick={() => selectAbility(ability)}
-					>
+					<button class="attribute-card" type="button" onclick={() => selectAbility(ability)}>
 						<div class="card-inner">
 							<div class="attribute-name">{ability.name}</div>
 

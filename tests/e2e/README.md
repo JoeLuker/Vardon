@@ -18,31 +18,37 @@ This directory contains comprehensive end-to-end tests for the Vardon Pathfinder
 ## Running Tests
 
 ### All Tests
+
 ```bash
 npm run test:e2e
 ```
 
 ### Specific Test Suite
+
 ```bash
 npm run test:e2e -- tests/e2e/character-sheet.spec.ts
 ```
 
 ### With UI Mode (Interactive)
+
 ```bash
 npm run test:e2e:ui
 ```
 
 ### Headed Mode (See Browser)
+
 ```bash
 npm run test:e2e -- --headed
 ```
 
 ### Debug Mode
+
 ```bash
 npm run test:e2e -- --debug
 ```
 
 ### Single Browser
+
 ```bash
 npm run test:e2e -- --project=chromium
 ```
@@ -52,12 +58,15 @@ npm run test:e2e -- --project=chromium
 Visual tests capture screenshots and compare against baselines.
 
 ### Update Screenshots
+
 ```bash
 npm run test:e2e -- --update-snapshots
 ```
 
 ### View Differences
+
 After a failed visual test, view the report:
+
 ```bash
 npx playwright show-report
 ```
@@ -65,27 +74,35 @@ npx playwright show-report
 ## Test Categories
 
 ### Smoke Tests
+
 Quick tests to ensure basic functionality:
+
 - App loads
 - Navigation works
 - No console errors
 
 ### Functional Tests
+
 Detailed testing of features:
+
 - Character data display
 - HP tracking
 - Skill calculations
 - Combat stats
 
 ### Integration Tests
+
 Unix filesystem integration:
+
 - Virtual filesystem operations
 - Capability mounting
 - File descriptor management
 - Message queues
 
 ### Visual Tests
+
 UI consistency:
+
 - Component appearance
 - Responsive design
 - Theme switching
@@ -114,6 +131,7 @@ UI consistency:
 ## CI/CD Integration
 
 Tests are configured to run in CI with:
+
 - Retry on failure (2 attempts)
 - Single worker to avoid conflicts
 - HTML report generation
@@ -121,16 +139,21 @@ Tests are configured to run in CI with:
 ## Common Issues
 
 ### Local Database
+
 Tests may fail if local database is not running. Start with:
+
 ```bash
 supabase start
 ```
 
 ### Character IDs
+
 Tests use character IDs 1 and 2. Ensure test data exists.
 
 ### Timeouts
+
 Increase timeouts for slow connections:
+
 ```javascript
 test.setTimeout(60000); // 60 seconds
 ```
@@ -147,6 +170,7 @@ test.setTimeout(60000); // 60 seconds
 ## Test Data
 
 Tests assume:
+
 - Character with ID 1 exists
 - Standard Pathfinder tables (skills, abilities, etc.)
 - Unix filesystem structure initialized

@@ -1,13 +1,12 @@
 qinggong_monk_ki_power_type:
-- id: &qinggong_monk_ki_power_type_monk_ability_id 1
-  name: 'monk_ability'
-  label: 'Monk Ability'
+  - id: &qinggong_monk_ki_power_type_monk_ability_id 1
+    name: 'monk_ability'
+    label: 'Monk Ability'
 
-- id: &qinggong_monk_ki_power_type_spell_like_ability_id 2
-  name: 'spell_like_ability'
-  label: 'Spell-Like Ability'
+  - id: &qinggong_monk_ki_power_type_spell_like_ability_id 2
+    name: 'spell_like_ability'
+    label: 'Spell-Like Ability'
 
-- id: &qinggong_monk_ki_power_type_feat_ability_id 3
-  name: 'feat_ability'
-  label: 'Feat Ability'
-
+  - id: &qinggong_monk_ki_power_type_feat_ability_id 3
+    name: 'feat_ability'
+    label: 'Feat Ability'

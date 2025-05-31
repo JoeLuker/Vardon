@@ -18,12 +18,12 @@ This document defines the standard Unix-style file paths used to access database
       /equipment/     - Character equipment
       /trait/         - Character traits
     /list             - List of all characters
-  
+
 /schema/              - Database schema metadata
   /[table_name]/      - Table-specific metadata
     /list             - List all rows in table
     /schema           - Table schema information
-  
+
 /entity/              - Entity resources
   /[id]/              - Entity by ID
     /abilities/       - Entity abilities
@@ -66,46 +66,46 @@ This document defines the standard Unix-style file paths used to access database
 // Get a character by ID
 const fd = kernel.open(`/proc/character/123`, OpenMode.READ);
 if (fd >= 0) {
-  try {
-    const [result, buffer] = kernel.read(fd);
-    if (result === ErrorCode.SUCCESS) {
-      const character = buffer.data;
-      // Process character data
-    }
-  } finally {
-    // Always close file descriptors
-    kernel.close(fd);
-  }
+	try {
+		const [result, buffer] = kernel.read(fd);
+		if (result === ErrorCode.SUCCESS) {
+			const character = buffer.data;
+			// Process character data
+		}
+	} finally {
+		// Always close file descriptors
+		kernel.close(fd);
+	}
 }
 
 // Update a character skill
 const skillFd = kernel.open(`/proc/character/123/skill/456`, OpenMode.WRITE);
 if (skillFd >= 0) {
-  try {
-    const result = kernel.write(skillFd, {
-      rank: 3,
-      classSkill: true
-    });
-    if (result === ErrorCode.SUCCESS) {
-      // Skill updated successfully
-    }
-  } finally {
-    kernel.close(skillFd);
-  }
+	try {
+		const result = kernel.write(skillFd, {
+			rank: 3,
+			classSkill: true
+		});
+		if (result === ErrorCode.SUCCESS) {
+			// Skill updated successfully
+		}
+	} finally {
+		kernel.close(skillFd);
+	}
 }
 
 // List all characters
 const listFd = kernel.open(`/proc/character/list`, OpenMode.READ);
 if (listFd >= 0) {
-  try {
-    const [result, buffer] = kernel.read(listFd);
-    if (result === ErrorCode.SUCCESS) {
-      const characters = buffer.characters;
-      // Process character list
-    }
-  } finally {
-    kernel.close(listFd);
-  }
+	try {
+		const [result, buffer] = kernel.read(listFd);
+		if (result === ErrorCode.SUCCESS) {
+			const characters = buffer.characters;
+			// Process character list
+		}
+	} finally {
+		kernel.close(listFd);
+	}
 }
 ```
 
@@ -119,15 +119,15 @@ Device control operations can be used for specialized database operations:
 // Query specific data with parameters
 const dbFd = kernel.open('/dev/db', OpenMode.READ_WRITE);
 if (dbFd >= 0) {
-  try {
-    const result = kernel.ioctl(dbFd, REQUEST.QUERY, {
-      table: 'spell',
-      filter: { level: 3, class_id: 1 }
-    });
-    // Process result
-  } finally {
-    kernel.close(dbFd);
-  }
+	try {
+		const result = kernel.ioctl(dbFd, REQUEST.QUERY, {
+			table: 'spell',
+			filter: { level: 3, class_id: 1 }
+		});
+		// Process result
+	} finally {
+		kernel.close(dbFd);
+	}
 }
 ```
 
@@ -138,25 +138,25 @@ Proper error handling is crucial for file operations:
 ```typescript
 const fd = kernel.open('/proc/character/999', OpenMode.READ);
 if (fd < 0) {
-  // Handle error - character not found or permission denied
-  console.error(`Failed to open character file: ${fd}`);
-  return;
+	// Handle error - character not found or permission denied
+	console.error(`Failed to open character file: ${fd}`);
+	return;
 }
 
 try {
-  const [result, buffer] = kernel.read(fd);
-  if (result !== ErrorCode.SUCCESS) {
-    // Handle read error
-    console.error(`Failed to read character data: ${result}`);
-    return;
-  }
-  // Process data
+	const [result, buffer] = kernel.read(fd);
+	if (result !== ErrorCode.SUCCESS) {
+		// Handle read error
+		console.error(`Failed to read character data: ${result}`);
+		return;
+	}
+	// Process data
 } catch (error) {
-  // Handle unexpected errors
-  console.error(`Unexpected error: ${error}`);
+	// Handle unexpected errors
+	console.error(`Unexpected error: ${error}`);
 } finally {
-  // Always close file descriptors
-  kernel.close(fd);
+	// Always close file descriptors
+	kernel.close(fd);
 }
 ```
 

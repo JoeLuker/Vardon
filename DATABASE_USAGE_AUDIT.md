@@ -45,17 +45,19 @@ The following files use direct Supabase query methods (like `.from()`):
 ### 1. Direct Character Data Access
 
 Current pattern:
+
 ```typescript
 // Direct Supabase usage
 const { data: entityData } = await supabase
-  .from('entity')
-  .select('ref_id')
-  .eq('type', 'character')
-  .eq('name', id)
-  .single();
+	.from('entity')
+	.select('ref_id')
+	.eq('type', 'character')
+	.eq('name', id)
+	.single();
 ```
 
 Target pattern:
+
 ```typescript
 // Unix file operation
 const path = `/entity/${id}`;
@@ -68,15 +70,14 @@ kernel.close(fd);
 ### 2. Character Data Updates
 
 Current pattern:
+
 ```typescript
 // Direct update
-await supabase
-  .from('game_character_ability')
-  .update({ value })
-  .eq('id', existingAbilities[0].id);
+await supabase.from('game_character_ability').update({ value }).eq('id', existingAbilities[0].id);
 ```
 
 Target pattern:
+
 ```typescript
 // Unix file operation
 const path = `/proc/character/${characterId}/ability/${abilityId}`;
@@ -88,15 +89,14 @@ kernel.close(fd);
 ### 3. Entity Querying
 
 Current pattern:
+
 ```typescript
 // Query entities directly
-const { data, error } = await supabase
-  .from('entity')
-  .select('uuid')
-  .eq('type', 'character');
+const { data, error } = await supabase.from('entity').select('uuid').eq('type', 'character');
 ```
 
 Target pattern:
+
 ```typescript
 // Unix file operation
 const path = `/proc/character/list`;

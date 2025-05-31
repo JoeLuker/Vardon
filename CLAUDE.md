@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Vardon is a character management system for Pathfinder 1e that follows Unix architectural principles. It treats game entities as files in a virtual filesystem, allowing composition through capabilities similar to Unix file descriptors.
 
 ## Core Technologies
+
 - **Frontend**: SvelteKit, TypeScript, Tailwind CSS
 - **Database**: Supabase (PostgreSQL)
 - **Architecture**: Unix-inspired virtual filesystem with capability-based composition
@@ -14,6 +15,7 @@ Vardon is a character management system for Pathfinder 1e that follows Unix arch
 ## Key Commands
 
 ### Development
+
 ```bash
 npm run dev        # Start development server on http://localhost:5173
 npm run build      # Build for production
@@ -21,6 +23,7 @@ npm run preview    # Preview production build
 ```
 
 ### Testing
+
 ```bash
 npm run test       # Run all tests
 npm run test:unit  # Run unit tests only
@@ -34,12 +37,14 @@ npm run test -- --verbose
 ```
 
 ### Linting & Type Checking
+
 ```bash
 npm run lint       # Run ESLint
 npm run check      # Run TypeScript type checking
 ```
 
 ### Database & Data Management
+
 ```bash
 # Load YAML data into database
 python scripts/load_yaml_to_db.py
@@ -59,6 +64,7 @@ node scripts/test_database_connection.js
 The codebase follows Unix principles where everything is a "file" (entity) with capabilities:
 
 ### Virtual Filesystem Structure
+
 ```
 /characters/{id}              # Character entities
 /characters/{id}/abilities    # Ability scores
@@ -71,11 +77,13 @@ The codebase follows Unix principles where everything is a "file" (entity) with 
 ### Core Components
 
 1. **Kernel** (`src/lib/domain/kernel/`)
+
    - `GameKernel`: Main system kernel, manages filesystem and capabilities
    - `FileSystem`: Virtual filesystem implementation
    - `EventBus`: Inter-component communication
 
 2. **Capabilities** (`src/lib/domain/capabilities/`)
+
    - `BaseCapability`: Abstract base for all capabilities
    - `AbilityCapability`: Manages ability scores (STR, DEX, etc.)
    - `SkillCapability`: Handles skill calculations
@@ -101,7 +109,6 @@ const characters = await kernel.listDirectory('/characters');
 // Check if file exists (like test -f /characters/123)
 const exists = await kernel.fileExists('/characters/123');
 ```
-
 
 ## TypeScript Import Best Practices
 
@@ -168,22 +175,22 @@ const fd = kernel.open(path, OpenMode.READ_WRITE);
 
 // Always use try/finally for resource cleanup
 try {
-  // Read data
-  const [result, data] = kernel.read(fd);
-  if (result !== ErrorCode.SUCCESS) {
-    // Handle error
-    return result;
-  }
-  
-  // Modify data
-  data.someProperty = newValue;
-  
-  // Write data back
-  const writeResult = kernel.write(fd, data);
-  return writeResult;
+	// Read data
+	const [result, data] = kernel.read(fd);
+	if (result !== ErrorCode.SUCCESS) {
+		// Handle error
+		return result;
+	}
+
+	// Modify data
+	data.someProperty = newValue;
+
+	// Write data back
+	const writeResult = kernel.write(fd, data);
+	return writeResult;
 } finally {
-  // Always close file descriptors
-  kernel.close(fd);
+	// Always close file descriptors
+	kernel.close(fd);
 }
 ```
 
@@ -192,27 +199,22 @@ try {
 Use the `withFile` pattern for automatic resource management:
 
 ```typescript
-return withFile(
-  kernel,
-  entityPath,
-  OpenMode.READ_WRITE,
-  async (fd) => {
-    // File operations with automatic cleanup
-    const [result, entity] = kernel.read(fd);
-    if (result !== ErrorCode.SUCCESS) {
-      return failure(result, 'Failed to read entity');
-    }
-    
-    // Modify entity
-    entity.properties.someValue = newValue;
-    
-    // Write back
-    const writeResult = kernel.write(fd, entity);
-    return writeResult === ErrorCode.SUCCESS 
-      ? success(entity)
-      : failure(writeResult, 'Failed to write entity');
-  }
-);
+return withFile(kernel, entityPath, OpenMode.READ_WRITE, async (fd) => {
+	// File operations with automatic cleanup
+	const [result, entity] = kernel.read(fd);
+	if (result !== ErrorCode.SUCCESS) {
+		return failure(result, 'Failed to read entity');
+	}
+
+	// Modify entity
+	entity.properties.someValue = newValue;
+
+	// Write back
+	const writeResult = kernel.write(fd, entity);
+	return writeResult === ErrorCode.SUCCESS
+		? success(entity)
+		: failure(writeResult, 'Failed to write entity');
+});
 ```
 
 ## Database Access Patterns
@@ -227,10 +229,10 @@ const characterData = await gameRulesAPI.getCompleteCharacterData(characterId);
 
 // ❌ INCORRECT
 const { data: characterData } = await gameRulesAPI.supabase
-  .from('game_character')
-  .select('*')
-  .eq('id', characterId)
-  .single();
+	.from('game_character')
+	.select('*')
+	.eq('id', characterId)
+	.single();
 ```
 
 ### Unix-Style Database Operations
@@ -241,10 +243,10 @@ All database operations should use the file-based abstraction:
 // ✅ CORRECT - Using file operations
 const fd = kernel.open('/proc/character/123', OpenMode.READ);
 try {
-  const [result, character] = kernel.read(fd);
-  // Process character data
+	const [result, character] = kernel.read(fd);
+	// Process character data
 } finally {
-  kernel.close(fd);
+	kernel.close(fd);
 }
 
 // ❌ INCORRECT - Direct database access
@@ -269,13 +271,13 @@ Use standard Unix-style error codes:
 
 ```typescript
 export enum ErrorCode {
-  SUCCESS = 0,
-  EPERM = 1,    // Operation not permitted
-  ENOENT = 2,   // No such file or directory
-  EIO = 5,      // I/O error
-  EACCES = 13,  // Permission denied
-  EINVAL = 22,  // Invalid argument
-  // ... other standard error codes
+	SUCCESS = 0,
+	EPERM = 1, // Operation not permitted
+	ENOENT = 2, // No such file or directory
+	EIO = 5, // I/O error
+	EACCES = 13, // Permission denied
+	EINVAL = 22 // Invalid argument
+	// ... other standard error codes
 }
 ```
 
@@ -285,11 +287,11 @@ Use the Result type for operations that can fail:
 
 ```typescript
 interface Result<T> {
-  success: boolean;
-  errorCode: ErrorCode;
-  errorMessage?: string;
-  errorContext?: ErrorContext;
-  data?: T;
+	success: boolean;
+	errorCode: ErrorCode;
+	errorMessage?: string;
+	errorContext?: ErrorContext;
+	data?: T;
 }
 
 // Helper functions
@@ -303,13 +305,13 @@ Provide rich error context for debugging:
 
 ```typescript
 interface ErrorContext {
-  operation: string;      // What operation failed
-  path?: string;         // File path involved
-  entityId?: string;     // Entity ID if applicable
-  userId?: string;       // User performing operation
-  timestamp: number;     // When error occurred
-  stackTrace?: string;   // Stack trace for debugging
-  metadata?: Record<string, any>;  // Additional context
+	operation: string; // What operation failed
+	path?: string; // File path involved
+	entityId?: string; // Entity ID if applicable
+	userId?: string; // User performing operation
+	timestamp: number; // When error occurred
+	stackTrace?: string; // Stack trace for debugging
+	metadata?: Record<string, any>; // Additional context
 }
 ```
 
@@ -355,16 +357,16 @@ Each piece of data should have a single, authoritative source:
 ```typescript
 // ❌ WRONG: Multiple sources of truth
 class Character {
-  strength: number;
-  strengthModifier: number;  // Calculated from strength
+	strength: number;
+	strengthModifier: number; // Calculated from strength
 }
 
 // ✅ RIGHT: Single source with derived values
 class Character {
-  strength: number;
-  get strengthModifier() {
-    return Math.floor((this.strength - 10) / 2);
-  }
+	strength: number;
+	get strengthModifier() {
+		return Math.floor((this.strength - 10) / 2);
+	}
 }
 ```
 
@@ -380,15 +382,15 @@ character.addCapability(new CombatCapability());
 
 ## Common Issues and Solutions
 
-| Issue | Solution |
-|-------|----------|
-| "Class extends value undefined is not a constructor" | Check import statements - ensure you're importing classes with regular imports, not type imports |
+| Issue                                                     | Solution                                                                                             |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| "Class extends value undefined is not a constructor"      | Check import statements - ensure you're importing classes with regular imports, not type imports     |
 | "The requested module does not provide an export named X" | Ensure the module actually exports what you're trying to import. Check for `export type` vs `export` |
-| "Cannot access X before initialization" | Check for circular dependencies. Try refactoring into smaller, more focused modules |
-| "TypeError: X is not a function" | Verify method names and signatures. Use VSCode IntelliSense to check available methods |
-| "ENOENT: No such file or directory" | Ensure the virtual path exists before accessing. Use `kernel.ensureDirectory()` |
-| "EACCES: Permission denied" | Check capability permissions. Some operations require specific capabilities |
-| "Capability not initialized" | Always call `capability.initialize(entity)` before using capability methods |
+| "Cannot access X before initialization"                   | Check for circular dependencies. Try refactoring into smaller, more focused modules                  |
+| "TypeError: X is not a function"                          | Verify method names and signatures. Use VSCode IntelliSense to check available methods               |
+| "ENOENT: No such file or directory"                       | Ensure the virtual path exists before accessing. Use `kernel.ensureDirectory()`                      |
+| "EACCES: Permission denied"                               | Check capability permissions. Some operations require specific capabilities                          |
+| "Capability not initialized"                              | Always call `capability.initialize(entity)` before using capability methods                          |
 
 ## Debugging Tips
 
@@ -407,11 +409,11 @@ kernel.setDebugMode(true);
 ```typescript
 // Use the event bus to monitor file operations
 kernel.eventBus.on('file:read', (event) => {
-  console.log(`Reading file: ${event.path}`);
+	console.log(`Reading file: ${event.path}`);
 });
 
 kernel.eventBus.on('file:write', (event) => {
-  console.log(`Writing file: ${event.path}`);
+	console.log(`Writing file: ${event.path}`);
 });
 ```
 
@@ -420,7 +422,10 @@ kernel.eventBus.on('file:write', (event) => {
 ```typescript
 // Check which capabilities an entity has
 const capabilities = entity.getCapabilities();
-console.log('Entity capabilities:', capabilities.map(c => c.constructor.name));
+console.log(
+	'Entity capabilities:',
+	capabilities.map((c) => c.constructor.name)
+);
 
 // Verify capability state
 const ability = entity.getCapability(AbilityCapability);
@@ -453,19 +458,19 @@ Tests are organized in `src/lib/domain/tests/`:
 ```typescript
 // Example test structure
 export async function runMyTest(): Promise<void> {
-  console.group('=== My Test Suite ===');
-  console.time('Test duration');
-  
-  try {
-    // Test implementation
-    await testSomething();
-    console.log('✅ Test passed');
-  } catch (error) {
-    console.error('❌ Test failed:', error);
-  } finally {
-    console.timeEnd('Test duration');
-    console.groupEnd();
-  }
+	console.group('=== My Test Suite ===');
+	console.time('Test duration');
+
+	try {
+		// Test implementation
+		await testSomething();
+		console.log('✅ Test passed');
+	} catch (error) {
+		console.error('❌ Test failed:', error);
+	} finally {
+		console.timeEnd('Test duration');
+		console.groupEnd();
+	}
 }
 ```
 
@@ -533,14 +538,14 @@ kernel.mount('/dev/combat', combatCapability);
 
 ## Common Issues and Solutions
 
-| Issue | Solution |
-|-------|----------|
-| "Class extends value undefined is not a constructor" | Check import statements - ensure you're importing classes with regular imports, not type imports |
+| Issue                                                     | Solution                                                                                             |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| "Class extends value undefined is not a constructor"      | Check import statements - ensure you're importing classes with regular imports, not type imports     |
 | "The requested module does not provide an export named X" | Ensure the module actually exports what you're trying to import. Check for `export type` vs `export` |
-| "Cannot access X before initialization" | Check for circular dependencies. Try refactoring into smaller, more focused modules |
-| "TypeError: X is not a function" | Verify method names and signatures. Use VSCode IntelliSense to check available methods |
-| "File descriptor leak" | Ensure all `kernel.open()` calls have corresponding `kernel.close()` calls in finally blocks |
-| "Direct database access" | Replace with Unix file operations through the kernel |
+| "Cannot access X before initialization"                   | Check for circular dependencies. Try refactoring into smaller, more focused modules                  |
+| "TypeError: X is not a function"                          | Verify method names and signatures. Use VSCode IntelliSense to check available methods               |
+| "File descriptor leak"                                    | Ensure all `kernel.open()` calls have corresponding `kernel.close()` calls in finally blocks         |
+| "Direct database access"                                  | Replace with Unix file operations through the kernel                                                 |
 
 ## Architecture Principles
 
@@ -561,20 +566,20 @@ Build functionality through composition of small, focused functions:
 ```typescript
 // ✅ CORRECT - Composition
 export function createCapability(options: CapabilityOptions): Capability {
-  const context = createContext(options);
-  
-  return {
-    onMount: (kernel) => handleMount(context, kernel),
-    read: (fd, buffer) => handleRead(context, fd, buffer),
-    write: (fd, buffer) => handleWrite(context, fd, buffer),
-    ioctl: (fd, request, arg) => handleIoctl(context, fd, request, arg),
-    shutdown: () => handleShutdown(context)
-  };
+	const context = createContext(options);
+
+	return {
+		onMount: (kernel) => handleMount(context, kernel),
+		read: (fd, buffer) => handleRead(context, fd, buffer),
+		write: (fd, buffer) => handleWrite(context, fd, buffer),
+		ioctl: (fd, request, arg) => handleIoctl(context, fd, request, arg),
+		shutdown: () => handleShutdown(context)
+	};
 }
 
 // ❌ INCORRECT - Inheritance
 class MyCapability extends BaseCapability {
-  // ...
+	// ...
 }
 ```
 
@@ -587,6 +592,7 @@ npm run lint
 ```
 
 Key ESLint rules enforce:
+
 - Unix file operations usage
 - No direct database access
 - Proper import types
@@ -601,9 +607,9 @@ Key ESLint rules enforce:
 const kernel = new Kernel({ debug: true });
 
 // Enable debug mode in capabilities
-const capability = createCapability({ 
-  id: 'my-capability',
-  debug: true 
+const capability = createCapability({
+	id: 'my-capability',
+	debug: true
 });
 ```
 
@@ -612,8 +618,8 @@ const capability = createCapability({
 ```typescript
 // List directory contents
 const [result, entries] = kernel.readdir('/dev');
-entries.forEach(entry => {
-  console.log(`${entry.name} (${entry.type})`);
+entries.forEach((entry) => {
+	console.log(`${entry.name} (${entry.type})`);
 });
 
 // Check if path exists
@@ -642,6 +648,7 @@ When updating existing code to follow these guidelines:
 ## Future Improvements
 
 The architecture is designed to support:
+
 - File locking for concurrent operations
 - Permission system for access control
 - Process isolation with message passing
