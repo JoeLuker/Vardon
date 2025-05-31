@@ -23,8 +23,8 @@ A Unix-inspired character management system for Pathfinder 1e that treats game e
 npm install
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your Supabase credentials
+# Create a .env file with your Supabase credentials
+# See ENV_GUIDE.md for required variables
 
 # Start development server
 npm run dev
@@ -104,12 +104,13 @@ npm run preview         # Preview production build
 
 # Testing
 npm run test            # Run automated tests with Playwright
-npm run test:ui         # Run tests with interactive UI
-npm run test:headed     # Run tests in headed browser mode
-npm run test:debug      # Debug tests step by step
-npm run test:report     # Show HTML test report
-npm run test:unix       # Run Unix architecture tests only
-npm run test:system     # Run system tests only
+npm run test:e2e:ui     # Run tests with interactive UI
+npm run test:e2e:headed # Run tests in headed browser mode
+npm run test:e2e:debug  # Debug tests step by step
+npm run test:e2e:report # Show HTML test report
+npm run test:e2e:unix   # Run Unix architecture tests only
+npm run test:cli        # Run CLI-based tests
+npm run test:unit       # Run unit tests
 
 # Manual Testing
 npm run test:manual     # Instructions for manual testing
@@ -136,8 +137,12 @@ The project includes comprehensive test suites:
 ```bash
 # Automated testing with Playwright
 npm run test             # Run all tests automatically
-npm run test:ui          # Interactive test UI
-npm run test:debug       # Debug tests step-by-step
+npm run test:e2e:ui      # Interactive test UI
+npm run test:e2e:debug   # Debug tests step-by-step
+
+# CLI and Unit Testing
+npm run test:cli         # Run CLI-based tests
+npm run test:unit        # Run unit tests
 
 # Generate new tests
 npm run test:codegen     # Record browser actions as tests
@@ -311,8 +316,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - 📚 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/yourusername/vardon/issues)
-- 💬 [Discussions](https://github.com/yourusername/vardon/discussions)
+- 🐛 [Issue Tracker](https://github.com/JoeLuker/Varden/issues)
+- 💬 [Discussions](https://github.com/JoeLuker/Varden/discussions)
 
 ---
 
