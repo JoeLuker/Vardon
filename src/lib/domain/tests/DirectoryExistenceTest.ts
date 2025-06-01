@@ -32,7 +32,7 @@ export async function runDirectoryExistenceTest(): Promise<string> {
 		console.log(`/entity directory exists: ${entityExists}`);
 
 		// Try to create a test character directory
-		const testCharPath = '/proc/character/999';
+		const testCharPath = '/v_proc/character/999';
 		let testCharExists = kernel.exists(testCharPath);
 
 		if (!testCharExists) {

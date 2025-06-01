@@ -130,11 +130,11 @@ export function createUnixAbilityDevice(
 			// Create all required directories
 			if (!createDirIfNeeded('/v_proc')) return;
 			if (!createDirIfNeeded('/v_proc/ability')) return;
-			if (!createDirIfNeeded('/proc/ability/cache')) return;
+			if (!createDirIfNeeded('/v_proc/ability/cache')) return;
 			if (!createDirIfNeeded(ABILITY_PATHS.PROC_CHARACTER)) return;
 
 			// Create device metadata file
-			kernel.create('/proc/ability/info.json', {
+			kernel.create('/v_proc/ability/info.json', {
 				name: 'ability',
 				version: '1.0.0',
 				description: 'Unix-style device driver for ability scores',
@@ -179,7 +179,7 @@ export function createUnixAbilityDevice(
 			}
 
 			// Check for proc file paths
-			if (path === '/proc/ability/info.json') {
+			if (path === '/v_proc/ability/info.json') {
 				Object.assign(buffer, {
 					name: 'ability',
 					version: '1.0.0',

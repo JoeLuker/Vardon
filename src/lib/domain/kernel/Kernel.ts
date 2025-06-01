@@ -39,34 +39,34 @@ import { InvariantChecker, UnixInvariants } from './InvariantChecker';
 // Plugin filesystem paths
 const PLUGIN_PATHS = {
 	/** Base path for plugin executables */
-	BIN: '/bin',
+	BIN: '/v_bin',
 
 	/** Base path for plugin process information */
-	PROC_PLUGINS: '/proc/plugins',
+	PROC_PLUGINS: '/v_proc/plugins',
 
 	/** Base path for plugin configuration */
-	ETC_PLUGINS: '/etc/plugins',
+	ETC_PLUGINS: '/v_etc/plugins',
 
 	/** Base path for plugin signals */
-	PROC_SIGNALS: '/proc/signals'
+	PROC_SIGNALS: '/v_proc/signals'
 };
 
 // Message queue paths
 const QUEUE_PATHS = {
 	/** Base path for named pipes / message queues */
-	PIPES: '/pipes',
+	PIPES: '/v_pipes',
 
 	/** System message queue for kernel events */
-	SYSTEM: '/pipes/system',
+	SYSTEM: '/v_pipes/system',
 
 	/** Game events message queue */
-	GAME_EVENTS: '/pipes/game_events',
+	GAME_EVENTS: '/v_pipes/game_events',
 
 	/** Entity events message queue */
-	ENTITY_EVENTS: '/pipes/entity_events',
+	ENTITY_EVENTS: '/v_pipes/entity_events',
 
 	/** Feature events message queue */
-	FEATURE_EVENTS: '/pipes/feature_events'
+	FEATURE_EVENTS: '/v_pipes/feature_events'
 };
 
 /**
@@ -85,10 +85,10 @@ export class Kernel {
 		PROC_CHARACTER: '/v_proc/character', // Character processes
 		ENTITY: '/v_entity', // Entity files
 		ETC: '/v_etc', // Configuration
-		VAR: '/var', // Variable data
-		TMP: '/tmp', // Temporary files
-		BIN: '/bin', // Executable plugins
-		HOME: '/home' // User home directories
+		VAR: '/v_var', // Variable data
+		TMP: '/v_tmp', // Temporary files
+		BIN: '/v_bin', // Executable plugins
+		HOME: '/v_home' // User home directories
 	};
 
 	// Filesystem
@@ -154,7 +154,7 @@ export class Kernel {
 		// stdin (fd 0)
 		this.fileDescriptors.set(0, {
 			fd: 0,
-			path: '/dev/stdin',
+			path: '/v_dev/stdin',
 			mode: OpenMode.READ,
 			openedAt: Date.now()
 		});
@@ -162,7 +162,7 @@ export class Kernel {
 		// stdout (fd 1)
 		this.fileDescriptors.set(1, {
 			fd: 1,
-			path: '/dev/stdout',
+			path: '/v_dev/stdout',
 			mode: OpenMode.WRITE,
 			openedAt: Date.now()
 		});
@@ -170,7 +170,7 @@ export class Kernel {
 		// stderr (fd 2)
 		this.fileDescriptors.set(2, {
 			fd: 2,
-			path: '/dev/stderr',
+			path: '/v_dev/stderr',
 			mode: OpenMode.WRITE,
 			openedAt: Date.now()
 		});

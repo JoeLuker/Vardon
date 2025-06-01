@@ -80,7 +80,7 @@ const TestPlugin = {
 	id: 'test-plugin',
 	name: 'Test Plugin',
 	description: 'A test plugin for the Unix architecture',
-	requiredDevices: ['/dev/test-capability'],
+	requiredDevices: ['/v_dev/test-capability'],
 
 	async execute(kernel: any, entityPath: string, options: any = {}): Promise<number> {
 		console.log(`[TestPlugin] Executing on ${entityPath}`);
@@ -93,7 +93,7 @@ const TestPlugin = {
 		}
 
 		// Open device
-		const deviceFd = kernel.open('/dev/test-capability', OpenMode.READ_WRITE);
+		const deviceFd = kernel.open('/v_dev/test-capability', OpenMode.READ_WRITE);
 		if (deviceFd < 0) {
 			console.error(`[TestPlugin] Failed to open device: /dev/test-capability`);
 			kernel.close(entityFd);
@@ -223,7 +223,7 @@ export async function runUnixArchitectureTest(): Promise<string> {
 			}
 
 			// Reopen device to verify it was updated by IOCTL
-			const deviceFd = kernel.open('/dev/test-capability', OpenMode.READ);
+			const deviceFd = kernel.open('/v_dev/test-capability', OpenMode.READ);
 			if (deviceFd < 0) {
 				throw new Error('Failed to open device');
 			}

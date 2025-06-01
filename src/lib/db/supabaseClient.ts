@@ -7,7 +7,7 @@
  *
  * Correct Unix architecture usage:
  * const kernel = new GameKernel();
- * const fd = kernel.open('/proc/character/1', OpenMode.READ);
+ * const fd = kernel.open('/v_proc/character/1', OpenMode.READ);
  * const buffer = {};
  * const [result] = kernel.read(fd, buffer);
  * kernel.close(fd);

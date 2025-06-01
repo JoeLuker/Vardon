@@ -12,8 +12,8 @@
 
 	// File paths and device constants
 	const PATHS = {
-		DEV_SKILL: '/dev/skill',
-		PROC_CHARACTER: '/proc/character'
+		DEV_SKILL: '/v_dev/skill',
+		PROC_CHARACTER: '/v_proc/character'
 	};
 
 	// Skill device IOCTL request codes

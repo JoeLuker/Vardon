@@ -70,7 +70,7 @@ export async function runPluginTest() {
 			name: 'Power Attack',
 			description:
 				'You can choose to take a penalty on attack rolls to gain a bonus on damage rolls.',
-			requiredDevices: ['/dev/bonus'],
+			requiredDevices: ['/v_dev/bonus'],
 
 			// Plugin execution
 			async execute(kernel: GameKernel, targetPath: string, options: any = {}): Promise<number> {
@@ -96,7 +96,7 @@ export async function runPluginTest() {
 						const penalty = options.penalty || 1;
 
 						// Get the bonus device
-						const bonusDeviceFd = kernel.open('/dev/bonus', OpenMode.READ_WRITE);
+						const bonusDeviceFd = kernel.open('/v_dev/bonus', OpenMode.READ_WRITE);
 						if (bonusDeviceFd < 0) {
 							console.error(`Failed to open bonus device`);
 							return 3;
@@ -231,7 +231,7 @@ export async function runPluginTest() {
 			console.log('Plugin options:', updatedEntity.properties.pluginOptions);
 
 			// Get bonus breakdown
-			const bonusDeviceFd = kernel.open('/dev/bonus', OpenMode.READ);
+			const bonusDeviceFd = kernel.open('/v_dev/bonus', OpenMode.READ);
 			if (bonusDeviceFd < 0) {
 				throw new Error('Failed to open bonus device');
 			}

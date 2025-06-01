@@ -2090,7 +2090,7 @@ export class GameRulesAPI {
 	 * (open, read, write, close) on database resources.
 	 *
 	 * To access database resources:
-	 * - kernel.open('/proc/character/{id}', OpenMode.READ) - Get a character by ID
+	 * - kernel.open('/v_proc/character/{id}', OpenMode.READ) - Get a character by ID
 	 * - kernel.open('/v_proc/character/list', OpenMode.READ) - List all characters
 	 * - kernel.open('/v_entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
 	 */
@@ -2423,7 +2423,7 @@ export class GameRulesAPI {
 	 * (open, read, write, close) on database resources instead.
 	 *
 	 * To access database resources:
-	 * - kernel.open('/proc/character/{id}', OpenMode.READ) - Get a character by ID
+	 * - kernel.open('/v_proc/character/{id}', OpenMode.READ) - Get a character by ID
 	 * - kernel.open('/v_proc/character/list', OpenMode.READ) - List all characters
 	 * - kernel.open('/v_entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
 	 */

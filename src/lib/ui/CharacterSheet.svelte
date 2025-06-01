@@ -15,7 +15,7 @@
 	import Skills from './Skills.svelte';
 
 	// Constants
-	const KERNEL_FILE = '/dev/kernel';
+	const KERNEL_FILE = '/v_dev/kernel';
 	const OpenMode = {
 		READ: 0x01,
 		WRITE: 0x02,

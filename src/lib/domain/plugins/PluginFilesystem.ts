@@ -20,13 +20,13 @@ import type { GameKernel } from '../kernel/GameKernel';
  */
 export const PLUGIN_PATHS = {
 	/** Base path for plugin executables */
-	BIN: '/bin',
+	BIN: '/v_bin',
 
 	/** Base path for plugin process information */
-	PROC_PLUGINS: '/proc/plugins',
+	PROC_PLUGINS: '/v_proc/plugins',
 
 	/** Base path for plugin configuration */
-	ETC_PLUGINS: '/etc/plugins'
+	ETC_PLUGINS: '/v_etc/plugins'
 };
 
 /**
