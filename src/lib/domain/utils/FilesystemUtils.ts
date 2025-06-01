@@ -13,22 +13,22 @@ import type { GameKernel } from '../kernel/GameKernel';
  */
 export const PATHS = {
   ROOT: '/',
-  DEV: '/dev',
-  PROC: '/proc',
-  PROC_CHARACTER: '/proc/character',
-  SYS: '/sys',
-  ETC: '/etc',
-  VAR: '/var',
-  TMP: '/tmp',
-  BIN: '/bin',
+  DEV: '/v_dev',
+  PROC: '/v_proc',
+  PROC_CHARACTER: '/v_proc/character',
+  SYS: '/v_sys',
+  ETC: '/v_etc',
+  VAR: '/v_var',
+  TMP: '/v_tmp',
+  BIN: '/v_bin',
   
   // Device paths
-  DEV_ABILITY: '/dev/ability',
-  DEV_SKILL: '/dev/skill',
-  DEV_COMBAT: '/dev/combat',
-  DEV_CHARACTER: '/dev/character',
-  DEV_CONDITION: '/dev/condition',
-  DEV_BONUS: '/dev/bonus',
+  DEV_ABILITY: '/v_dev/ability',
+  DEV_SKILL: '/v_dev/skill',
+  DEV_COMBAT: '/v_dev/combat',
+  DEV_CHARACTER: '/v_dev/character',
+  DEV_CONDITION: '/v_dev/condition',
+  DEV_BONUS: '/v_dev/bonus',
 };
 
 /**
@@ -175,5 +175,5 @@ export function getEntityPath(entityType: string, entityId: string | number): st
     return getCharacterPath(entityId);
   }
   
-  return `/entity/${entityType}/${entityId}`;
+  return `/v_entity/${entityType}/${entityId}`;
 }

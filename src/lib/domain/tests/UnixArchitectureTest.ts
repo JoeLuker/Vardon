@@ -74,11 +74,11 @@ export async function runUnixArchitectureTest(): Promise<void> {
 	};
 
 	// Mount the device
-	const mountResult = kernel.mount('/dev/test', testDevice);
+	const mountResult = kernel.mount('/v_dev/test', testDevice);
 	console.log(`Mount device: ${mountResult.success ? 'success' : mountResult.errorMessage}`);
 
 	// Open the device file
-	const deviceFd = kernel.open('/dev/test', OpenMode.READ_WRITE);
+	const deviceFd = kernel.open('/v_dev/test', OpenMode.READ_WRITE);
 	console.log(`Open device fd: ${deviceFd}`);
 
 	// Read from device

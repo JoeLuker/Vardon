@@ -31,9 +31,9 @@ import {
 
 // Device file paths
 export const ABILITY_PATHS = {
-	DEVICE: '/dev/ability',
-	PROC_CHARACTER: '/proc/character',
-	VIRTUAL_FILES: '/proc/ability'
+	DEVICE: '/v_dev/ability',
+	PROC_CHARACTER: '/v_proc/character',
+	VIRTUAL_FILES: '/v_proc/ability'
 };
 
 // Operation request codes
@@ -88,12 +88,12 @@ export function createAbilityCapability(
 		// Initialization handler
 		onMount: (kernel: Kernel) => {
 			// Initialize device directories
-			kernel.mkdir('/proc/ability', true);
-			kernel.mkdir('/proc/ability/cache', true);
+			kernel.mkdir('/v_proc/ability', true);
+			kernel.mkdir('/v_proc/ability/cache', true);
 			kernel.mkdir(ABILITY_PATHS.PROC_CHARACTER, true);
 
 			// Create device metadata file
-			kernel.create('/proc/ability/info.json', {
+			kernel.create('/v_proc/ability/info.json', {
 				name: 'ability',
 				version: '2.0.0',
 				description: 'Unix-style device driver for ability scores',
@@ -114,13 +114,13 @@ export function createAbilityCapability(
 			const path = fileInfo.path;
 
 			// Check for entity ability path pattern
-			const entityMatch = path.match(/\/entity\/([^\/]+)\/abilities(?:\/([^\/]+))?/);
+			const entityMatch = path.match(/\/v_entity\/([^\/]+)\/abilities(?:\/([^\/]+))?/);
 			if (entityMatch) {
 				return readEntityAbility(context, entityMatch[1], entityMatch[2], buffer);
 			}
 
 			// Check for proc file paths
-			if (path === '/proc/ability/info.json') {
+			if (path === '/v_proc/ability/info.json') {
 				Object.assign(buffer, {
 					name: 'ability',
 					version: '2.0.0',
@@ -187,7 +187,7 @@ export function createAbilityCapability(
 			const path = fileInfo.path;
 
 			// Check for entity ability path pattern
-			const entityMatch = path.match(/\/entity\/([^\/]+)\/abilities(?:\/([^\/]+))?/);
+			const entityMatch = path.match(/\/v_entity\/([^\/]+)\/abilities(?:\/([^\/]+))?/);
 			if (entityMatch) {
 				return writeEntityAbility(context, entityMatch[1], entityMatch[2], buffer);
 			}
@@ -307,13 +307,13 @@ export function createAbilityCapability(
 					const entityId = entityPath.split('/').pop() || '';
 
 					// Verify entity exists, create it if it doesn't
-					const entityPath2 = `/entity/${entityId}`;
+					const entityPath2 = `/v_entity/${entityId}`;
 					if (!context.kernel.exists(entityPath2)) {
 						context.logger.warn(`Entity ${entityId} doesn't exist, creating it`);
 						try {
 							// Ensure parent directory exists
-							if (!context.kernel.exists('/entity')) {
-								context.kernel.mkdir('/entity', true);
+							if (!context.kernel.exists('/v_entity')) {
+								context.kernel.mkdir('/v_entity', true);
 							}
 
 							// Create entity file with basic structure

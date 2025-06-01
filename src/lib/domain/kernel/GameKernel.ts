@@ -23,34 +23,34 @@ import { EventBus } from './EventBus';
 // Plugin filesystem paths
 const PLUGIN_PATHS = {
 	/** Base path for plugin executables */
-	BIN: '/bin',
+	BIN: '/v_bin',
 
 	/** Base path for plugin process information */
-	PROC_PLUGINS: '/proc/plugins',
+	PROC_PLUGINS: '/v_proc/plugins',
 
 	/** Base path for plugin configuration */
-	ETC_PLUGINS: '/etc/plugins',
+	ETC_PLUGINS: '/v_etc/plugins',
 
 	/** Base path for plugin signals */
-	PROC_SIGNALS: '/proc/signals'
+	PROC_SIGNALS: '/v_proc/signals'
 };
 
 // Message queue paths
 const QUEUE_PATHS = {
 	/** Base path for named pipes / message queues */
-	PIPES: '/pipes',
+	PIPES: '/v_pipes',
 
 	/** System message queue for kernel events */
-	SYSTEM: '/pipes/system',
+	SYSTEM: '/v_pipes/system',
 
 	/** Game events message queue */
-	GAME_EVENTS: '/pipes/game_events',
+	GAME_EVENTS: '/v_pipes/game_events',
 
 	/** Entity events message queue */
-	ENTITY_EVENTS: '/pipes/entity_events',
+	ENTITY_EVENTS: '/v_pipes/entity_events',
 
 	/** Feature events message queue */
-	FEATURE_EVENTS: '/pipes/feature_events'
+	FEATURE_EVENTS: '/v_pipes/feature_events'
 };
 
 /**
@@ -91,15 +91,15 @@ export class GameKernel {
 
 	// Unix standard directory paths
 	public static readonly PATHS = {
-		DEV: '/dev', // Device files
-		PROC: '/proc', // Process information
-		PROC_CHARACTER: '/proc/character', // Character processes
-		ENTITY: '/entity', // Entity files
-		ETC: '/etc', // Configuration
-		VAR: '/var', // Variable data
-		TMP: '/tmp', // Temporary files
-		BIN: '/bin', // Executable plugins
-		HOME: '/home' // User home directories
+		DEV: '/v_dev', // Device files
+		PROC: '/v_proc', // Process information
+		PROC_CHARACTER: '/v_proc/character', // Character processes
+		ENTITY: '/v_entity', // Entity files
+		ETC: '/v_etc', // Configuration
+		VAR: '/v_var', // Variable data
+		TMP: '/v_tmp', // Temporary files
+		BIN: '/v_bin', // Executable plugins
+		HOME: '/v_home' // User home directories
 	};
 
 	constructor(options: KernelOptions = {}) {
@@ -148,17 +148,17 @@ export class GameKernel {
 		this.mkdir(QUEUE_PATHS.PIPES); // Named pipes directory
 
 		// Create device-specific directories
-		this.mkdir('/dev/ability'); // Ability device directory
-		this.mkdir('/dev/skill'); // Skill device directory
-		this.mkdir('/dev/combat'); // Combat device directory
-		this.mkdir('/dev/condition'); // Condition device directory
-		this.mkdir('/dev/bonus'); // Bonus device directory
-		this.mkdir('/dev/character'); // Character device directory
+		this.mkdir('/v_dev/ability'); // Ability device directory
+		this.mkdir('/v_dev/skill'); // Skill device directory
+		this.mkdir('/v_dev/combat'); // Combat device directory
+		this.mkdir('/v_dev/condition'); // Condition device directory
+		this.mkdir('/v_dev/bonus'); // Bonus device directory
+		this.mkdir('/v_dev/character'); // Character device directory
 
 		// Create app-specific directories
-		this.mkdir('/sys'); // System directory
-		this.mkdir('/sys/class'); // Class definitions
-		this.mkdir('/sys/devices'); // Device specifications
+		this.mkdir('/v_sys'); // System directory
+		this.mkdir('/v_sys/class'); // Class definitions
+		this.mkdir('/v_sys/devices'); // Device specifications
 
 		this.log('Filesystem initialized');
 	}

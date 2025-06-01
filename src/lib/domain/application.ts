@@ -22,29 +22,29 @@ import { initializeBrowserApplication, type BrowserApplication } from './applica
 // The Unix Way: Everything is a file, even our capabilities
 const PATHS = {
 	// Device files
-	DB_DEVICE: '/dev/db',
-	ABILITY_DEVICE: '/dev/ability',
-	BONUS_DEVICE: '/dev/bonus',
-	SKILL_DEVICE: '/dev/skill',
-	COMBAT_DEVICE: '/dev/combat',
-	CONDITION_DEVICE: '/dev/condition',
+	DB_DEVICE: '/v_dev/db',
+	ABILITY_DEVICE: '/v_dev/ability',
+	BONUS_DEVICE: '/v_dev/bonus',
+	SKILL_DEVICE: '/v_dev/skill',
+	COMBAT_DEVICE: '/v_dev/combat',
+	CONDITION_DEVICE: '/v_dev/condition',
 
 	// Data files
-	ENTITIES: '/entity',
-	CHARACTER_PREFIX: '/proc/character/',
+	ENTITIES: '/v_entity',
+	CHARACTER_PREFIX: '/v_proc/character/',
 
 	// System directories
-	BIN: '/bin',
-	ETC: '/etc',
-	PROC: '/proc',
-	TMP: '/tmp',
-	VAR: '/var',
+	BIN: '/v_bin',
+	ETC: '/v_etc',
+	PROC: '/v_proc',
+	TMP: '/v_tmp',
+	VAR: '/v_var',
 
 	// Configuration files
-	CONFIG: '/etc/config.json',
+	CONFIG: '/v_etc/config.json',
 
 	// Log files
-	LOG: '/var/log/app.log'
+	LOG: '/v_var/log/app.log'
 };
 
 // Kernel requests (like ioctl requests in Unix)
@@ -112,7 +112,7 @@ export async function initializeApplication(
 	// so we don't need to create them again, but we'll create application-specific ones
 	console.log('[init] Creating filesystem hierarchy');
 	// Create application-specific directory structure
-	kernel.mkdir('/proc/character');
+	kernel.mkdir('/v_proc/character');
 	kernel.mkdir('/var/log');
 
 	// Create configuration file with defaults
@@ -470,12 +470,12 @@ function createUnixDbDevice(
 			if (debug) console.log(`[db] Device mounted`);
 
 			// Ensure proc directories exist for the database device
-			if (!kernel.exists('/proc/schema')) {
-				kernel.mkdir('/proc/schema');
+			if (!kernel.exists('/v_proc/schema')) {
+				kernel.mkdir('/v_proc/schema');
 			}
 
-			if (!kernel.exists('/proc/character')) {
-				kernel.mkdir('/proc/character');
+			if (!kernel.exists('/v_proc/character')) {
+				kernel.mkdir('/v_proc/character');
 			}
 		},
 

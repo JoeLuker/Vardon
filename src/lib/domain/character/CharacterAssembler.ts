@@ -23,23 +23,23 @@ import {
 // Unix paths for devices and entity data
 const PATHS = {
 	// Device files
-	DB_DEVICE: '/dev/db',
-	ABILITY_DEVICE: '/dev/ability',
-	SKILL_DEVICE: '/dev/skill',
-	BONUS_DEVICE: '/dev/bonus',
-	COMBAT_DEVICE: '/dev/combat',
-	CONDITION_DEVICE: '/dev/condition',
-	SPELLCASTING_DEVICE: '/dev/spellcasting',
+	DB_DEVICE: '/v_dev/db',
+	ABILITY_DEVICE: '/v_dev/ability',
+	SKILL_DEVICE: '/v_dev/skill',
+	BONUS_DEVICE: '/v_dev/bonus',
+	COMBAT_DEVICE: '/v_dev/combat',
+	CONDITION_DEVICE: '/v_dev/condition',
+	SPELLCASTING_DEVICE: '/v_dev/spellcasting',
 
 	// Character path (canonical)
-	PROC_CHARACTER: '/proc/character',
+	PROC_CHARACTER: '/v_proc/character',
 
 	// Process directory
-	PROC: '/proc',
-	PROC_FEATURES: '/proc/features',
+	PROC: '/v_proc',
+	PROC_FEATURES: '/v_proc/features',
 
 	// Log files
-	LOG: '/var/log/character-assembler.log'
+	LOG: '/v_var/log/character-assembler.log'
 };
 
 // Request codes for devices
@@ -328,7 +328,7 @@ export class UnixCharacterAssembler {
 				const procPath = `${PATHS.PROC_FEATURES}/${featurePath}`;
 
 				try {
-					// Check if feature exists in /proc/features
+					// Check if feature exists in /v_proc/features
 					if (this.kernel.exists(procPath)) {
 						// Feature exists - apply it using file operations
 						await withFile(this.kernel, procPath, OpenMode.READ_WRITE, (fd) => {

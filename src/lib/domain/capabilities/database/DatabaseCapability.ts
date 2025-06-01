@@ -53,7 +53,7 @@ export class DatabaseCapability implements Capability {
 
 		if (!options.driver) {
 			throw new Error(
-				'DatabaseCapability requires a driver. Use kernel.mount("/dev/db", new DatabaseCapability({ driver }))'
+				'DatabaseCapability requires a driver. Use kernel.mount("/v_dev/db", new DatabaseCapability({ driver }))'
 			);
 		}
 
@@ -114,27 +114,27 @@ export class DatabaseCapability implements Capability {
 		// Directory structure follows our file path mapping
 		const directories = [
 			// Core directories
-			'/proc',
-			'/entity',
-			'/etc',
-			'/dev',
+			'/v_proc',
+			'/v_entity',
+			'/v_etc',
+			'/v_dev',
 
 			// Proc subdirectories
-			'/proc/character',
-			'/proc/ability',
+			'/v_proc/character',
+			'/v_proc/ability',
 
 			// Entity subdirectories
-			'/entity',
+			'/v_entity',
 
 			// Schema directories
-			'/etc/schema',
-			'/etc/schema/ability',
-			'/etc/schema/class',
-			'/etc/schema/feat',
-			'/etc/schema/skill',
+			'/v_etc/schema',
+			'/v_etc/schema/ability',
+			'/v_etc/schema/class',
+			'/v_etc/schema/feat',
+			'/v_etc/schema/skill',
 
 			// Device files directory
-			'/dev'
+			'/v_dev'
 		];
 
 		// Create each directory
@@ -149,7 +149,7 @@ export class DatabaseCapability implements Capability {
 			}
 		}
 
-		// Do not create the /dev/db device file directly
+		// Do not create the /v_dev/db device file directly
 		// It should be mounted by the application through kernel.mount()
 		// This avoids conflict between creating a file and mounting a device at the same path
 		this.log('Database capability ready for mounting');
@@ -224,17 +224,17 @@ export class DatabaseCapability implements Capability {
 			const path = fileInfo?.path || '';
 
 			// Handle special path patterns
-			if (path.startsWith('/proc/character/')) {
+			if (path.startsWith('/v_proc/character/')) {
 				const result = await this.handleCharacterRead(path, buffer, dbFd);
 				if (result !== undefined) {
 					return result;
 				}
-			} else if (path.startsWith('/entity/')) {
+			} else if (path.startsWith('/v_entity/')) {
 				const result = await this.handleEntityRead(path, buffer, dbFd);
 				if (result !== undefined) {
 					return result;
 				}
-			} else if (path.startsWith('/etc/schema/')) {
+			} else if (path.startsWith('/v_etc/schema/')) {
 				const result = await this.handleSchemaRead(path, buffer, dbFd);
 				if (result !== undefined) {
 					return result;
@@ -270,14 +270,14 @@ export class DatabaseCapability implements Capability {
 		dbFd: number
 	): Promise<number | undefined> {
 		// Handle character list
-		if (path === '/proc/character/list') {
+		if (path === '/v_proc/character/list') {
 			// Read all characters
 			const result = await this.driver.read(dbFd, buffer);
 			return result;
 		}
 
 		// Handle individual character paths: /proc/character/{id}
-		const characterIdMatch = path.match(/\/proc\/character\/(\d+)$/);
+		const characterIdMatch = path.match(/\/v_proc\/character\/(\d+)$/);
 		if (characterIdMatch) {
 			const characterId = parseInt(characterIdMatch[1], 10);
 
@@ -320,10 +320,10 @@ export class DatabaseCapability implements Capability {
 		buffer: any,
 		dbFd: number
 	): Promise<number | undefined> {
-		// Parse entity path: /entity/{id}/...
+		// Parse entity path: /v_entity/{id}/...
 		const pathParts = path.split('/').filter(Boolean);
 
-		// Need at least "/entity/{id}"
+		// Need at least "/v_entity/{id}"
 		if (pathParts.length < 2) {
 			return undefined;
 		}
@@ -387,10 +387,10 @@ export class DatabaseCapability implements Capability {
 		buffer: any,
 		dbFd: number
 	): Promise<number | undefined> {
-		// Parse schema path: /etc/schema/{type}/...
+		// Parse schema path: /v_etc/schema/{type}/...
 		const pathParts = path.split('/').filter(Boolean);
 
-		// Need at least "/etc/schema/{type}"
+		// Need at least "/v_etc/schema/{type}"
 		if (pathParts.length < 3) {
 			return undefined;
 		}
@@ -445,12 +445,12 @@ export class DatabaseCapability implements Capability {
 			const path = fileInfo?.path || '';
 
 			// Handle special path patterns
-			if (path.startsWith('/proc/character/')) {
+			if (path.startsWith('/v_proc/character/')) {
 				const result = await this.handleCharacterWrite(path, buffer, dbFd);
 				if (result !== undefined) {
 					return result;
 				}
-			} else if (path.startsWith('/entity/')) {
+			} else if (path.startsWith('/v_entity/')) {
 				const result = await this.handleEntityWrite(path, buffer, dbFd);
 				if (result !== undefined) {
 					return result;
@@ -486,7 +486,7 @@ export class DatabaseCapability implements Capability {
 		dbFd: number
 	): Promise<number | undefined> {
 		// Handle character creation
-		if (path === '/proc/character/create') {
+		if (path === '/v_proc/character/create') {
 			// Create a new character
 			const result = await this.driver.ioctl(dbFd, DatabaseOperation.CREATE, {
 				data: buffer
@@ -495,7 +495,7 @@ export class DatabaseCapability implements Capability {
 		}
 
 		// Handle individual character paths: /proc/character/{id}
-		const characterIdMatch = path.match(/\/proc\/character\/(\d+)$/);
+		const characterIdMatch = path.match(/\/v_proc\/character\/(\d+)$/);
 		if (characterIdMatch) {
 			const characterId = parseInt(characterIdMatch[1], 10);
 
@@ -522,10 +522,10 @@ export class DatabaseCapability implements Capability {
 		buffer: any,
 		dbFd: number
 	): Promise<number | undefined> {
-		// Parse entity path: /entity/{id}/...
+		// Parse entity path: /v_entity/{id}/...
 		const pathParts = path.split('/').filter(Boolean);
 
-		// Need at least "/entity/{id}"
+		// Need at least "/v_entity/{id}"
 		if (pathParts.length < 2) {
 			return undefined;
 		}
@@ -733,17 +733,17 @@ export class DatabaseCapability implements Capability {
 			const path = fileInfo?.path || '';
 
 			// Check if this is a special operation based on path pattern
-			if (path.startsWith('/proc/character/')) {
+			if (path.startsWith('/v_proc/character/')) {
 				const result = await this.handleCharacterIoctl(fd, path, request, arg, dbFd);
 				if (result !== undefined) {
 					return result;
 				}
-			} else if (path.startsWith('/entity/')) {
+			} else if (path.startsWith('/v_entity/')) {
 				const result = await this.handleEntityIoctl(fd, path, request, arg, dbFd);
 				if (result !== undefined) {
 					return result;
 				}
-			} else if (path === '/dev/db') {
+			} else if (path === '/v_dev/db') {
 				const result = await this.handleDatabaseDeviceIoctl(fd, request, arg, dbFd);
 				if (result !== undefined) {
 					return result;
@@ -782,13 +782,13 @@ export class DatabaseCapability implements Capability {
 		arg: any,
 		dbFd: number
 	): Promise<number | undefined> {
-		// Extract character ID from path: /proc/character/{id}
-		const characterIdMatch = path.match(/\/proc\/character\/(\d+)/);
+		// Extract character ID from path: /v_proc/character/{id}
+		const characterIdMatch = path.match(/\/v_proc\/character\/(\d+)/);
 		const characterId = characterIdMatch ? parseInt(characterIdMatch[1], 10) : null;
 
 		if (!characterId) {
 			// Special case for the list path
-			if (path === '/proc/character/list') {
+			if (path === '/v_proc/character/list') {
 				if (request === DatabaseOperation.GET_ALL) {
 					// Get all characters
 					return await this.driver.ioctl(dbFd, request, arg);
@@ -838,10 +838,10 @@ export class DatabaseCapability implements Capability {
 		arg: any,
 		dbFd: number
 	): Promise<number | undefined> {
-		// Extract entity ID and sub-resources from path: /entity/{id}/...
+		// Extract entity ID and sub-resources from path: /v_entity/{id}/...
 		const pathParts = path.split('/').filter(Boolean);
 
-		// Need at least "/entity/{id}"
+		// Need at least "/v_entity/{id}"
 		if (pathParts.length < 2) {
 			return undefined;
 		}
@@ -1072,7 +1072,7 @@ export class DatabaseCapability implements Capability {
 				return null;
 			}
 
-			const path = `/proc/character/${characterId}`;
+			const path = `/v_proc/character/${characterId}`;
 
 			// Check if the file exists
 			if (!this.kernel.exists(path)) {
@@ -1121,7 +1121,7 @@ export class DatabaseCapability implements Capability {
 				return false;
 			}
 
-			const path = `/proc/character/${characterId}`;
+			const path = `/v_proc/character/${characterId}`;
 
 			// Check if the file exists
 			if (!this.kernel.exists(path)) {

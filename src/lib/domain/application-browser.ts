@@ -20,30 +20,30 @@ import { createPluginManager, type PluginManager } from './plugins/PluginManager
 // The Unix Way: Everything is a file, even our capabilities
 const PATHS = {
 	// Device files
-	DB_DEVICE: '/dev/db',
-	ABILITY_DEVICE: '/dev/ability',
-	BONUS_DEVICE: '/dev/bonus',
-	SKILL_DEVICE: '/dev/skill',
-	COMBAT_DEVICE: '/dev/combat',
-	CONDITION_DEVICE: '/dev/condition',
-	CHARACTER_DEVICE: '/dev/character',
+	DB_DEVICE: '/v_dev/db',
+	ABILITY_DEVICE: '/v_dev/ability',
+	BONUS_DEVICE: '/v_dev/bonus',
+	SKILL_DEVICE: '/v_dev/skill',
+	COMBAT_DEVICE: '/v_dev/combat',
+	CONDITION_DEVICE: '/v_dev/condition',
+	CHARACTER_DEVICE: '/v_dev/character',
 
 	// Data files
-	ENTITIES: '/entity',
-	CHARACTER_PREFIX: '/proc/character/',
+	ENTITIES: '/v_entity',
+	CHARACTER_PREFIX: '/v_proc/character/',
 
 	// System directories
-	BIN: '/bin',
-	ETC: '/etc',
-	PROC: '/proc',
-	TMP: '/tmp',
-	VAR: '/var',
+	BIN: '/v_bin',
+	ETC: '/v_etc',
+	PROC: '/v_proc',
+	TMP: '/v_tmp',
+	VAR: '/v_var',
 
 	// Configuration files
-	CONFIG: '/etc/config.json',
+	CONFIG: '/v_etc/config.json',
 
 	// Log files
-	LOG: '/var/log/app.log'
+	LOG: '/v_var/log/app.log'
 };
 
 // Kernel requests (like ioctl requests in Unix)
