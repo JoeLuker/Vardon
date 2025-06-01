@@ -7,10 +7,8 @@ const config = {
 		adapter: adapter({
 			// Specify Node.js runtime version for Vercel
 			runtime: 'nodejs20.x',
-			// Disable file tracing to avoid system directory issues
-			functions: {
-				external: ['fsevents']
-			}
+			// Split configuration to avoid build-time issues
+			split: true
 		}),
 
 		// Set paths relative to the base path
