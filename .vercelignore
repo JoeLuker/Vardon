@@ -1,0 +1,26 @@
+# Exclude system directories that might be created during build
+/dev
+/proc
+/sys
+/etc
+/var
+/tmp
+
+# Exclude test and development files
+*.test.ts
+*.test.js
+test-results/
+playwright-report/
+.svelte-kit/
+
+# Exclude local environment files
+.env.local
+.env.*.local
+
+# Exclude source control
+.git/
+.gitignore
+
+# Exclude documentation
+*.md
+docs/
