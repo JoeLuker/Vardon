@@ -83,7 +83,7 @@ export class UnixSessionState {
 	addEntity(entity: Entity): void {
 		// Create a symlink in active directory pointing to the entity
 		const activePath = `${SESSION_PATHS.ACTIVE_DIR}/${entity.id}`;
-		const entityPath = `/entity/${entity.id}`;
+		const entityPath = `/v_entity/${entity.id}`;
 
 		// Create a session entry for the entity
 		const sessionEntityPath = `${SESSION_PATHS.ENTITIES_DIR}/${entity.id}`;
@@ -188,7 +188,7 @@ export class UnixSessionState {
 	 * Follows Unix principle by reading from a file
 	 */
 	getEntity(entityId: string): Entity | undefined {
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 
 		if (!this.kernel.exists(entityPath)) {
 			return undefined;
@@ -282,7 +282,7 @@ export class UnixSessionState {
 			});
 
 			// Update entity
-			const entityPath = `/entity/${entityId}`;
+			const entityPath = `/v_entity/${entityId}`;
 			const fd = this.kernel.open(entityPath, OpenMode.READ_WRITE);
 			if (fd >= 0) {
 				try {
@@ -317,7 +317,7 @@ export class UnixSessionState {
 			this.kernel.unlink(conditionPath);
 
 			// Update entity
-			const entityPath = `/entity/${entityId}`;
+			const entityPath = `/v_entity/${entityId}`;
 			const fd = this.kernel.open(entityPath, OpenMode.READ_WRITE);
 			if (fd >= 0) {
 				try {

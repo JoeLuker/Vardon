@@ -94,8 +94,8 @@ export class InvariantChecker {
 	checkEntityPath(path: string, context: InvariantContext): void {
 		this.checkPath(path, context);
 		this.check(
-			path.startsWith('/entity/') || path.startsWith('/proc/character/'),
-			`Entity path must start with /entity/ or /proc/character/, got: ${path}`,
+			path.startsWith('/v_entity/') || path.startsWith('/proc/character/'),
+			`Entity path must start with /v_entity/ or /v_proc/character/, got: ${path}`,
 			{ ...context, path }
 		);
 	}
@@ -103,8 +103,8 @@ export class InvariantChecker {
 	checkCapabilityPath(path: string, context: InvariantContext): void {
 		this.checkPath(path, context);
 		this.check(
-			path.startsWith('/dev/'),
-			`Capability mount path must start with /dev/, got: ${path}`,
+			path.startsWith('/v_dev/'),
+			`Capability mount path must start with /v_dev/, got: ${path}`,
 			{ ...context, path }
 		);
 	}

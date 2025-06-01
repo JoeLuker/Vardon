@@ -23,9 +23,9 @@ export async function runDirectoryExistenceTest(): Promise<string> {
 		const kernel = dbAPI.getKernel();
 
 		// Check if base directories exist
-		const procExists = kernel.exists('/proc');
-		const procCharacterExists = kernel.exists('/proc/character');
-		const entityExists = kernel.exists('/entity');
+		const procExists = kernel.exists('/v_proc');
+		const procCharacterExists = kernel.exists('/v_proc/character');
+		const entityExists = kernel.exists('/v_entity');
 
 		console.log(`/proc directory exists: ${procExists}`);
 		console.log(`/proc/character directory exists: ${procCharacterExists}`);
@@ -53,8 +53,8 @@ export async function runDirectoryExistenceTest(): Promise<string> {
 		const appKernel = app.kernel;
 
 		// Check directories with app kernel
-		const appProcExists = appKernel.exists('/proc');
-		const appProcCharacterExists = appKernel.exists('/proc/character');
+		const appProcExists = appKernel.exists('/v_proc');
+		const appProcCharacterExists = appKernel.exists('/v_proc/character');
 
 		console.log(`App /proc directory exists: ${appProcExists}`);
 		console.log(`App /proc/character directory exists: ${appProcCharacterExists}`);

@@ -153,7 +153,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		console.log(`[SupabaseStorageDriver] Creating new character: ${data.name}`);
 
 		// Use the character creation path
-		const creationPath = '/proc/character/create';
+		const creationPath = '/v_proc/character/create';
 
 		// Open the creation path
 		const fd = this.kernel.open(creationPath, OpenMode.WRITE);
@@ -211,7 +211,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 			const entityPath = this.gameRulesAPI.getFileSystemPath('entity', data.id);
 
 			// Check if entity directory exists
-			const entityDir = '/entity';
+			const entityDir = '/v_entity';
 			if (!this.kernel.exists(entityDir)) {
 				const mkdirResult = this.kernel.mkdir(entityDir, true);
 				if (!mkdirResult.success) {
@@ -268,7 +268,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 			}
 
 			// The Unix path for character ability
-			const abilityPath = `/proc/character/${characterId}/ability/${abilityId}`;
+			const abilityPath = `/v_proc/character/${characterId}/ability/${abilityId}`;
 
 			// Check if the path exists - ability record already exists
 			if (this.kernel.exists(abilityPath)) {
@@ -291,7 +291,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 				}
 			} else {
 				// Create a new ability record
-				const createPath = `/proc/character/${characterId}/ability/create`;
+				const createPath = `/v_proc/character/${characterId}/ability/create`;
 				const fd = this.kernel.open(createPath, OpenMode.WRITE);
 				if (fd < 0) {
 					console.error(`Failed to open ability creation path: ${createPath}`);
@@ -327,7 +327,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		classes: Array<{ id: string; name: string; level: number }>
 	): Promise<void> {
 		// First get all available classes using file operations
-		const classesPath = '/schema/class/list';
+		const classesPath = '/v_schema/class/list';
 		const classesFd = this.kernel.open(classesPath, OpenMode.READ);
 		if (classesFd < 0) {
 			console.error(`Failed to open classes list: ${classesPath}`);
@@ -350,7 +350,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		const classMap = new Map(classData.map((c) => [c.name.toLowerCase(), c.id]));
 
 		// Get existing character classes using the character classes path
-		const characterClassesPath = `/proc/character/${characterId}/class/list`;
+		const characterClassesPath = `/v_proc/character/${characterId}/class/list`;
 		const existingClassesFd = this.kernel.open(characterClassesPath, OpenMode.READ);
 
 		let existingClasses: any[] = [];
@@ -378,7 +378,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 			}
 
 			const existingClass = existingClassMap.get(classId);
-			const classPath = `/proc/character/${characterId}/class/${classId}`;
+			const classPath = `/v_proc/character/${characterId}/class/${classId}`;
 
 			if (existingClass) {
 				// Update existing class if level has changed
@@ -401,7 +401,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 				}
 			} else {
 				// Create a new class record
-				const createPath = `/proc/character/${characterId}/class/create`;
+				const createPath = `/v_proc/character/${characterId}/class/create`;
 				const fd = this.kernel.open(createPath, OpenMode.WRITE);
 				if (fd < 0) {
 					console.error(`Failed to open class creation path: ${createPath}`);
@@ -436,7 +436,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 
 		// Delete each class that's no longer present
 		for (const classToRemove of classesToRemove) {
-			const deletePath = `/proc/character/${characterId}/class/${classToRemove.class_id}`;
+			const deletePath = `/v_proc/character/${characterId}/class/${classToRemove.class_id}`;
 			const fd = this.kernel.open(deletePath, OpenMode.WRITE);
 			if (fd >= 0) {
 				try {
@@ -462,7 +462,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		feats: Array<{ id: string; name: string }>
 	): Promise<void> {
 		// First get all available feats using file operations
-		const featsPath = '/schema/feat/list';
+		const featsPath = '/v_schema/feat/list';
 		const featsFd = this.kernel.open(featsPath, OpenMode.READ);
 		if (featsFd < 0) {
 			console.error(`Failed to open feats list: ${featsPath}`);
@@ -485,7 +485,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		const featMap = new Map(featData.map((f) => [f.name.toLowerCase(), f.id]));
 
 		// Get existing character feats using the character feats path
-		const characterFeatsPath = `/proc/character/${characterId}/feat/list`;
+		const characterFeatsPath = `/v_proc/character/${characterId}/feat/list`;
 		const existingFeatsFd = this.kernel.open(characterFeatsPath, OpenMode.READ);
 
 		let existingFeats: any[] = [];
@@ -515,7 +515,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 			// Only add the feat if it doesn't already exist
 			if (!existingFeatMap.has(featId)) {
 				// Create a new feat record
-				const createPath = `/proc/character/${characterId}/feat/create`;
+				const createPath = `/v_proc/character/${characterId}/feat/create`;
 				const fd = this.kernel.open(createPath, OpenMode.WRITE);
 				if (fd < 0) {
 					console.error(`Failed to open feat creation path: ${createPath}`);
@@ -549,7 +549,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 
 		// Delete each feat that's no longer present
 		for (const featToRemove of featsToRemove) {
-			const deletePath = `/proc/character/${characterId}/feat/${featToRemove.feat_id}`;
+			const deletePath = `/v_proc/character/${characterId}/feat/${featToRemove.feat_id}`;
 			const fd = this.kernel.open(deletePath, OpenMode.WRITE);
 			if (fd >= 0) {
 				try {
@@ -575,7 +575,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		skills: Record<string, { ranks: number; classSkill: boolean }>
 	): Promise<void> {
 		// First get all available skills using file operations
-		const skillsPath = '/schema/skill/list';
+		const skillsPath = '/v_schema/skill/list';
 		const skillsFd = this.kernel.open(skillsPath, OpenMode.READ);
 		if (skillsFd < 0) {
 			console.error(`Failed to open skills list: ${skillsPath}`);
@@ -598,7 +598,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		const skillMap = new Map(skillData.map((s) => [s.name.toLowerCase(), s.id]));
 
 		// Get existing character skill ranks using the character skills path
-		const characterSkillsPath = `/proc/character/${characterId}/skill/list`;
+		const characterSkillsPath = `/v_proc/character/${characterId}/skill/list`;
 		const existingSkillsFd = this.kernel.open(characterSkillsPath, OpenMode.READ);
 
 		let existingSkills: any[] = [];
@@ -642,7 +642,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 				const ranksToAdd = desiredRanks - existingRanks;
 				for (let i = 0; i < ranksToAdd; i++) {
 					// Create a new skill rank record
-					const createPath = `/proc/character/${characterId}/skill/create`;
+					const createPath = `/v_proc/character/${characterId}/skill/create`;
 					const fd = this.kernel.open(createPath, OpenMode.WRITE);
 					if (fd < 0) {
 						console.error(`Failed to open skill creation path: ${createPath}`);
@@ -676,7 +676,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 
 				for (const rank of ranksToRemove) {
 					// Delete the skill rank record
-					const deletePath = `/proc/character/${characterId}/skill/rank/${rank.id}`;
+					const deletePath = `/v_proc/character/${characterId}/skill/rank/${rank.id}`;
 					const fd = this.kernel.open(deletePath, OpenMode.WRITE);
 					if (fd < 0) {
 						console.error(`Failed to open skill rank deletion path: ${deletePath}`);
@@ -706,7 +706,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		if (!entity.activeFeatures) return;
 
 		// Use entity file path to get entity database ID
-		const entityMetadataPath = `/proc/character/${characterId}/entity`;
+		const entityMetadataPath = `/v_proc/character/${characterId}/entity`;
 		const entityMetadataFd = this.kernel.open(entityMetadataPath, OpenMode.READ);
 
 		if (entityMetadataFd < 0) {
@@ -728,7 +728,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 		}
 
 		// Get existing active features using the feature path
-		const featuresPath = `/proc/character/${characterId}/feature/list`;
+		const featuresPath = `/v_proc/character/${characterId}/feature/list`;
 		const existingFeaturesFd = this.kernel.open(featuresPath, OpenMode.READ);
 
 		let existingFeatures: any[] = [];
@@ -753,7 +753,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 
 			if (existingFeature) {
 				// The file path for this specific feature
-				const featureFilePath = `/proc/character/${characterId}/feature/${existingFeature.id}`;
+				const featureFilePath = `/v_proc/character/${characterId}/feature/${existingFeature.id}`;
 
 				if (existingFeature.deactivated_at && feature.active) {
 					// Reactivate the feature
@@ -822,7 +822,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 				}
 			} else if (feature.active) {
 				// Create new active feature
-				const createPath = `/proc/character/${characterId}/feature/create`;
+				const createPath = `/v_proc/character/${characterId}/feature/create`;
 				const fd = this.kernel.open(createPath, OpenMode.WRITE);
 				if (fd < 0) {
 					console.error(`Failed to open feature creation path: ${createPath}`);
@@ -858,7 +858,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 
 		// Deactivate each feature that is no longer in the list
 		for (const feature of featuresToDeactivate) {
-			const featurePath = `/proc/character/${characterId}/feature/${feature.id}`;
+			const featurePath = `/v_proc/character/${characterId}/feature/${feature.id}`;
 			const fd = this.kernel.open(featurePath, OpenMode.WRITE);
 			if (fd >= 0) {
 				try {
@@ -978,7 +978,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 	 */
 	private async getActiveFeatures(entityId: number): Promise<any[]> {
 		// Get active features using the entity features path
-		const featuresPath = `/entity/${entityId}/features`;
+		const featuresPath = `/v_entity/${entityId}/features`;
 		const featuresFd = this.kernel.open(featuresPath, OpenMode.READ);
 
 		if (featuresFd < 0) {
@@ -1307,7 +1307,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 					}
 
 					// Use an ioctl to delete from database too
-					const devicePath = '/dev/db';
+					const devicePath = '/v_dev/db';
 					const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
 					if (deviceFd >= 0) {
@@ -1350,7 +1350,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 			console.log(`[SupabaseStorageDriver] Listing all characters`);
 
 			// First, check if the list file exists
-			const listPath = '/proc/character/list';
+			const listPath = '/v_proc/character/list';
 
 			if (this.kernel.exists(listPath)) {
 				// Read the list file
@@ -1387,7 +1387,7 @@ export class SupabaseStorageDriver implements StorageDriver {
 			}
 
 			// No list file, scan the entity directory
-			const entityDir = '/entity';
+			const entityDir = '/v_entity';
 
 			if (this.kernel.exists(entityDir)) {
 				// Try to list all files in the entity directory

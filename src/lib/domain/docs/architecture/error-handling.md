@@ -219,7 +219,7 @@ Return structured results for higher-level functions:
 
 ```typescript
 async function loadEntity(entityId: string): Promise<Result<Entity>> {
-	const entityPath = `/entity/${entityId}`;
+	const entityPath = `/v_entity/${entityId}`;
 
 	return withFile(kernel, entityPath, OpenMode.READ, (fd) => {
 		const [result, entity] = kernel.read(fd);

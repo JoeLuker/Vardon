@@ -528,9 +528,9 @@ export class GameRulesAPI {
 				);
 
 				// Attempt to create critical directories directly
-				const procSuccess = this.ensureDirectoryExists('/proc', 'process directory (recovery)');
+				const procSuccess = this.ensureDirectoryExists('/v_proc', 'process directory (recovery)');
 				const charDirSuccess = this.ensureDirectoryExists(
-					'/proc/character',
+					'/v_proc/character',
 					'character directory (recovery)'
 				);
 
@@ -560,7 +560,7 @@ export class GameRulesAPI {
 
 		// Ensure /proc and /proc/character directories exist
 		// Allow parent directory to be created if it doesn't exist yet
-		let success = this.ensureDirectoryExists('/proc', 'process directory');
+		let success = this.ensureDirectoryExists('/v_proc', 'process directory');
 		if (!success) {
 			// The Unix Way: Better error reporting
 			console.error('[GameRulesAPI] Failed to ensure /proc directory exists');
@@ -568,7 +568,7 @@ export class GameRulesAPI {
 		}
 
 		// Now create character directory
-		success = this.ensureDirectoryExists('/proc/character', 'character directory');
+		success = this.ensureDirectoryExists('/v_proc/character', 'character directory');
 		if (!success) {
 			console.error('[GameRulesAPI] Failed to ensure /proc/character directory exists');
 			return false;
@@ -589,11 +589,11 @@ export class GameRulesAPI {
 
 		// Ensure critical directories exist
 		const criticalPaths = [
-			{ path: '/proc', description: 'process directory' },
-			{ path: '/proc/character', description: 'character directory' },
-			{ path: '/entity', description: 'entity directory' },
-			{ path: '/etc', description: 'configuration directory' },
-			{ path: '/etc/schema', description: 'schema directory' }
+			{ path: '/v_proc', description: 'process directory' },
+			{ path: '/v_proc/character', description: 'character directory' },
+			{ path: '/v_entity', description: 'entity directory' },
+			{ path: '/v_etc', description: 'configuration directory' },
+			{ path: '/v_etc/schema', description: 'schema directory' }
 		];
 
 		// Create all critical directories
@@ -620,7 +620,7 @@ export class GameRulesAPI {
 			return false;
 		}
 
-		return this.ensureDirectoryExists('/entity', 'entity directory');
+		return this.ensureDirectoryExists('/v_entity', 'entity directory');
 	}
 
 	/**
@@ -820,7 +820,7 @@ export class GameRulesAPI {
 	): Promise<Row<T> | null> {
 		try {
 			// Get the proper path for this entity
-			const entityPath = `/proc/${table}/${id}`;
+			const entityPath = `/v_proc/${table}/${id}`;
 
 			// Check if the path exists
 			if (!this.kernel.exists(entityPath)) {
@@ -1057,7 +1057,7 @@ export class GameRulesAPI {
 		// Check if the path exists
 		if (!this.kernel.exists(nodePath)) {
 			// Try to create the path by querying the device
-			const devicePath = '/dev/db';
+			const devicePath = '/v_dev/db';
 			const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
 			if (deviceFd < 0) {
@@ -1169,7 +1169,7 @@ export class GameRulesAPI {
 		// Build path based on resource type
 		switch (resourceType) {
 			case 'character':
-				const characterPath = `/proc/character/${id}`;
+				const characterPath = `/v_proc/character/${id}`;
 				return subResource
 					? subId
 						? `${characterPath}/${subResource}/${subId}`
@@ -1177,7 +1177,7 @@ export class GameRulesAPI {
 					: characterPath;
 
 			case 'entity':
-				const entityPath = `/entity/${id}`;
+				const entityPath = `/v_entity/${id}`;
 				return subResource
 					? subId
 						? `${entityPath}/${subResource}/${subId}`
@@ -1188,10 +1188,10 @@ export class GameRulesAPI {
 			case 'class':
 			case 'feat':
 			case 'skill':
-				return `/etc/schema/${resourceType}/${id === 'all' ? 'list' : id}`;
+				return `/v_etc/schema/${resourceType}/${id === 'all' ? 'list' : id}`;
 
 			default:
-				return `/proc/${resourceType}/${id}`;
+				return `/v_proc/${resourceType}/${id}`;
 		}
 	}
 
@@ -1801,7 +1801,7 @@ export class GameRulesAPI {
 			}
 
 			// Get file path
-			const path = '/proc/character/list';
+			const path = '/v_proc/character/list';
 
 			// Check if list file exists
 			if (!this.kernel.exists(path)) {
@@ -2091,8 +2091,8 @@ export class GameRulesAPI {
 	 *
 	 * To access database resources:
 	 * - kernel.open('/proc/character/{id}', OpenMode.READ) - Get a character by ID
-	 * - kernel.open('/proc/character/list', OpenMode.READ) - List all characters
-	 * - kernel.open('/entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
+	 * - kernel.open('/v_proc/character/list', OpenMode.READ) - List all characters
+	 * - kernel.open('/v_entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
 	 */
 
 	/**
@@ -2129,7 +2129,7 @@ export class GameRulesAPI {
 			);
 
 			// No data found yet, check if device path is available
-			const devicePath = '/dev/db';
+			const devicePath = '/v_dev/db';
 			if (this.kernel.exists(devicePath)) {
 				const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 				if (deviceFd >= 0) {
@@ -2213,7 +2213,7 @@ export class GameRulesAPI {
 			}
 
 			// Fallback to device file operations
-			const devicePath = '/dev/db';
+			const devicePath = '/v_dev/db';
 			const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
 			if (deviceFd < 0) {
@@ -2269,7 +2269,7 @@ export class GameRulesAPI {
 			}
 
 			// Fallback to device file operations
-			const devicePath = '/dev/db';
+			const devicePath = '/v_dev/db';
 			const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
 			if (deviceFd < 0) {
@@ -2325,7 +2325,7 @@ export class GameRulesAPI {
 			}
 
 			// Fallback to device file operations
-			const devicePath = '/dev/db';
+			const devicePath = '/v_dev/db';
 			const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
 			if (deviceFd < 0) {
@@ -2381,7 +2381,7 @@ export class GameRulesAPI {
 			}
 
 			// Fallback to device file operations
-			const devicePath = '/dev/db';
+			const devicePath = '/v_dev/db';
 			const deviceFd = this.kernel.open(devicePath, OpenMode.READ_WRITE);
 
 			if (deviceFd < 0) {
@@ -2424,8 +2424,8 @@ export class GameRulesAPI {
 	 *
 	 * To access database resources:
 	 * - kernel.open('/proc/character/{id}', OpenMode.READ) - Get a character by ID
-	 * - kernel.open('/proc/character/list', OpenMode.READ) - List all characters
-	 * - kernel.open('/entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
+	 * - kernel.open('/v_proc/character/list', OpenMode.READ) - List all characters
+	 * - kernel.open('/v_entity/{entity_id}/abilities', OpenMode.READ) - Get entity abilities
 	 */
 }
 

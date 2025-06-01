@@ -941,7 +941,7 @@ export class DatabaseCapability implements Capability {
 			this.log(`Loading entity ${entityId}`);
 
 			// Check if the entity exists
-			const exists = await this.driver.exists(`/db/entity/${entityId}`);
+			const exists = await this.driver.exists(`/v_db/entity/${entityId}`);
 
 			if (!exists) {
 				this.log(`Entity ${entityId} not found`);
@@ -949,7 +949,7 @@ export class DatabaseCapability implements Capability {
 			}
 
 			// Open the entity
-			const fd = await this.driver.open(`/db/entity/${entityId}`, OpenMode.READ);
+			const fd = await this.driver.open(`/v_db/entity/${entityId}`, OpenMode.READ);
 
 			if (fd < 0) {
 				this.error(`Failed to open entity ${entityId}: ${fd}`);
@@ -988,11 +988,11 @@ export class DatabaseCapability implements Capability {
 			this.log(`Saving entity ${entity.id}`);
 
 			// Check if the entity exists
-			const exists = await this.driver.exists(`/db/entity/${entity.id}`);
+			const exists = await this.driver.exists(`/v_db/entity/${entity.id}`);
 
 			// Open the entity with the appropriate mode
 			const mode = exists ? OpenMode.READ_WRITE : OpenMode.WRITE;
-			const fd = await this.driver.open(`/db/entity/${entity.id}`, mode);
+			const fd = await this.driver.open(`/v_db/entity/${entity.id}`, mode);
 
 			if (fd < 0) {
 				this.error(`Failed to open entity ${entity.id}: ${fd}`);
@@ -1027,7 +1027,7 @@ export class DatabaseCapability implements Capability {
 	 */
 	async entityExists(entityId: string): Promise<boolean> {
 		try {
-			const exists = await this.driver.exists(`/db/entity/${entityId}`);
+			const exists = await this.driver.exists(`/v_db/entity/${entityId}`);
 			this.log(`Entity ${entityId} exists: ${exists}`);
 			return exists;
 		} catch (error) {

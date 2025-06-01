@@ -355,18 +355,18 @@ export class FileSystem {
 		// Standard Unix directories
 		const standardDirs = [
 			'/bin', // Essential user commands
-			'/dev', // Device files
-			'/etc', // System configuration
+			'/v_dev', // Device files
+			'/v_etc', // System configuration
 			'/home', // User home directories
 			'/lib', // Libraries
-			'/proc', // Process information
+			'/v_proc', // Process information
 			'/sys', // System information
 			'/tmp', // Temporary files
 			'/usr', // User utilities
 			'/var', // Variable data
 
 			// Custom application directories
-			'/entity', // Game entities
+			'/v_entity', // Game entities
 			'/pipes' // Message queues
 		];
 
@@ -376,20 +376,20 @@ export class FileSystem {
 		}
 
 		// Create important subdirectories
-		await this.mkdir('/dev/character');
-		await this.mkdir('/dev/ability');
-		await this.mkdir('/dev/skill');
-		await this.mkdir('/dev/combat');
-		await this.mkdir('/dev/condition');
-		await this.mkdir('/dev/bonus');
+		await this.mkdir('/v_dev/character');
+		await this.mkdir('/v_dev/ability');
+		await this.mkdir('/v_dev/skill');
+		await this.mkdir('/v_dev/combat');
+		await this.mkdir('/v_dev/condition');
+		await this.mkdir('/v_dev/bonus');
 
-		await this.mkdir('/proc/character');
+		await this.mkdir('/v_proc/character');
 		await this.mkdir('/proc/plugins');
 		await this.mkdir('/proc/signals');
 
 		await this.mkdir('/etc/plugins');
 
-		await this.mkdir('/var/log');
+		await this.mkdir('/v_var/log');
 		await this.mkdir('/var/run');
 	}
 

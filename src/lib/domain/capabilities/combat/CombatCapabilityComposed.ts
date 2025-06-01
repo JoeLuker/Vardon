@@ -869,9 +869,9 @@ function handleRead(fd: number, buffer: any, context: CombatCapabilityContext): 
 
 	// Extract entity ID and resource type from path
 	// Example paths:
-	// /entity/{id}/combat/stats - Combat statistics
-	// /entity/{id}/combat/ac - Armor class
-	// /entity/{id}/combat/saves - Saving throws
+	// /v_entity/{id}/combat/stats - Combat statistics
+	// /v_entity/{id}/combat/ac - Armor class
+	// /v_entity/{id}/combat/saves - Saving throws
 	const match = fileInfo.path.match(/\/entity\/([^\/]+)\/combat\/([^\/]+)/);
 	if (match) {
 		const entityId = match[1];
@@ -1054,7 +1054,7 @@ function handleIoctl(
 function handleInitializeOperation(entityPath: string, context: CombatCapabilityContext): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {
@@ -1084,7 +1084,7 @@ function handleSetBaseSave(
 ): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Validate save type
 		if (!['fortitude', 'reflex', 'will'].includes(save)) {

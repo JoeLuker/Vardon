@@ -57,7 +57,7 @@
 
 		// Get the entity ID
 		const entityId = `character-${character.id}`;
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 
 		if (!kernel.exists(entityPath)) {
 			console.error(`Entity not found: ${entityPath}`);

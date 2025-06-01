@@ -740,7 +740,7 @@ function handleApplyConditionOperation(
 ): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Open the entity
 		const fd = context.kernel.open(entityPath, OpenMode.READ_WRITE);
@@ -847,7 +847,7 @@ function handleRemoveConditionOperation(
 ): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Open the entity
 		const fd = context.kernel.open(entityPath, OpenMode.READ_WRITE);
@@ -923,7 +923,7 @@ function handleProcessExpirationsOperation(
 ): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Open the entity
 		const fd = context.kernel.open(entityPath, OpenMode.READ_WRITE);
@@ -1012,7 +1012,7 @@ function handleRead(fd: number, buffer: any, context: any): number {
 		const conditionId = match[2];
 
 		// Get the entity
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 		const entityFd = context.kernel.open(entityPath, OpenMode.READ);
 
 		if (entityFd < 0) {
@@ -1097,7 +1097,7 @@ function handleWrite(fd: number, buffer: any, context: any): number {
 		const conditionId = match[2];
 
 		// Get the entity
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 		const entityFd = context.kernel.open(entityPath, OpenMode.READ_WRITE);
 
 		if (entityFd < 0) {

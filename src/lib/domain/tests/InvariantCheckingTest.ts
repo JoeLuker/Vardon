@@ -213,13 +213,13 @@ async function testSystemWideInvariants(): Promise<void> {
 		const kernel = new Kernel({ debug: true });
 
 		// Create standard directories
-		await kernel.create('/entity/test-entity', { id: 'test-entity' });
+		await kernel.create('/v_entity/test-entity', { id: 'test-entity' });
 
 		// Open multiple file descriptors to test leak detection
 		console.log('Testing file descriptor leak detection...');
 		const fds: number[] = [];
 		for (let i = 0; i < 10; i++) {
-			const fd = kernel.open('/entity/test-entity');
+			const fd = kernel.open('/v_entity/test-entity');
 			if (fd > 0) fds.push(fd);
 		}
 

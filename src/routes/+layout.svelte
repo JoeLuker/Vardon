@@ -86,11 +86,11 @@
 			const kernel = gameRules.getKernel();
 			if (kernel) {
 				// Create base directories first
-				if (!kernel.exists('/proc')) {
-					kernel.mkdir('/proc');
+				if (!kernel.exists('/v_proc')) {
+					kernel.mkdir('/v_proc');
 				}
-				if (!kernel.exists('/proc/character')) {
-					kernel.mkdir('/proc/character');
+				if (!kernel.exists('/v_proc/character')) {
+					kernel.mkdir('/v_proc/character');
 				}
 
 				console.log(`[${getTimestamp()}] [Layout] Created base directories`);
@@ -105,7 +105,7 @@
 					);
 
 					for (const char of basicChars) {
-						const charPath = `/proc/character/${char.id}`;
+						const charPath = `/v_proc/character/${char.id}`;
 						const charData = await gameRules.getCompleteCharacterData(char.id);
 
 						if (!kernel.exists(charPath) && charData) {

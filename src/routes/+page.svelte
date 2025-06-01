@@ -80,14 +80,14 @@
 			}
 
 			// Ensure directories
-			if (!kernel.exists('/proc')) {
+			if (!kernel.exists('/v_proc')) {
 				console.log('🚨 CREATING /proc DIRECTORY');
-				kernel.mkdir('/proc');
+				kernel.mkdir('/v_proc');
 			}
 
-			if (!kernel.exists('/proc/character')) {
+			if (!kernel.exists('/v_proc/character')) {
 				console.log('🚨 CREATING /proc/character DIRECTORY');
-				kernel.mkdir('/proc/character');
+				kernel.mkdir('/v_proc/character');
 			}
 
 			// Get all characters and create files
@@ -99,7 +99,7 @@
 
 				// Create a file for each character
 				for (const char of allChars) {
-					const charPath = `/proc/character/${char.id}`;
+					const charPath = `/v_proc/character/${char.id}`;
 
 					// Check if file exists
 					if (!kernel.exists(charPath)) {

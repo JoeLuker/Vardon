@@ -466,7 +466,7 @@ function handleIoctl(fd: number, request: number, arg: any, context: any): numbe
 function handleInitializeOperation(entityPath: string, context: any): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {
@@ -500,7 +500,7 @@ function handleAddBonusOperation(
 ): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {
@@ -530,7 +530,7 @@ function handleRemoveBonusOperation(
 ): number {
 	try {
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {
@@ -653,7 +653,7 @@ function withEntitySync<T extends number>(
 	}
 
 	// Path to the entity file
-	const entityPath = `/entity/${entityId}`;
+	const entityPath = `/v_entity/${entityId}`;
 
 	// Verify entity exists
 	if (!kernel.exists(entityPath)) {

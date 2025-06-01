@@ -1172,7 +1172,7 @@ function createBrowserCharacterDevice(options: { debug?: boolean } = {}): Capabi
 				if (!characterId) return ErrorCode.EINVAL;
 
 				// Create status file in /proc directory
-				const procPath = `/proc/character/${characterId}`;
+				const procPath = `/v_proc/character/${characterId}`;
 				const statusResult = this.kernel.create(procPath, {
 					id: characterId,
 					path: entityPath,
@@ -1195,7 +1195,7 @@ function createBrowserCharacterDevice(options: { debug?: boolean } = {}): Capabi
 				if (!characterId) return ErrorCode.EINVAL;
 
 				// Check if character exists in /proc
-				const procPath = `/proc/character/${characterId}`;
+				const procPath = `/v_proc/character/${characterId}`;
 				if (!this.kernel.exists(procPath)) {
 					if (debug) console.warn(`[character] Character not found in /proc: ${characterId}`);
 					return ErrorCode.ENOENT;
@@ -1209,7 +1209,7 @@ function createBrowserCharacterDevice(options: { debug?: boolean } = {}): Capabi
 				}
 
 				// Read entity file
-				const entityPath = processInfo.path || `/entity/character-${characterId}`;
+				const entityPath = processInfo.path || `/v_entity/character-${characterId}`;
 				if (!this.kernel.exists(entityPath)) {
 					if (debug) console.warn(`[character] Character entity not found: ${entityPath}`);
 					return ErrorCode.ENOENT;
@@ -1232,7 +1232,7 @@ function createBrowserCharacterDevice(options: { debug?: boolean } = {}): Capabi
 				if (!characterId || !data) return ErrorCode.EINVAL;
 
 				// Check if character exists in /proc
-				const procPath = `/proc/character/${characterId}`;
+				const procPath = `/v_proc/character/${characterId}`;
 				if (!this.kernel.exists(procPath)) {
 					if (debug) console.warn(`[character] Character not found in /proc: ${characterId}`);
 					return ErrorCode.ENOENT;
@@ -1246,7 +1246,7 @@ function createBrowserCharacterDevice(options: { debug?: boolean } = {}): Capabi
 				}
 
 				// Read entity file
-				const entityPath = processInfo.path || `/entity/character-${characterId}`;
+				const entityPath = processInfo.path || `/v_entity/character-${characterId}`;
 				if (!this.kernel.exists(entityPath)) {
 					if (debug) console.warn(`[character] Character entity not found: ${entityPath}`);
 					return ErrorCode.ENOENT;

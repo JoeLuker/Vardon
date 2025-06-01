@@ -505,7 +505,7 @@ export async function processCharacter(
 ): Promise<CharacterUIModel | null> {
   try {
     // Example entity path
-    const entityPath = `/entity/${characterId}`;
+    const entityPath = `/v_entity/${characterId}`;
     
     // Check if entity exists
     if (!kernel.exists(entityPath)) {

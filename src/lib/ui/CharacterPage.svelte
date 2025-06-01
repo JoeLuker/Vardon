@@ -46,24 +46,24 @@
 
 			// Create required directories - MUST BE CREATED BEFORE REGISTERING CAPABILITIES
 			// First check if /proc exists
-			if (!kernel.exists('/proc')) {
-				const procResult = kernel.mkdir('/proc');
+			if (!kernel.exists('/v_proc')) {
+				const procResult = kernel.mkdir('/v_proc');
 				if (typeof procResult === 'number' && procResult !== 0) {
 					console.error(`Failed to create /proc directory: ${procResult}`);
 				}
 			}
 
 			// Then create /proc/character
-			if (!kernel.exists('/proc/character')) {
-				const charDirResult = kernel.mkdir('/proc/character');
+			if (!kernel.exists('/v_proc/character')) {
+				const charDirResult = kernel.mkdir('/v_proc/character');
 				if (typeof charDirResult === 'number' && charDirResult !== 0) {
 					console.error(`Failed to create /proc/character directory: ${charDirResult}`);
 				}
 			}
 
 			// Create entity directory if it doesn"t exist
-			if (!kernel.exists('/entity')) {
-				const entityDirResult = kernel.mkdir('/entity');
+			if (!kernel.exists('/v_entity')) {
+				const entityDirResult = kernel.mkdir('/v_entity');
 				if (typeof entityDirResult === 'number' && entityDirResult !== 0) {
 					console.error(`Failed to create /entity directory: ${entityDirResult}`);
 				}
@@ -87,11 +87,11 @@
 			const characterCapability = new CharacterCapability();
 
 			// Mount capabilities as device files
-			kernel.mount('/dev/bonus', bonusCapability);
-			kernel.mount('/dev/ability', abilityCapability);
-			kernel.mount('/dev/skill', skillCapability);
-			kernel.mount('/dev/combat', combatCapability);
-			kernel.mount('/dev/character', characterCapability);
+			kernel.mount('/v_dev/bonus', bonusCapability);
+			kernel.mount('/v_dev/ability', abilityCapability);
+			kernel.mount('/v_dev/skill', skillCapability);
+			kernel.mount('/v_dev/combat', combatCapability);
+			kernel.mount('/v_dev/character', characterCapability);
 
 			// Import Supabase client and setup database capability
 			const { supabaseClient } = await import('$lib/db/supabaseClient');
@@ -103,12 +103,12 @@
 			const dbDriver = new SupabaseDatabaseDriver(supabaseClient, kernel, true);
 
 			// Mount database driver as device
-			const mountResult = kernel.mount('/dev/db', dbDriver);
+			const mountResult = kernel.mount('/v_dev/db', dbDriver);
 			console.log(`${getTimestamp()} - Database mount result:`, mountResult);
 
 			// Get character capability from kernel
 			const characterDevice =
-				kernel.mountPoints?.get('/dev/character') || kernel.devices?.get('/dev/character');
+				kernel.mountPoints?.get('/v_dev/character') || kernel.devices?.get('/v_dev/character');
 
 			if (!characterDevice) {
 				console.error(

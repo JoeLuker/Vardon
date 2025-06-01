@@ -80,11 +80,11 @@ const QUEUE_PATHS = {
 export class Kernel {
 	// Standard Unix paths
 	public static readonly PATHS = {
-		DEV: '/dev', // Device files
-		PROC: '/proc', // Process information
-		PROC_CHARACTER: '/proc/character', // Character processes
-		ENTITY: '/entity', // Entity files
-		ETC: '/etc', // Configuration
+		DEV: '/v_dev', // Device files
+		PROC: '/v_proc', // Process information
+		PROC_CHARACTER: '/v_proc/character', // Character processes
+		ENTITY: '/v_entity', // Entity files
+		ETC: '/v_etc', // Configuration
 		VAR: '/var', // Variable data
 		TMP: '/tmp', // Temporary files
 		BIN: '/bin', // Executable plugins
@@ -425,7 +425,7 @@ export class Kernel {
 
 		// Check if this is a device file
 		const pathParts = descriptor.path.split('/');
-		if (pathParts.length >= 3 && pathParts[1] === 'dev') {
+		if (pathParts.length >= 3 && pathParts[1] === 'v_dev') {
 			const deviceId = pathParts[2];
 			const device = this.getCapability(deviceId);
 
@@ -490,7 +490,7 @@ export class Kernel {
 
 		// Check if this is a device file
 		const pathParts = descriptor.path.split('/');
-		if (pathParts.length >= 3 && pathParts[1] === 'dev') {
+		if (pathParts.length >= 3 && pathParts[1] === 'v_dev') {
 			const deviceId = pathParts[2];
 			const device = this.getCapability(deviceId);
 
@@ -570,7 +570,7 @@ export class Kernel {
 
 		// Only works on device files
 		const pathParts = descriptor.path.split('/');
-		if (pathParts.length < 3 || pathParts[1] !== 'dev') {
+		if (pathParts.length < 3 || pathParts[1] !== 'v_dev') {
 			this.error(`Not a device file: ${descriptor.path}`);
 			return ErrorCode.ENOTTY;
 		}
@@ -606,7 +606,7 @@ export class Kernel {
 	 * @returns Entity path
 	 */
 	registerEntity(entity: Entity): string {
-		const path = `/entity/${entity.id}`;
+		const path = `/v_entity/${entity.id}`;
 
 		// Create entity file
 		const result = this.create(path, entity);
@@ -626,7 +626,7 @@ export class Kernel {
 	 * @returns Entity or undefined if not found
 	 */
 	getEntity(entityId: string): Entity | undefined {
-		const path = `/entity/${entityId}`;
+		const path = `/v_entity/${entityId}`;
 		const [errorCode, data] = this.fs.read(path);
 
 		if (errorCode === ErrorCode.SUCCESS) {
@@ -641,7 +641,7 @@ export class Kernel {
 	 * @returns Array of entity IDs
 	 */
 	getEntityIds(): string[] {
-		const [errorCode, entries] = this.fs.readdir('/entity');
+		const [errorCode, entries] = this.fs.readdir('/v_entity');
 
 		if (errorCode !== ErrorCode.SUCCESS) {
 			return [];
@@ -656,7 +656,7 @@ export class Kernel {
 	 * @returns Whether removal was successful
 	 */
 	removeEntity(entityId: string): boolean {
-		const path = `/entity/${entityId}`;
+		const path = `/v_entity/${entityId}`;
 
 		// Check if any file descriptors are open for this entity
 		for (const descriptor of this.fileDescriptors.values()) {
@@ -688,7 +688,7 @@ export class Kernel {
 	 * @param capability Capability implementation
 	 */
 	registerCapability(id: string, capability: Capability): void {
-		const devicePath = `/dev/${id}`;
+		const devicePath = `/v_dev/${id}`;
 
 		// Mount the device
 		const result = this.mount(devicePath, capability);
@@ -726,7 +726,7 @@ export class Kernel {
 		const deviceIds: string[] = [];
 
 		for (const [path, deviceId] of mountPoints.entries()) {
-			if (path.startsWith('/dev/')) {
+			if (path.startsWith('/v_dev/')) {
 				deviceIds.push(deviceId);
 			}
 		}
@@ -853,7 +853,7 @@ export class Kernel {
 			throw new Error(error);
 		}
 
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 
 		// Check if entity exists
 		if (!this.exists(entityPath)) {
@@ -1242,7 +1242,7 @@ export class Kernel {
 		);
 
 		// Check standard directories exist
-		const standardDirs = ['/dev', '/proc', '/entity', '/etc', '/var', '/tmp', '/bin'];
+		const standardDirs = ['/v_dev', '/v_proc', '/v_entity', '/v_etc', '/v_var', '/v_tmp', '/v_bin'];
 		for (const dir of standardDirs) {
 			const stats = this.fs.stat(dir);
 			this.invariants.check(

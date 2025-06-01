@@ -614,14 +614,14 @@ export const CommonTransforms = {
    * Convert entity path to file path
    */
   entityPathToFilePath: (entityPath: string) => {
-    return entityPath.replace(/^\/entity\//, '/var/entity/').replace(/:/g, '/');
+    return entityPath.replace(/^\/v_entity\//, '/var/entity/').replace(/:/g, '/');
   },
   
   /**
    * Convert file path to entity path
    */
   filePathToEntityPath: (filePath: string) => {
-    return filePath.replace(/^\/var\/entity\//, '/entity/').replace(/\//g, ':');
+    return filePath.replace(/^\/var\/entity\//, '/v_entity/').replace(/\//g, ':');
   },
   
   /**

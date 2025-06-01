@@ -94,8 +94,8 @@
 
 			// Step 2: Create required directories
 			logDiagnostic('Creating directories...', false);
-			if (!kernel.exists('/proc')) {
-				const procResult = kernel.mkdir('/proc');
+			if (!kernel.exists('/v_proc')) {
+				const procResult = kernel.mkdir('/v_proc');
 				if (typeof procResult === 'number' && procResult !== 0) {
 					logDiagnostic('Directory creation', false, {
 						errorCode: procResult,
@@ -105,8 +105,8 @@
 				}
 			}
 
-			if (!kernel.exists('/proc/character')) {
-				const charDirResult = kernel.mkdir('/proc/character');
+			if (!kernel.exists('/v_proc/character')) {
+				const charDirResult = kernel.mkdir('/v_proc/character');
 				if (typeof charDirResult === 'number' && charDirResult !== 0) {
 					logDiagnostic('Directory creation', false, {
 						errorCode: charDirResult,
@@ -116,8 +116,8 @@
 				}
 			}
 
-			if (!kernel.exists('/entity')) {
-				const entityDirResult = kernel.mkdir('/entity');
+			if (!kernel.exists('/v_entity')) {
+				const entityDirResult = kernel.mkdir('/v_entity');
 				if (typeof entityDirResult === 'number' && entityDirResult !== 0) {
 					logDiagnostic('Directory creation', false, {
 						errorCode: entityDirResult,
@@ -127,7 +127,7 @@
 				}
 			}
 			logDiagnostic('Directory creation', true, {
-				created: ['/proc', '/proc/character', '/entity']
+				created: ['/v_proc', '/v_proc/character', '/v_entity']
 			});
 
 			// Step 3: Create capabilities
@@ -155,11 +155,11 @@
 
 			// Step 4: Mount capabilities as device files
 			logDiagnostic('Mounting capabilities...', false);
-			kernel.mount('/dev/bonus', bonusCapability);
-			kernel.mount('/dev/ability', abilityCapability);
-			kernel.mount('/dev/skill', skillCapability);
-			kernel.mount('/dev/combat', combatCapability);
-			kernel.mount('/dev/character', characterCapability);
+			kernel.mount('/v_dev/bonus', bonusCapability);
+			kernel.mount('/v_dev/ability', abilityCapability);
+			kernel.mount('/v_dev/skill', skillCapability);
+			kernel.mount('/v_dev/combat', combatCapability);
+			kernel.mount('/v_dev/character', characterCapability);
 
 			// List all mounted devices to verify
 			const mountedDevices = Array.from(kernel.devices.keys());
@@ -175,7 +175,7 @@
 			databaseDriver = new SupabaseDatabaseDriver(null, kernel, true);
 
 			// Mount database driver as device
-			kernel.mount('/dev/db', databaseDriver);
+			kernel.mount('/v_dev/db', databaseDriver);
 
 			// Update CharacterCapability with the database driver
 			characterCapability.databaseDriver = databaseDriver;
@@ -189,7 +189,7 @@
 			logDiagnostic('Testing database connection...', false);
 			try {
 				// Use unix-style file operations to test database access
-				const characterListFd = kernel.open('/proc/character/list', OpenMode.READ);
+				const characterListFd = kernel.open('/v_proc/character/list', OpenMode.READ);
 				if (characterListFd < 0) {
 					logDiagnostic('Database connection', false, { error: 'Failed to open character list' });
 					return;
@@ -247,10 +247,10 @@
 			});
 
 			// Create character path
-			const characterPath = `/proc/character/${characterId}`;
+			const characterPath = `/v_proc/character/${characterId}`;
 
 			// Check if the character device is mounted
-			if (!kernel.devices.has('/dev/character')) {
+			if (!kernel.devices.has('/v_dev/character')) {
 				logDiagnostic('Character loading', false, {
 					error: 'Character device not mounted',
 					characterId
@@ -259,7 +259,7 @@
 			}
 
 			// Open character device
-			const deviceFd = kernel.open('/dev/character', OpenMode.READ);
+			const deviceFd = kernel.open('/v_dev/character', OpenMode.READ);
 
 			if (deviceFd < 0) {
 				logDiagnostic('Character loading', false, {

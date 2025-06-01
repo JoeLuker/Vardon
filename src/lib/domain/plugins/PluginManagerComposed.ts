@@ -268,7 +268,7 @@ export function createPluginManager(options: PluginManagerOptions): PluginManage
 		): Promise<any> {
 			// Create the paths
 			const pluginPath = `${PLUGIN_PATHS.BIN}/${pluginId}`;
-			const entityPath = `/entity/${entityId}`;
+			const entityPath = `/v_entity/${entityId}`;
 
 			// Check if plugin exists
 			if (!context.filesystem.existsPlugin(pluginPath)) {

@@ -43,9 +43,9 @@
 		if (!character?.id || !kernel) return;
 
 		// Ensure /proc directory exists
-		if (!kernel.exists('/proc')) {
+		if (!kernel.exists('/v_proc')) {
 			console.log('Creating /proc directory');
-			const procResult = kernel.mkdir('/proc');
+			const procResult = kernel.mkdir('/v_proc');
 			if (!procResult.success) {
 				console.error(
 					`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`
@@ -55,9 +55,9 @@
 		}
 
 		// Ensure /proc/character directory exists
-		if (!kernel.exists('/proc/character')) {
+		if (!kernel.exists('/v_proc/character')) {
 			console.log('Creating /proc/character directory');
-			const charDirResult = kernel.mkdir('/proc/character');
+			const charDirResult = kernel.mkdir('/v_proc/character');
 			if (!charDirResult.success) {
 				console.error(
 					`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`
@@ -67,7 +67,7 @@
 		}
 
 		// Get the entity path
-		const entityPath = `/proc/character/${character.id}`;
+		const entityPath = `/v_proc/character/${character.id}`;
 
 		if (!kernel.exists(entityPath)) {
 			console.error(`Entity not found: ${entityPath}`);
@@ -214,9 +214,9 @@
 		if (!character?.id || !kernel) return;
 
 		// Ensure /proc directory exists
-		if (!kernel.exists('/proc')) {
+		if (!kernel.exists('/v_proc')) {
 			console.log('Creating /proc directory');
-			const procResult = kernel.mkdir('/proc');
+			const procResult = kernel.mkdir('/v_proc');
 			if (!procResult.success) {
 				console.error(
 					`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`
@@ -226,9 +226,9 @@
 		}
 
 		// Ensure /proc/character directory exists
-		if (!kernel.exists('/proc/character')) {
+		if (!kernel.exists('/v_proc/character')) {
 			console.log('Creating /proc/character directory');
-			const charDirResult = kernel.mkdir('/proc/character');
+			const charDirResult = kernel.mkdir('/v_proc/character');
 			if (!charDirResult.success) {
 				console.error(
 					`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`
@@ -238,7 +238,7 @@
 		}
 
 		// Get the entity path
-		const entityPath = `/proc/character/${character.id}`;
+		const entityPath = `/v_proc/character/${character.id}`;
 
 		if (!kernel.exists(entityPath)) {
 			console.error(`Entity not found: ${entityPath}`);

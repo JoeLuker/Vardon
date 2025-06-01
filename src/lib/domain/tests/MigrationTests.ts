@@ -49,7 +49,7 @@ export async function runPluginTest() {
 	};
 
 	// Create entity in filesystem
-	const entityPath = `/entity/${entity.id}`;
+	const entityPath = `/v_entity/${entity.id}`;
 	console.log(`\nCreating entity at ${entityPath}...`);
 	const createResult = kernel.create(entityPath, entity);
 	if (!createResult.success) {

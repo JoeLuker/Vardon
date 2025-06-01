@@ -21,8 +21,8 @@ export enum CharacterRequest {
  * Directory paths used by the character capability
  */
 export const CHAR_PATHS = {
-	PROC: '/proc',
-	PROC_CHARACTER: '/proc/character'
+	PROC: '/v_proc',
+	PROC_CHARACTER: '/v_proc/character'
 };
 
 /**
@@ -53,7 +53,7 @@ export class CharacterCapability implements Capability {
 			// The Unix Way: Wait for database device availability with event mechanism
 			const attachDatabaseDriver = () => {
 				// Look for the database device in kernel
-				const dbDevice = kernel.mountPoints?.get('/dev/db') || kernel.devices?.get('/dev/db');
+				const dbDevice = kernel.mountPoints?.get('/v_dev/db') || kernel.devices?.get('/v_dev/db');
 				if (dbDevice) {
 					console.log(`[CharacterCapability] Found database driver in kernel, attaching it`);
 					// Store a direct reference to the database driver
@@ -75,7 +75,7 @@ export class CharacterCapability implements Capability {
 					// Emit an event to notify other components that character device is fully ready
 					if (kernel.events) {
 						kernel.events.emit('character:device_ready', {
-							path: '/dev/character',
+							path: '/v_dev/character',
 							hasDbDriver: true,
 							driverDetails
 						});
@@ -120,7 +120,7 @@ export class CharacterCapability implements Capability {
 		// Emit an event to notify other components
 		if (kernel && kernel.events) {
 			kernel.events.emit('character:device_ready', {
-				path: '/dev/character',
+				path: '/v_dev/character',
 				hasDbDriver: !!this.databaseDriver
 			});
 		}
@@ -237,7 +237,7 @@ export class CharacterCapability implements Capability {
 			// Try to find database driver in kernel - with improved driver reference extraction
 			if (this.kernel) {
 				const dbDevice =
-					this.kernel.mountPoints?.get('/dev/db') || this.kernel.devices?.get('/dev/db');
+					this.kernel.mountPoints?.get('/v_dev/db') || this.kernel.devices?.get('/v_dev/db');
 				if (dbDevice) {
 					console.log(
 						`[CharacterCapability] Found database driver in kernel, attaching it during ioctl`
@@ -302,7 +302,7 @@ export class CharacterCapability implements Capability {
 
 						// Try again
 						const dbDevice =
-							this.kernel.mountPoints?.get('/dev/db') || this.kernel.devices?.get('/dev/db');
+							this.kernel.mountPoints?.get('/v_dev/db') || this.kernel.devices?.get('/v_dev/db');
 						if (dbDevice) {
 							console.log(`[CharacterCapability] Found database driver on retry ${retries}`);
 							this.databaseDriver = dbDevice.driver || dbDevice;
@@ -413,7 +413,7 @@ export class CharacterCapability implements Capability {
 
 					// Try to get the database driver from kernel - with improved driver extraction
 					const dbDevice =
-						this.kernel.mountPoints?.get('/dev/db') || this.kernel.devices?.get('/dev/db');
+						this.kernel.mountPoints?.get('/v_dev/db') || this.kernel.devices?.get('/v_dev/db');
 
 					if (dbDevice) {
 						// Try to get the driver reference from the device

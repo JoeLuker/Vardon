@@ -13,8 +13,8 @@
 
 	// Constants for file paths
 	const PATHS = {
-		PROC_CHARACTER: '/proc/character',
-		DEV_CHARACTER: '/dev/character',
+		PROC_CHARACTER: '/v_proc/character',
+		DEV_CHARACTER: '/v_dev/character',
 		SYS_CLASSES: '/sys/class'
 	};
 
@@ -188,14 +188,14 @@
 			}
 
 			// Make sure parent directories exist before creating character file
-			if (!kernel.exists('/proc')) {
+			if (!kernel.exists('/v_proc')) {
 				console.log('Creating /proc directory');
-				kernel.mkdir('/proc');
+				kernel.mkdir('/v_proc');
 			}
 
-			if (!kernel.exists('/proc/character')) {
+			if (!kernel.exists('/v_proc/character')) {
 				console.log('Creating /proc/character directory');
-				kernel.mkdir('/proc/character');
+				kernel.mkdir('/v_proc/character');
 			}
 
 			// Create/update file if it doesn't exist or was a directory
@@ -266,10 +266,10 @@
 
 		// Check both character device and database capability
 		const needsCharDevice = !kernel.devices.has(PATHS.DEV_CHARACTER);
-		const needsDbDevice = !kernel.devices.has('/dev/db');
+		const needsDbDevice = !kernel.devices.has('/v_dev/db');
 
 		// Check for sentinel file that indicates database is ready
-		const dbDirsReady = kernel.exists('/etc/db_dirs_ready');
+		const dbDirsReady = kernel.exists('/v_etc/db_dirs_ready');
 
 		if (needsCharDevice || needsDbDevice || !dbDirsReady) {
 			// Log what resources we're waiting for
@@ -296,13 +296,13 @@
 				console.log(`${getTimestamp()} - Mount event received:`, event);
 
 				// Check if this is a device we're waiting for
-				if (event.path === PATHS.DEV_CHARACTER || event.path === '/dev/db') {
+				if (event.path === PATHS.DEV_CHARACTER || event.path === '/v_dev/db') {
 					console.log(`${getTimestamp()} - Device ${event.path} mounted`);
 
 					// Check if we still need to wait for anything
 					const stillNeedsChar = !kernel.devices?.has(PATHS.DEV_CHARACTER);
-					const stillNeedsDb = !kernel.devices?.has('/dev/db');
-					const stillNeedsDirs = !kernel.exists('/etc/db_dirs_ready');
+					const stillNeedsDb = !kernel.devices?.has('/v_dev/db');
+					const stillNeedsDirs = !kernel.exists('/v_etc/db_dirs_ready');
 
 					if (!stillNeedsChar && !stillNeedsDb && stillNeedsDirs === false) {
 						console.log(
@@ -330,7 +330,7 @@
 				console.log(`${getTimestamp()} - Character device ready event received:`, event);
 
 				// Check if database is also ready before proceeding
-				if (kernel.devices?.has('/dev/db') && kernel.exists('/etc/db_dirs_ready')) {
+				if (kernel.devices?.has('/v_dev/db') && kernel.exists('/v_etc/db_dirs_ready')) {
 					console.log(
 						`${getTimestamp()} - Character device and database both ready, proceeding with character load`
 					);
@@ -379,8 +379,8 @@
 
 					// Re-check if devices are available now
 					const stillNeedsChar = !kernel.devices?.has(PATHS.DEV_CHARACTER);
-					const stillNeedsDb = !kernel.devices?.has('/dev/db');
-					const stillNeedsDirs = !kernel.exists('/etc/db_dirs_ready');
+					const stillNeedsDb = !kernel.devices?.has('/v_dev/db');
+					const stillNeedsDirs = !kernel.exists('/v_etc/db_dirs_ready');
 
 					// If both devices are available but the sentinel file is missing, create it
 					if (!stillNeedsChar && !stillNeedsDb && stillNeedsDirs) {
@@ -389,14 +389,14 @@
 						);
 
 						// Ensure /etc directory exists
-						if (!kernel.exists('/etc')) {
+						if (!kernel.exists('/v_etc')) {
 							console.log(`${getTimestamp()} - Creating /etc directory`);
-							kernel.mkdir('/etc');
+							kernel.mkdir('/v_etc');
 						}
 
 						// Create the sentinel file
 						try {
-							const createResult = kernel.create('/etc/db_dirs_ready', {
+							const createResult = kernel.create('/v_etc/db_dirs_ready', {
 								timestamp: Date.now(),
 								status: 'ready',
 								createdBy: 'CharacterLoader safety timer'
@@ -433,7 +433,7 @@
 							needsChar: stillNeedsChar,
 							needsDb: stillNeedsDb,
 							needsDirs: stillNeedsDirs,
-							dbDirsExist: kernel.exists('/etc/db_dirs_ready')
+							dbDirsExist: kernel.exists('/v_etc/db_dirs_ready')
 						});
 
 						// If only waiting for the sentinel file AND we've been waiting for more than 5 seconds,
@@ -750,11 +750,11 @@
 						console.log('Forcing database driver reconnection');
 
 						// Find the database driver - with better driver extraction
-						const dbDevice = kernel.mountPoints?.get('/dev/db') || kernel.devices?.get('/dev/db');
+						const dbDevice = kernel.mountPoints?.get('/v_dev/db') || kernel.devices?.get('/v_dev/db');
 
 						// Find the character device
 						const charDevice =
-							kernel.mountPoints?.get('/dev/character') || kernel.devices?.get('/dev/character');
+							kernel.mountPoints?.get('/v_dev/character') || kernel.devices?.get('/v_dev/character');
 
 						if (dbDevice && charDevice) {
 							// Force connect database driver to character capability
@@ -817,7 +817,7 @@
 								kernelDevices: kernel.devices ? Array.from(kernel.devices.keys()) : [],
 								kernelMountPoints: kernel.mountPoints ? Array.from(kernel.mountPoints.keys()) : [],
 								eventsRegistered: !!kernel.events,
-								sentinelFileExists: kernel.exists('/etc/db_dirs_ready')
+								sentinelFileExists: kernel.exists('/v_etc/db_dirs_ready')
 							};
 							console.error('Device status:', deviceStatus);
 

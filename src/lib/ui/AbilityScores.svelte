@@ -16,9 +16,9 @@
 
 	// The Unix way - everything is a file
 	const ABILITY_PATHS = {
-		DEVICE: '/dev/ability',
-		PROC: '/proc',
-		PROC_CHARACTER: '/proc/character'
+		DEVICE: '/v_dev/ability',
+		PROC: '/v_proc',
+		PROC_CHARACTER: '/v_proc/character'
 	};
 
 	// Request codes

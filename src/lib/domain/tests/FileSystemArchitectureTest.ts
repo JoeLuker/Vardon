@@ -173,7 +173,7 @@ export async function runUnixArchitectureTest(): Promise<string> {
 
 		// Create test entity
 		const entityId = 'test-entity';
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 
 		const entity = {
 			id: entityId,

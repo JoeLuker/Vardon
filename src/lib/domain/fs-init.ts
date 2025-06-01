@@ -88,8 +88,8 @@ export async function loadCharacter(
 		console.log(`[fs-init] Character ${characterId} already loaded, using cached version`);
 
 		// Check if the character exists in the filesystem
-		const characterPath = `/proc/character/${characterId}`;
-		const entityPath = `/entity/character-${characterId}`;
+		const characterPath = `/v_proc/character/${characterId}`;
+		const entityPath = `/v_entity/character-${characterId}`;
 
 		if ('kernel' in app && app.kernel) {
 			// Try to get the character from the filesystem

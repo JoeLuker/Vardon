@@ -310,7 +310,7 @@ export class GameKernel {
 		}
 
 		// Store in the devices map - extracting the device name from the path
-		const deviceName = path.startsWith('/dev/') ? path : path.split('/').pop() || path;
+		const deviceName = path.startsWith('/v_dev/') ? path : path.split('/').pop() || path;
 		this.devices.set(deviceName, device);
 
 		this.log(`Mounted device ${device.id} at ${path}, device name: ${deviceName}`);
@@ -785,7 +785,7 @@ export class GameKernel {
 	 * @returns Entity path
 	 */
 	registerEntity(entity: Entity): string {
-		const path = `/entity/${entity.id}`;
+		const path = `/v_entity/${entity.id}`;
 
 		// Create entity file
 		const result = this.create(path, entity);
@@ -805,7 +805,7 @@ export class GameKernel {
 	 * @returns Entity or undefined if not found
 	 */
 	getEntity(entityId: string): Entity | undefined {
-		const path = `/entity/${entityId}`;
+		const path = `/v_entity/${entityId}`;
 		const inode = this.inodes.get(path);
 		return inode?.data;
 	}
@@ -816,8 +816,8 @@ export class GameKernel {
 	 */
 	getEntityIds(): string[] {
 		return Array.from(this.inodes.keys())
-			.filter((path) => path.startsWith('/entity/'))
-			.map((path) => path.substring('/entity/'.length));
+			.filter((path) => path.startsWith('/v_entity/'))
+			.map((path) => path.substring('/v_entity/'.length));
 	}
 
 	/**
@@ -826,7 +826,7 @@ export class GameKernel {
 	 * @returns Whether removal was successful
 	 */
 	removeEntity(entityId: string): boolean {
-		const path = `/entity/${entityId}`;
+		const path = `/v_entity/${entityId}`;
 
 		// Check if any file descriptors are open for this entity
 		for (const descriptor of this.fileDescriptors.values()) {
@@ -856,7 +856,7 @@ export class GameKernel {
 	 * @param capability Capability implementation
 	 */
 	registerCapability(id: string, capability: Capability): void {
-		const devicePath = `/dev/${id}`;
+		const devicePath = `/v_dev/${id}`;
 
 		// Mount the device
 		const result = this.mount(devicePath, capability);
@@ -875,7 +875,7 @@ export class GameKernel {
 	 * @returns Capability or undefined if not found
 	 */
 	getCapability<T extends Capability>(id: string): T | undefined {
-		const devicePath = `/dev/${id}`;
+		const devicePath = `/v_dev/${id}`;
 		return this.mountPoints.get(devicePath) as T | undefined;
 	}
 
@@ -885,8 +885,8 @@ export class GameKernel {
 	 */
 	getCapabilityIds(): string[] {
 		return Array.from(this.mountPoints.keys())
-			.filter((path) => path.startsWith('/dev/'))
-			.map((path) => path.substring('/dev/'.length));
+			.filter((path) => path.startsWith('/v_dev/'))
+			.map((path) => path.substring('/v_dev/'.length));
 	}
 
 	//=============================================================================
@@ -1001,7 +1001,7 @@ export class GameKernel {
 			throw new Error(error);
 		}
 
-		const entityPath = `/entity/${entityId}`;
+		const entityPath = `/v_entity/${entityId}`;
 
 		// Check if entity exists
 		if (!this.exists(entityPath)) {

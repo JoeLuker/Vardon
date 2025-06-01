@@ -412,15 +412,15 @@ export class CombatCapability implements Capability {
 		}
 
 		// Check if /proc exists, create if not
-		if (!this.kernel.exists('/proc')) {
+		if (!this.kernel.exists('/v_proc')) {
 			console.log(`[CombatCapability] Creating /proc directory`);
-			this.kernel.mkdir('/proc');
+			this.kernel.mkdir('/v_proc');
 		}
 
 		// Check if /proc/character exists, create if not
-		if (!this.kernel.exists('/proc/character')) {
+		if (!this.kernel.exists('/v_proc/character')) {
 			console.log(`[CombatCapability] Creating /proc/character directory`);
-			this.kernel.mkdir('/proc/character');
+			this.kernel.mkdir('/v_proc/character');
 		}
 	}
 }

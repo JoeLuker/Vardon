@@ -17,7 +17,7 @@ The architecture follows these core Unix principles:
 The virtual filesystem is organized as follows:
 
 - `/bin/` - Executable plugins (like executables in Unix)
-- `/entity/` - Entity data (like files in Unix)
+- `/v_entity/` - Entity data (like files in Unix)
 - `/dev/` - Capabilities mounted as device drivers (like device files in Unix)
 - `/proc/plugins/` - Plugin metadata and status information (like procfs in Unix)
 - `/etc/plugins/` - Plugin configuration (like config files in Unix)
@@ -62,7 +62,7 @@ Capabilities are like device drivers in Unix:
 
 Entities are like files in Unix:
 
-- Stored at `/entity/{entity_id}`
+- Stored at `/v_entity/{entity_id}`
 - Contain data in a structured format
 - Accessed through file descriptors using read/write operations
 - Modified by plugins through standard file operations
@@ -74,7 +74,7 @@ Entities are like files in Unix:
 ```typescript
 // Create entity ID and path
 const entityId = `character-${characterId}`;
-const entityPath = `/entity/${entityId}`;
+const entityPath = `/v_entity/${entityId}`;
 
 // Check if entity exists
 if (kernel.exists(entityPath)) {
@@ -103,7 +103,7 @@ const result = await pluginManager.applyPlugin(entityId, 'power-attack', { penal
 
 // Or directly using the plugin
 const pluginPath = '/bin/power-attack';
-const entityPath = `/entity/${entityId}`;
+const entityPath = `/v_entity/${entityId}`;
 const exitCode = await kernel.execute(pluginPath, entityPath, { penalty: 3 });
 ```
 
@@ -117,7 +117,7 @@ try {
 	// Use ioctl to control the device
 	const result = kernel.ioctl(bonusDeviceFd, 0, {
 		operation: 'addBonus',
-		entityPath: `/entity/${entityId}`,
+		entityPath: `/v_entity/${entityId}`,
 		target: 'melee_attack',
 		value: -3,
 		type: 'power_attack',

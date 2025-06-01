@@ -25,9 +25,9 @@ import {
 
 // Device file paths
 export const ABILITY_PATHS = {
-	DEVICE: '/dev/ability',
-	PROC_CHARACTER: '/proc/character',
-	VIRTUAL_FILES: '/proc/ability'
+	DEVICE: '/v_dev/ability',
+	PROC_CHARACTER: '/v_proc/character',
+	VIRTUAL_FILES: '/v_proc/ability'
 };
 
 // Operation request codes (like ioctl request codes in Unix)
@@ -128,8 +128,8 @@ export function createUnixAbilityDevice(
 			};
 
 			// Create all required directories
-			if (!createDirIfNeeded('/proc')) return;
-			if (!createDirIfNeeded('/proc/ability')) return;
+			if (!createDirIfNeeded('/v_proc')) return;
+			if (!createDirIfNeeded('/v_proc/ability')) return;
 			if (!createDirIfNeeded('/proc/ability/cache')) return;
 			if (!createDirIfNeeded(ABILITY_PATHS.PROC_CHARACTER)) return;
 

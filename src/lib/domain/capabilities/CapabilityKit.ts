@@ -284,7 +284,7 @@ export async function withEntity<T>(
 	}
 
 	// Path to the entity file
-	const entityPath = `/entity/${entityId}`;
+	const entityPath = `/v_entity/${entityId}`;
 
 	// Use withFile from ErrorHandler to manage file descriptor
 	return withFile(kernel, entityPath, OpenMode.READ_WRITE, async (fd) => {
@@ -327,7 +327,7 @@ export function withEntitySync<T>(
 	}
 
 	// Path to the entity file
-	const entityPath = `/entity/${entityId}`;
+	const entityPath = `/v_entity/${entityId}`;
 
 	// Verify entity exists
 	if (!kernel.exists(entityPath)) {
@@ -400,7 +400,7 @@ export async function initializeEntity(
 		initializer(entity);
 
 		// Update entity in filesystem
-		const entityPath = `/entity/${entity.id}`;
+		const entityPath = `/v_entity/${entity.id}`;
 
 		return withFile(context.kernel, entityPath, OpenMode.WRITE, (fd) => {
 			// Write updated entity

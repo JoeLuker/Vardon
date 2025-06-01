@@ -52,18 +52,18 @@ function ensureProcDirectories(context: CapabilityContext): void {
 	}
 
 	// Check if /proc exists
-	if (!context.kernel.exists('/proc')) {
+	if (!context.kernel.exists('/v_proc')) {
 		log(context, 'Creating /proc directory');
-		const result = context.kernel.mkdir('/proc');
+		const result = context.kernel.mkdir('/v_proc');
 		if (result !== ErrorCode.SUCCESS) {
 			error(context, `Failed to create /proc directory: ${result}`);
 		}
 	}
 
 	// Check if /proc/character exists
-	if (!context.kernel.exists('/proc/character')) {
+	if (!context.kernel.exists('/v_proc/character')) {
 		log(context, 'Creating /proc/character directory');
-		const result = context.kernel.mkdir('/proc/character');
+		const result = context.kernel.mkdir('/v_proc/character');
 		if (result !== ErrorCode.SUCCESS) {
 			error(context, `Failed to create /proc/character directory: ${result}`);
 		}
@@ -708,7 +708,7 @@ function handleInitializeOperation(entityPath: string, context: SkillCapabilityC
 		ensureProcDirectories(context);
 
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {
@@ -739,7 +739,7 @@ function handleGetAvailableSkillPoints(
 		ensureProcDirectories(context);
 
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {
@@ -774,7 +774,7 @@ function handleGetInvestedSkillPoints(
 		ensureProcDirectories(context);
 
 		// Extract entity ID from path
-		const entityId = entityPath.substring('/entity/'.length);
+		const entityId = entityPath.substring('/v_entity/'.length);
 
 		// Use the withEntity helper to handle file operations
 		return withEntitySync(context, entityId, (entity) => {

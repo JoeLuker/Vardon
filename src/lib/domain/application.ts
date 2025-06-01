@@ -113,7 +113,7 @@ export async function initializeApplication(
 	console.log('[init] Creating filesystem hierarchy');
 	// Create application-specific directory structure
 	kernel.mkdir('/v_proc/character');
-	kernel.mkdir('/var/log');
+	kernel.mkdir('/v_var/log');
 
 	// Create configuration file with defaults
 	console.log('[init] Writing configuration');

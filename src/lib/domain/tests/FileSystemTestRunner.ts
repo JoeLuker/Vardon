@@ -89,12 +89,12 @@ export async function runAllUnixTests(): Promise<string> {
 			});
 
 			// Create standard directories
-			kernel.mkdir('/dev');
-			kernel.mkdir('/entity');
-			kernel.mkdir('/proc');
-			kernel.mkdir('/proc/features');
+			kernel.mkdir('/v_dev');
+			kernel.mkdir('/v_entity');
+			kernel.mkdir('/v_proc');
+			kernel.mkdir('/v_proc/features');
 			kernel.mkdir('/var');
-			kernel.mkdir('/var/log');
+			kernel.mkdir('/v_var/log');
 
 			// Create character assembler
 			const assembler = new UnixCharacterAssembler(kernel);
