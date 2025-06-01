@@ -102,7 +102,7 @@ export class DataPipeline<TInput = any, TOutput = any> {
     config: PipelineConfig = {}
   ) {
     this.debug = config.debug || false;
-    this.pipeDir = config.pipeDir || '/tmp/pipelines';
+    this.pipeDir = config.pipeDir || '/v_tmp/pipelines';
     this.collectMetrics = config.collectMetrics || true;
     this.cleanup = config.cleanup || false;
     this.name = config.name || `pipeline_${Date.now()}`;
@@ -614,7 +614,7 @@ export const CommonTransforms = {
    * Convert entity path to file path
    */
   entityPathToFilePath: (entityPath: string) => {
-    return entityPath.replace(/^\/v_entity\//, '/var/entity/').replace(/:/g, '/');
+    return entityPath.replace(/^\/v_entity\//, '/v_var/entity/').replace(/:/g, '/');
   },
   
   /**

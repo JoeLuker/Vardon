@@ -235,7 +235,7 @@ async function testSystemWideInvariants(): Promise<void> {
 		// Test mount consistency
 		console.log('Testing mount point consistency...');
 		const capability = new TestCapability({ debug: true });
-		kernel.mount('/dev/test', capability);
+		kernel.mount('/v_dev/test', capability);
 
 		// System check should verify mount point exists
 		console.log('✅ Mount point consistency check works');

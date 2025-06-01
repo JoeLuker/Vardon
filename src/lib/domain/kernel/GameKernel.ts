@@ -1429,7 +1429,7 @@ export class GameKernel {
 			message.includes('Created file') ||
 			message.includes('Failed to create') ||
 			message.includes('directory') ||
-			message.includes('/proc/character')
+			message.includes('/v_proc/character')
 		) {
 			console.warn(`[GameKernel-DEBUG] ${message}`, data);
 			return;

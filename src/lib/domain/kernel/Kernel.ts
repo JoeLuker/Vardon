@@ -1226,7 +1226,7 @@ export class Kernel {
 			if (fd > 2) {
 				// Skip standard descriptors
 				this.invariants.check(
-					this.exists(descriptor.path) || descriptor.path.startsWith('/dev/'),
+					this.exists(descriptor.path) || descriptor.path.startsWith('/v_dev/'),
 					`File descriptor ${fd} points to non-existent path: ${descriptor.path}`,
 					{ ...context, fd, path: descriptor.path }
 				);

@@ -80,7 +80,7 @@ export function createCharacterToUIModelPipeline(
     name: 'character_to_ui_model',
     description: 'Transforms a character entity into a UI model',
     debug: true,
-    pipeDir: '/tmp/character_pipelines',
+    pipeDir: '/v_tmp/character_pipelines',
     collectMetrics: true,
     retainIntermediateFiles: true
   })

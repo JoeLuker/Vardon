@@ -347,7 +347,7 @@ export class UnixCharacterStore {
 					this.kernel.close(dbFd);
 
 					// Use a special delete operation via ioctl
-					const dbCapDevice = '/dev/database';
+					const dbCapDevice = '/v_dev/database';
 					const dbCapFd = this.kernel.open(dbCapDevice, OpenMode.READ_WRITE);
 					if (dbCapFd >= 0) {
 						try {

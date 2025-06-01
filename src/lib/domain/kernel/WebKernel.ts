@@ -258,7 +258,7 @@ export class WebKernel extends Kernel {
 		// Basic directories were already created during filesystem mounting,
 		// so we only need to add application-specific ones
 
-		const appDirs = ['/proc/api', '/etc/config', '/var/cache', '/var/data'];
+		const appDirs = ['/v_proc/api', '/v_etc/config', '/v_var/cache', '/v_var/data'];
 
 		for (const dir of appDirs) {
 			await this.fs.mkdir(dir, true);

@@ -384,13 +384,13 @@ export class FileSystem {
 		await this.mkdir('/v_dev/bonus');
 
 		await this.mkdir('/v_proc/character');
-		await this.mkdir('/proc/plugins');
-		await this.mkdir('/proc/signals');
+		await this.mkdir('/v_proc/plugins');
+		await this.mkdir('/v_proc/signals');
 
-		await this.mkdir('/etc/plugins');
+		await this.mkdir('/v_etc/plugins');
 
 		await this.mkdir('/v_var/log');
-		await this.mkdir('/var/run');
+		await this.mkdir('/v_var/run');
 	}
 
 	/**

@@ -94,7 +94,7 @@ export class InvariantChecker {
 	checkEntityPath(path: string, context: InvariantContext): void {
 		this.checkPath(path, context);
 		this.check(
-			path.startsWith('/v_entity/') || path.startsWith('/proc/character/'),
+			path.startsWith('/v_entity/') || path.startsWith('/v_proc/character/'),
 			`Entity path must start with /v_entity/ or /v_proc/character/, got: ${path}`,
 			{ ...context, path }
 		);

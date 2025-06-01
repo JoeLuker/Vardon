@@ -57,7 +57,7 @@ export async function runPluginTest() {
 	}
 
 	// Check if Power Attack plugin exists
-	const powerAttackPath = '/bin/power-attack';
+	const powerAttackPath = '/v_bin/power-attack';
 	if (!kernel.exists(powerAttackPath)) {
 		console.log(`\nPower Attack plugin not found at ${powerAttackPath}, creating it...`);
 

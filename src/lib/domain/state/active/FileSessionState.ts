@@ -16,12 +16,12 @@ import { OpenMode, ErrorCode } from '../../kernel/types';
  * Session state directories in the filesystem
  */
 export const SESSION_PATHS = {
-	SESSION_DIR: '/proc/session',
-	ACTIVE_DIR: '/proc/session/active',
-	ENTITIES_DIR: '/proc/session/entities',
-	FEATURES_DIR: '/proc/session/features',
-	CONDITIONS_DIR: '/proc/session/conditions',
-	COUNTERS_DIR: '/proc/session/counters'
+	SESSION_DIR: '/v_proc/session',
+	ACTIVE_DIR: '/v_proc/session/active',
+	ENTITIES_DIR: '/v_proc/session/entities',
+	FEATURES_DIR: '/v_proc/session/features',
+	CONDITIONS_DIR: '/v_proc/session/conditions',
+	COUNTERS_DIR: '/v_proc/session/counters'
 };
 
 /**

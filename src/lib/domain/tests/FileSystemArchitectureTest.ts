@@ -276,7 +276,7 @@ export async function testCharacterDirectoryCreation(): Promise<string> {
 
 	try {
 		// Check if /proc/character directory exists
-		const exists = kernel.exists('/proc/character');
+		const exists = kernel.exists('/v_proc/character');
 
 		if (exists) {
 			console.log('✅ /proc/character directory was created during kernel initialization');

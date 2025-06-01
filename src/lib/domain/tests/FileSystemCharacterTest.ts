@@ -55,7 +55,7 @@ export async function runUnixCharacterTest(): Promise<string> {
 
 		// Test filesystem access to character
 		const kernel = app.kernel;
-		const entityPath = `/proc/character/1`;
+		const entityPath = `/v_proc/character/1`;
 
 		// Verify character exists in filesystem
 		if (!kernel.exists(entityPath)) {
@@ -101,7 +101,7 @@ export async function runUnixCharacterTest(): Promise<string> {
 			console.log('Character data validated successfully');
 
 			// Test device access (should be mounted in /dev)
-			const abilityDevicePath = '/dev/ability';
+			const abilityDevicePath = '/v_dev/ability';
 			if (!kernel.exists(abilityDevicePath)) {
 				throw new Error('Ability device not found');
 			}
@@ -129,7 +129,7 @@ export async function runUnixCharacterTest(): Promise<string> {
 				id: 'character-test-plugin',
 				name: 'Character Test Plugin',
 				description: 'Test plugin for character manipulation',
-				requiredDevices: ['/dev/ability', '/dev/bonus'],
+				requiredDevices: ['/v_dev/ability', '/v_dev/bonus'],
 
 				async execute(kernel: any, entityPath: string, options: any = {}): Promise<number> {
 					console.log(`[TestPlugin] Reading character from ${entityPath}`);
@@ -175,7 +175,7 @@ export async function runUnixCharacterTest(): Promise<string> {
 
 			// Execute plugin
 			console.log('Executing test plugin on character...');
-			await kernel.executePlugin('character-test-plugin', '/proc/character/1', { newHp: 75 });
+			await kernel.executePlugin('character-test-plugin', '/v_proc/character/1', { newHp: 75 });
 
 			// Verify character was modified by plugin
 			const checkFd = kernel.open(entityPath, OpenMode.READ);
