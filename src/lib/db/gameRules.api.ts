@@ -511,9 +511,9 @@ export class GameRulesAPI {
 				characterId,
 				kernelReady: !!this.kernel,
 				dbCapCreated: !!this.dbCapability,
-				dbDeviceExists: this.kernel && this.kernel.exists('/dev/db'),
-				procDirExists: this.kernel && this.kernel.exists('/proc'),
-				characterDirExists: this.kernel && this.kernel.exists('/proc/character')
+				dbDeviceExists: this.kernel && this.kernel.exists('/v_dev/db'),
+				procDirExists: this.kernel && this.kernel.exists('/v_proc'),
+				characterDirExists: this.kernel && this.kernel.exists('/v_proc/character')
 			};
 
 			console.error(
@@ -642,9 +642,9 @@ export class GameRulesAPI {
 				throw new Error('Failed to create Database Capability');
 			}
 
-			// IMPORTANT: Mount the database capability directly at /dev/db
+			// IMPORTANT: Mount the database capability directly at /v_dev/db
 			// This ensures it's properly recognized as a device file, not just registered
-			const mountResult = this.kernel.mount('/dev/db', this.dbCapability);
+			const mountResult = this.kernel.mount('/v_dev/db', this.dbCapability);
 
 			if (!mountResult.success) {
 				throw new Error(`Failed to mount Database Capability: ${mountResult.errorMessage}`);
@@ -669,7 +669,7 @@ export class GameRulesAPI {
 				});
 			}
 
-			console.log('[GameRulesAPI] Database Capability mounted successfully at /dev/db');
+			console.log('[GameRulesAPI] Database Capability mounted successfully at /v_dev/db');
 		} catch (error) {
 			console.error('[GameRulesAPI] Failed to initialize Database Capability:', error);
 			this.hasDbCapability = false;
@@ -700,19 +700,19 @@ export class GameRulesAPI {
 
 			// Base directories
 			const criticalPaths = [
-				{ path: '/proc', description: 'Process directory' },
-				{ path: '/proc/character', description: 'Character process directory' },
-				{ path: '/entity', description: 'Entity directory' },
-				{ path: '/etc', description: 'Configuration directory' },
-				{ path: '/etc/schema', description: 'Schema directory' }
+				{ path: '/v_proc', description: 'Process directory' },
+				{ path: '/v_proc/character', description: 'Character process directory' },
+				{ path: '/v_entity', description: 'Entity directory' },
+				{ path: '/v_etc', description: 'Configuration directory' },
+				{ path: '/v_etc/schema', description: 'Schema directory' }
 			];
 
 			// Additional schema directories
 			const schemaDirectories = [
-				{ path: '/etc/schema/ability', description: 'Ability schema directory' },
-				{ path: '/etc/schema/class', description: 'Class schema directory' },
-				{ path: '/etc/schema/feat', description: 'Feat schema directory' },
-				{ path: '/etc/schema/skill', description: 'Skill schema directory' }
+				{ path: '/v_etc/schema/ability', description: 'Ability schema directory' },
+				{ path: '/v_etc/schema/class', description: 'Class schema directory' },
+				{ path: '/v_etc/schema/feat', description: 'Feat schema directory' },
+				{ path: '/v_etc/schema/skill', description: 'Skill schema directory' }
 			];
 
 			// Combine all directories to create
@@ -726,7 +726,7 @@ export class GameRulesAPI {
 
 			// Create critical paths first with retries
 			for (const { path, description } of criticalPaths) {
-				if (path === '/dev') {
+				if (path === '/v_dev') {
 					// Skip creating /dev directly - it should already exist in the kernel
 					continue;
 				}
@@ -785,8 +785,8 @@ export class GameRulesAPI {
 
 			// The Unix Way: Write sentinel file to indicate directories are ready
 			try {
-				if (!this.kernel.exists('/etc/db_dirs_ready')) {
-					this.kernel.create('/etc/db_dirs_ready', {
+				if (!this.kernel.exists('/v_etc/db_dirs_ready')) {
+					this.kernel.create('/v_etc/db_dirs_ready', {
 						timestamp: Date.now(),
 						status: 'ready'
 					});

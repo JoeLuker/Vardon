@@ -496,13 +496,13 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 			// Standard database path
 			parts = path.substring(4).split('/');
 			resourceOffset = 0;
-		} else if (path.startsWith('/proc/character/')) {
+		} else if (path.startsWith('/v_proc/character/')) {
 			// Character in proc directory - the canonical format
 			parts = path.substring(16).split('/');
 			resource = 'character';
 			resourceOffset = 1;
 		} else {
-			throw new Error(`Invalid database path: ${path}. Must start with /db/ or /proc/character/`);
+			throw new Error(`Invalid database path: ${path}. Must start with /db/ or /v_proc/character/`);
 		}
 
 		// For custom paths with resourceOffset, we only need the ID
