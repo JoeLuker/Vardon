@@ -45,19 +45,19 @@
 			});
 
 			// Create required directories - MUST BE CREATED BEFORE REGISTERING CAPABILITIES
-			// First check if /proc exists
+			// First check if /v_proc exists
 			if (!kernel.exists('/v_proc')) {
 				const procResult = kernel.mkdir('/v_proc');
 				if (typeof procResult === 'number' && procResult !== 0) {
-					console.error(`Failed to create /proc directory: ${procResult}`);
+					console.error(`Failed to create /v_proc directory: ${procResult}`);
 				}
 			}
 
-			// Then create /proc/character
+			// Then create /v_proc/character
 			if (!kernel.exists('/v_proc/character')) {
 				const charDirResult = kernel.mkdir('/v_proc/character');
 				if (typeof charDirResult === 'number' && charDirResult !== 0) {
-					console.error(`Failed to create /proc/character directory: ${charDirResult}`);
+					console.error(`Failed to create /v_proc/character directory: ${charDirResult}`);
 				}
 			}
 

@@ -72,7 +72,7 @@
 		isLoading = true;
 		error = null;
 
-		// Ensure /proc directory exists
+		// Ensure /v_proc directory exists
 		if (!kernel.exists('/v_proc')) {
 			console.log('Creating /proc directory');
 			const procResult = kernel.mkdir('/v_proc');
@@ -134,7 +134,7 @@
 			return null;
 		}
 
-		// Ensure /proc directory exists
+		// Ensure /v_proc directory exists
 		if (!kernel.exists('/v_proc')) {
 			console.log('Creating /proc directory');
 			const procResult = kernel.mkdir('/v_proc');

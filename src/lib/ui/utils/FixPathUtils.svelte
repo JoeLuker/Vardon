@@ -16,7 +16,7 @@
 	 * Prepares character paths correctly for all UI components.
 	 *
 	 * This function ensures:
-	 * 1. Parent directories exist (/proc and /proc/character)
+	 * 1. Parent directories exist (/v_proc and /v_proc/character)
 	 * 2. Character paths are files, not directories
 	 * 3. Any incorrectly created directories at character paths are fixed
 	 *

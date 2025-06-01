@@ -54,7 +54,7 @@
 		isLoading = true;
 		error = null;
 
-		// Check if /proc exists and create if needed
+		// Check if /v_proc exists and create if needed
 		if (!kernel.exists(ABILITY_PATHS.PROC)) {
 			console.log(`Creating ${ABILITY_PATHS.PROC} directory`);
 			const procResult = kernel.mkdir(ABILITY_PATHS.PROC);
@@ -65,7 +65,7 @@
 			}
 		}
 
-		// Check if /proc/character exists and create if needed
+		// Check if /v_proc/character exists and create if needed
 		if (!kernel.exists(ABILITY_PATHS.PROC_CHARACTER)) {
 			console.log(`Creating ${ABILITY_PATHS.PROC_CHARACTER} directory`);
 			const charDirResult = kernel.mkdir(ABILITY_PATHS.PROC_CHARACTER);
@@ -208,7 +208,7 @@
 			return;
 		}
 
-		// Check if /proc exists and create if needed
+		// Check if /v_proc exists and create if needed
 		if (!kernel.exists(ABILITY_PATHS.PROC)) {
 			console.log(`Creating ${ABILITY_PATHS.PROC} directory`);
 			const procResult = kernel.mkdir(ABILITY_PATHS.PROC);
@@ -220,7 +220,7 @@
 			}
 		}
 
-		// Check if /proc/character exists and create if needed
+		// Check if /v_proc/character exists and create if needed
 		if (!kernel.exists(ABILITY_PATHS.PROC_CHARACTER)) {
 			console.log(`Creating ${ABILITY_PATHS.PROC_CHARACTER} directory`);
 			const charDirResult = kernel.mkdir(ABILITY_PATHS.PROC_CHARACTER);
