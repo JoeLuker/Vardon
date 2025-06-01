@@ -2,11 +2,15 @@
 import { error } from '@sveltejs/kit';
 import { GameRulesAPI } from '$lib/db';
 
-// Create a singleton instance of GameRulesAPI with Unix architecture
-const gameRules = new GameRulesAPI({ debug: true });
+// Lazy-initialize GameRulesAPI to avoid build-time filesystem creation
+let gameRules: GameRulesAPI | null = null;
 
-// GameKernel instance from the gameRules API for direct file operations
-const kernel = gameRules.getKernel();
+function getGameRules(): GameRulesAPI {
+	if (!gameRules) {
+		gameRules = new GameRulesAPI({ debug: true });
+	}
+	return gameRules;
+}
 
 export async function load({ params }: { params: Record<string, string> }) {
 	try {
@@ -18,7 +22,7 @@ export async function load({ params }: { params: Record<string, string> }) {
 
 		// Get complete character data from GameRulesAPI
 		// This now correctly handles creating files (not directories) for characters
-		const character = await gameRules.getCompleteCharacterData(numericId);
+		const character = await getGameRules().getCompleteCharacterData(numericId);
 
 		if (!character) {
 			throw error(404, 'Character not found');

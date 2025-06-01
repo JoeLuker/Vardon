@@ -7,8 +7,13 @@ const config = {
 		adapter: adapter({
 			// Specify Node.js runtime version for Vercel
 			runtime: 'nodejs20.x',
-			// Split configuration to avoid build-time issues
-			split: true
+			// Disable edge functions which might cause file tracing issues
+			edge: false,
+			// Use ISR (Incremental Static Regeneration) to reduce build complexity
+			isr: {
+				// Prerender the root page
+				expiration: false
+			}
 		}),
 
 		// Set paths relative to the base path
