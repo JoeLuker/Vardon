@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Eye, EyeOff, Grid, Circle } from 'lucide-svelte';
+	import { untrack } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -429,14 +430,19 @@
 		baseSkillsDataResolved = data;
 	}
 
-	// Use reactive assignment instead of effect to avoid state mutation warnings
-	$: if (kernel && character) {
+	// Use effect to handle async data loading in Svelte 5
+	$effect(() => {
+		if (!kernel || !character) return;
+
+		// Handle the promise properly in Svelte 5 with untrack to avoid state_unsafe_mutation
 		baseSkillsData.then(resolved => {
-			baseSkillsDataResolved = resolved;
+			untrack(() => {
+				baseSkillsDataResolved = resolved;
+			});
 		}).catch(error => {
 			console.error('Error loading skills data:', error);
 		});
-	}
+	});
 
 	// Add or remove a skill rank using file-based operations
 	async function updateSkillRank(
