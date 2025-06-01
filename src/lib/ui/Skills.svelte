@@ -193,8 +193,14 @@
 		});
 	}
 
-	// Base skill data - only recomputed when character/kernel change
-	let baseSkillsData = $derived.by(async () => {
+	// Base skill data state
+	let baseSkillsData = $state<{
+		byAbility: Record<string, ProcessedSkill[]>;
+		allSkills: ProcessedSkill[];
+	} | null>(null);
+
+	// Function to load skill data
+	async function loadSkillsData() {
 		if (!kernel || !character)
 			return {
 				byAbility: {},
@@ -284,7 +290,7 @@
 				allSkills: []
 			};
 		}
-	});
+	}
 
 	// Improved function to get skill ranks count considering optimistic state
 	function getSkillRanksCount(skillId: number): number {
@@ -327,15 +333,16 @@
 	}
 
 	// Filtered skills for current view - recalculated when toggle state changes
-	let filteredSkillsByAbility = $derived.by(async () => {
-		const baseData = await baseSkillsData;
+	let filteredSkillsByAbility = $derived(() => {
+		if (!baseSkillsData) return {};
+		
 		const result: Record<string, ProcessedSkill[]> = {};
 
 		// Include timestamp to force reactivity
 		const timestamp = filterTimestamp;
 
 		// Don't filter based on visibility - let the template handle that
-		for (const [ability, skills] of Object.entries(baseData.byAbility)) {
+		for (const [ability, skills] of Object.entries(baseSkillsData.byAbility)) {
 			result[ability] = skills;
 		}
 
@@ -343,14 +350,14 @@
 	});
 
 	// Filtered and sorted skills for alphabetical view
-	let filteredSkillsAlphabetical = $derived.by(async () => {
-		const baseData = await baseSkillsData;
+	let filteredSkillsAlphabetical = $derived(() => {
+		if (!baseSkillsData) return [];
 
 		// Include timestamp to force reactivity
 		const timestamp = filterTimestamp;
 
 		// Don't filter based on visibility - let the template handle that
-		return baseData.allSkills.sort((a, b) => a.name.localeCompare(b.name));
+		return baseSkillsData.allSkills.sort((a, b) => a.name.localeCompare(b.name));
 	});
 
 	function isSkillUnusable(skill: ProcessedSkill): boolean {
@@ -430,17 +437,24 @@
 		baseSkillsDataResolved = data;
 	}
 
-	// Use effect to handle async data loading in Svelte 5
+	// Use effect to load skills data
 	$effect(() => {
-		if (!kernel || !character) return;
+		if (!kernel || !character) {
+			baseSkillsData = null;
+			return;
+		}
 
-		// Handle the promise properly in Svelte 5 with untrack to avoid state_unsafe_mutation
-		baseSkillsData.then(resolved => {
+		// Load skills data and update state
+		loadSkillsData().then(resolved => {
 			untrack(() => {
+				baseSkillsData = resolved;
 				baseSkillsDataResolved = resolved;
 			});
 		}).catch(error => {
 			console.error('Error loading skills data:', error);
+			untrack(() => {
+				error = `Failed to load skills: ${error.message}`;
+			});
 		});
 	});
 
@@ -659,11 +673,12 @@
 					<p class="text-muted-foreground">Character or kernel not available</p>
 				</div>
 			{:else}
-				{#await filteredSkillsByAbility}
+				{#if Object.keys(filteredSkillsByAbility).length === 0}
 					<div class="rounded-md border border-muted p-4">
 						<p class="text-muted-foreground">Loading skills...</p>
 					</div>
-				{:then skills}
+				{:else}
+					{@const skills = filteredSkillsByAbility}
 					<div class="ability-cards">
 						{#each Object.entries(skills) as [ability, skillList]}
 							{#if skillList.length > 0}

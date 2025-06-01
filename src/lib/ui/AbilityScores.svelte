@@ -132,6 +132,8 @@
 					ability: 'all'
 				});
 
+				console.log('DEBUG: ioctlResult type:', typeof ioctlResult, 'value:', ioctlResult);
+
 				if (ioctlResult !== ErrorCode.SUCCESS) {
 					error = `Failed to request ability scores: ${ioctlResult}`;
 					isLoading = false;
