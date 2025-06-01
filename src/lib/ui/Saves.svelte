@@ -111,14 +111,23 @@
 				entityPath
 			});
 
-			if (savesResult.errorCode !== ErrorCode.SUCCESS) {
-				error = `Failed to get saves: ${savesResult.errorMessage}`;
+			if (savesResult !== ErrorCode.SUCCESS) {
+				error = `Failed to get saves: ${savesResult}`;
+				isLoading = false;
+				return;
+			}
+
+			// Read the saves data from the file descriptor
+			const [readResult, savesData] = kernel.read(fd);
+			
+			if (readResult !== ErrorCode.SUCCESS) {
+				error = `Failed to read saves data: ${readResult}`;
 				isLoading = false;
 				return;
 			}
 
 			// Update local state
-			saves = savesResult.data;
+			saves = savesData;
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);

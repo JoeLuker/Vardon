@@ -101,8 +101,8 @@
 				entityPath
 			});
 
-			if (currentHPResult.errorCode !== ErrorCode.SUCCESS) {
-				error = `Failed to get current HP: ${currentHPResult.errorMessage}`;
+			if (currentHPResult !== ErrorCode.SUCCESS) {
+				error = `Failed to get current HP: ${currentHPResult}`;
 				isLoading = false;
 				return;
 			}
@@ -112,15 +112,24 @@
 				entityPath
 			});
 
-			if (maxHPResult.errorCode !== ErrorCode.SUCCESS) {
-				error = `Failed to get max HP: ${maxHPResult.errorMessage}`;
+			if (maxHPResult !== ErrorCode.SUCCESS) {
+				error = `Failed to get max HP: ${maxHPResult}`;
+				isLoading = false;
+				return;
+			}
+
+			// Read the HP data from the file descriptor
+			const [readResult, hpData] = kernel.read(fd);
+			
+			if (readResult !== ErrorCode.SUCCESS) {
+				error = `Failed to read HP data: ${readResult}`;
 				isLoading = false;
 				return;
 			}
 
 			// Update local state
-			current_hp = currentHPResult.data;
-			max_hp = maxHPResult.data;
+			current_hp = hpData.current_hp || 0;
+			max_hp = hpData.max_hp || 0;
 			sliderValue = current_hp;
 		} finally {
 			// Always close the file descriptor

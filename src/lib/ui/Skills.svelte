@@ -429,21 +429,14 @@
 		baseSkillsDataResolved = data;
 	}
 
-	$effect(() => {
-		if (!kernel || !character) return;
-
-		// Use immediately-invoked async function to handle the promise
-		(async () => {
-			try {
-				// Wait for baseSkillsData to be resolved
-				const resolved = await baseSkillsData;
-				// Schedule state update to avoid state_unsafe_mutation error
-				setTimeout(() => updateSkillsData(resolved), 0);
-			} catch (error) {
-				console.error('Error in skills effect:', error);
-			}
-		})();
-	});
+	// Use reactive assignment instead of effect to avoid state mutation warnings
+	$: if (kernel && character) {
+		baseSkillsData.then(resolved => {
+			baseSkillsDataResolved = resolved;
+		}).catch(error => {
+			console.error('Error loading skills data:', error);
+		});
+	}
 
 	// Add or remove a skill rank using file-based operations
 	async function updateSkillRank(

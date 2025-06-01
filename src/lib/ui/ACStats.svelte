@@ -122,14 +122,23 @@
 				entityPath
 			});
 
-			if (statsResult.errorCode !== ErrorCode.SUCCESS) {
-				error = `Failed to get combat stats: ${statsResult.errorMessage}`;
+			if (statsResult !== ErrorCode.SUCCESS) {
+				error = `Failed to get combat stats: ${statsResult}`;
+				isLoading = false;
+				return;
+			}
+
+			// Read the combat stats data from the file descriptor
+			const [readResult, statsData] = kernel.read(fd);
+			
+			if (readResult !== ErrorCode.SUCCESS) {
+				error = `Failed to read combat stats data: ${readResult}`;
 				isLoading = false;
 				return;
 			}
 
 			// Update local state
-			combatStats = statsResult.data;
+			combatStats = statsData;
 		} finally {
 			// Always close the file descriptor
 			if (fd > 0) kernel.close(fd);

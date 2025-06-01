@@ -139,8 +139,7 @@
 				}
 
 				// Read response
-				const buffer = {};
-				const readResult = kernel.read(fd, buffer);
+				const [readResult, buffer] = kernel.read(fd);
 
 				if (readResult !== ErrorCode.SUCCESS) {
 					error = `Failed to read ability scores: ${readResult}`;
