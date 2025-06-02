@@ -57,7 +57,138 @@ export const CharacterSchema: SchemaDescriptor = {
 			dbField: 'updated_at',
 			property: 'updatedAt'
 		}
-	]
+	],
+	relations: {
+		game_character_ability: {
+			tableName: 'game_character_ability',
+			foreignKey: 'id',
+			referencedKey: 'game_character_id',
+			isArray: true,
+			schema: {
+				tableName: 'game_character_ability',
+				primaryKey: 'id',
+				fields: [
+					{
+						dbField: 'id',
+						property: 'id',
+						required: true
+					},
+					{
+						dbField: 'game_character_id',
+						property: 'characterId',
+						required: true
+					},
+					{
+						dbField: 'ability_id',
+						property: 'abilityId',
+						required: true
+					},
+					{
+						dbField: 'value',
+						property: 'score',
+						defaultValue: 10,
+						alternativeFields: ['score']
+					}
+				]
+			}
+		},
+		game_character_class: {
+			tableName: 'game_character_class',
+			foreignKey: 'id',
+			referencedKey: 'game_character_id',
+			isArray: true,
+			schema: {
+				tableName: 'game_character_class',
+				primaryKey: 'id',
+				fields: [
+					{
+						dbField: 'id',
+						property: 'id',
+						required: true
+					},
+					{
+						dbField: 'game_character_id',
+						property: 'characterId',
+						required: true
+					},
+					{
+						dbField: 'class_id',
+						property: 'classId',
+						required: true
+					},
+					{
+						dbField: 'level',
+						property: 'level',
+						defaultValue: 1
+					}
+				]
+			}
+		},
+		game_character_feat: {
+			tableName: 'game_character_feat',
+			foreignKey: 'id',
+			referencedKey: 'game_character_id',
+			isArray: true,
+			schema: {
+				tableName: 'game_character_feat',
+				primaryKey: 'id',
+				fields: [
+					{
+						dbField: 'id',
+						property: 'id',
+						required: true
+					},
+					{
+						dbField: 'game_character_id',
+						property: 'characterId',
+						required: true
+					},
+					{
+						dbField: 'feat_id',
+						property: 'featId',
+						required: true
+					},
+					{
+						dbField: 'level_gained',
+						property: 'levelGained',
+						defaultValue: 1
+					}
+				]
+			}
+		},
+		game_character_skill_rank: {
+			tableName: 'game_character_skill_rank',
+			foreignKey: 'id',
+			referencedKey: 'game_character_id',
+			isArray: true,
+			schema: {
+				tableName: 'game_character_skill_rank',
+				primaryKey: 'id',
+				fields: [
+					{
+						dbField: 'id',
+						property: 'id',
+						required: true
+					},
+					{
+						dbField: 'game_character_id',
+						property: 'characterId',
+						required: true
+					},
+					{
+						dbField: 'skill_id',
+						property: 'skillId',
+						required: true
+					},
+					{
+						dbField: 'applied_at_level',
+						property: 'appliedAtLevel',
+						defaultValue: 1
+					}
+				]
+			}
+		}
+	}
 };
 
 /**

@@ -228,438 +228,318 @@
 		}
 	}
 
-	// Track whether we've already attempted loading
-	let loadAttempted = $state(false);
-	let isWaitingForDevice = $state(false);
+	// State machine states
+	enum LoaderState {
+		INITIAL = 'initial',
+		WAITING_FOR_RESOURCES = 'waiting_for_resources',
+		LOADING = 'loading',
+		LOADED = 'loaded',
+		ERROR = 'error'
+	}
 
-	// Initialize on component mount and watch for kernel to be ready
-	$effect(async () => {
-		// Prevent infinite loops by only attempting to load once per state change
-		const kernelReady = !!kernel;
-		const hasId = !!data?.id;
+	// State machine
+	let currentState = $state<LoaderState>(LoaderState.INITIAL);
+	let loadingAttempts = 0;
+	const MAX_LOADING_ATTEMPTS = 3;
 
-		console.log(
-			`${getTimestamp()} - Unix Character Loader effect running with kernel: ${kernelReady} and ID: ${hasId}, load attempted: ${loadAttempted}, isWaitingForDevice: ${isWaitingForDevice}`
-		);
+	// Check if all required resources are available
+	function checkResourcesAvailable(): boolean {
+		if (!kernel) return false;
 
-		// Skip if no kernel or data
-		if (!kernelReady || !hasId) {
-			return;
-		}
-
-		// If we're waiting for the device mount event, don't attempt to load yet
-		if (isWaitingForDevice) {
-			return;
-		}
-
-		// Skip if we've already attempted and succeeded
-		if (loadAttempted) {
-			return;
-		}
-
-		// The Unix Way: Check all required resources - character device, DB device, and directories
 		// Ensure devices map exists
 		if (!kernel.devices) {
-			console.log(`${getTimestamp()} - Device map is undefined, creating empty map`);
 			kernel.devices = new Map();
 		}
 
-		// Check both character device and database capability
-		const needsCharDevice = !kernel.devices.has(PATHS.DEV_CHARACTER);
-		const needsDbDevice = !kernel.devices.has('/v_dev/db');
-
-		// Check for sentinel file that indicates database is ready
+		const hasCharDevice = kernel.devices.has(PATHS.DEV_CHARACTER);
+		const hasDbDevice = kernel.devices.has('/v_dev/db');
 		const dbDirsReady = kernel.exists('/v_etc/db_dirs_ready');
 
-		if (needsCharDevice || needsDbDevice || !dbDirsReady) {
-			// Log what resources we're waiting for
-			console.log(
-				`${getTimestamp()} - Waiting for resources: ${[
-					needsCharDevice ? 'character device' : '',
-					needsDbDevice ? 'database device' : '',
-					!dbDirsReady ? 'database directories' : ''
-				]
-					.filter(Boolean)
-					.join(', ')}`
-			);
+		return hasCharDevice && hasDbDevice && dbDirsReady;
+	}
 
-			console.log(`${getTimestamp()} - Available devices:`, Array.from(kernel.devices.keys()));
+	// State transition functions
+	async function transitionToWaitingForResources() {
+		console.log(`${getTimestamp()} - Transitioning to WAITING_FOR_RESOURCES state`);
+		currentState = LoaderState.WAITING_FOR_RESOURCES;
 
-			// Set flag to indicate we're waiting for resources
-			isWaitingForDevice = true;
+		// Set up event listeners for resource availability
+		setupResourceListeners();
 
-			// The Unix Way: Set up comprehensive event listeners for all needed events
-			// This is the Unix approach - use notification rather than polling
+		// Start safety timer
+		startSafetyTimer();
+	}
 
-			// 1. Listen for mount events for either device
-			const mountSubscription = kernel.events?.on('fs:mount', (event) => {
-				console.log(`${getTimestamp()} - Mount event received:`, event);
-
-				// Check if this is a device we're waiting for
-				if (event.path === PATHS.DEV_CHARACTER || event.path === '/v_dev/db') {
-					console.log(`${getTimestamp()} - Device ${event.path} mounted`);
-
-					// Check if we still need to wait for anything
-					const stillNeedsChar = !kernel.devices?.has(PATHS.DEV_CHARACTER);
-					const stillNeedsDb = !kernel.devices?.has('/v_dev/db');
-					const stillNeedsDirs = !kernel.exists('/v_etc/db_dirs_ready');
-
-					if (!stillNeedsChar && !stillNeedsDb && stillNeedsDirs === false) {
-						console.log(
-							`${getTimestamp()} - All required resources are now available, proceeding with character load`
-						);
-
-						// Clear the waiting flag to allow loading
-						isWaitingForDevice = false;
-					} else {
-						console.log(
-							`${getTimestamp()} - Still waiting for: ${[
-								stillNeedsChar ? 'character device' : '',
-								stillNeedsDb ? 'database device' : '',
-								stillNeedsDirs ? 'database directories' : ''
-							]
-								.filter(Boolean)
-								.join(', ')}`
-						);
-					}
-				}
-			});
-
-			// 2. Listen for character device ready event
-			const deviceReadySubscription = kernel.events?.on('character:device_ready', (event) => {
-				console.log(`${getTimestamp()} - Character device ready event received:`, event);
-
-				// Check if database is also ready before proceeding
-				if (kernel.devices?.has('/v_dev/db') && kernel.exists('/v_etc/db_dirs_ready')) {
-					console.log(
-						`${getTimestamp()} - Character device and database both ready, proceeding with character load`
-					);
-					isWaitingForDevice = false;
-				}
-			});
-
-			// 3. Listen for database ready event - a key part of our fix
-			const databaseReadySubscription = kernel.events?.on('database:ready', (event) => {
-				console.log(`${getTimestamp()} - Database ready event received:`, event);
-
-				// Check if character device is also ready before proceeding
-				if (kernel.devices?.has(PATHS.DEV_CHARACTER)) {
-					console.log(
-						`${getTimestamp()} - Character device and database both ready, proceeding with character load`
-					);
-					isWaitingForDevice = false;
-				}
-			});
-
-			// 4. Listen for database recovery event
-			const databaseRecoveredSubscription = kernel.events?.on('database:recovered', (event) => {
-				console.log(`${getTimestamp()} - Database recovered event received:`, event);
-
-				// If this is for our character, we can proceed
-				if (event.characterId === data?.id) {
-					console.log(
-						`${getTimestamp()} - Database recovered for our character, proceeding with character load`
-					);
-					isWaitingForDevice = false;
-				}
-			});
-
-			// Track all subscriptions for cleanup
-			if (mountSubscription) subscriptions.push(mountSubscription);
-			if (deviceReadySubscription) subscriptions.push(deviceReadySubscription);
-			if (databaseReadySubscription) subscriptions.push(databaseReadySubscription);
-			if (databaseRecoveredSubscription) subscriptions.push(databaseRecoveredSubscription);
-
-			// Start safety timer to check for device readiness
-			// This prevents getting stuck in "waiting for device" state if events don't fire
-			clearInterval(deviceCheckTimer);
-			deviceCheckTimer = setInterval(() => {
-				if (isWaitingForDevice && kernel) {
-					console.log(`${getTimestamp()} - Safety timer checking if devices are available`);
-
-					// Re-check if devices are available now
-					const stillNeedsChar = !kernel.devices?.has(PATHS.DEV_CHARACTER);
-					const stillNeedsDb = !kernel.devices?.has('/v_dev/db');
-					const stillNeedsDirs = !kernel.exists('/v_etc/db_dirs_ready');
-
-					// If both devices are available but the sentinel file is missing, create it
-					if (!stillNeedsChar && !stillNeedsDb && stillNeedsDirs) {
-						console.log(
-							`${getTimestamp()} - Both devices available but missing sentinel file, creating it`
-						);
-
-						// Ensure /etc directory exists
-						if (!kernel.exists('/v_etc')) {
-							console.log(`${getTimestamp()} - Creating /etc directory`);
-							kernel.mkdir('/v_etc');
-						}
-
-						// Create the sentinel file
-						try {
-							const createResult = kernel.create('/v_etc/db_dirs_ready', {
-								timestamp: Date.now(),
-								status: 'ready',
-								createdBy: 'CharacterLoader safety timer'
-							});
-
-							if (createResult.success) {
-								console.log(
-									`${getTimestamp()} - Successfully created sentinel file /etc/db_dirs_ready`
-								);
-							} else {
-								console.error(
-									`${getTimestamp()} - Failed to create sentinel file: ${createResult.errorMessage}`
-								);
-							}
-						} catch (sentinelError) {
-							console.error(`${getTimestamp()} - Error creating sentinel file:`, sentinelError);
-						}
-
-						// Proceed with loading regardless
-						console.log(
-							`${getTimestamp()} - All resources are available (or attempted to create), unblocking load`
-						);
-						isWaitingForDevice = false;
-						loadAttempted = false;
-					}
-					// If everything is ready, proceed with loading
-					else if (!stillNeedsChar && !stillNeedsDb && stillNeedsDirs === false) {
-						console.log(`${getTimestamp()} - All resources are now available, unblocking load`);
-						isWaitingForDevice = false;
-						loadAttempted = false;
-					} else {
-						// Debug log what we're still waiting for
-						console.log(`${getTimestamp()} - Still waiting for: `, {
-							needsChar: stillNeedsChar,
-							needsDb: stillNeedsDb,
-							needsDirs: stillNeedsDirs,
-							dbDirsExist: kernel.exists('/v_etc/db_dirs_ready')
-						});
-
-						// If only waiting for the sentinel file AND we've been waiting for more than 5 seconds,
-						// proceed anyway as it's likely a missing sentinel file that won't be created
-						if (!stillNeedsChar && !stillNeedsDb && stillNeedsDirs) {
-							const waitingThreshold = 5000; // 5 seconds
-							const waitingStartTime = parseInt(localStorage.getItem('waitingStartTime') || '0');
-							const currentTime = Date.now();
-
-							// Store the start time if we haven't already
-							if (waitingStartTime === 0) {
-								localStorage.setItem('waitingStartTime', currentTime.toString());
-							}
-							// If we've been waiting long enough, proceed anyway
-							else if (currentTime - waitingStartTime > waitingThreshold) {
-								console.log(
-									`${getTimestamp()} - Waiting threshold exceeded (${waitingThreshold}ms), proceeding anyway`
-								);
-								isWaitingForDevice = false;
-								loadAttempted = false;
-								localStorage.removeItem('waitingStartTime');
-							}
-						}
-					}
-				} else if (!isWaitingForDevice) {
-					// Clear interval if we're no longer waiting
-					clearInterval(deviceCheckTimer);
-					deviceCheckTimer = null;
-				}
-			}, 1000);
-
-			// Wait for events to trigger before proceeding
-			return;
-		}
-
-		// Mark that we've attempted a load with this data/kernel state
-		loadAttempted = true;
-
-		console.log(`${getTimestamp()} - Loading character with ID: ${data.id}`);
+	async function transitionToLoading() {
+		console.log(`${getTimestamp()} - Transitioning to LOADING state`);
+		currentState = LoaderState.LOADING;
+		isLoading = true;
+		error = null;
 		dispatch('loading', true);
 
 		try {
-			// Load character with Unix file operations
-			character = await loadCharacterUnix(
+			if (!kernel || !data?.id) {
+				throw new Error('Missing kernel or character ID');
+			}
+
+			// Load character
+			const loadedCharacter = await loadCharacterUnix(
 				data.id,
-				false, // Not forcing refresh
-				data.initialCharacter // Pass preloaded data from server
+				false,
+				data.initialCharacter
 			);
 
-			// Log character basics after successful loading
-			if (character) {
-				console.log(`${getTimestamp()} - Character loaded successfully:`, {
-					id: character.id,
-					name: character.name,
-					classes: character.game_character_class?.map((c) => c.class?.name) || [],
-					ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
-					level: character.totalLevel
+			// Success - transition to loaded state
+			character = loadedCharacter;
+			transitionToLoaded();
+		} catch (loadError) {
+			transitionToError(loadError);
+		}
+	}
+
+	function transitionToLoaded() {
+		console.log(`${getTimestamp()} - Transitioning to LOADED state`);
+		currentState = LoaderState.LOADED;
+		isLoading = false;
+		loadingAttempts = 0;
+
+		if (character) {
+			console.log(`${getTimestamp()} - Character loaded successfully:`, {
+				id: character.id,
+				name: character.name,
+				classes: character.game_character_class?.map((c) => c.class?.name) || [],
+				ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
+				level: character.totalLevel
+			});
+
+			dispatch('loaded', character);
+		}
+	}
+
+	function transitionToError(loadError: any) {
+		console.error(`${getTimestamp()} - Failed to load character:`, loadError);
+		currentState = LoaderState.ERROR;
+		isLoading = false;
+		loadingAttempts++;
+
+		// Create informative error message
+		let errorMessage = loadError instanceof Error ? loadError.message : 'Failed to load character data';
+
+		// Add specific information for known error types
+		if (loadError instanceof Error) {
+			if (
+				loadError.message.includes('Database error') ||
+				loadError.message.includes('Character not found')
+			) {
+				errorMessage = `Database error: ${loadError.message}. Please check if this character ID exists in the database.`;
+				diagnosticInfo.errorType = 'database';
+			} else if (
+				loadError.message.includes('Character device not mounted') ||
+				loadError.message.includes('EDEVNOTREADY')
+			) {
+				errorMessage = `Device not ready: ${loadError.message}. The system is still initializing.`;
+				diagnosticInfo.errorType = 'device';
+
+				// If it's a device error and we haven't exceeded max attempts, wait for resources
+				if (loadingAttempts < MAX_LOADING_ATTEMPTS) {
+					transitionToWaitingForResources();
+					return;
+				}
+			} else if (loadError.message.includes('ENOSYS')) {
+				errorMessage = 'System error: Database capability not available';
+				diagnosticInfo.errorType = 'capability';
+			} else if (loadError.message.includes('EIO')) {
+				errorMessage = 'I/O error: Failed to read from database';
+				diagnosticInfo.errorType = 'io';
+			}
+		}
+
+		error = errorMessage;
+		dispatch('error', error);
+
+		// Update diagnostic info
+		diagnosticInfo = {
+			...diagnosticInfo,
+			characterId: data?.id,
+			errorTime: new Date().toISOString(),
+			errorMessage: errorMessage,
+			originalError: loadError instanceof Error ? loadError.message : String(loadError),
+			attemptNumber: loadingAttempts
+		};
+	}
+
+	// Set up event listeners for resource availability
+	function setupResourceListeners() {
+		if (!kernel || !kernel.events) return;
+
+		// Clear existing subscriptions
+		clearSubscriptions();
+
+		// Listen for mount events
+		const mountSub = kernel.events.on('fs:mount', handleMountEvent);
+		if (mountSub) subscriptions.push(mountSub);
+
+		// Listen for device ready events
+		const charReadySub = kernel.events.on('character:device_ready', handleDeviceReady);
+		if (charReadySub) subscriptions.push(charReadySub);
+
+		const dbReadySub = kernel.events.on('database:ready', handleDatabaseReady);
+		if (dbReadySub) subscriptions.push(dbReadySub);
+
+		const dbRecoveredSub = kernel.events.on('database:recovered', handleDatabaseRecovered);
+		if (dbRecoveredSub) subscriptions.push(dbRecoveredSub);
+	}
+
+	// Event handlers
+	function handleMountEvent(event: any) {
+		console.log(`${getTimestamp()} - Mount event received:`, event);
+
+		if (currentState === LoaderState.WAITING_FOR_RESOURCES) {
+			if (checkResourcesAvailable()) {
+				console.log(`${getTimestamp()} - All resources now available after mount`);
+				transitionToLoading();
+			}
+		}
+	}
+
+	function handleDeviceReady(event: any) {
+		console.log(`${getTimestamp()} - Character device ready event received:`, event);
+
+		if (currentState === LoaderState.WAITING_FOR_RESOURCES) {
+			if (checkResourcesAvailable()) {
+				transitionToLoading();
+			}
+		}
+	}
+
+	function handleDatabaseReady(event: any) {
+		console.log(`${getTimestamp()} - Database ready event received:`, event);
+
+		if (currentState === LoaderState.WAITING_FOR_RESOURCES) {
+			if (checkResourcesAvailable()) {
+				transitionToLoading();
+			}
+		}
+	}
+
+	function handleDatabaseRecovered(event: any) {
+		console.log(`${getTimestamp()} - Database recovered event received:`, event);
+
+		if (event.characterId === data?.id && currentState === LoaderState.WAITING_FOR_RESOURCES) {
+			if (checkResourcesAvailable()) {
+				transitionToLoading();
+			}
+		}
+	}
+
+	// Safety timer to periodically check resource availability
+	function startSafetyTimer() {
+		clearInterval(deviceCheckTimer);
+
+		deviceCheckTimer = setInterval(() => {
+			if (currentState === LoaderState.WAITING_FOR_RESOURCES) {
+				console.log(`${getTimestamp()} - Safety timer checking resource availability`);
+
+				if (kernel && checkResourcesAvailable()) {
+					console.log(`${getTimestamp()} - Resources available via safety timer`);
+					transitionToLoading();
+				} else if (kernel) {
+					// Try to create missing sentinel file if devices are ready
+					tryCreateSentinelFile();
+				}
+			}
+		}, 1000);
+	}
+
+	// Try to create the sentinel file if devices are ready but file is missing
+	function tryCreateSentinelFile() {
+		if (!kernel || !kernel.devices) return;
+
+		const hasCharDevice = kernel.devices.has(PATHS.DEV_CHARACTER);
+		const hasDbDevice = kernel.devices.has('/v_dev/db');
+		const sentinelExists = kernel.exists('/v_etc/db_dirs_ready');
+
+		if (hasCharDevice && hasDbDevice && !sentinelExists) {
+			console.log(`${getTimestamp()} - Both devices available but missing sentinel file, creating it`);
+
+			// Ensure /etc directory exists
+			if (!kernel.exists('/v_etc')) {
+				kernel.mkdir('/v_etc');
+			}
+
+			// Create the sentinel file
+			try {
+				const createResult = kernel.create('/v_etc/db_dirs_ready', {
+					timestamp: Date.now(),
+					status: 'ready',
+					createdBy: 'CharacterLoader safety timer'
 				});
 
-				// Dispatch loaded event
-				dispatch('loaded', character);
-			} else {
-				throw new Error('Character loaded but data is null or invalid');
-			}
-
-			isLoading = false;
-		} catch (loadError) {
-			console.error(`${getTimestamp()} - Failed to load character:`, loadError);
-
-			// Create more informative error message based on error type
-			let errorMessage =
-				loadError instanceof Error ? loadError.message : 'Failed to load character data';
-
-			// Add specific information for known error types
-			if (loadError instanceof Error) {
-				// Check for database errors
-				if (
-					loadError.message.includes('Database error') ||
-					loadError.message.includes('Character not found')
-				) {
-					errorMessage = `Database error: ${loadError.message}. Please check if this character ID exists in the database.`;
-					diagnosticInfo.errorType = 'database';
+				if (createResult.success) {
+					console.log(`${getTimestamp()} - Successfully created sentinel file`);
+				} else {
+					console.error(`${getTimestamp()} - Failed to create sentinel file: ${createResult.errorMessage}`);
 				}
-				// Check for device errors
-				else if (
-					loadError.message.includes('Character device not mounted') ||
-					loadError.message.includes('EDEVNOTREADY')
-				) {
-					errorMessage = `Device not ready: ${loadError.message}. The system is still initializing.`;
-					diagnosticInfo.errorType = 'device';
-				}
-				// Check for other specific error codes
-				else if (loadError.message.includes('ENOSYS')) {
-					errorMessage = 'System error: Database capability not available';
-					diagnosticInfo.errorType = 'capability';
-				} else if (loadError.message.includes('EIO')) {
-					errorMessage = 'I/O error: Failed to read from database';
-					diagnosticInfo.errorType = 'io';
-				}
-			}
-
-			error = errorMessage;
-			isLoading = false;
-			dispatch('error', error);
-
-			// Update diagnostic info with error details
-			diagnosticInfo = {
-				...diagnosticInfo,
-				characterId: data.id,
-				errorTime: new Date().toISOString(),
-				errorMessage: errorMessage,
-				originalError: loadError instanceof Error ? loadError.message : String(loadError)
-			};
-
-			// If error is device not ready, we can set up a listener for mount events
-			if (
-				loadError instanceof Error &&
-				(loadError.message.includes('Character device not mounted') ||
-					loadError.message.includes('EDEVNOTREADY'))
-			) {
-				console.log(
-					`${getTimestamp()} - Detected device not ready error, waiting for device mount event`
-				);
-
-				// Reset loading state to retry after device is mounted
-				loadAttempted = false;
-				isWaitingForDevice = true;
-
-				// Set up event listeners for both standard mount events and custom device ready events
-				// Only if not already listening
-				if (!subscriptions.some((s) => s.includes('fs:mount'))) {
-					const mountSubscription = kernel.events?.on('fs:mount', (event) => {
-						console.log(`${getTimestamp()} - Mount event received:`, event);
-
-						// Check if this is the character device being mounted
-						if (event.path === PATHS.DEV_CHARACTER) {
-							console.log(`${getTimestamp()} - Character device mounted, releasing wait lock`);
-
-							// Clear the waiting flag to allow loading
-							isWaitingForDevice = false;
-						}
-					});
-
-					if (mountSubscription) {
-						subscriptions.push(mountSubscription);
-					}
-				}
-
-				// Also listen for the custom character:device_ready event if not already listening
-				if (!subscriptions.some((s) => s.includes('character:device_ready'))) {
-					const deviceReadySubscription = kernel.events?.on('character:device_ready', (event) => {
-						console.log(
-							`${getTimestamp()} - Character device ready event received in error handler:`,
-							event
-						);
-
-						// Clear the waiting flag to allow loading
-						isWaitingForDevice = false;
-					});
-
-					if (deviceReadySubscription) {
-						subscriptions.push(deviceReadySubscription);
-					}
-				}
-
-				// Also listen for database ready events
-				if (!subscriptions.some((s) => s.includes('database:ready'))) {
-					const dbReadySubscription = kernel.events?.on('database:ready', (event) => {
-						console.log(
-							`${getTimestamp()} - Database ready event received in error handler:`,
-							event
-						);
-
-						// Only clear if character device is also ready
-						if (kernel.devices?.has(PATHS.DEV_CHARACTER)) {
-							isWaitingForDevice = false;
-						}
-					});
-
-					if (dbReadySubscription) {
-						subscriptions.push(dbReadySubscription);
-					}
-				}
-
-				// Also listen for database recovery events
-				if (!subscriptions.some((s) => s.includes('database:recovered'))) {
-					const dbRecoveredSubscription = kernel.events?.on('database:recovered', (event) => {
-						console.log(
-							`${getTimestamp()} - Database recovered event received in error handler:`,
-							event
-						);
-
-						// If this is for our character, we can proceed
-						if (event.characterId === data?.id) {
-							isWaitingForDevice = false;
-						}
-					});
-
-					if (dbRecoveredSubscription) {
-						subscriptions.push(dbRecoveredSubscription);
-					}
-				}
+			} catch (sentinelError) {
+				console.error(`${getTimestamp()} - Error creating sentinel file:`, sentinelError);
 			}
 		}
-	});
+	}
 
-	// Additional onMount for initial setup
-	onMount(() => {
-		console.log(`${getTimestamp()} - Unix Character Loader mounted with ID: ${data?.id}`);
-
-		if (!data?.id) {
-			console.warn(`${getTimestamp()} - No character ID received`);
-			error = 'No character ID received';
-			isLoading = false;
-			dispatch('error', error);
-		}
-	});
-
-	// Clean up resources on component destruction
-	onDestroy(() => {
-		// Remove event listeners
+	// Clear event subscriptions
+	function clearSubscriptions() {
 		if (kernel && kernel.events) {
 			subscriptions.forEach((id) => {
 				kernel.events.off(id);
 			});
 		}
+		subscriptions = [];
+	}
+
+	// Initialize loading when kernel and data are available
+	function initializeLoading() {
+		if (!kernel || !data?.id) {
+			if (!data?.id) {
+				console.warn(`${getTimestamp()} - No character ID received`);
+				error = 'No character ID received';
+				isLoading = false;
+				currentState = LoaderState.ERROR;
+				dispatch('error', error);
+			}
+			return;
+		}
+
+		console.log(`${getTimestamp()} - Initializing character load for ID: ${data.id}`);
+
+		// Check if resources are available
+		if (checkResourcesAvailable()) {
+			transitionToLoading();
+		} else {
+			transitionToWaitingForResources();
+		}
+	}
+
+	// React to kernel changes
+	$effect(() => {
+		// Only react to kernel becoming available when in initial state
+		if (kernel && currentState === LoaderState.INITIAL) {
+			initializeLoading();
+		}
+	});
+
+	// Component lifecycle
+	onMount(() => {
+		console.log(`${getTimestamp()} - Unix Character Loader mounted with ID: ${data?.id}`);
+		
+		// Initialize if kernel is already available
+		if (kernel && currentState === LoaderState.INITIAL) {
+			initializeLoading();
+		}
+	});
+
+	onDestroy(() => {
+		// Clean up resources
+		clearSubscriptions();
 
 		// Close all open file descriptors
 		if (kernel) {
@@ -685,6 +565,57 @@
 			// Ignore errors with localStorage
 		}
 	});
+
+	// Public methods for parent components
+	export function retryLoading() {
+		if (currentState === LoaderState.ERROR) {
+			loadingAttempts = 0;
+			initializeLoading();
+		}
+	}
+
+	export function forceReconnectDrivers() {
+		if (!kernel) {
+			alert('Kernel not available. Try reloading the page.');
+			return;
+		}
+
+		console.log('Forcing database driver reconnection');
+
+		// Find the database driver
+		const dbDevice = kernel.mountPoints?.get('/v_dev/db') || kernel.devices?.get('/v_dev/db');
+
+		// Find the character device
+		const charDevice = kernel.mountPoints?.get('/v_dev/character') || kernel.devices?.get('/v_dev/character');
+
+		if (dbDevice && charDevice) {
+			// Force connect database driver to character capability
+			console.log('Found both devices, connecting them');
+
+			// Try to get the actual driver from the device
+			const dbDriver = dbDevice.driver || dbDevice;
+
+			// Connect the driver to the character device
+			(charDevice as any).databaseDriver = dbDriver;
+
+			// Signal that db connection has been repaired
+			if (kernel.events) {
+				kernel.events.emit('database:connection_repaired', {
+					timestamp: Date.now(),
+					source: 'manual_reconnect',
+					characterId: data?.id
+				});
+			}
+
+			// Retry loading
+			loadingAttempts = 0;
+			initializeLoading();
+		} else {
+			alert(
+				`Could not find required devices. Missing: ${!dbDevice ? 'Database' : ''} ${!charDevice ? 'Character' : ''}\nCheck console for details. Try reloading the page.`
+			);
+		}
+	}
 </script>
 
 {#if isLoading}
@@ -692,7 +623,7 @@
 		<div
 			class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
 		></div>
-		<p class="ml-2">Loading character{isWaitingForDevice ? ' (waiting for device)' : ''}...</p>
+		<p class="ml-2">Loading character{currentState === LoaderState.WAITING_FOR_RESOURCES ? ' (waiting for resources)' : ''}...</p>
 	</div>
 {:else if error}
 	<div class="rounded-md bg-red-100 p-4 text-red-800">
@@ -735,7 +666,7 @@
 		<div class="mt-4 flex flex-wrap gap-2">
 			<button
 				class="rounded bg-primary px-4 py-2 text-white"
-				onclick={() => window.location.reload()}
+				onclick={() => retryLoading()}
 			>
 				Retry Loading
 			</button>
@@ -744,92 +675,7 @@
 			</a>
 			<button
 				class="rounded bg-orange-500 px-4 py-2 text-white"
-				onclick={() => {
-					// Force database driver connection
-					if (kernel) {
-						console.log('Forcing database driver reconnection');
-
-						// Find the database driver - with better driver extraction
-						const dbDevice = kernel.mountPoints?.get('/v_dev/db') || kernel.devices?.get('/v_dev/db');
-
-						// Find the character device
-						const charDevice =
-							kernel.mountPoints?.get('/v_dev/character') || kernel.devices?.get('/v_dev/character');
-
-						if (dbDevice && charDevice) {
-							// Force connect database driver to character capability
-							console.log('Found both devices, connecting them');
-
-							// Try to get the actual driver from the device
-							const dbDriver = dbDevice.driver || dbDevice;
-
-							// Log driver details for debugging
-							const driverDetails = {
-								hasClient: !!(dbDriver as any).client,
-								hasKernel: !!(dbDriver as any).kernel,
-								type: dbDriver.constructor ? dbDriver.constructor.name : 'unknown',
-								methods: Object.getOwnPropertyNames((dbDriver as any).__proto__).filter(
-									(m) => typeof (dbDriver as any)[m] === 'function'
-								)
-							};
-							console.log('Database driver details:', driverDetails);
-
-							// Connect the driver to the character device
-							(charDevice as any).databaseDriver = dbDriver;
-
-							// For better diagnostics, check character device methods too
-							console.log('Character device details:', {
-								methods: Object.getOwnPropertyNames((charDevice as any).__proto__).filter(
-									(m) => typeof (charDevice as any)[m] === 'function'
-								),
-								type: charDevice.constructor ? charDevice.constructor.name : 'unknown'
-							});
-
-							// Signal that db connection has been repaired
-							if (kernel.events) {
-								kernel.events.emit('database:connection_repaired', {
-									timestamp: Date.now(),
-									source: 'manual_reconnect',
-									characterId: data?.id
-								});
-							}
-
-							// Retry loading
-							loadAttempted = false;
-							isWaitingForDevice = false;
-							isLoading = true;
-							error = null;
-						} else {
-							// More diagnostic information to help troubleshoot
-							const deviceStatus = {
-								dbFound: !!dbDevice,
-								charFound: !!charDevice,
-								dbMountPoints: kernel.mountPoints
-									? Array.from(kernel.mountPoints.entries())
-											.filter(([k]) => k.includes('db'))
-											.map(([k, v]) => ({ path: k, type: v?.constructor?.name }))
-									: [],
-								charMountPoints: kernel.mountPoints
-									? Array.from(kernel.mountPoints.entries())
-											.filter(([k]) => k.includes('character'))
-											.map(([k, v]) => ({ path: k, type: v?.constructor?.name }))
-									: [],
-								kernelDevices: kernel.devices ? Array.from(kernel.devices.keys()) : [],
-								kernelMountPoints: kernel.mountPoints ? Array.from(kernel.mountPoints.keys()) : [],
-								eventsRegistered: !!kernel.events,
-								sentinelFileExists: kernel.exists('/v_etc/db_dirs_ready')
-							};
-							console.error('Device status:', deviceStatus);
-
-							// Alert with more helpful message
-							alert(
-								`Could not find required devices. Missing: ${!dbDevice ? 'Database' : ''} ${!charDevice ? 'Character' : ''}\nCheck console for details. Try reloading the page.`
-							);
-						}
-					} else {
-						alert('Kernel not available. Try reloading the page.');
-					}
-				}}
+				onclick={() => forceReconnectDrivers()}
 			>
 				Force Reconnect Drivers
 			</button>

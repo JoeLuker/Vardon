@@ -65,6 +65,13 @@ export class SchemaRegistry {
 		this.registerSchema('character_spell', Schemas.CharacterSpell);
 		this.registerSchema('character_feat', Schemas.CharacterFeat);
 		this.registerSchema('character_class', Schemas.CharacterClass);
+
+		// IMPORTANT: Register game_character schema specifically for foreign key relationships
+		this.registerSchema('game_character', Schemas.Character);
+		this.registerSchema('game_character_ability', Schemas.CharacterAbility);
+		this.registerSchema('game_character_class', Schemas.CharacterClass);
+		this.registerSchema('game_character_feat', Schemas.CharacterFeat);
+		this.registerSchema('game_character_skill_rank', Schemas.CharacterSkillRank);
 	}
 
 	/**

@@ -146,14 +146,23 @@
 		};
 	});
 
-	// Add a cache for skill calculations to prevent recalculating on every state change
-	let skillCalculationCache = $state<Map<number, { total: number; ranks: number }>>(new Map());
+	// Add a cache for skill calculations keyed by character ID to prevent recalculating on every state change
+	let skillCalculationCache = $state<Map<string, Map<number, { total: number; ranks: number }>>>(new Map());
 
 	// Function to get skill data with caching
 	function getSkillData(skillId: number): { total: number; ranks: number } | undefined {
-		// Return from cache if available and not invalidated
-		if (skillCalculationCache.has(skillId)) {
-			return skillCalculationCache.get(skillId);
+		if (!character?.id) return undefined;
+		
+		// Get or create cache for this character
+		const charCacheKey = String(character.id);
+		if (!skillCalculationCache.has(charCacheKey)) {
+			skillCalculationCache.set(charCacheKey, new Map());
+		}
+		const charCache = skillCalculationCache.get(charCacheKey)!;
+		
+		// Return from cache if available
+		if (charCache.has(skillId)) {
+			return charCache.get(skillId);
 		}
 
 		// Calculate if not in cache
@@ -162,12 +171,13 @@
 			const ranks = getSkillRanksCount(skillId);
 
 			// Store in cache
-			skillCalculationCache.set(skillId, {
+			const cacheEntry = {
 				total: skillData.total,
 				ranks: ranks
-			});
+			};
+			charCache.set(skillId, cacheEntry);
 
-			return skillCalculationCache.get(skillId);
+			return cacheEntry;
 		}
 
 		return undefined;
@@ -437,26 +447,28 @@
 		baseSkillsDataResolved = data;
 	}
 
-	// Use effect to load skills data
+	// Load skills data when kernel or character changes
 	$effect(() => {
 		if (!kernel || !character) {
 			baseSkillsData = null;
 			return;
 		}
 
-		// Load skills data and update state
-		loadSkillsData().then(resolved => {
-			untrack(() => {
-				baseSkillsData = resolved;
-				baseSkillsDataResolved = resolved;
-			});
-		}).catch(error => {
-			console.error('Error loading skills data:', error);
-			untrack(() => {
-				error = `Failed to load skills: ${error.message}`;
-			});
-		});
+		// Just trigger the load, don't update state inside the effect
+		performSkillsLoad();
 	});
+	
+	// Handle the async loading separately
+	async function performSkillsLoad() {
+		try {
+			const resolved = await loadSkillsData();
+			baseSkillsData = resolved;
+			baseSkillsDataResolved = resolved;
+		} catch (err) {
+			console.error('Error loading skills data:', err);
+			error = `Failed to load skills: ${err.message}`;
+		}
+	}
 
 	// Add or remove a skill rank using file-based operations
 	async function updateSkillRank(
@@ -550,13 +562,8 @@
 		}
 	}
 
-	// Listen for character changes to refresh the cache
-	$effect(() => {
-		if (character) {
-			// Clear the entire cache when character data changes
-			skillCalculationCache = new Map();
-		}
-	});
+	// No need for cache clearing effect - cache is keyed by character ID
+	// Old cache entries for previous characters will be garbage collected naturally
 
 	// Function to get display total for a skill, using cache
 	function getSkillDisplayTotal(skillId: number): number {
@@ -762,11 +769,7 @@
 							{/if}
 						{/each}
 					</div>
-				{:catch err}
-					<div class="rounded-md border border-destructive p-4">
-						<p class="text-destructive">Error loading skills: {err.message}</p>
-					</div>
-				{/await}
+				{/if}
 			{/if}
 		</Tabs.Content>
 

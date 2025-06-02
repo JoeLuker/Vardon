@@ -18,11 +18,16 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '$lib/domain/types/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-	throw new Error('Missing Supabase environment variables');
+	console.error('Supabase environment variables missing:', {
+		url: !!supabaseUrl,
+		key: !!supabaseAnonKey,
+		env: typeof import.meta.env !== 'undefined' ? 'Vite' : 'Node'
+	});
+	throw new Error('Missing Supabase environment variables. Please check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }
 
 // Internal client instance for GameRulesAPI

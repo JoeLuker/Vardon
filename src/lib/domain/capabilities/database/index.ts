@@ -17,7 +17,29 @@ export * from './DatabaseCapability';
 // Export a convenience function to create a DatabaseCapability
 import { DatabaseCapability, type DatabaseCapabilityOptions } from './DatabaseCapability';
 import { SupabaseDatabaseDriver } from './SupabaseDatabaseDriver';
-import { supabaseClient } from '$lib/db/supabaseClient';
+import { logger } from '$lib/utils/Logger';
+
+// Import Supabase client at module level to ensure it's available
+let cachedSupabaseClient: any = null;
+
+/**
+ * Initialize the Supabase client asynchronously
+ */
+async function getSupabaseClient() {
+	if (cachedSupabaseClient) {
+		return cachedSupabaseClient;
+	}
+	
+	try {
+		const module = await import('$lib/db/supabaseClient');
+		cachedSupabaseClient = module.supabaseClient;
+		logger.info('DatabaseCapability', 'getSupabaseClient', 'Successfully imported Supabase client');
+		return cachedSupabaseClient;
+	} catch (error) {
+		logger.error('DatabaseCapability', 'getSupabaseClient', 'Failed to import Supabase client', { error });
+		return null;
+	}
+}
 
 /**
  * Create a new database capability
@@ -30,10 +52,8 @@ export function createDatabaseCapability(
 	// Extract debug setting to pass to driver
 	const debug = options.debug || false;
 
-	// Create driver with Supabase client
-	// Note: We can't pass kernel yet because the DatabaseCapability hasn't been mounted
-	// but we'll set it later in the onMount method
-	const driver = new SupabaseDatabaseDriver(supabaseClient, null, debug);
+	// Create driver with null client initially - it will be set later
+	const driver = new SupabaseDatabaseDriver(null, null, debug);
 
 	// Create capability with driver
 	const capability = new DatabaseCapability({
@@ -43,13 +63,21 @@ export function createDatabaseCapability(
 
 	// Override the onMount method to set the kernel in the driver
 	const originalOnMount = capability.onMount;
-	capability.onMount = function (kernel: any): void {
+	capability.onMount = async function (kernel: any): Promise<void> {
 		// Call the original onMount method
 		originalOnMount.call(this, kernel);
 
 		// Set the kernel in the driver
 		(driver as any).kernel = kernel;
-		console.log('[DatabaseCapability] Driver kernel initialized');
+		
+		// Try to get and set the Supabase client
+		const client = await getSupabaseClient();
+		if (client) {
+			(driver as any)._client = client;
+			logger.info('DatabaseCapability', 'onMount', 'Driver kernel and client initialized');
+		} else {
+			logger.warn('DatabaseCapability', 'onMount', 'Driver kernel initialized but client not available');
+		}
 	};
 
 	return capability;

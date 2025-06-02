@@ -290,7 +290,7 @@ export class Kernel {
 	 * @param createParentDirs Whether to create parent directories if they don't exist
 	 * @returns Path result
 	 */
-	create(path: string, data: any, createParentDirs: boolean = true): PathResult {
+	async create(path: string, data: any, createParentDirs: boolean = true): Promise<PathResult> {
 		const context = { component: 'Kernel', operation: 'create', path };
 
 		// Invariant: Path must be absolute
@@ -305,7 +305,7 @@ export class Kernel {
 			);
 		}
 
-		const result = this.fs.create(path, data, createParentDirs);
+		const result = await this.fs.create(path, data, createParentDirs);
 
 		// Only emit event if not disabled
 		if (!this.noFsEvents && result.success) {

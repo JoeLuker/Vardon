@@ -38,10 +38,16 @@ export async function load({ params }: { params: Record<string, string> }) {
 		// If it's already a SvelteKit error, rethrow it
 		if (err && typeof err === 'object' && 'status' in err) throw err;
 
-		// Log error details for debugging
-		console.error('Error loading character:', err);
+		// Log detailed error information
+		console.error('Error loading character:', {
+			message: err instanceof Error ? err.message : String(err),
+			stack: err instanceof Error ? err.stack : undefined,
+			characterId: params.id,
+			timestamp: new Date().toISOString()
+		});
 
-		// Return a generic 500
-		throw error(500, 'Failed to load character data');
+		// Return a more descriptive error
+		const errorMessage = err instanceof Error ? err.message : 'Failed to load character data';
+		throw error(500, errorMessage);
 	}
 }

@@ -11,6 +11,9 @@
 	// Component imports
 	import CharacterLoader from '$lib/ui/CharacterLoader.svelte';
 	import CharacterSheet from '$lib/ui/CharacterSheet.svelte';
+	
+	// Diagnostic tools
+	import DiagnosticTool from '$lib/utils/DiagnosticTool';
 
 	// Props from the load function
 	let { data } = $props<{ data: PageData }>();
@@ -128,6 +131,14 @@
 			}
 
 			console.log(`${getTimestamp()} - Kernel initialized successfully`);
+			
+			// Initialize diagnostic tools
+			console.log(`${getTimestamp()} - Setting up auto-diagnostics`);
+			DiagnosticTool.setupAutoDiagnostics();
+			
+			// Make diagnostic tools available in browser console
+			console.log(`${getTimestamp()} - Diagnostic tools available: window.vardonDiagnostics`);
+			console.log('Use vardonDiagnostics.analyze() to run diagnostics or vardonDiagnostics.downloadLogs() to download logs');
 		} catch (err) {
 			console.error(`${getTimestamp()} - Failed to initialize kernel:`, err);
 			error = err instanceof Error ? err.message : 'Failed to initialize kernel';

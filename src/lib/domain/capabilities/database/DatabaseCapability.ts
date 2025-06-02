@@ -10,6 +10,7 @@ import type { Capability, Entity } from '../../kernel/types';
 import { ErrorCode, OpenMode } from '../../kernel/types';
 import type { CapabilityOptions } from '../BaseCapability';
 import type { DatabaseDriver, DatabasePath } from './DatabaseDriver';
+import { DatabaseOperation } from './DatabaseDriver';
 import { SupabaseDatabaseDriver } from './SupabaseDatabaseDriver';
 import type { SchemaDescriptor } from './SchemaDescriptor';
 

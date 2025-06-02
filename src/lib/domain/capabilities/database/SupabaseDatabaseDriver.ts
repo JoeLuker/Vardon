@@ -17,6 +17,7 @@ import { getSchemaRegistry } from './SchemaRegistry';
 import { OpenMode } from '../../kernel/types';
 import type { GameKernel } from '../../kernel/GameKernel';
 import type { CompleteCharacter, Character } from '../../../types/supabase';
+import { logger } from '../../../utils/Logger';
 
 /**
  * File descriptor information for an open database resource
@@ -49,15 +50,12 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 	private _client: SupabaseClient | null;
 
 	/**
-	 * Get the Supabase client, lazy-loading it if needed
-	 * This is only used in diagnostics or when needed for backward compatibility
+	 * Get the Supabase client
+	 * Throws an error if the client is not available
 	 */
 	private get client(): SupabaseClient {
 		if (!this._client) {
-			console.warn('Auto-importing supabaseClient (diagnostics only) - lazy loading client');
-			// Dynamic import for diagnostics only
-			const { supabaseClient } = require('$lib/db/supabaseClient');
-			this._client = supabaseClient;
+			throw new Error('Supabase client not initialized. Please ensure the DatabaseCapability is properly configured with a Supabase client.');
 		}
 		return this._client;
 	}
@@ -162,15 +160,33 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 		];
 
 		for (const basicSchema of basicSchemas) {
+			// Only register if not already registered by the SchemaRegistry
+			// This prevents overriding the more complete schemas with relationships
 			if (!this.schemaRegistry.has(basicSchema.name)) {
 				this.registerSchema(basicSchema.name, {
 					tableName: basicSchema.tableName,
 					primaryKey: basicSchema.primaryKey,
-					fields: basicSchema.fields
+					fields: basicSchema.fields.map(field => ({
+						dbField: field,
+						property: field === 'user_id' ? 'userId' : 
+								 field === 'current_hp' ? 'currentHp' :
+								 field === 'max_hp' ? 'maxHp' :
+								 field === 'is_offline' ? 'isOffline' :
+								 field === 'created_at' ? 'createdAt' :
+								 field === 'updated_at' ? 'updatedAt' :
+								 field === 'ability_type' ? 'abilityType' :
+								 field === 'ability_id' ? 'abilityId' :
+								 field === 'hit_die' ? 'hitDie' :
+								 field
+					}))
 				});
 
 				if (this.debug) {
 					console.log(`[SupabaseDatabaseDriver] Registered basic schema for ${basicSchema.name}`);
+				}
+			} else {
+				if (this.debug) {
+					console.log(`[SupabaseDatabaseDriver] Schema for ${basicSchema.name} already registered, skipping basic registration`);
 				}
 			}
 		}
@@ -254,30 +270,39 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 	 */
 	async getCharacterById(id: number | string, query: string = '*'): Promise<CompleteCharacter> {
 		try {
-			if (this.debug) {
-				console.log(`[SupabaseDatabaseDriver] Getting character by ID: ${id} with query: ${query}`);
-			}
+			logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Getting character by ID: ${id}`, { id, queryType: query });
 
 			// Check if client is available
-			if (!this.client) {
-				console.error(`[SupabaseDatabaseDriver] No Supabase client available`);
-				throw new Error('Database connection not available');
+			if (!this._client) {
+				logger.error('SupabaseDatabaseDriver', 'getCharacterById', `No Supabase client available`, { 
+					id,
+					clientNull: this._client === null,
+					clientUndefined: this._client === undefined,
+					kernelAvailable: !!this.kernel
+				});
+				throw new Error('Database connection not available - Supabase client was not initialized');
 			}
 
 			// Use alternative approach to get character if having issues with complex queries
 			try {
 				// First try the full query
+				const queryString = query === 'complete' ? this.getCompleteCharacterQuery() : query;
+				logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Attempting full query`, { id, queryString });
+				
 				const { data, error } = await this.client
 					.from('game_character')
-					.select(query === 'complete' ? this.getCompleteCharacterQuery() : query)
+					.select(queryString)
 					.eq('id', id)
 					.single();
 
 				if (error) {
-					console.error(
-						`[SupabaseDatabaseDriver] Error fetching character ${id} with full query:`,
-						error
-					);
+					logger.error('SupabaseDatabaseDriver', 'getCharacterById', `Error fetching character ${id} with full query`, { 
+						id, 
+						errorCode: error.code,
+						errorMessage: error.message,
+						errorDetails: error.details,
+						errorHint: error.hint 
+					});
 					throw error;
 				}
 
@@ -296,7 +321,7 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 				return data as CompleteCharacter;
 			} catch (queryError) {
 				// If the complex query fails, try a simpler query as fallback
-				console.warn(`[SupabaseDatabaseDriver] Falling back to basic character query:`, queryError);
+				logger.warn('SupabaseDatabaseDriver', 'getCharacterById', `Falling back to basic character query`, { id, error: queryError });
 
 				// Get basic character data
 				const { data: basicData, error: basicError } = await this.client
@@ -306,16 +331,20 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 					.single();
 
 				if (basicError) {
-					console.error(`[SupabaseDatabaseDriver] Basic character query failed:`, basicError);
+					logger.error('SupabaseDatabaseDriver', 'getCharacterById', `Basic character query failed`, { 
+						id, 
+						errorCode: basicError.code,
+						errorMessage: basicError.message 
+					});
 					throw new Error(`Database error: ${basicError.message}`);
 				}
 
 				if (!basicData) {
-					console.error(`[SupabaseDatabaseDriver] Character not found with basic query: ${id}`);
+					logger.error('SupabaseDatabaseDriver', 'getCharacterById', `Character not found with basic query: ${id}`, { id });
 					throw new Error(`Character not found: ${id}`);
 				}
 
-				console.log(`[SupabaseDatabaseDriver] Successfully fetched basic character data:`, {
+				logger.info('SupabaseDatabaseDriver', 'getCharacterById', `Successfully fetched basic character data`, {
 					id: basicData.id,
 					name: basicData.name
 				});
