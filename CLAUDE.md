@@ -380,6 +380,79 @@ character.addCapability(new SkillCapability());
 character.addCapability(new CombatCapability());
 ```
 
+## Svelte 5 Best Practices
+
+### Avoiding Reactive Loops
+
+Never modify state inside `$effect` blocks that the effect depends on:
+
+```typescript
+// ❌ WRONG: Creates infinite loop
+let count = $state(0);
+$effect(() => {
+  if (count < 10) {
+    count++; // This triggers the effect again!
+  }
+});
+
+// ✅ RIGHT: Use explicit actions
+let count = $state(0);
+function increment() {
+  if (count < 10) count++;
+}
+
+// ✅ RIGHT: Use $derived for computed values
+let count = $state(0);
+let doubled = $derived(count * 2);
+```
+
+### State Machine Pattern
+
+For complex component state, use a state machine instead of multiple boolean flags:
+
+```typescript
+// ❌ WRONG: Multiple flags create complex interactions
+let isLoading = $state(false);
+let isWaiting = $state(false);
+let hasError = $state(false);
+let loadAttempted = $state(false);
+
+// ✅ RIGHT: Single state with clear transitions
+enum LoaderState {
+  INITIAL = 'initial',
+  WAITING = 'waiting',
+  LOADING = 'loading',
+  LOADED = 'loaded',
+  ERROR = 'error'
+}
+let state = $state<LoaderState>(LoaderState.INITIAL);
+```
+
+### Async Operations in Effects
+
+Don't update state inside async operations within effects:
+
+```typescript
+// ❌ WRONG: State updates inside effect's async operation
+$effect(() => {
+  loadData().then(data => {
+    myState = data; // This can cause issues
+  });
+});
+
+// ✅ RIGHT: Separate the concerns
+$effect(() => {
+  if (shouldLoad) {
+    performLoad(); // Call a function that handles its own state
+  }
+});
+
+async function performLoad() {
+  const data = await loadData();
+  myState = data;
+}
+```
+
 ## Common Issues and Solutions
 
 | Issue                                                     | Solution                                                                                             |
@@ -391,6 +464,53 @@ character.addCapability(new CombatCapability());
 | "ENOENT: No such file or directory"                       | Ensure the virtual path exists before accessing. Use `kernel.ensureDirectory()`                      |
 | "EACCES: Permission denied"                               | Check capability permissions. Some operations require specific capabilities                          |
 | "Capability not initialized"                              | Always call `capability.initialize(entity)` before using capability methods                          |
+| "effect_update_depth_exceeded"                            | You have a reactive loop. Check for state modifications inside $effect blocks                        |
+| "ReferenceError: window is not defined"                   | SSR error. Wrap browser-specific code in `if (typeof window !== 'undefined')`                       |
+| "kernel.read() returns empty buffer"                      | kernel.read() returns [errorCode, data] tuple, not a buffer parameter                               |
+
+## Logging System
+
+Vardon includes a comprehensive logging system that replaces console.log statements with structured logging:
+
+### Using the Logger
+
+```typescript
+import { logger } from '$lib/utils/Logger';
+
+// Log at different levels
+logger.debug('Component', 'methodName', 'Debug message', { extraData });
+logger.info('Component', 'methodName', 'Info message');
+logger.warn('Component', 'methodName', 'Warning message');
+logger.error('Component', 'methodName', 'Error message', { error });
+logger.fatal('Component', 'methodName', 'Fatal error', { criticalData });
+```
+
+### Browser Diagnostic Tools
+
+In the browser console, you have access to diagnostic tools:
+
+```javascript
+// Run full diagnostics
+vardonDiagnostics.analyze();
+
+// Export logs as JSON
+vardonDiagnostics.exportLogs();
+
+// Download logs as a file
+vardonDiagnostics.downloadLogs();
+
+// Enable automatic diagnostics (logs warnings/errors every minute)
+vardonDiagnostics.autoAnalyze();
+```
+
+### Analyzing Issues
+
+The diagnostic tool automatically detects common issues:
+- Character loading failures
+- Database connection problems
+- File system errors
+- Foreign key relationship issues
+- Schema registration problems
 
 ## Debugging Tips
 
@@ -402,6 +522,10 @@ process.env.DEBUG = 'true';
 
 // Or use kernel debug mode
 kernel.setDebugMode(true);
+
+// Or set logger to debug level
+import { logger, LogLevel } from '$lib/utils/Logger';
+logger.setLogLevel(LogLevel.DEBUG);
 ```
 
 ### Trace File Operations
@@ -409,11 +533,11 @@ kernel.setDebugMode(true);
 ```typescript
 // Use the event bus to monitor file operations
 kernel.eventBus.on('file:read', (event) => {
-	console.log(`Reading file: ${event.path}`);
+	logger.debug('FileTrace', 'read', `Reading file: ${event.path}`);
 });
 
 kernel.eventBus.on('file:write', (event) => {
-	console.log(`Writing file: ${event.path}`);
+	logger.debug('FileTrace', 'write', `Writing file: ${event.path}`);
 });
 ```
 
@@ -422,14 +546,15 @@ kernel.eventBus.on('file:write', (event) => {
 ```typescript
 // Check which capabilities an entity has
 const capabilities = entity.getCapabilities();
-console.log(
-	'Entity capabilities:',
-	capabilities.map((c) => c.constructor.name)
-);
+logger.debug('Entity', 'capabilities', 'Available capabilities', {
+	capabilities: capabilities.map((c) => c.constructor.name)
+});
 
 // Verify capability state
 const ability = entity.getCapability(AbilityCapability);
-console.log('Ability state:', ability.getDebugInfo());
+logger.debug('Capability', 'state', 'Ability capability state', {
+	debugInfo: ability.getDebugInfo()
+});
 ```
 
 ## Migration Guide
