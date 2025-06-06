@@ -2,25 +2,6 @@
 <script lang="ts">
 	import type { ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
 	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
-	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
-
-	// Constants for file paths and ioctl requests
-	const PATHS = {
-		DEV_COMBAT: '/v_dev/combat',
-		PROC_SAVES: '/v_proc/character'
-	};
-
-	const COMBAT_REQUEST = {
-		GET_ALL_SAVES: 0x2001,
-		GET_SAVE: 0x2002
-	};
-
-	// File operations
-	const OpenMode = {
-		READ: 0x01,
-		WRITE: 0x02,
-		READ_WRITE: 0x03
-	};
 
 	// Save types
 	type SaveType = 'fortitude' | 'reflex' | 'will';
@@ -66,150 +47,88 @@
 	});
 
 	/**
-	 * Unix-style file operation to load save data
+	 * Load save data from character
 	 */
 	async function loadSavesData() {
 		isLoading = true;
 		error = null;
 
-		// Ensure /v_proc directory exists
-		if (!kernel.exists('/v_proc')) {
-			console.log('Creating /proc directory');
-			const procResult = kernel.mkdir('/v_proc');
-			if (!procResult.success) {
-				error = `Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`;
-				isLoading = false;
-				return;
-			}
-		}
-
-		// Ensure /proc/character directory exists
-		if (!kernel.exists('/v_proc/character')) {
-			console.log('Creating /proc/character directory');
-			const charDirResult = kernel.mkdir('/v_proc/character');
-			if (!charDirResult.success) {
-				error = `Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`;
-				isLoading = false;
-				return;
-			}
-		}
-
-		// Get entity path for current character
-		const entityPath = `/v_proc/character/${character.id}`;
-
-		// Open combat device
-		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
-		if (fd < 0) {
-			error = `Failed to open combat device: error ${fd}`;
-			isLoading = false;
-			return;
-		}
-
 		try {
-			// Get all saves
-			const savesResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_ALL_SAVES, {
-				entityPath
-			});
+			// Simply use the character data we already have
+			// Get CON modifier for Fortitude
+			const conAbility = character.game_character_ability?.find(
+				(a) => a.ability?.name?.toLowerCase() === 'constitution'
+			);
+			const conMod = Math.floor(((conAbility?.value || 10) - 10) / 2);
 
-			if (savesResult !== ErrorCode.SUCCESS) {
-				error = `Failed to get saves: ${savesResult}`;
-				isLoading = false;
-				return;
-			}
+			// Get DEX modifier for Reflex
+			const dexAbility = character.game_character_ability?.find(
+				(a) => a.ability?.name?.toLowerCase() === 'dexterity'
+			);
+			const dexMod = Math.floor(((dexAbility?.value || 10) - 10) / 2);
 
-			// Read the saves data from the file descriptor
-			const [readResult, savesData] = kernel.read(fd);
-			
-			if (readResult !== ErrorCode.SUCCESS) {
-				error = `Failed to read saves data: ${readResult}`;
-				isLoading = false;
-				return;
-			}
+			// Get WIS modifier for Will
+			const wisAbility = character.game_character_ability?.find(
+				(a) => a.ability?.name?.toLowerCase() === 'wisdom'
+			);
+			const wisMod = Math.floor(((wisAbility?.value || 10) - 10) / 2);
 
-			// Update local state
-			saves = savesData;
-		} finally {
-			// Always close the file descriptor
-			if (fd > 0) kernel.close(fd);
+			// Get base saves from character data
+			const baseFort = character.base_fortitude_save || 0;
+			const baseRef = character.base_reflex_save || 0;
+			const baseWill = character.base_will_save || 0;
+
+			// Build save data
+			saves = {
+				fortitude: {
+					total: baseFort + conMod,
+					breakdown: [
+						{ name: 'Base Save', value: baseFort },
+						{ name: 'CON Modifier', value: conMod }
+					]
+				},
+				reflex: {
+					total: baseRef + dexMod,
+					breakdown: [
+						{ name: 'Base Save', value: baseRef },
+						{ name: 'DEX Modifier', value: dexMod }
+					]
+				},
+				will: {
+					total: baseWill + wisMod,
+					breakdown: [
+						{ name: 'Base Save', value: baseWill },
+						{ name: 'WIS Modifier', value: wisMod }
+					]
+				}
+			};
+
+			isLoading = false;
+		} catch (err) {
+			error = `Failed to load saves: ${err instanceof Error ? err.message : String(err)}`;
 			isLoading = false;
 		}
 	}
 
 	/**
-	 * Unix-style file operation to get a specific save's breakdown
+	 * Get a specific save's breakdown
 	 */
-	function getSaveBreakdown(saveType: SaveType): ValueWithBreakdown | null {
-		if (!kernel || !character) {
+	async function getSaveBreakdown(saveType: SaveType): Promise<ValueWithBreakdown | null> {
+		if (!character) {
 			return null;
 		}
 
-		// Ensure /v_proc directory exists
-		if (!kernel.exists('/v_proc')) {
-			console.log('Creating /proc directory');
-			const procResult = kernel.mkdir('/v_proc');
-			if (!procResult.success) {
-				console.error(
-					`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`
-				);
-				return null;
-			}
-		}
-
-		// Ensure /proc/character directory exists
-		if (!kernel.exists('/v_proc/character')) {
-			console.log('Creating /proc/character directory');
-			const charDirResult = kernel.mkdir('/v_proc/character');
-			if (!charDirResult.success) {
-				console.error(
-					`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`
-				);
-				return null;
-			}
-		}
-
-		const entityPath = `/v_proc/character/${character.id}`;
-
-		// Open combat device
-		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
-		if (fd < 0) {
-			console.error(`Failed to open combat device: error ${fd}`);
-			return null;
-		}
-
-		try {
-			// Get specific save
-			const saveResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_SAVE, {
-				entityPath,
-				saveType
-			});
-
-			if (saveResult.errorCode !== ErrorCode.SUCCESS) {
-				console.error(`Failed to get save breakdown: ${saveResult.errorMessage}`);
-				return null;
-			}
-
-			return saveResult.data;
-		} finally {
-			// Always close the file descriptor
-			if (fd > 0) kernel.close(fd);
-		}
+		// Return the save data we already have
+		return saves[saveType];
 	}
 
 	/**
 	 * Handle selecting a save to show breakdown
 	 */
-	function handleSelectSave(saveType: SaveType) {
-		if (kernel && character) {
-			const breakdown = getSaveBreakdown(saveType);
-			if (breakdown) {
-				onSelectValue(breakdown);
-				return;
-			}
-		}
-
-		// Use local data if available
-		if (saves[saveType]) {
-			onSelectValue(saves[saveType]);
+	async function handleSelectSave(saveType: SaveType) {
+		const breakdown = await getSaveBreakdown(saveType);
+		if (breakdown) {
+			onSelectValue(breakdown);
 		}
 	}
 

@@ -60,6 +60,26 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 		return this._client;
 	}
 
+	/**
+	 * Ensure the Supabase client is available
+	 * This will attempt to lazy-load the client if it's not already available
+	 */
+	private async ensureClient(): Promise<void> {
+		if (this._client) {
+			return; // Client already available
+		}
+
+		// Try to lazy-load the client
+		try {
+			const module = await import('$lib/db/supabaseClient');
+			this._client = module.supabaseClient;
+			logger.info('SupabaseDatabaseDriver', 'ensureClient', 'Successfully lazy-loaded Supabase client');
+		} catch (error) {
+			logger.error('SupabaseDatabaseDriver', 'ensureClient', 'Failed to lazy-load Supabase client', { error });
+			throw new Error('Unable to initialize Supabase client');
+		}
+	}
+
 	/** Kernel instance for Unix file operations */
 	private kernel: GameKernel | null;
 
@@ -217,6 +237,9 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 	 */
 	async query(resourceType: string, filter?: any, queryStr: string = '*'): Promise<any[]> {
 		try {
+			// Ensure client is available
+			await this.ensureClient();
+
 			if (this.debug) {
 				console.log(`[SupabaseDatabaseDriver] Query on ${resourceType} with filter:`, filter);
 			}
@@ -272,16 +295,8 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 		try {
 			logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Getting character by ID: ${id}`, { id, queryType: query });
 
-			// Check if client is available
-			if (!this._client) {
-				logger.error('SupabaseDatabaseDriver', 'getCharacterById', `No Supabase client available`, { 
-					id,
-					clientNull: this._client === null,
-					clientUndefined: this._client === undefined,
-					kernelAvailable: !!this.kernel
-				});
-				throw new Error('Database connection not available - Supabase client was not initialized');
-			}
+			// Ensure client is available
+			await this.ensureClient();
 
 			// Use alternative approach to get character if having issues with complex queries
 			try {
@@ -755,6 +770,9 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 	 */
 	async ioctl(fd: number, request: number, arg: any): Promise<number> {
 		try {
+			// Ensure client is available
+			await this.ensureClient();
+
 			// Get file descriptor info
 			const fileInfo = this.openFiles.get(fd);
 			if (!fileInfo) {
@@ -866,6 +884,9 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 			if (!schema) {
 				return false;
 			}
+
+			// Ensure client is available
+			await this.ensureClient();
 
 			// Check if the resource exists
 			const queryResult = await this.client

@@ -229,16 +229,18 @@
 	}
 
 	// State machine states
-	enum LoaderState {
-		INITIAL = 'initial',
-		WAITING_FOR_RESOURCES = 'waiting_for_resources',
-		LOADING = 'loading',
-		LOADED = 'loaded',
-		ERROR = 'error'
-	}
+	const LoaderState = {
+		INITIAL: 'initial',
+		WAITING_FOR_RESOURCES: 'waiting_for_resources',
+		LOADING: 'loading',
+		LOADED: 'loaded',
+		ERROR: 'error'
+	} as const;
+
+	type LoaderStateType = typeof LoaderState[keyof typeof LoaderState];
 
 	// State machine
-	let currentState = $state<LoaderState>(LoaderState.INITIAL);
+	let currentState = $state<LoaderStateType>(LoaderState.INITIAL);
 	let loadingAttempts = 0;
 	const MAX_LOADING_ATTEMPTS = 3;
 

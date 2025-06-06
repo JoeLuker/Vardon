@@ -8,6 +8,7 @@
 	} from '$lib/domain/character/characterTypes';
 
 	// Import UI components
+	import CharacterHeader from './CharacterHeader.svelte';
 	import AbilityScores from './AbilityScores.svelte';
 	import HPTracker from './HPTracker.svelte';
 	import Saves from './Saves.svelte';
@@ -87,20 +88,8 @@
 	</div>
 {:else}
 	<!-- Character header -->
-	<div class="mb-4 rounded-md border bg-card p-4">
-		<h1 class="text-2xl font-bold">{character?.name ?? 'Unknown Character'}</h1>
-		<div class="text-muted-foreground">
-			{character?.game_character_ancestry?.[0]?.ancestry?.name ?? 'Unknown Ancestry'}
-			{#if character?.game_character_class?.length}
-				-
-				{#each character.game_character_class as cls, i}
-					{cls.class?.name ?? 'Unknown Class'}
-					{cls.level ?? '?'}
-					{#if i < character.game_character_class.length - 1},
-					{/if}
-				{/each}
-			{/if}
-		</div>
+	<div class="mb-4">
+		<CharacterHeader {character} />
 	</div>
 
 	<!-- Main character sheet layout -->

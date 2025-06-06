@@ -64,121 +64,40 @@
 	});
 
 	/**
-	 * File operation to load HP data
+	 * Load HP data from character
 	 */
 	async function loadHPData() {
 		isLoading = true;
 		error = null;
 
-		// Clear any pending values
-		pendingHP = null;
-		if (updateTimer) clearTimeout(updateTimer);
-
-		// Ensure parent directories exist and character paths are files, not directories
-		if (!ensureCharacterParentDirectoriesExist(kernel, character.id)) {
-			error = 'Failed to ensure parent directories exist';
-			isLoading = false;
-			return;
-		}
-
-		// Fix character path in case it was incorrectly created as a directory
-		fixCharacterPath(kernel, character.id);
-
-		// Get entity path for current character
-		const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
-
-		// Open combat device
-		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ_WRITE);
-		if (fd < 0) {
-			error = `Failed to open combat device: error ${fd}`;
-			isLoading = false;
-			return;
-		}
-
 		try {
-			// Get current HP
-			const currentHPResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_CURRENT_HP, {
-				entityPath
-			});
-
-			if (currentHPResult !== ErrorCode.SUCCESS) {
-				error = `Failed to get current HP: ${currentHPResult}`;
-				isLoading = false;
-				return;
-			}
-
-			// Get max HP
-			const maxHPResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_MAX_HP, {
-				entityPath
-			});
-
-			if (maxHPResult !== ErrorCode.SUCCESS) {
-				error = `Failed to get max HP: ${maxHPResult}`;
-				isLoading = false;
-				return;
-			}
-
-			// Read the HP data from the file descriptor
-			const [readResult, hpData] = kernel.read(fd);
-			
-			if (readResult !== ErrorCode.SUCCESS) {
-				error = `Failed to read HP data: ${readResult}`;
-				isLoading = false;
-				return;
-			}
-
-			// Update local state
-			current_hp = hpData.current_hp || 0;
-			max_hp = hpData.max_hp || 0;
+			// Simply use the character data we already have
+			current_hp = character.current_hp || 0;
+			max_hp = character.max_hp || 0;
 			sliderValue = current_hp;
-		} finally {
-			// Always close the file descriptor
-			if (fd > 0) kernel.close(fd);
+			
+			// TODO: Calculate max HP properly based on class, level, CON, etc
+			// For now just use what's in the database
+			
+			isLoading = false;
+		} catch (err) {
+			error = `Failed to load HP: ${err instanceof Error ? err.message : String(err)}`;
 			isLoading = false;
 		}
 	}
 
 	/**
-	 * Unix-style file operation to update HP
+	 * Update HP value
 	 */
 	async function updateHP(newHP: number) {
-		if (!kernel || !character) {
-			throw new Error('Kernel or character not available');
+		if (!character) {
+			throw new Error('Character not available');
 		}
 
-		// Ensure parent directories exist and character paths are files, not directories
-		if (!ensureCharacterParentDirectoriesExist(kernel, character.id)) {
-			throw new Error('Failed to ensure parent directories exist');
-		}
-
-		// Fix character path in case it was incorrectly created as a directory
-		fixCharacterPath(kernel, character.id);
-
-		const entityPath = `${PATHS.PROC_CHARACTER}/${character.id}`;
-
-		// Open combat device
-		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ_WRITE);
-		if (fd < 0) {
-			throw new Error(`Failed to open combat device: error ${fd}`);
-		}
-
-		try {
-			// Update current HP
-			const updateResult = kernel.ioctl(fd, COMBAT_REQUEST.SET_CURRENT_HP, {
-				entityPath,
-				value: newHP
-			});
-
-			if (updateResult.errorCode !== ErrorCode.SUCCESS) {
-				throw new Error(`Failed to update HP: ${updateResult.errorMessage}`);
-			}
-
-			// Update local state on success
-			current_hp = newHP;
-		} finally {
-			// Always close the file descriptor
-			if (fd > 0) kernel.close(fd);
-		}
+		// TODO: Save to database
+		// For now just update local state
+		current_hp = newHP;
+		console.log('HP updated to:', newHP);
 	}
 
 	/**

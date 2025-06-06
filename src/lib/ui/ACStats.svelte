@@ -1,31 +1,7 @@
 <!-- FILE: src/lib/ui/ACStats.svelte -->
 <script lang="ts">
 	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
-	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
 	import { Shield } from 'lucide-svelte';
-
-	// Constants for file paths and ioctl requests
-	const PATHS = {
-		DEV_COMBAT: '/v_dev/combat',
-		PROC_COMBAT: '/v_proc/character'
-	};
-
-	const COMBAT_REQUEST = {
-		GET_AC: 0x3001,
-		GET_TOUCH_AC: 0x3002,
-		GET_FLAT_FOOTED_AC: 0x3003,
-		GET_CMB: 0x3004,
-		GET_CMD: 0x3005,
-		GET_INITIATIVE: 0x3006,
-		GET_ALL_COMBAT_STATS: 0x3007
-	};
-
-	// File operations
-	const OpenMode = {
-		READ: 0x01,
-		WRITE: 0x02,
-		READ_WRITE: 0x03
-	};
 
 	// Value with modifiers type
 	type ValueWithModifiers = {
@@ -77,165 +53,118 @@
 	});
 
 	/**
-	 * Unix-style file operation to load all combat stats
+	 * Load combat stats from character data
 	 */
 	async function loadCombatStats() {
 		isLoading = true;
 		error = null;
 
-		// Ensure /proc directory exists
-		if (!kernel.exists('/v_proc')) {
-			console.log('Creating /proc directory');
-			const procResult = kernel.mkdir('/v_proc');
-			if (!procResult.success) {
-				error = `Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`;
-				isLoading = false;
-				return;
-			}
-		}
-
-		// Ensure /proc/character directory exists
-		if (!kernel.exists('/v_proc/character')) {
-			console.log('Creating /proc/character directory');
-			const charDirResult = kernel.mkdir('/v_proc/character');
-			if (!charDirResult.success) {
-				error = `Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`;
-				isLoading = false;
-				return;
-			}
-		}
-
-		// Get entity path for current character
-		const entityPath = `/v_proc/character/${character.id}`;
-
-		// Open combat device
-		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
-		if (fd < 0) {
-			error = `Failed to open combat device: error ${fd}`;
-			isLoading = false;
-			return;
-		}
-
 		try {
-			// Get all combat stats
-			const statsResult = kernel.ioctl(fd, COMBAT_REQUEST.GET_ALL_COMBAT_STATS, {
-				entityPath
-			});
+			// Get ability modifiers
+			const dexAbility = character.game_character_ability?.find(
+				(a) => a.ability?.name?.toLowerCase() === 'dexterity'
+			);
+			const dexMod = Math.floor(((dexAbility?.value || 10) - 10) / 2);
 
-			if (statsResult !== ErrorCode.SUCCESS) {
-				error = `Failed to get combat stats: ${statsResult}`;
-				isLoading = false;
-				return;
-			}
+			const strAbility = character.game_character_ability?.find(
+				(a) => a.ability?.name?.toLowerCase() === 'strength'
+			);
+			const strMod = Math.floor(((strAbility?.value || 10) - 10) / 2);
 
-			// Read the combat stats data from the file descriptor
-			const [readResult, statsData] = kernel.read(fd);
+			// Get character level and size
+			const characterLevel = character.level || 1;
+			const bab = character.base_attack_bonus || 0;
 			
-			if (readResult !== ErrorCode.SUCCESS) {
-				error = `Failed to read combat stats data: ${readResult}`;
-				isLoading = false;
-				return;
-			}
+			// Calculate AC values
+			const baseAC = 10;
+			const armorBonus = character.armor_bonus || 0;
+			const shieldBonus = character.shield_bonus || 0;
+			const naturalArmor = character.natural_armor || 0;
+			
+			// Build combat stats
+			combatStats = {
+				ac: {
+					label: 'Armor Class',
+					total: baseAC + dexMod + armorBonus + shieldBonus + naturalArmor,
+					modifiers: [
+						{ source: 'Base', value: baseAC },
+						{ source: 'DEX Modifier', value: dexMod },
+						{ source: 'Armor', value: armorBonus },
+						{ source: 'Shield', value: shieldBonus },
+						{ source: 'Natural Armor', value: naturalArmor }
+					]
+				},
+				touch_ac: {
+					label: 'Touch AC',
+					total: baseAC + dexMod,
+					modifiers: [
+						{ source: 'Base', value: baseAC },
+						{ source: 'DEX Modifier', value: dexMod }
+					]
+				},
+				flat_footed_ac: {
+					label: 'Flat-Footed AC',
+					total: baseAC + armorBonus + shieldBonus + naturalArmor,
+					modifiers: [
+						{ source: 'Base', value: baseAC },
+						{ source: 'Armor', value: armorBonus },
+						{ source: 'Shield', value: shieldBonus },
+						{ source: 'Natural Armor', value: naturalArmor }
+					]
+				},
+				cmb: {
+					label: 'Combat Maneuver Bonus',
+					total: bab + strMod,
+					modifiers: [
+						{ source: 'BAB', value: bab },
+						{ source: 'STR Modifier', value: strMod }
+					]
+				},
+				cmd: {
+					label: 'Combat Maneuver Defense',
+					total: 10 + bab + strMod + dexMod,
+					modifiers: [
+						{ source: 'Base', value: 10 },
+						{ source: 'BAB', value: bab },
+						{ source: 'STR Modifier', value: strMod },
+						{ source: 'DEX Modifier', value: dexMod }
+					]
+				},
+				initiative: {
+					label: 'Initiative',
+					total: dexMod,
+					modifiers: [
+						{ source: 'DEX Modifier', value: dexMod }
+					]
+				}
+			};
 
-			// Update local state
-			combatStats = statsData;
-		} finally {
-			// Always close the file descriptor
-			if (fd > 0) kernel.close(fd);
+			isLoading = false;
+		} catch (err) {
+			error = `Failed to load combat stats: ${err instanceof Error ? err.message : String(err)}`;
 			isLoading = false;
 		}
 	}
 
 	/**
-	 * Unix-style file operation to get a specific combat stat with full breakdown
+	 * Get a specific combat stat with full breakdown
 	 */
-	function getCombatStatBreakdown(statType: keyof typeof combatStats): ValueWithModifiers | null {
-		if (!kernel || !character) {
+	async function getCombatStatBreakdown(statType: keyof typeof combatStats): Promise<ValueWithModifiers | null> {
+		if (!character) {
 			return null;
 		}
 
-		// Ensure /proc directory exists
-		if (!kernel.exists('/v_proc')) {
-			console.log('Creating /proc directory');
-			const procResult = kernel.mkdir('/v_proc');
-			if (!procResult.success) {
-				console.error(
-					`Failed to create /proc directory: ${procResult.errorMessage || 'Unknown error'}`
-				);
-				return null;
-			}
-		}
-
-		// Ensure /proc/character directory exists
-		if (!kernel.exists('/v_proc/character')) {
-			console.log('Creating /proc/character directory');
-			const charDirResult = kernel.mkdir('/v_proc/character');
-			if (!charDirResult.success) {
-				console.error(
-					`Failed to create /proc/character directory: ${charDirResult.errorMessage || 'Unknown error'}`
-				);
-				return null;
-			}
-		}
-
-		const entityPath = `/v_proc/character/${character.id}`;
-
-		// Map stat type to ioctl request
-		const requestMap = {
-			ac: COMBAT_REQUEST.GET_AC,
-			touch_ac: COMBAT_REQUEST.GET_TOUCH_AC,
-			flat_footed_ac: COMBAT_REQUEST.GET_FLAT_FOOTED_AC,
-			cmb: COMBAT_REQUEST.GET_CMB,
-			cmd: COMBAT_REQUEST.GET_CMD,
-			initiative: COMBAT_REQUEST.GET_INITIATIVE
-		};
-
-		const requestCode = requestMap[statType];
-		if (!requestCode) {
-			console.error(`Unknown stat type: ${statType}`);
-			return null;
-		}
-
-		// Open combat device
-		const fd = kernel.open(PATHS.DEV_COMBAT, OpenMode.READ);
-		if (fd < 0) {
-			console.error(`Failed to open combat device: error ${fd}`);
-			return null;
-		}
-
-		try {
-			// Get specific stat
-			const statResult = kernel.ioctl(fd, requestCode, {
-				entityPath
-			});
-
-			if (statResult.errorCode !== ErrorCode.SUCCESS) {
-				console.error(`Failed to get stat breakdown: ${statResult.errorMessage}`);
-				return null;
-			}
-
-			return statResult.data;
-		} finally {
-			// Always close the file descriptor
-			if (fd > 0) kernel.close(fd);
-		}
+		// Return the stat data we already have
+		return combatStats[statType];
 	}
 
 	/**
 	 * Handle selecting a combat stat to show breakdown
 	 */
-	function handleSelectStat(statType: keyof typeof combatStats) {
-		if (kernel && character) {
-			const breakdown = getCombatStatBreakdown(statType);
-			if (breakdown) {
-				onSelectValue(breakdown);
-				return;
-			}
-		}
-
-		// Use local data if available
-		if (combatStats[statType]) {
-			onSelectValue(combatStats[statType]);
+	async function handleSelectStat(statType: keyof typeof combatStats) {
+		const breakdown = await getCombatStatBreakdown(statType);
+		if (breakdown) {
+			onSelectValue(breakdown);
 		}
 	}
 

@@ -18,8 +18,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '$lib/domain/types/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+// Handle both browser (Vite) and Node.js (SSR) environments
+const supabaseUrl = typeof import.meta.env !== 'undefined' 
+	? import.meta.env.VITE_SUPABASE_URL 
+	: process.env.VITE_SUPABASE_URL;
+	
+const supabaseAnonKey = typeof import.meta.env !== 'undefined'
+	? import.meta.env.VITE_SUPABASE_ANON_KEY
+	: process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
 	console.error('Supabase environment variables missing:', {

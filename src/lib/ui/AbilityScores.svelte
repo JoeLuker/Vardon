@@ -45,46 +45,14 @@
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
 
-	// Load abilities from device
+	// Load abilities from character data
 	async function loadAbilityScores() {
-		if (!kernel || !character) {
+		if (!character) {
 			return;
 		}
 
 		isLoading = true;
 		error = null;
-
-		// Check if /v_proc exists and create if needed
-		if (!kernel.exists(ABILITY_PATHS.PROC)) {
-			console.log(`Creating ${ABILITY_PATHS.PROC} directory`);
-			const procResult = kernel.mkdir(ABILITY_PATHS.PROC);
-			if (!procResult.success) {
-				error = `Failed to create ${ABILITY_PATHS.PROC} directory: ${procResult.errorMessage || 'Unknown error'}`;
-				isLoading = false;
-				return;
-			}
-		}
-
-		// Check if /v_proc/character exists and create if needed
-		if (!kernel.exists(ABILITY_PATHS.PROC_CHARACTER)) {
-			console.log(`Creating ${ABILITY_PATHS.PROC_CHARACTER} directory`);
-			const charDirResult = kernel.mkdir(ABILITY_PATHS.PROC_CHARACTER);
-			if (!charDirResult.success) {
-				error = `Failed to create ${ABILITY_PATHS.PROC_CHARACTER} directory: ${charDirResult.errorMessage || 'Unknown error'}`;
-				isLoading = false;
-				return;
-			}
-		}
-
-		// Path to character in filesystem
-		const entityPath = `${ABILITY_PATHS.PROC_CHARACTER}/${character.id}`;
-
-		// Check if entity exists
-		if (!kernel.exists(entityPath)) {
-			error = `Character entity not found: ${entityPath}`;
-			isLoading = false;
-			return;
-		}
 
 		// Define ability names
 		const abilityNames = [
@@ -96,215 +64,95 @@
 			{ key: 'charisma', name: 'Charisma' }
 		];
 
-		// Try to read abilities using device file
-		if (kernel.exists(ABILITY_PATHS.DEVICE)) {
-			// Open ability device
-			const fd = kernel.open(ABILITY_PATHS.DEVICE, OpenMode.READ_WRITE);
-			if (fd < 0) {
-				error = `Failed to open ability device: ${fd}`;
-				isLoading = false;
-				return;
-			}
-
-			try {
-				// Ensure entity exists at entityPath
-				if (!kernel.exists(entityPath)) {
-					// Create entity file with basic data if it doesn't exist
-					console.log(`Creating entity file at ${entityPath}`);
-					kernel.create(entityPath, {
-						id: character.id,
-						type: 'character',
-						name: character.name || 'Unknown Character',
-						properties: {
-							abilities: {}
-						},
-						metadata: {
-							createdAt: Date.now(),
-							updatedAt: Date.now()
-						}
-					});
+		try {
+			// Process ability scores from character data
+			const newScores: AbilityScore[] = [];
+			
+			for (const ability of abilityNames) {
+				// Find the ability in game_character_ability
+				const charAbility = character.game_character_ability?.find(
+					(a) => a.ability?.name?.toLowerCase() === ability.key.toLowerCase()
+				);
+				
+				const baseValue = charAbility?.value || 10;
+				
+				// Calculate racial modifiers
+				let racialMod = 0;
+				const ancestry = character.game_character_ancestry?.[0]?.ancestry;
+				if (ancestry?.name === 'tengu') {
+					if (ability.key === 'dexterity' || ability.key === 'wisdom') racialMod = 2;
+					if (ability.key === 'constitution') racialMod = -2;
 				}
-
-				// Call ioctl to get all ability scores
-				const ioctlResult = kernel.ioctl(fd, ABILITY_REQUEST.GET_ALL, {
-					operation: 'getBreakdown',
-					entityPath,
-					ability: 'all'
-				});
-
-				console.log('DEBUG: ioctlResult type:', typeof ioctlResult, 'value:', ioctlResult);
-
-				if (ioctlResult !== ErrorCode.SUCCESS) {
-					error = `Failed to request ability scores: ${ioctlResult}`;
-					isLoading = false;
-					return;
-				}
-
-				// Read response
-				const [readResult, buffer] = kernel.read(fd);
-
-				if (readResult !== ErrorCode.SUCCESS) {
-					error = `Failed to read ability scores: ${readResult}`;
-					isLoading = false;
-					return;
-				}
-
-				// Process ability scores
-				const newScores: AbilityScore[] = [];
-				for (const ability of abilityNames) {
-					const abilityData = buffer[ability.key];
-					if (abilityData) {
-						newScores.push({
-							name: ability.name,
-							value: abilityData.total || 10,
-							mod: Math.floor((abilityData.total - 10) / 2),
-							path: `${entityPath}/abilities/${ability.key}`
-						});
-					} else {
-						// Fallback to character if device doesn't have the data
-						const charAbility = character[ability.key as keyof AssembledCharacter];
-						newScores.push({
-							name: ability.name,
-							value: charAbility?.total || 10,
-							mod:
-								(character[
-									`${ability.key.substring(0, 3)}Mod` as keyof AssembledCharacter
-								] as number) || 0,
-							path: `${entityPath}/abilities/${ability.key}`
-						});
-					}
-				}
-
-				// Update state
-				abilityScores = newScores;
-			} finally {
-				// Always close the file descriptor
-				kernel.close(fd);
-			}
-		} else {
-			// Fallback to character props if device not available
-			const newScores: AbilityScore[] = abilityNames.map((ability) => {
-				const charAbility = character[ability.key as keyof AssembledCharacter];
-				return {
+				
+				const totalValue = baseValue + racialMod;
+				const modifier = Math.floor((totalValue - 10) / 2);
+				
+				newScores.push({
 					name: ability.name,
-					value: charAbility?.total || 10,
-					mod:
-						(character[
-							`${ability.key.substring(0, 3)}Mod` as keyof AssembledCharacter
-						] as number) || 0,
-					path: `${entityPath}/abilities/${ability.key}`
-				};
-			});
+					value: totalValue,
+					mod: modifier,
+					path: `character/${character.id}/abilities/${ability.key}`
+				});
+			}
 
-			// Update state
 			abilityScores = newScores;
+			isLoading = false;
+		} catch (err) {
+			error = `Failed to load ability scores: ${err instanceof Error ? err.message : String(err)}`;
+			isLoading = false;
 		}
-
-		isLoading = false;
 	}
 
 	// Load ability breakdown when selected
 	function selectAbility(ability: AbilityScore) {
-		if (!kernel || !character) {
+		if (!character) {
 			return;
 		}
 
-		// Check if /v_proc exists and create if needed
-		if (!kernel.exists(ABILITY_PATHS.PROC)) {
-			console.log(`Creating ${ABILITY_PATHS.PROC} directory`);
-			const procResult = kernel.mkdir(ABILITY_PATHS.PROC);
-			if (!procResult.success) {
-				console.error(
-					`Failed to create ${ABILITY_PATHS.PROC} directory: ${procResult.errorMessage || 'Unknown error'}`
-				);
-				return;
-			}
-		}
+		// Create breakdown for the selected ability
+		const breakdown: ValueWithBreakdown = {
+			label: ability.name,
+			total: ability.value,
+			modifiers: []
+		};
 
-		// Check if /v_proc/character exists and create if needed
-		if (!kernel.exists(ABILITY_PATHS.PROC_CHARACTER)) {
-			console.log(`Creating ${ABILITY_PATHS.PROC_CHARACTER} directory`);
-			const charDirResult = kernel.mkdir(ABILITY_PATHS.PROC_CHARACTER);
-			if (!charDirResult.success) {
-				console.error(
-					`Failed to create ${ABILITY_PATHS.PROC_CHARACTER} directory: ${charDirResult.errorMessage || 'Unknown error'}`
-				);
-				return;
-			}
-		}
+		// Add base score
+		const charAbility = character.game_character_ability?.find(
+			(a) => a.ability?.name?.toLowerCase() === ability.name.toLowerCase()
+		);
+		const baseValue = charAbility?.value || 10;
+		breakdown.modifiers.push({
+			source: 'Base Score',
+			value: baseValue,
+			type: 'base'
+		});
 
-		// Open ability device
-		const fd = kernel.open(ABILITY_PATHS.DEVICE, OpenMode.READ_WRITE);
-		if (fd < 0) {
-			console.error(`Failed to open ability device: ${fd}`);
-			return;
-		}
-
-		try {
-			// Path to character in filesystem
-			const entityPath = `${ABILITY_PATHS.PROC_CHARACTER}/${character.id}`;
-
-			// Ensure entity exists at entityPath
-			if (!kernel.exists(entityPath)) {
-				// Create entity file with basic data if it doesn't exist
-				console.log(`Creating entity file at ${entityPath}`);
-				kernel.create(entityPath, {
-					id: character.id,
-					type: 'character',
-					name: character.name || 'Unknown Character',
-					properties: {
-						abilities: {}
-					},
-					metadata: {
-						createdAt: Date.now(),
-						updatedAt: Date.now()
-					}
+		// Add racial modifiers
+		const ancestry = character.game_character_ancestry?.[0]?.ancestry;
+		if (ancestry?.name === 'tengu') {
+			const abilityKey = ability.name.toLowerCase();
+			if (abilityKey === 'dexterity' || abilityKey === 'wisdom') {
+				breakdown.modifiers.push({
+					source: 'Tengu Ancestry',
+					value: 2,
+					type: 'racial'
+				});
+			} else if (abilityKey === 'constitution') {
+				breakdown.modifiers.push({
+					source: 'Tengu Ancestry',
+					value: -2,
+					type: 'racial'
 				});
 			}
-
-			// Request the ability breakdown
-			const abilityKey = ability.name.toLowerCase();
-			const ioctlResult = kernel.ioctl(fd, ABILITY_REQUEST.GET_BREAKDOWN, {
-				operation: 'getBreakdown',
-				entityPath,
-				ability: abilityKey
-			});
-
-			if (ioctlResult !== ErrorCode.SUCCESS) {
-				console.error(`Failed to request ability breakdown: ${ioctlResult}`);
-				return;
-			}
-
-			// Read the breakdown
-			const buffer = {};
-			const readResult = kernel.read(fd, buffer);
-
-			if (readResult !== ErrorCode.SUCCESS) {
-				console.error(`Failed to read ability breakdown: ${readResult}`);
-				return;
-			}
-
-			// Convert to ValueWithBreakdown format
-			const breakdown: ValueWithBreakdown = {
-				label: ability.name,
-				total: buffer.total || ability.value,
-				modifiers: (buffer.bonuses?.components || []).map((c: any) => ({
-					source: c.source,
-					value: c.value
-				}))
-			};
-
-			// Call the onSelectValue callback
-			onSelectValue(breakdown);
-		} finally {
-			// Always close the file descriptor
-			kernel.close(fd);
 		}
+
+		// Call the parent handler
+		onSelectValue(breakdown);
 	}
 
 	// Load data when component mounts or character changes
 	$effect(() => {
-		if (character && kernel) {
+		if (character) {
 			loadAbilityScores();
 		}
 	});

@@ -414,6 +414,9 @@ export class GameRulesAPI {
 
 	/** Debug mode flag */
 	private debug: boolean;
+	
+	/** Promise that resolves when database is ready */
+	private dbInitPromise: Promise<void>;
 
 	/**
 	 * Creates a new GameRulesAPI instance
@@ -430,8 +433,8 @@ export class GameRulesAPI {
 		});
 
 		// Set up the Database Capability
-		// We can't await in constructor, so we use a then() chain
-		this.initializeDatabaseCapability()
+		// Store the promise so methods can wait for initialization
+		this.dbInitPromise = this.initializeDatabaseCapability()
 			.then(() => {
 				if (this.debug) {
 					console.log('[GameRulesAPI] Async initialization of Database Capability completed');
@@ -439,6 +442,8 @@ export class GameRulesAPI {
 			})
 			.catch((error) => {
 				console.error('[GameRulesAPI] Async initialization failed:', error);
+				// Re-throw to ensure methods know initialization failed
+				throw error;
 			});
 
 		if (this.debug) {
@@ -869,6 +874,9 @@ export class GameRulesAPI {
 	 * @throws Error if character cannot be loaded
 	 */
 	async getCompleteCharacterData(characterId: number): Promise<GameRules.Complete.Character> {
+		// Wait for database initialization to complete
+		await this.dbInitPromise;
+		
 		if (this.debug) {
 			console.log(`[GameRulesAPI] Getting complete data for character ${characterId}`);
 		}
