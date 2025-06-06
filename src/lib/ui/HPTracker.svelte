@@ -1,41 +1,29 @@
-<!-- FILE: src/lib/ui/HPTracker.svelte -->
+<!-- 
+	HPTracker Component - Uses Domain Layer
+	HP calculations are handled by the domain CombatService
+-->
 <script lang="ts">
 	// UI components
 	import { Button } from '$lib/components/ui/button';
 	import { Progress } from '$lib/components/ui/progress';
 
-	// File system imports
+	// Domain imports
 	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
-	import { ErrorCode } from '$lib/domain/kernel/ErrorHandler';
-	import {
-		PATHS,
-		ensureCharacterParentDirectoriesExist,
-		fixCharacterPath
-	} from '$lib/domain/utils/FilesystemUtils';
-
-	const COMBAT_REQUEST = {
-		GET_CURRENT_HP: 0x1001,
-		GET_MAX_HP: 0x1002,
-		SET_CURRENT_HP: 0x1003
-	};
-
-	// File operations
-	const OpenMode = {
-		READ: 0x01,
-		WRITE: 0x02,
-		READ_WRITE: 0x03
-	};
+	import type { Entity } from '$lib/domain/kernel/types';
+	import { CombatService } from '$lib/domain/services/CombatService';
 
 	/**
-	 * Component props
+	 * Props:
+	 * - character: Character entity
+	 * - kernel: GameKernel instance
 	 */
 	let { character = null, kernel = null } = $props<{
-		character: any;
+		character: Entity | null;
 		kernel: GameKernel | null;
 	}>();
 
 	/**
-	 * Svelte 5 local state
+	 * Local state
 	 */
 	let current_hp = $state(0);
 	let max_hp = $state(0);
@@ -45,6 +33,9 @@
 	let error = $state<string | null>(null);
 	let updateStatus = $state<'idle' | 'syncing' | 'error'>('idle');
 	let errorMessage = $state<string | null>(null);
+
+	// Domain service
+	let combatService: CombatService | null = null;
 
 	/**
 	 * Derived variables for HP
@@ -64,21 +55,30 @@
 	});
 
 	/**
-	 * Load HP data from character
+	 * Load HP data using domain service
 	 */
 	async function loadHPData() {
 		isLoading = true;
 		error = null;
 
 		try {
-			// Simply use the character data we already have
-			current_hp = character.current_hp || 0;
-			max_hp = character.max_hp || 0;
+			// Initialize service if needed
+			if (!combatService) {
+				combatService = new CombatService();
+			}
+
+			// Character is passed directly as AssembledCharacter, not wrapped in Entity
+			const characterData = character;
+			if (!characterData) {
+				throw new Error('Character data not available');
+			}
+
+			// Get HP from combat service
+			const hpData = combatService.getHitPoints(characterData);
+			max_hp = hpData.max;
+			current_hp = hpData.current;
 			sliderValue = current_hp;
-			
-			// TODO: Calculate max HP properly based on class, level, CON, etc
-			// For now just use what's in the database
-			
+
 			isLoading = false;
 		} catch (err) {
 			error = `Failed to load HP: ${err instanceof Error ? err.message : String(err)}`;
@@ -90,14 +90,25 @@
 	 * Update HP value
 	 */
 	async function updateHP(newHP: number) {
-		if (!character) {
-			throw new Error('Character not available');
+		if (!character || !kernel) {
+			throw new Error('Character or kernel not available');
 		}
 
-		// TODO: Save to database
-		// For now just update local state
-		current_hp = newHP;
-		console.log('HP updated to:', newHP);
+		try {
+			// Update the character's current HP in the entity
+			// This would typically involve kernel file operations
+			// For now, just update local state
+			current_hp = newHP;
+			
+			// TODO: Save to database through kernel
+			// const characterPath = `/proc/character/${character.id}`;
+			// const fd = kernel.open(characterPath, OpenMode.READ_WRITE);
+			// ... update and save
+			
+			console.log('HP updated to:', newHP);
+		} catch (err) {
+			throw new Error(`Failed to update HP: ${err instanceof Error ? err.message : String(err)}`);
+		}
 	}
 
 	/**

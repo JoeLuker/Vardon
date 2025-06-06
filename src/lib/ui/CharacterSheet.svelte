@@ -133,7 +133,7 @@
 
 			<!-- ABP Display -->
 			{#if character}
-				<ABPDisplay {character} />
+				<ABPDisplay {character} {kernel} />
 			{/if}
 
 			<div class="card bg-muted/30 p-4">
@@ -189,7 +189,7 @@
 			</div>
 		</div>
 	{/if}
-	
+
 	<!-- ABP Choice Dialog -->
 	{#if character}
 		<ABPChoiceDialog {character} {kernel} bind:open={showABPChoiceDialog} />

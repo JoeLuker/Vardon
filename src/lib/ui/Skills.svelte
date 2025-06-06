@@ -135,19 +135,21 @@
 	});
 
 	// Add a cache for skill calculations keyed by character ID to prevent recalculating on every state change
-	let skillCalculationCache = $state<Map<string, Map<number, { total: number; ranks: number }>>>(new Map());
+	let skillCalculationCache = $state<Map<string, Map<number, { total: number; ranks: number }>>>(
+		new Map()
+	);
 
 	// Function to get skill data with caching
 	function getSkillData(skillId: number): { total: number; ranks: number } | undefined {
 		if (!character?.id) return undefined;
-		
+
 		// Get or create cache for this character
 		const charCacheKey = String(character.id);
 		if (!skillCalculationCache.has(charCacheKey)) {
 			skillCalculationCache.set(charCacheKey, new Map());
 		}
 		const charCache = skillCalculationCache.get(charCacheKey)!;
-		
+
 		// Return from cache if available
 		if (charCache.has(skillId)) {
 			return charCache.get(skillId);
@@ -217,7 +219,7 @@
 			if (character.skills) {
 				for (const [skillIdStr, skillData] of Object.entries(character.skills)) {
 					const skillId = parseInt(skillIdStr);
-					
+
 					// Get base skill info from skill definitions
 					const baseSkill = character.skill_definitions?.find((s: any) => s.id === skillId);
 					if (!baseSkill) continue;
@@ -231,7 +233,8 @@
 					).toUpperCase();
 
 					// Check if it's a class skill
-					const isClassSkill = character.class_skills?.some((cs: any) => cs.skill_id === skillId) ?? false;
+					const isClassSkill =
+						character.class_skills?.some((cs: any) => cs.skill_id === skillId) ?? false;
 
 					const processed: ProcessedSkill = {
 						id: baseSkill.id,
@@ -310,7 +313,7 @@
 	// Filtered skills for current view - recalculated when toggle state changes
 	let filteredSkillsByAbility = $derived(() => {
 		if (!baseSkillsData) return {};
-		
+
 		const result: Record<string, ProcessedSkill[]> = {};
 
 		// Include timestamp to force reactivity
@@ -422,7 +425,7 @@
 		// Just trigger the load, don't update state inside the effect
 		performSkillsLoad();
 	});
-	
+
 	// Handle the async loading separately
 	async function performSkillsLoad() {
 		try {
@@ -449,7 +452,7 @@
 			skillId,
 			level
 		});
-		
+
 		// Simulate success
 		return true;
 	}
@@ -619,97 +622,95 @@
 				<div class="rounded-md border border-muted p-4">
 					<p class="text-muted-foreground">Character or kernel not available</p>
 				</div>
+			{:else if Object.keys(filteredSkillsByAbility).length === 0}
+				<div class="rounded-md border border-muted p-4">
+					<p class="text-muted-foreground">Loading skills...</p>
+				</div>
 			{:else}
-				{#if Object.keys(filteredSkillsByAbility).length === 0}
-					<div class="rounded-md border border-muted p-4">
-						<p class="text-muted-foreground">Loading skills...</p>
-					</div>
-				{:else}
-					{@const skills = filteredSkillsByAbility}
-					<div class="ability-cards">
-						{#each Object.entries(skills) as [ability, skillList]}
-							{#if skillList.length > 0}
-								<Card.Root>
-									<Card.Header>
-										<Card.Title>{ability.toUpperCase()}</Card.Title>
-									</Card.Header>
-									<Card.Content>
-										<div class="skills-grid">
-											{#each skillList as skill}
-												<!-- Check visibility within the template -->
-												{@const isUnusable = isSkillUnusable(skill)}
-												{@const shouldBeVisible =
-													!isUnusable || showUnusableSkills || showRankAllocation}
-												{#if shouldBeVisible}
-													<button
-														class="skill"
-														class:is-class-skill={skill.isClassSkill}
-														class:unusable={isUnusable}
-														onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
-														type="button"
-													>
-														<div class="skill-info">
-															<span class="skill-name">{skill.label}</span>
-															{#if viewMode === 'alphabetical' || skill.overrides?.ability}
-																<Badge variant="secondary" class="ability-badge">
-																	{#if skill.overrides?.ability}
-																		<span class="text-xs opacity-50"
-																			>({skill.overrides.ability.source})</span
-																		>
-																	{/if}
-																</Badge>
-															{/if}
-															<span class="modifier"
-																>{formatModifier(getSkillDisplayTotal(skill.id))}</span
-															>
-														</div>
-
-														{#if showRankAllocation}
-															<div class="rank-grid">
-																{#each levelNumbers as level}
-																	{@const hasRank = hasSkillRank(skill.id, level)}
-																	{@const canAdd = !hasRank && getRemainingPoints(level) > 0}
-																	{@const isPending = isOperationPendingLocal(skill.id, level)}
-																	{@const error = getOperationError(skill.id, level)}
-
-																	<div class="button-container">
-																		<Button
-																			variant="outline"
-																			size="sm"
-																			class="h-8 w-8 {isPending ? 'pending' : ''} {error
-																				? 'error'
-																				: ''}"
-																			title={isPending ? 'Operation in progress...' : error || ''}
-																			disabled={isPending}
-																			onclick={(e: MouseEvent) => {
-																				e.stopPropagation();
-																				if (!isPending && (hasRank || canAdd)) {
-																					handleCellClick(skill.id, level);
-																				}
-																			}}
-																		>
-																			{#if isPending}
-																				<div class="loading-spinner"></div>
-																			{:else if hasRank}
-																				<Circle class="fill-primary stroke-primary" size={16} />
-																			{:else}
-																				<Circle size={16} />
-																			{/if}
-																		</Button>
-																	</div>
-																{/each}
-															</div>
+				{@const skills = filteredSkillsByAbility}
+				<div class="ability-cards">
+					{#each Object.entries(skills) as [ability, skillList]}
+						{#if skillList.length > 0}
+							<Card.Root>
+								<Card.Header>
+									<Card.Title>{ability.toUpperCase()}</Card.Title>
+								</Card.Header>
+								<Card.Content>
+									<div class="skills-grid">
+										{#each skillList as skill}
+											<!-- Check visibility within the template -->
+											{@const isUnusable = isSkillUnusable(skill)}
+											{@const shouldBeVisible =
+												!isUnusable || showUnusableSkills || showRankAllocation}
+											{#if shouldBeVisible}
+												<button
+													class="skill"
+													class:is-class-skill={skill.isClassSkill}
+													class:unusable={isUnusable}
+													onclick={() => onSelectValue?.(character?.skills?.[skill.id])}
+													type="button"
+												>
+													<div class="skill-info">
+														<span class="skill-name">{skill.label}</span>
+														{#if viewMode === 'alphabetical' || skill.overrides?.ability}
+															<Badge variant="secondary" class="ability-badge">
+																{#if skill.overrides?.ability}
+																	<span class="text-xs opacity-50"
+																		>({skill.overrides.ability.source})</span
+																	>
+																{/if}
+															</Badge>
 														{/if}
-													</button>
-												{/if}
-											{/each}
-										</div>
-									</Card.Content>
-								</Card.Root>
-							{/if}
-						{/each}
-					</div>
-				{/if}
+														<span class="modifier"
+															>{formatModifier(getSkillDisplayTotal(skill.id))}</span
+														>
+													</div>
+
+													{#if showRankAllocation}
+														<div class="rank-grid">
+															{#each levelNumbers as level}
+																{@const hasRank = hasSkillRank(skill.id, level)}
+																{@const canAdd = !hasRank && getRemainingPoints(level) > 0}
+																{@const isPending = isOperationPendingLocal(skill.id, level)}
+																{@const error = getOperationError(skill.id, level)}
+
+																<div class="button-container">
+																	<Button
+																		variant="outline"
+																		size="sm"
+																		class="h-8 w-8 {isPending ? 'pending' : ''} {error
+																			? 'error'
+																			: ''}"
+																		title={isPending ? 'Operation in progress...' : error || ''}
+																		disabled={isPending}
+																		onclick={(e: MouseEvent) => {
+																			e.stopPropagation();
+																			if (!isPending && (hasRank || canAdd)) {
+																				handleCellClick(skill.id, level);
+																			}
+																		}}
+																	>
+																		{#if isPending}
+																			<div class="loading-spinner"></div>
+																		{:else if hasRank}
+																			<Circle class="fill-primary stroke-primary" size={16} />
+																		{:else}
+																			<Circle size={16} />
+																		{/if}
+																	</Button>
+																</div>
+															{/each}
+														</div>
+													{/if}
+												</button>
+											{/if}
+										{/each}
+									</div>
+								</Card.Content>
+							</Card.Root>
+						{/if}
+					{/each}
+				</div>
 			{/if}
 		</Tabs.Content>
 

@@ -24,7 +24,7 @@ export class DiagnosticTool {
 			console.warn('Download logs is only available in browser environment');
 			return;
 		}
-		
+
 		const logs = logger.exportLogs();
 		const blob = new Blob([logs], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -45,35 +45,42 @@ export class DiagnosticTool {
 		const recommendations: string[] = [];
 
 		// Check for file creation failures
-		const fileCreationErrors = issues.filter(log => 
-			log.operation === 'createCharacterFile' && log.message.includes('Failed to create')
+		const fileCreationErrors = issues.filter(
+			(log) => log.operation === 'createCharacterFile' && log.message.includes('Failed to create')
 		);
 		if (fileCreationErrors.length > 0) {
-			recommendations.push('❌ File Creation Issues: Character files are failing to be created. Check filesystem permissions and kernel async/await handling.');
+			recommendations.push(
+				'❌ File Creation Issues: Character files are failing to be created. Check filesystem permissions and kernel async/await handling.'
+			);
 		}
 
 		// Check for database connection issues
-		const dbConnectionErrors = issues.filter(log => 
-			log.message.includes('Database connection') || log.message.includes('Supabase client')
+		const dbConnectionErrors = issues.filter(
+			(log) =>
+				log.message.includes('Database connection') || log.message.includes('Supabase client')
 		);
 		if (dbConnectionErrors.length > 0) {
-			recommendations.push('❌ Database Connection Issues: Database client is not available or failing to connect.');
+			recommendations.push(
+				'❌ Database Connection Issues: Database client is not available or failing to connect.'
+			);
 		}
 
 		// Check for schema relationship errors
-		const schemaErrors = issues.filter(log => 
-			log.message.includes('relationship') || log.message.includes('schema cache')
+		const schemaErrors = issues.filter(
+			(log) => log.message.includes('relationship') || log.message.includes('schema cache')
 		);
 		if (schemaErrors.length > 0) {
-			recommendations.push('❌ Schema Relationship Issues: Foreign key relationships are not properly configured in the schema cache.');
+			recommendations.push(
+				'❌ Schema Relationship Issues: Foreign key relationships are not properly configured in the schema cache.'
+			);
 		}
 
 		// Check for empty file issues
-		const emptyFileErrors = issues.filter(log => 
-			log.message.includes('empty or invalid')
-		);
+		const emptyFileErrors = issues.filter((log) => log.message.includes('empty or invalid'));
 		if (emptyFileErrors.length > 0) {
-			recommendations.push('❌ Empty File Issues: Character files are being created but contain no data. Check async file creation.');
+			recommendations.push(
+				'❌ Empty File Issues: Character files are being created but contain no data. Check async file creation.'
+			);
 		}
 
 		if (recommendations.length === 0) {
@@ -91,27 +98,35 @@ export class DiagnosticTool {
 		const recommendations: string[] = [];
 
 		// Check for foreign key errors
-		const foreignKeyErrors = issues.filter(log => 
-			log.message.includes('foreign key relationship') || log.errorMessage?.includes('foreign key')
+		const foreignKeyErrors = issues.filter(
+			(log) =>
+				log.message.includes('foreign key relationship') ||
+				log.errorMessage?.includes('foreign key')
 		);
 		if (foreignKeyErrors.length > 0) {
-			recommendations.push('❌ Foreign Key Issues: Database schema relationships are not properly defined. Check SchemaRegistry and relationship definitions.');
+			recommendations.push(
+				'❌ Foreign Key Issues: Database schema relationships are not properly defined. Check SchemaRegistry and relationship definitions.'
+			);
 		}
 
 		// Check for query failures
-		const queryErrors = issues.filter(log => 
-			log.operation === 'getCharacterById' && log.level >= 2 // WARN or ERROR
+		const queryErrors = issues.filter(
+			(log) => log.operation === 'getCharacterById' && log.level >= 2 // WARN or ERROR
 		);
 		if (queryErrors.length > 0) {
-			recommendations.push('❌ Query Issues: Database queries are failing. Check Supabase connection and query syntax.');
+			recommendations.push(
+				'❌ Query Issues: Database queries are failing. Check Supabase connection and query syntax.'
+			);
 		}
 
 		// Check for schema registration issues
-		const schemaRegErrors = issues.filter(log => 
-			log.component === 'SchemaRegistry' && log.level >= 2
+		const schemaRegErrors = issues.filter(
+			(log) => log.component === 'SchemaRegistry' && log.level >= 2
 		);
 		if (schemaRegErrors.length > 0) {
-			recommendations.push('❌ Schema Registration Issues: Database schemas are not being registered properly.');
+			recommendations.push(
+				'❌ Schema Registration Issues: Database schemas are not being registered properly.'
+			);
 		}
 
 		if (recommendations.length === 0) {
@@ -129,24 +144,26 @@ export class DiagnosticTool {
 		const recommendations: string[] = [];
 
 		// Check for async/await issues
-		const asyncErrors = issues.filter(log => 
-			log.message.includes('Promise') || log.message.includes('async')
+		const asyncErrors = issues.filter(
+			(log) => log.message.includes('Promise') || log.message.includes('async')
 		);
 		if (asyncErrors.length > 0) {
 			recommendations.push('❌ Async/Await Issues: File operations may not be properly awaited.');
 		}
 
 		// Check for file descriptor leaks
-		const fdErrors = issues.filter(log => 
-			log.message.includes('file descriptor') || log.message.includes('fd')
+		const fdErrors = issues.filter(
+			(log) => log.message.includes('file descriptor') || log.message.includes('fd')
 		);
 		if (fdErrors.length > 0) {
-			recommendations.push('❌ File Descriptor Issues: File descriptors may not be properly closed.');
+			recommendations.push(
+				'❌ File Descriptor Issues: File descriptors may not be properly closed.'
+			);
 		}
 
 		// Check for permission issues
-		const permErrors = issues.filter(log => 
-			log.message.includes('permission') || log.message.includes('EACCES')
+		const permErrors = issues.filter(
+			(log) => log.message.includes('permission') || log.message.includes('EACCES')
 		);
 		if (permErrors.length > 0) {
 			recommendations.push('❌ Permission Issues: File system operations are being denied access.');
@@ -172,13 +189,13 @@ export class DiagnosticTool {
 			'=' * 50,
 			'',
 			'📊 CHARACTER LOADING ANALYSIS:',
-			...charIssues.map(issue => `  ${issue}`),
+			...charIssues.map((issue) => `  ${issue}`),
 			'',
 			'💾 DATABASE ANALYSIS:',
-			...dbIssues.map(issue => `  ${issue}`),
+			...dbIssues.map((issue) => `  ${issue}`),
 			'',
 			'📁 FILE SYSTEM ANALYSIS:',
-			...fsIssues.map(issue => `  ${issue}`),
+			...fsIssues.map((issue) => `  ${issue}`),
 			'',
 			'💡 RECOMMENDATIONS:',
 			'  1. Check browser console for detailed error logs',
@@ -203,8 +220,11 @@ export class DiagnosticTool {
 		const criticalLogs = logger.getLogs({ level: 3 }); // ERROR level
 		if (criticalLogs.length > 0) {
 			console.group('🚨 RECENT CRITICAL ERRORS');
-			criticalLogs.slice(-10).forEach(log => {
-				console.error(`[${log.timestamp}] [${log.component}:${log.operation}] ${log.message}`, log.data || '');
+			criticalLogs.slice(-10).forEach((log) => {
+				console.error(
+					`[${log.timestamp}] [${log.component}:${log.operation}] ${log.message}`,
+					log.data || ''
+				);
 			});
 			console.groupEnd();
 		}
@@ -219,10 +239,10 @@ export class DiagnosticTool {
 			console.warn('Auto diagnostics is only available in browser environment');
 			return;
 		}
-		
+
 		// Log diagnostic summary every minute
 		setInterval(() => {
-			const recentErrors = logger.getLogs({ 
+			const recentErrors = logger.getLogs({
 				level: 2, // WARN and above
 				since: new Date(Date.now() - 60000) // Last minute
 			});
@@ -230,7 +250,7 @@ export class DiagnosticTool {
 			if (recentErrors.length > 0) {
 				console.group('⚠️ VARDON AUTO-DIAGNOSTIC (1 min)');
 				console.log(`${recentErrors.length} warnings/errors in the last minute`);
-				recentErrors.forEach(log => {
+				recentErrors.forEach((log) => {
 					console.log(`[${log.component}] ${log.message}`);
 				});
 				console.groupEnd();

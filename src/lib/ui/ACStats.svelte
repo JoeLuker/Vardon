@@ -1,9 +1,15 @@
-<!-- FILE: src/lib/ui/ACStats.svelte -->
+<!-- 
+	ACStats Component - Uses Domain Layer
+	All combat calculations are handled by the domain CombatService
+-->
 <script lang="ts">
 	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import type { Entity } from '$lib/domain/kernel/types';
 	import { Shield } from 'lucide-svelte';
+	import { CombatService } from '$lib/domain/services/CombatService';
+	import type { ACBreakdown } from '$lib/domain/services/CombatService';
 
-	// Value with modifiers type
+	// Value with modifiers type for UI
 	type ValueWithModifiers = {
 		label: string;
 		modifiers: Array<{ source: string; value: number }>;
@@ -12,7 +18,7 @@
 
 	/**
 	 * Props:
-	 * - character: Character object (can be simple ID reference)
+	 * - character: Character entity
 	 * - kernel: GameKernel instance
 	 * - onSelectValue: callback for clicking an AC breakdown
 	 */
@@ -21,7 +27,7 @@
 		kernel = null,
 		onSelectValue = () => {}
 	} = $props<{
-		character: any;
+		character: Entity | null;
 		kernel: GameKernel | null;
 		onSelectValue: (value: ValueWithModifiers) => void;
 	}>();
@@ -45,6 +51,9 @@
 		initiative: null
 	});
 
+	// Domain service
+	let combatService: CombatService | null = null;
+
 	// Load combat stats when component mounts
 	$effect(() => {
 		if (kernel && character) {
@@ -53,133 +62,85 @@
 	});
 
 	/**
-	 * Load combat stats from character data
+	 * Load combat stats using domain service
 	 */
 	async function loadCombatStats() {
 		isLoading = true;
 		error = null;
 
 		try {
-			// Get ability modifiers
-			const dexAbility = character.game_character_ability?.find(
-				(a) => a.ability?.name?.toLowerCase() === 'dexterity'
-			);
-			let baseDex = dexAbility?.value || 10;
-			
-			// Check for ABP ability bonuses
-			if (character.abpData?.appliedBonuses) {
-				const dexABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'dexterity' && b.type === 'inherent'
-				);
-				if (dexABP) baseDex += dexABP.value;
+			// Initialize service if needed
+			if (!combatService) {
+				combatService = new CombatService();
 			}
-			
-			const dexMod = Math.floor((baseDex - 10) / 2);
 
-			const strAbility = character.game_character_ability?.find(
-				(a) => a.ability?.name?.toLowerCase() === 'strength'
-			);
-			let baseStr = strAbility?.value || 10;
-			
-			// Check for ABP ability bonuses
-			if (character.abpData?.appliedBonuses) {
-				const strABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'strength' && b.type === 'inherent'
-				);
-				if (strABP) baseStr += strABP.value;
+			// Character is passed directly as AssembledCharacter, not wrapped in Entity
+			const characterData = character;
+			if (!characterData) {
+				throw new Error('Character data not available');
 			}
-			
-			const strMod = Math.floor((baseStr - 10) / 2);
 
-			// Get character level and size
-			const characterLevel = character.totalLevel || 1;
-			const bab = character.base_attack_bonus || 0;
+			// Get AC breakdown from service
+			const acData = combatService.getArmorClass(characterData);
 			
-			// Calculate AC values
-			const baseAC = 10;
-			const armorBonus = character.armor_bonus || 0;
-			const shieldBonus = character.shield_bonus || 0;
-			let naturalArmor = character.natural_armor || 0;
+			// Get other combat stats
+			const bab = combatService.getBaseAttackBonus(characterData);
 			
-			// Get ABP bonuses
-			let deflectionBonus = 0;
-			let abpNaturalArmor = 0;
-			
-			if (character.abpData?.appliedBonuses) {
-				// Deflection bonus
-				const deflectionABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'ac' && b.type === 'deflection'
-				);
-				if (deflectionABP) deflectionBonus = deflectionABP.value;
-				
-				// Natural armor bonus (toughening)
-				const naturalABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'ac' && b.type === 'natural'
-				);
-				if (naturalABP) abpNaturalArmor = naturalABP.value;
-			}
-			
-			// Add ABP natural armor to total
-			naturalArmor += abpNaturalArmor;
-			
-			// Build combat stats
+			// Get ability modifiers for CMB/CMD - use AbilityService
+			const abilityService = new (await import('$lib/domain/services/AbilityService')).AbilityService();
+			const strAbility = abilityService.getScore(characterData, 'strength');
+			const dexAbility = abilityService.getScore(characterData, 'dexterity');
+			const strMod = strAbility.modifier || 0;
+			const dexMod = dexAbility.modifier || 0;
+
+			// Build AC stats from service data
 			combatStats = {
 				ac: {
 					label: 'Armor Class',
-					total: baseAC + dexMod + armorBonus + shieldBonus + naturalArmor + deflectionBonus,
-					modifiers: [
-						{ source: 'Base', value: baseAC },
-						{ source: 'DEX Modifier', value: dexMod },
-						{ source: 'Armor', value: armorBonus },
-						{ source: 'Shield', value: shieldBonus },
-						{ source: 'Natural Armor', value: naturalArmor },
-						...(deflectionBonus ? [{ source: 'Deflection (ABP)', value: deflectionBonus }] : [])
-					]
+					total: acData.total,
+					modifiers: acData.modifiers
+						.filter(mod => mod.value !== 0)
+						.map(mod => ({ source: mod.source, value: mod.value }))
 				},
 				touch_ac: {
 					label: 'Touch AC',
-					total: baseAC + dexMod + deflectionBonus,
-					modifiers: [
-						{ source: 'Base', value: baseAC },
-						{ source: 'DEX Modifier', value: dexMod },
-						...(deflectionBonus ? [{ source: 'Deflection (ABP)', value: deflectionBonus }] : [])
-					]
+					total: acData.touch,
+					modifiers: acData.modifiers
+						.filter(mod => mod.appliesToTouch && mod.value !== 0)
+						.map(mod => ({ source: mod.source, value: mod.value }))
 				},
 				flat_footed_ac: {
 					label: 'Flat-Footed AC',
-					total: baseAC + armorBonus + shieldBonus + naturalArmor + deflectionBonus,
-					modifiers: [
-						{ source: 'Base', value: baseAC },
-						{ source: 'Armor', value: armorBonus },
-						{ source: 'Shield', value: shieldBonus },
-						{ source: 'Natural Armor', value: naturalArmor },
-						...(deflectionBonus ? [{ source: 'Deflection (ABP)', value: deflectionBonus }] : [])
-					]
+					total: acData.flatFooted,
+					modifiers: acData.modifiers
+						.filter(mod => mod.appliesToFlatFooted && mod.value !== 0)
+						.map(mod => ({ source: mod.source, value: mod.value }))
 				},
 				cmb: {
-					label: 'Combat Maneuver Bonus',
+					label: 'CMB',
 					total: bab + strMod,
 					modifiers: [
 						{ source: 'BAB', value: bab },
 						{ source: 'STR Modifier', value: strMod }
-					]
+					].filter(mod => mod.value !== 0)
 				},
 				cmd: {
-					label: 'Combat Maneuver Defense',
+					label: 'CMD',
 					total: 10 + bab + strMod + dexMod,
 					modifiers: [
 						{ source: 'Base', value: 10 },
 						{ source: 'BAB', value: bab },
 						{ source: 'STR Modifier', value: strMod },
 						{ source: 'DEX Modifier', value: dexMod }
-					]
+					].filter(mod => mod.value !== 0)
 				},
 				initiative: {
 					label: 'Initiative',
 					total: dexMod,
 					modifiers: [
 						{ source: 'DEX Modifier', value: dexMod }
-					]
+						// TODO: Add trait bonuses, feat bonuses, etc.
+					].filter(mod => mod.value !== 0)
 				}
 			};
 
@@ -190,134 +151,122 @@
 		}
 	}
 
-	/**
-	 * Get a specific combat stat with full breakdown
-	 */
-	async function getCombatStatBreakdown(statType: keyof typeof combatStats): Promise<ValueWithModifiers | null> {
-		if (!character) {
-			return null;
-		}
-
-		// Return the stat data we already have
-		return combatStats[statType];
+	// Helper to format numeric bonuses
+	function formatBonus(value: number): string {
+		return value >= 0 ? `+${value}` : `${value}`;
 	}
-
-	/**
-	 * Handle selecting a combat stat to show breakdown
-	 */
-	async function handleSelectStat(statType: keyof typeof combatStats) {
-		const breakdown = await getCombatStatBreakdown(statType);
-		if (breakdown) {
-			onSelectValue(breakdown);
-		}
-	}
-
-	// Helper function to format numbers with sign
-	const formatModifier = (num: number) => (num >= 0 ? `+${num}` : `${num}`);
 </script>
 
-{#if isLoading}
-	<div class="w-full animate-pulse space-y-2">
-		<div class="h-10 rounded-md bg-muted"></div>
-		<div class="flex h-24 items-center justify-center">
-			<div class="h-20 w-20 rounded-full bg-muted"></div>
+<div class="ac-stats">
+	{#if isLoading}
+		<div class="flex items-center justify-center space-x-2 p-4 text-primary/70">
+			<div class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"></div>
+			<p>Loading combat stats...</p>
 		</div>
-		<div class="grid grid-cols-2 gap-2">
-			<div class="h-10 rounded-md bg-muted"></div>
-			<div class="h-10 rounded-md bg-muted"></div>
+	{:else if error}
+		<div class="space-y-6 border-destructive">
+			<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+				{error}
+			</div>
+			<button class="text-sm text-primary hover:underline" onclick={loadCombatStats}>
+				Retry
+			</button>
 		</div>
-	</div>
-{:else if error}
-	<div class="w-full space-y-2">
-		<div class="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-			{error}
-		</div>
-		<button class="text-sm text-primary hover:underline" onclick={loadCombatStats}> Retry </button>
-	</div>
-{:else}
-	<div class="w-full space-y-2">
-		<!-- Initiative -->
-		<button
-			type="button"
-			class="flex w-full items-center justify-between rounded-md border border-accent/40 bg-accent/20 p-2 transition hover:bg-accent"
-			onclick={() => handleSelectStat('initiative')}
-		>
-			<div class="font-bold">Initiative</div>
-			<div>{combatStats.initiative ? formatModifier(combatStats.initiative.total) : '+0'}</div>
-		</button>
-
-		<!-- AC Layout -->
-		<div class="relative flex h-24 items-end justify-center">
-			<!-- Normal AC -->
-			<button
-				type="button"
-				class="absolute z-20 rounded-full transition hover:bg-accent/10"
-				onclick={() => handleSelectStat('ac')}
-			>
-				<div class="relative h-20 w-20">
-					<Shield class="h-full w-full" />
-					<div class="absolute inset-0 flex items-center justify-center text-xl font-bold">
-						{combatStats.ac?.total ?? 10}
+	{:else}
+		<div class="grid grid-cols-3 gap-4">
+			<!-- AC Stats -->
+			{#if combatStats.ac}
+				<button
+					class="stat-card"
+					type="button"
+					onclick={() => onSelectValue(combatStats.ac)}
+				>
+					<div class="stat-icon">
+						<Shield size={24} />
 					</div>
-				</div>
-			</button>
+					<div class="stat-label">AC</div>
+					<div class="stat-value">{combatStats.ac.total}</div>
+				</button>
+			{/if}
 
-			<!-- Touch AC -->
-			<button
-				type="button"
-				class="absolute bottom-0 left-12 z-10 rounded-full transition hover:bg-accent/10"
-				onclick={() => handleSelectStat('touch_ac')}
-			>
-				<div class="flex flex-col items-center">
-					<div class="mb-1 text-xs font-medium text-blue-400">Touch</div>
-					<div class="relative h-10 w-10">
-						<Shield class="h-full w-full text-blue-400" />
-						<div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
-							{combatStats.touch_ac?.total ?? 10}
-						</div>
-					</div>
-				</div>
-			</button>
+			{#if combatStats.touch_ac}
+				<button
+					class="stat-card"
+					type="button"
+					onclick={() => onSelectValue(combatStats.touch_ac)}
+				>
+					<div class="stat-label">Touch</div>
+					<div class="stat-value">{combatStats.touch_ac.total}</div>
+				</button>
+			{/if}
 
-			<!-- Flat-Footed AC -->
-			<button
-				type="button"
-				class="absolute bottom-0 right-12 z-10 rounded-full transition hover:bg-accent/10"
-				onclick={() => handleSelectStat('flat_footed_ac')}
-			>
-				<div class="flex flex-col items-center">
-					<div class="mb-1 text-xs font-medium text-amber-400">Flat-Footed</div>
-					<div class="relative h-10 w-10">
-						<Shield class="h-full w-full text-amber-400" />
-						<div class="absolute inset-0 flex items-center justify-center text-sm font-bold">
-							{combatStats.flat_footed_ac?.total ?? 10}
-						</div>
-					</div>
-				</div>
-			</button>
+			{#if combatStats.flat_footed_ac}
+				<button
+					class="stat-card"
+					type="button"
+					onclick={() => onSelectValue(combatStats.flat_footed_ac)}
+				>
+					<div class="stat-label">Flat-Footed</div>
+					<div class="stat-value">{combatStats.flat_footed_ac.total}</div>
+				</button>
+			{/if}
+
+			<!-- Combat Maneuvers -->
+			{#if combatStats.cmb}
+				<button
+					class="stat-card"
+					type="button"
+					onclick={() => onSelectValue(combatStats.cmb)}
+				>
+					<div class="stat-label">CMB</div>
+					<div class="stat-value">{formatBonus(combatStats.cmb.total)}</div>
+				</button>
+			{/if}
+
+			{#if combatStats.cmd}
+				<button
+					class="stat-card"
+					type="button"
+					onclick={() => onSelectValue(combatStats.cmd)}
+				>
+					<div class="stat-label">CMD</div>
+					<div class="stat-value">{combatStats.cmd.total}</div>
+				</button>
+			{/if}
+
+			{#if combatStats.initiative}
+				<button
+					class="stat-card"
+					type="button"
+					onclick={() => onSelectValue(combatStats.initiative)}
+				>
+					<div class="stat-label">Initiative</div>
+					<div class="stat-value">{formatBonus(combatStats.initiative.total)}</div>
+				</button>
+			{/if}
 		</div>
+	{/if}
+</div>
 
-		<!-- Combat Maneuvers Row -->
-		<div class="grid grid-cols-2 gap-2">
-			<!-- CMB -->
-			<button
-				type="button"
-				class="flex items-center justify-between rounded-md p-2 transition hover:bg-accent"
-				onclick={() => handleSelectStat('cmb')}
-			>
-				<div class="font-semibold">CMB</div>
-				<div>{combatStats.cmb ? formatModifier(combatStats.cmb.total) : '+0'}</div>
-			</button>
+<style lang="postcss">
+	.ac-stats {
+		@apply space-y-4;
+	}
 
-			<!-- CMD -->
-			<button
-				type="button"
-				class="flex items-center justify-between rounded-md p-2 transition hover:bg-accent"
-				onclick={() => handleSelectStat('cmd')}
-			>
-				<div class="font-semibold">CMD</div>
-				<div>{combatStats.cmd?.total ?? 10}</div>
-			</button>
-		</div>
-	</div>
-{/if}
+	.stat-card {
+		@apply relative flex flex-col items-center rounded-lg border bg-card p-4 shadow-sm transition-all hover:scale-105;
+		border-color: hsl(var(--border) / 0.2);
+	}
+
+	.stat-icon {
+		@apply mb-2 text-primary;
+	}
+
+	.stat-label {
+		@apply text-sm font-medium text-muted-foreground;
+	}
+
+	.stat-value {
+		@apply text-2xl font-bold text-foreground;
+	}
+</style>

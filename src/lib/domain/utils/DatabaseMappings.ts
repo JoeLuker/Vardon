@@ -1,8 +1,8 @@
 /**
  * Database Field Mappings
- * 
+ *
  * This utility module centralizes database field mappings and property name conversions
- * to avoid inconsistencies in the codebase. This follows the Unix philosophy of 
+ * to avoid inconsistencies in the codebase. This follows the Unix philosophy of
  * keeping things simple and well-defined.
  */
 
@@ -11,25 +11,24 @@
  * These match the values in the database and YAML files
  */
 export const ABILITY_ID_MAPPING: Record<number, string> = {
-  401: 'strength',
-  402: 'dexterity',
-  403: 'constitution', 
-  404: 'intelligence',
-  405: 'wisdom',
-  406: 'charisma'
+	401: 'strength',
+	402: 'dexterity',
+	403: 'constitution',
+	404: 'intelligence',
+	405: 'wisdom',
+	406: 'charisma'
 };
 
 /**
  * Reverse mapping (name to ID) for convenience
  */
-export const ABILITY_NAME_TO_ID: Record<string, number> = 
-  Object.entries(ABILITY_ID_MAPPING).reduce(
-    (acc, [id, name]) => {
-      acc[name] = parseInt(id);
-      return acc;
-    }, 
-    {} as Record<string, number>
-  );
+export const ABILITY_NAME_TO_ID: Record<string, number> = Object.entries(ABILITY_ID_MAPPING).reduce(
+	(acc, [id, name]) => {
+		acc[name] = parseInt(id);
+		return acc;
+	},
+	{} as Record<string, number>
+);
 
 /**
  * Field name mapping for character ability scores
@@ -44,20 +43,16 @@ export const ABILITY_SCORE_FIELD_NAMES = ['value', 'score'];
  * @param defaultValue Default value to return if no field is found
  * @returns The value of the first found field, or the default value
  */
-export function getSafeProperty<T>(
-  obj: any, 
-  fieldNames: string[], 
-  defaultValue: T
-): T {
-  if (!obj) return defaultValue;
-  
-  for (const fieldName of fieldNames) {
-    if (obj[fieldName] !== undefined) {
-      return obj[fieldName];
-    }
-  }
-  
-  return defaultValue;
+export function getSafeProperty<T>(obj: any, fieldNames: string[], defaultValue: T): T {
+	if (!obj) return defaultValue;
+
+	for (const fieldName of fieldNames) {
+		if (obj[fieldName] !== undefined) {
+			return obj[fieldName];
+		}
+	}
+
+	return defaultValue;
 }
 
 /**
@@ -67,7 +62,7 @@ export function getSafeProperty<T>(
  * @returns The ability score
  */
 export function getAbilityScore(abilityEntry: any, defaultValue: number = 10): number {
-  return getSafeProperty<number>(abilityEntry, ABILITY_SCORE_FIELD_NAMES, defaultValue);
+	return getSafeProperty<number>(abilityEntry, ABILITY_SCORE_FIELD_NAMES, defaultValue);
 }
 
 /**
@@ -76,7 +71,7 @@ export function getAbilityScore(abilityEntry: any, defaultValue: number = 10): n
  * @returns The ability name, or undefined if not found
  */
 export function getAbilityNameFromId(abilityId: number): string | undefined {
-  return ABILITY_ID_MAPPING[abilityId];
+	return ABILITY_ID_MAPPING[abilityId];
 }
 
 /**
@@ -85,8 +80,8 @@ export function getAbilityNameFromId(abilityId: number): string | undefined {
  * @returns The ability ID, or undefined if not found
  */
 export function getAbilityIdFromName(abilityName: string): number | undefined {
-  const normalizedName = abilityName.toLowerCase();
-  return ABILITY_NAME_TO_ID[normalizedName];
+	const normalizedName = abilityName.toLowerCase();
+	return ABILITY_NAME_TO_ID[normalizedName];
 }
 
 /**
@@ -95,28 +90,28 @@ export function getAbilityIdFromName(abilityName: string): number | undefined {
  * @returns Record of ability scores keyed by ability name
  */
 export function extractAbilityScores(abilityEntries: any[]): Record<string, number> {
-  const abilities: Record<string, number> = {
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10
-  };
-  
-  if (!abilityEntries || !Array.isArray(abilityEntries)) {
-    return abilities;
-  }
-  
-  for (const abilityEntry of abilityEntries) {
-    const abilityId = abilityEntry.ability_id;
-    const abilityName = getAbilityNameFromId(abilityId);
-    
-    if (abilityName) {
-      const score = getAbilityScore(abilityEntry);
-      abilities[abilityName] = score;
-    }
-  }
-  
-  return abilities;
+	const abilities: Record<string, number> = {
+		strength: 10,
+		dexterity: 10,
+		constitution: 10,
+		intelligence: 10,
+		wisdom: 10,
+		charisma: 10
+	};
+
+	if (!abilityEntries || !Array.isArray(abilityEntries)) {
+		return abilities;
+	}
+
+	for (const abilityEntry of abilityEntries) {
+		const abilityId = abilityEntry.ability_id;
+		const abilityName = getAbilityNameFromId(abilityId);
+
+		if (abilityName) {
+			const score = getAbilityScore(abilityEntry);
+			abilities[abilityName] = score;
+		}
+	}
+
+	return abilities;
 }

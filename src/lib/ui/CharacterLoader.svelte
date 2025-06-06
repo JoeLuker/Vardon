@@ -166,20 +166,42 @@
 			}
 
 			// Calculate totalLevel from class levels
-			const totalLevel = loadedCharacter.game_character_class?.reduce(
-				(sum, classEntry) => sum + (classEntry.level || 0),
-				0
-			) || 0;
-			
+			const totalLevel =
+				loadedCharacter.game_character_class?.reduce(
+					(sum, classEntry) => sum + (classEntry.level || 0),
+					0
+				) || 0;
+
 			// Add totalLevel to the character data
 			loadedCharacter.totalLevel = totalLevel;
-			
+
+			// Transform ABP data to match AssembledCharacter interface
+			if (loadedCharacter.game_character_abp_choice) {
+				loadedCharacter.abpData = {
+					nodes: loadedCharacter.game_character_abp_choice
+						.map((choice) => choice.node)
+						.filter(Boolean),
+					appliedBonuses: [] // This would normally be calculated by the assembler
+				};
+			} else {
+				loadedCharacter.abpData = {
+					nodes: [],
+					appliedBonuses: []
+				};
+			}
+
 			// Log successful character data for debugging
 			console.log(`[CharacterLoader] Loaded character successfully:`, {
 				id: loadedCharacter.id,
 				name: loadedCharacter.name,
-				classes: loadedCharacter.game_character_class?.map((c) => `${c.class?.name} ${c.level}`).join(', ') || [],
-				totalLevel: loadedCharacter.totalLevel
+				classes:
+					loadedCharacter.game_character_class
+						?.map((c) => `${c.class?.name} ${c.level}`)
+						.join(', ') || [],
+				totalLevel: loadedCharacter.totalLevel,
+				hasAbpChoices: !!loadedCharacter.game_character_abp_choice,
+				abpChoiceCount: loadedCharacter.game_character_abp_choice?.length || 0,
+				abpChoices: loadedCharacter.game_character_abp_choice
 			});
 
 			// Add preloaded data if available
@@ -246,7 +268,7 @@
 		ERROR: 'error'
 	} as const;
 
-	type LoaderStateType = typeof LoaderState[keyof typeof LoaderState];
+	type LoaderStateType = (typeof LoaderState)[keyof typeof LoaderState];
 
 	// State machine
 	let currentState = $state<LoaderStateType>(LoaderState.INITIAL);
@@ -294,11 +316,7 @@
 			}
 
 			// Load character
-			const loadedCharacter = await loadCharacterUnix(
-				data.id,
-				false,
-				data.initialCharacter
-			);
+			const loadedCharacter = await loadCharacterUnix(data.id, false, data.initialCharacter);
 
 			// Success - transition to loaded state
 			character = loadedCharacter;
@@ -318,7 +336,9 @@
 			console.log(`${getTimestamp()} - Character loaded successfully:`, {
 				id: character.id,
 				name: character.name,
-				classes: character.game_character_class?.map((c) => `${c.class?.name} ${c.level}`).join(', ') || [],
+				classes:
+					character.game_character_class?.map((c) => `${c.class?.name} ${c.level}`).join(', ') ||
+					[],
 				ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
 				totalLevel: character.totalLevel
 			});
@@ -334,7 +354,8 @@
 		loadingAttempts++;
 
 		// Create informative error message
-		let errorMessage = loadError instanceof Error ? loadError.message : 'Failed to load character data';
+		let errorMessage =
+			loadError instanceof Error ? loadError.message : 'Failed to load character data';
 
 		// Add specific information for known error types
 		if (loadError instanceof Error) {
@@ -471,7 +492,9 @@
 		const sentinelExists = kernel.exists('/v_etc/db_dirs_ready');
 
 		if (hasCharDevice && hasDbDevice && !sentinelExists) {
-			console.log(`${getTimestamp()} - Both devices available but missing sentinel file, creating it`);
+			console.log(
+				`${getTimestamp()} - Both devices available but missing sentinel file, creating it`
+			);
 
 			// Ensure /etc directory exists
 			if (!kernel.exists('/v_etc')) {
@@ -489,7 +512,9 @@
 				if (createResult.success) {
 					console.log(`${getTimestamp()} - Successfully created sentinel file`);
 				} else {
-					console.error(`${getTimestamp()} - Failed to create sentinel file: ${createResult.errorMessage}`);
+					console.error(
+						`${getTimestamp()} - Failed to create sentinel file: ${createResult.errorMessage}`
+					);
 				}
 			} catch (sentinelError) {
 				console.error(`${getTimestamp()} - Error creating sentinel file:`, sentinelError);
@@ -541,7 +566,7 @@
 	// Component lifecycle
 	onMount(() => {
 		console.log(`${getTimestamp()} - Unix Character Loader mounted with ID: ${data?.id}`);
-		
+
 		// Initialize if kernel is already available
 		if (kernel && currentState === LoaderState.INITIAL) {
 			initializeLoading();
@@ -597,7 +622,8 @@
 		const dbDevice = kernel.mountPoints?.get('/v_dev/db') || kernel.devices?.get('/v_dev/db');
 
 		// Find the character device
-		const charDevice = kernel.mountPoints?.get('/v_dev/character') || kernel.devices?.get('/v_dev/character');
+		const charDevice =
+			kernel.mountPoints?.get('/v_dev/character') || kernel.devices?.get('/v_dev/character');
 
 		if (dbDevice && charDevice) {
 			// Force connect database driver to character capability
@@ -634,7 +660,11 @@
 		<div
 			class="h-5 w-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
 		></div>
-		<p class="ml-2">Loading character{currentState === LoaderState.WAITING_FOR_RESOURCES ? ' (waiting for resources)' : ''}...</p>
+		<p class="ml-2">
+			Loading character{currentState === LoaderState.WAITING_FOR_RESOURCES
+				? ' (waiting for resources)'
+				: ''}...
+		</p>
 	</div>
 {:else if error}
 	<div class="rounded-md bg-red-100 p-4 text-red-800">
@@ -675,10 +705,7 @@
 		{/if}
 
 		<div class="mt-4 flex flex-wrap gap-2">
-			<button
-				class="rounded bg-primary px-4 py-2 text-white"
-				onclick={() => retryLoading()}
-			>
+			<button class="rounded bg-primary px-4 py-2 text-white" onclick={() => retryLoading()}>
 				Retry Loading
 			</button>
 			<a href="/diagnostics" class="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300">

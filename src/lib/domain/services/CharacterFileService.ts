@@ -35,7 +35,7 @@ export class CharacterFileService implements CharacterFileOperations {
 
 	read(characterId: number): Result<CompleteCharacter> {
 		const path = getCharacterPath(characterId);
-		
+
 		if (!this.kernel.exists(path)) {
 			return {
 				success: false,
@@ -75,7 +75,7 @@ export class CharacterFileService implements CharacterFileOperations {
 
 	write(characterId: number, data: CompleteCharacter): Result<void> {
 		const path = getCharacterPath(characterId);
-		
+
 		// Ensure parent directory exists
 		const parentDir = VFSPATHS.PROCESS.CHARACTER;
 		if (!this.kernel.exists(parentDir)) {
@@ -91,7 +91,7 @@ export class CharacterFileService implements CharacterFileOperations {
 
 		// Create or update the file
 		const result = this.kernel.create(path, data);
-		
+
 		return {
 			success: result.success,
 			errorCode: result.success ? ErrorCode.SUCCESS : ErrorCode.EIO,
@@ -101,7 +101,7 @@ export class CharacterFileService implements CharacterFileOperations {
 
 	delete(characterId: number): Result<void> {
 		const path = getCharacterPath(characterId);
-		
+
 		if (!this.kernel.exists(path)) {
 			return {
 				success: true, // Already doesn't exist
@@ -113,13 +113,14 @@ export class CharacterFileService implements CharacterFileOperations {
 		return {
 			success: unlinkResult === ErrorCode.SUCCESS,
 			errorCode: unlinkResult,
-			errorMessage: unlinkResult !== ErrorCode.SUCCESS ? `Failed to delete character file` : undefined
+			errorMessage:
+				unlinkResult !== ErrorCode.SUCCESS ? `Failed to delete character file` : undefined
 		};
 	}
 
 	lock(characterId: number): Result<void> {
 		const lockPath = getCharacterLockPath(characterId);
-		
+
 		// Check if already locked
 		if (this.kernel.exists(lockPath)) {
 			return {
@@ -145,7 +146,7 @@ export class CharacterFileService implements CharacterFileOperations {
 
 	unlock(characterId: number): Result<void> {
 		const lockPath = getCharacterLockPath(characterId);
-		
+
 		if (!this.kernel.exists(lockPath)) {
 			return {
 				success: true, // Not locked

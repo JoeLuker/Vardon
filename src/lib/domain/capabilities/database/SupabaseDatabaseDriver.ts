@@ -55,7 +55,9 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 	 */
 	private get client(): SupabaseClient {
 		if (!this._client) {
-			throw new Error('Supabase client not initialized. Please ensure the DatabaseCapability is properly configured with a Supabase client.');
+			throw new Error(
+				'Supabase client not initialized. Please ensure the DatabaseCapability is properly configured with a Supabase client.'
+			);
 		}
 		return this._client;
 	}
@@ -73,9 +75,18 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 		try {
 			const module = await import('$lib/db/supabaseClient');
 			this._client = module.supabaseClient;
-			logger.info('SupabaseDatabaseDriver', 'ensureClient', 'Successfully lazy-loaded Supabase client');
+			logger.info(
+				'SupabaseDatabaseDriver',
+				'ensureClient',
+				'Successfully lazy-loaded Supabase client'
+			);
 		} catch (error) {
-			logger.error('SupabaseDatabaseDriver', 'ensureClient', 'Failed to lazy-load Supabase client', { error });
+			logger.error(
+				'SupabaseDatabaseDriver',
+				'ensureClient',
+				'Failed to lazy-load Supabase client',
+				{ error }
+			);
 			throw new Error('Unable to initialize Supabase client');
 		}
 	}
@@ -186,18 +197,28 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 				this.registerSchema(basicSchema.name, {
 					tableName: basicSchema.tableName,
 					primaryKey: basicSchema.primaryKey,
-					fields: basicSchema.fields.map(field => ({
+					fields: basicSchema.fields.map((field) => ({
 						dbField: field,
-						property: field === 'user_id' ? 'userId' : 
-								 field === 'current_hp' ? 'currentHp' :
-								 field === 'max_hp' ? 'maxHp' :
-								 field === 'is_offline' ? 'isOffline' :
-								 field === 'created_at' ? 'createdAt' :
-								 field === 'updated_at' ? 'updatedAt' :
-								 field === 'ability_type' ? 'abilityType' :
-								 field === 'ability_id' ? 'abilityId' :
-								 field === 'hit_die' ? 'hitDie' :
-								 field
+						property:
+							field === 'user_id'
+								? 'userId'
+								: field === 'current_hp'
+									? 'currentHp'
+									: field === 'max_hp'
+										? 'maxHp'
+										: field === 'is_offline'
+											? 'isOffline'
+											: field === 'created_at'
+												? 'createdAt'
+												: field === 'updated_at'
+													? 'updatedAt'
+													: field === 'ability_type'
+														? 'abilityType'
+														: field === 'ability_id'
+															? 'abilityId'
+															: field === 'hit_die'
+																? 'hitDie'
+																: field
 					}))
 				});
 
@@ -206,7 +227,9 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 				}
 			} else {
 				if (this.debug) {
-					console.log(`[SupabaseDatabaseDriver] Schema for ${basicSchema.name} already registered, skipping basic registration`);
+					console.log(
+						`[SupabaseDatabaseDriver] Schema for ${basicSchema.name} already registered, skipping basic registration`
+					);
 				}
 			}
 		}
@@ -293,7 +316,10 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 	 */
 	async getCharacterById(id: number | string, query: string = '*'): Promise<CompleteCharacter> {
 		try {
-			logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Getting character by ID: ${id}`, { id, queryType: query });
+			logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Getting character by ID: ${id}`, {
+				id,
+				queryType: query
+			});
 
 			// Ensure client is available
 			await this.ensureClient();
@@ -302,8 +328,11 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 			try {
 				// First try the full query
 				const queryString = query === 'complete' ? this.getCompleteCharacterQuery() : query;
-				logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Attempting full query`, { id, queryString });
-				
+				logger.debug('SupabaseDatabaseDriver', 'getCharacterById', `Attempting full query`, {
+					id,
+					queryString
+				});
+
 				const { data, error } = await this.client
 					.from('game_character')
 					.select(queryString)
@@ -311,13 +340,18 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 					.single();
 
 				if (error) {
-					logger.error('SupabaseDatabaseDriver', 'getCharacterById', `Error fetching character ${id} with full query`, { 
-						id, 
-						errorCode: error.code,
-						errorMessage: error.message,
-						errorDetails: error.details,
-						errorHint: error.hint 
-					});
+					logger.error(
+						'SupabaseDatabaseDriver',
+						'getCharacterById',
+						`Error fetching character ${id} with full query`,
+						{
+							id,
+							errorCode: error.code,
+							errorMessage: error.message,
+							errorDetails: error.details,
+							errorHint: error.hint
+						}
+					);
 					throw error;
 				}
 
@@ -336,7 +370,12 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 				return data as CompleteCharacter;
 			} catch (queryError) {
 				// If the complex query fails, try a simpler query as fallback
-				logger.warn('SupabaseDatabaseDriver', 'getCharacterById', `Falling back to basic character query`, { id, error: queryError });
+				logger.warn(
+					'SupabaseDatabaseDriver',
+					'getCharacterById',
+					`Falling back to basic character query`,
+					{ id, error: queryError }
+				);
 
 				// Get basic character data
 				const { data: basicData, error: basicError } = await this.client
@@ -346,23 +385,38 @@ export class SupabaseDatabaseDriver implements DatabaseDriver {
 					.single();
 
 				if (basicError) {
-					logger.error('SupabaseDatabaseDriver', 'getCharacterById', `Basic character query failed`, { 
-						id, 
-						errorCode: basicError.code,
-						errorMessage: basicError.message 
-					});
+					logger.error(
+						'SupabaseDatabaseDriver',
+						'getCharacterById',
+						`Basic character query failed`,
+						{
+							id,
+							errorCode: basicError.code,
+							errorMessage: basicError.message
+						}
+					);
 					throw new Error(`Database error: ${basicError.message}`);
 				}
 
 				if (!basicData) {
-					logger.error('SupabaseDatabaseDriver', 'getCharacterById', `Character not found with basic query: ${id}`, { id });
+					logger.error(
+						'SupabaseDatabaseDriver',
+						'getCharacterById',
+						`Character not found with basic query: ${id}`,
+						{ id }
+					);
 					throw new Error(`Character not found: ${id}`);
 				}
 
-				logger.info('SupabaseDatabaseDriver', 'getCharacterById', `Successfully fetched basic character data`, {
-					id: basicData.id,
-					name: basicData.name
-				});
+				logger.info(
+					'SupabaseDatabaseDriver',
+					'getCharacterById',
+					`Successfully fetched basic character data`,
+					{
+						id: basicData.id,
+						name: basicData.name
+					}
+				);
 
 				// Create a minimal CompleteCharacter with the basic data
 				const minimalCharacter = {

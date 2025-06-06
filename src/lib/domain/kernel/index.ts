@@ -32,9 +32,21 @@ export { OpenMode, ErrorCode } from './types';
 export { EventBus } from './EventBus';
 
 // Export Kernels
-export { GameKernel } from './GameKernel'; // Legacy kernel
+export { GameKernel } from './GameKernelMigration'; // Backward compatible wrapper
+export { GameKernelRefactored } from './GameKernelRefactored'; // New modular kernel
+export { createGameKernel } from './GameKernelMigration'; // Factory function
 export { Kernel } from './Kernel'; // New Unix-style kernel with persistent filesystem
 export { FileSystem, FileType } from './FileSystem'; // Filesystem implementation
+
+// Export kernel modules
+export {
+	FileSystemManager,
+	DeviceManager,
+	FileDescriptorManager,
+	MessageQueueManager,
+	EntityManager,
+	PluginExecutor
+} from './modules';
 
 // Export error handling utilities
 export {

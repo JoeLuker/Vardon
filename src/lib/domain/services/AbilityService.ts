@@ -20,7 +20,7 @@ export interface AbilityScore {
 export class AbilityService {
 	private static readonly ABILITIES = [
 		'strength',
-		'dexterity', 
+		'dexterity',
 		'constitution',
 		'intelligence',
 		'wisdom',
@@ -46,13 +46,13 @@ export class AbilityService {
 	getScore(character: CompleteCharacter, abilityName: string): AbilityScore {
 		// Get base value from character abilities
 		const base = this.getBaseScore(character, abilityName);
-		
+
 		// Get all modifiers
 		const modifiers = this.getModifiers(character, abilityName);
-		
+
 		// Calculate total
 		const total = base + modifiers.reduce((sum, mod) => sum + mod.value, 0);
-		
+
 		// Calculate modifier
 		const modifier = Math.floor((total - 10) / 2);
 
@@ -80,7 +80,10 @@ export class AbilityService {
 	/**
 	 * Get all modifiers for an ability
 	 */
-	private getModifiers(character: CompleteCharacter, abilityName: string): AbilityScore['modifiers'] {
+	private getModifiers(
+		character: CompleteCharacter,
+		abilityName: string
+	): AbilityScore['modifiers'] {
 		const modifiers: AbilityScore['modifiers'] = [];
 
 		// Add ancestry bonuses

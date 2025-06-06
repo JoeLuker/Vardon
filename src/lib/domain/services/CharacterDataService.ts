@@ -27,11 +27,15 @@ export class CharacterDataService {
 
 	async getCharacter(characterId: number): Promise<Result<CompleteCharacter>> {
 		const cacheKey = `character:${characterId}`;
-		
+
 		// 1. Check cache first
 		const cached = this.cache.get<CompleteCharacter>(cacheKey);
 		if (cached) {
-			logger.debug('CharacterDataService', 'getCharacter', `Cache hit for character ${characterId}`);
+			logger.debug(
+				'CharacterDataService',
+				'getCharacter',
+				`Cache hit for character ${characterId}`
+			);
 			return {
 				success: true,
 				errorCode: ErrorCode.SUCCESS,
@@ -50,16 +54,24 @@ export class CharacterDataService {
 			if (this.fileService.exists(characterId)) {
 				const fileResult = this.fileService.read(characterId);
 				if (fileResult.success && fileResult.data) {
-					logger.info('CharacterDataService', 'getCharacter', `Loaded character ${characterId} from file`);
+					logger.info(
+						'CharacterDataService',
+						'getCharacter',
+						`Loaded character ${characterId} from file`
+					);
 					this.cache.set(cacheKey, fileResult.data);
 					return fileResult;
 				}
 			}
 
 			// 4. Fall back to database
-			logger.info('CharacterDataService', 'getCharacter', `Loading character ${characterId} from database`);
+			logger.info(
+				'CharacterDataService',
+				'getCharacter',
+				`Loading character ${characterId} from database`
+			);
 			const dbResult = await this.database.getCharacterById(characterId);
-			
+
 			if (!dbResult.success) {
 				return dbResult;
 			}
@@ -67,7 +79,12 @@ export class CharacterDataService {
 			// 5. Save to file for next time
 			const writeResult = this.fileService.write(characterId, dbResult.data!);
 			if (!writeResult.success) {
-				logger.warn('CharacterDataService', 'getCharacter', 'Failed to cache character to file', writeResult);
+				logger.warn(
+					'CharacterDataService',
+					'getCharacter',
+					'Failed to cache character to file',
+					writeResult
+				);
 			}
 
 			// 6. Update cache
@@ -90,7 +107,12 @@ export class CharacterDataService {
 		// 2. Update file
 		const fileResult = this.fileService.write(characterId, data);
 		if (!fileResult.success) {
-			logger.warn('CharacterDataService', 'saveCharacter', 'Failed to update character file', fileResult);
+			logger.warn(
+				'CharacterDataService',
+				'saveCharacter',
+				'Failed to update character file',
+				fileResult
+			);
 		}
 
 		// 3. Update cache

@@ -33,21 +33,21 @@
 			variant={node.isActive ? 'outline' : 'ghost'}
 			size="sm"
 			class={`h-auto min-w-[180px] justify-start gap-1.5 whitespace-nowrap px-3 py-2 text-left ${node.isActive ? 'border-success text-success font-medium' : ''} ${!node.isAvailable ? 'opacity-60' : ''}`}
-            disabled={!node.entry || }
-			disabled={(onclick = { handleClick })}
-			onclick={n>{node.nam}
+			disabled={!node.entry || !node.isAvailable}
+			onclick={handleClick}
 		>
-			<span>{ss="text-}</span>
-			<span class="ml-1 text-xs text-muted-foreground">(ML {   </div>
-})</span>
+			<span>{node.name}</span>
+			<span class="ml-1 text-xs text-muted-foreground">(ML {node.level})</span>
 		</Button>
 	</div>
 
-	{#if  0}
-        <div class="node-children pl-}<div class="node-children ml-2 mt-2 border-l pl-8">
-			{#each  <Self node={ as child}<Self node={     } {onNodeclick}></Self>
+	{#if node.children && node.children.length > 0}
+		<div class="node-children ml-2 mt-2 border-l pl-8">
+			{#each node.children as child}
+				<Self node={child} {onNodeclick} />
 			{/each}
-		</div>{/if}
+		</div>
+	{/if}
 </div>
 
 <style lang="postcss">

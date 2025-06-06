@@ -44,7 +44,14 @@ export class Logger {
 		this.maxLogs = max;
 	}
 
-	private log(level: LogLevel, component: string, operation: string, message: string, data?: any, error?: Error): void {
+	private log(
+		level: LogLevel,
+		component: string,
+		operation: string,
+		message: string,
+		data?: any,
+		error?: Error
+	): void {
 		if (level < this.logLevel) return;
 
 		const entry: LogEntry = {
@@ -55,10 +62,12 @@ export class Logger {
 			message,
 			data: data ? (typeof data === 'object' ? JSON.stringify(data, null, 2) : data) : undefined,
 			error: error?.message,
-			context: error ? {
-				stack: error.stack,
-				name: error.name
-			} : undefined
+			context: error
+				? {
+						stack: error.stack,
+						name: error.name
+					}
+				: undefined
 		};
 
 		this.logs.push(entry);
@@ -71,7 +80,7 @@ export class Logger {
 		// Also log to console for immediate visibility
 		const levelStr = LogLevel[level];
 		const prefix = `[${entry.timestamp}] [${levelStr}] [${component}:${operation}]`;
-		
+
 		switch (level) {
 			case LogLevel.DEBUG:
 				console.debug(prefix, message, data || '');
@@ -119,7 +128,7 @@ export class Logger {
 		let filtered = this.logs;
 
 		if (filter) {
-			filtered = filtered.filter(log => {
+			filtered = filtered.filter((log) => {
 				if (filter.component && log.component !== filter.component) return false;
 				if (filter.operation && log.operation !== filter.operation) return false;
 				if (filter.level !== undefined && log.level < filter.level) return false;
@@ -136,13 +145,20 @@ export class Logger {
 		return this.getLogs({
 			component: 'CharacterLoader',
 			level: LogLevel.WARN
-		}).concat(this.getLogs({
-			component: 'GameRulesAPI',
-			level: LogLevel.WARN
-		})).concat(this.getLogs({
-			component: 'CharacterCapability',
-			level: LogLevel.WARN
-		})).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+		})
+			.concat(
+				this.getLogs({
+					component: 'GameRulesAPI',
+					level: LogLevel.WARN
+				})
+			)
+			.concat(
+				this.getLogs({
+					component: 'CharacterCapability',
+					level: LogLevel.WARN
+				})
+			)
+			.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 	}
 
 	// Get database-related issues
@@ -150,13 +166,20 @@ export class Logger {
 		return this.getLogs({
 			component: 'SupabaseDatabaseDriver',
 			level: LogLevel.WARN
-		}).concat(this.getLogs({
-			component: 'DatabaseCapability',
-			level: LogLevel.WARN
-		})).concat(this.getLogs({
-			operation: 'schema',
-			level: LogLevel.WARN
-		})).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+		})
+			.concat(
+				this.getLogs({
+					component: 'DatabaseCapability',
+					level: LogLevel.WARN
+				})
+			)
+			.concat(
+				this.getLogs({
+					operation: 'schema',
+					level: LogLevel.WARN
+				})
+			)
+			.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 	}
 
 	// Get file system operation issues
@@ -164,19 +187,32 @@ export class Logger {
 		return this.getLogs({
 			component: 'GameKernel',
 			level: LogLevel.WARN
-		}).concat(this.getLogs({
-			component: 'FileSystem',
-			level: LogLevel.WARN
-		})).concat(this.getLogs({
-			operation: 'create',
-			level: LogLevel.WARN
-		})).concat(this.getLogs({
-			operation: 'read',
-			level: LogLevel.WARN
-		})).concat(this.getLogs({
-			operation: 'write',
-			level: LogLevel.WARN
-		})).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+		})
+			.concat(
+				this.getLogs({
+					component: 'FileSystem',
+					level: LogLevel.WARN
+				})
+			)
+			.concat(
+				this.getLogs({
+					operation: 'create',
+					level: LogLevel.WARN
+				})
+			)
+			.concat(
+				this.getLogs({
+					operation: 'read',
+					level: LogLevel.WARN
+				})
+			)
+			.concat(
+				this.getLogs({
+					operation: 'write',
+					level: LogLevel.WARN
+				})
+			)
+			.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 	}
 
 	// Export logs as JSON for analysis
@@ -204,24 +240,36 @@ export class Logger {
 			`Warnings: ${warningLogs.length}`,
 			'',
 			'=== RECENT CHARACTER LOADING ISSUES ===',
-			...this.getCharacterLoadingIssues().slice(0, 5).map(log => 
-				`[${log.timestamp}] ${log.message}${log.data ? ` | Data: ${log.data}` : ''}${log.error ? ` | Error: ${log.error}` : ''}`
-			),
+			...this.getCharacterLoadingIssues()
+				.slice(0, 5)
+				.map(
+					(log) =>
+						`[${log.timestamp}] ${log.message}${log.data ? ` | Data: ${log.data}` : ''}${log.error ? ` | Error: ${log.error}` : ''}`
+				),
 			'',
 			'=== RECENT DATABASE ISSUES ===',
-			...this.getDatabaseIssues().slice(0, 5).map(log => 
-				`[${log.timestamp}] ${log.message}${log.data ? ` | Data: ${log.data}` : ''}${log.error ? ` | Error: ${log.error}` : ''}`
-			),
+			...this.getDatabaseIssues()
+				.slice(0, 5)
+				.map(
+					(log) =>
+						`[${log.timestamp}] ${log.message}${log.data ? ` | Data: ${log.data}` : ''}${log.error ? ` | Error: ${log.error}` : ''}`
+				),
 			'',
 			'=== RECENT FILE SYSTEM ISSUES ===',
-			...this.getFileSystemIssues().slice(0, 5).map(log => 
-				`[${log.timestamp}] ${log.message}${log.data ? ` | Data: ${log.data}` : ''}${log.error ? ` | Error: ${log.error}` : ''}`
-			),
+			...this.getFileSystemIssues()
+				.slice(0, 5)
+				.map(
+					(log) =>
+						`[${log.timestamp}] ${log.message}${log.data ? ` | Data: ${log.data}` : ''}${log.error ? ` | Error: ${log.error}` : ''}`
+				),
 			'',
 			'=== RECENT CRITICAL ERRORS ===',
-			...criticalLogs.slice(0, 10).map(log => 
-				`[${log.timestamp}] [${log.component}:${log.operation}] ${log.message}${log.error ? ` | ${log.error}` : ''}`
-			)
+			...criticalLogs
+				.slice(0, 10)
+				.map(
+					(log) =>
+						`[${log.timestamp}] [${log.component}:${log.operation}] ${log.message}${log.error ? ` | ${log.error}` : ''}`
+				)
 		];
 
 		return report.join('\n');
@@ -237,17 +285,27 @@ export class Logger {
 export const logger = Logger.getInstance();
 
 // Helper functions for quick logging
-export const logDebug = (component: string, operation: string, message: string, data?: any) => 
+export const logDebug = (component: string, operation: string, message: string, data?: any) =>
 	logger.debug(component, operation, message, data);
 
-export const logInfo = (component: string, operation: string, message: string, data?: any) => 
+export const logInfo = (component: string, operation: string, message: string, data?: any) =>
 	logger.info(component, operation, message, data);
 
-export const logWarn = (component: string, operation: string, message: string, data?: any) => 
+export const logWarn = (component: string, operation: string, message: string, data?: any) =>
 	logger.warn(component, operation, message, data);
 
-export const logError = (component: string, operation: string, message: string, data?: any, error?: Error) => 
-	logger.error(component, operation, message, data, error);
+export const logError = (
+	component: string,
+	operation: string,
+	message: string,
+	data?: any,
+	error?: Error
+) => logger.error(component, operation, message, data, error);
 
-export const logFatal = (component: string, operation: string, message: string, data?: any, error?: Error) => 
-	logger.fatal(component, operation, message, data, error);
+export const logFatal = (
+	component: string,
+	operation: string,
+	message: string,
+	data?: any,
+	error?: Error
+) => logger.fatal(component, operation, message, data, error);

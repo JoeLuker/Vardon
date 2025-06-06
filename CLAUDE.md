@@ -390,15 +390,15 @@ Never modify state inside `$effect` blocks that the effect depends on:
 // ❌ WRONG: Creates infinite loop
 let count = $state(0);
 $effect(() => {
-  if (count < 10) {
-    count++; // This triggers the effect again!
-  }
+	if (count < 10) {
+		count++; // This triggers the effect again!
+	}
 });
 
 // ✅ RIGHT: Use explicit actions
 let count = $state(0);
 function increment() {
-  if (count < 10) count++;
+	if (count < 10) count++;
 }
 
 // ✅ RIGHT: Use $derived for computed values
@@ -419,11 +419,11 @@ let loadAttempted = $state(false);
 
 // ✅ RIGHT: Single state with clear transitions
 enum LoaderState {
-  INITIAL = 'initial',
-  WAITING = 'waiting',
-  LOADING = 'loading',
-  LOADED = 'loaded',
-  ERROR = 'error'
+	INITIAL = 'initial',
+	WAITING = 'waiting',
+	LOADING = 'loading',
+	LOADED = 'loaded',
+	ERROR = 'error'
 }
 let state = $state<LoaderState>(LoaderState.INITIAL);
 ```
@@ -435,21 +435,21 @@ Don't update state inside async operations within effects:
 ```typescript
 // ❌ WRONG: State updates inside effect's async operation
 $effect(() => {
-  loadData().then(data => {
-    myState = data; // This can cause issues
-  });
+	loadData().then((data) => {
+		myState = data; // This can cause issues
+	});
 });
 
 // ✅ RIGHT: Separate the concerns
 $effect(() => {
-  if (shouldLoad) {
-    performLoad(); // Call a function that handles its own state
-  }
+	if (shouldLoad) {
+		performLoad(); // Call a function that handles its own state
+	}
 });
 
 async function performLoad() {
-  const data = await loadData();
-  myState = data;
+	const data = await loadData();
+	myState = data;
 }
 ```
 
@@ -465,8 +465,8 @@ async function performLoad() {
 | "EACCES: Permission denied"                               | Check capability permissions. Some operations require specific capabilities                          |
 | "Capability not initialized"                              | Always call `capability.initialize(entity)` before using capability methods                          |
 | "effect_update_depth_exceeded"                            | You have a reactive loop. Check for state modifications inside $effect blocks                        |
-| "ReferenceError: window is not defined"                   | SSR error. Wrap browser-specific code in `if (typeof window !== 'undefined')`                       |
-| "kernel.read() returns empty buffer"                      | kernel.read() returns [errorCode, data] tuple, not a buffer parameter                               |
+| "ReferenceError: window is not defined"                   | SSR error. Wrap browser-specific code in `if (typeof window !== 'undefined')`                        |
+| "kernel.read() returns empty buffer"                      | kernel.read() returns [errorCode, data] tuple, not a buffer parameter                                |
 
 ## Logging System
 
@@ -506,6 +506,7 @@ vardonDiagnostics.autoAnalyze();
 ### Analyzing Issues
 
 The diagnostic tool automatically detects common issues:
+
 - Character loading failures
 - Database connection problems
 - File system errors

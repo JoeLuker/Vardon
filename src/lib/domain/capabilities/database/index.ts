@@ -29,14 +29,16 @@ async function getSupabaseClient() {
 	if (cachedSupabaseClient) {
 		return cachedSupabaseClient;
 	}
-	
+
 	try {
 		const module = await import('$lib/db/supabaseClient');
 		cachedSupabaseClient = module.supabaseClient;
 		logger.info('DatabaseCapability', 'getSupabaseClient', 'Successfully imported Supabase client');
 		return cachedSupabaseClient;
 	} catch (error) {
-		logger.error('DatabaseCapability', 'getSupabaseClient', 'Failed to import Supabase client', { error });
+		logger.error('DatabaseCapability', 'getSupabaseClient', 'Failed to import Supabase client', {
+			error
+		});
 		return null;
 	}
 }
@@ -69,14 +71,18 @@ export function createDatabaseCapability(
 
 		// Set the kernel in the driver
 		(driver as any).kernel = kernel;
-		
+
 		// Try to get and set the Supabase client
 		const client = await getSupabaseClient();
 		if (client) {
 			(driver as any)._client = client;
 			logger.info('DatabaseCapability', 'onMount', 'Driver kernel and client initialized');
 		} else {
-			logger.warn('DatabaseCapability', 'onMount', 'Driver kernel initialized but client not available');
+			logger.warn(
+				'DatabaseCapability',
+				'onMount',
+				'Driver kernel initialized but client not available'
+			);
 		}
 	};
 

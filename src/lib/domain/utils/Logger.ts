@@ -27,7 +27,12 @@ class SimpleLogger {
 		return new Date().toISOString();
 	}
 
-	private formatMessage(level: string, component: string, operation: string, message: string): string {
+	private formatMessage(
+		level: string,
+		component: string,
+		operation: string,
+		message: string
+	): string {
 		const timestamp = this.enableTimestamps ? `[${this.getTimestamp()}] ` : '';
 		return `${timestamp}[${level}] [${component}:${operation}] ${message}`;
 	}

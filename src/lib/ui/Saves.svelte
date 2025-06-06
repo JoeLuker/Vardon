@@ -1,14 +1,20 @@
-<!-- FILE: src/lib/ui/Saves.svelte -->
+<!-- 
+	Saves Component - Uses Domain Layer
+	All save calculations are handled by the domain CombatService
+-->
 <script lang="ts">
 	import type { ValueWithBreakdown } from '$lib/ui/types/CharacterTypes';
 	import type { GameKernel } from '$lib/domain/kernel/GameKernel';
+	import type { Entity } from '$lib/domain/kernel/types';
+	import { CombatService } from '$lib/domain/services/CombatService';
+	import type { SaveBreakdown } from '$lib/domain/services/CombatService';
 
 	// Save types
 	type SaveType = 'fortitude' | 'reflex' | 'will';
 
 	/**
 	 * Props:
-	 * - character: Character object (can be simple ID reference)
+	 * - character: Character entity
 	 * - kernel: GameKernel instance
 	 * - onSelectValue: callback that receives the breakdown of the selected save
 	 */
@@ -17,7 +23,7 @@
 		kernel = null,
 		onSelectValue = () => {}
 	} = $props<{
-		character: any;
+		character: Entity | null;
 		kernel: GameKernel | null;
 		onSelectValue?: (val: ValueWithBreakdown) => void;
 	}>();
@@ -25,21 +31,24 @@
 	// Local state
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
-	let saves = $state<Record<SaveType, ValueWithBreakdown | null>>({
+	let saves = $state<Record<SaveType, SaveBreakdown | null>>({
 		fortitude: null,
 		reflex: null,
 		will: null
 	});
 
-	// We'll list the keys and labels for each save
-	let saveKeys = $derived(['fortitude', 'reflex', 'will'] as const);
-	let saveLabels = $derived({
+	// Domain service
+	let combatService: CombatService | null = null;
+
+	// Save metadata
+	const saveKeys: SaveType[] = ['fortitude', 'reflex', 'will'];
+	const saveLabels = {
 		fortitude: 'Fortitude',
 		reflex: 'Reflex',
 		will: 'Will'
-	});
+	};
 
-	// Load saves when component mounts
+	// Load saves when component mounts or character changes
 	$effect(() => {
 		if (kernel && character) {
 			loadSavesData();
@@ -47,102 +56,32 @@
 	});
 
 	/**
-	 * Load save data from character
+	 * Load save data using domain service
 	 */
 	async function loadSavesData() {
 		isLoading = true;
 		error = null;
 
 		try {
-			// Simply use the character data we already have
-			// Get CON modifier for Fortitude
-			const conAbility = character.game_character_ability?.find(
-				(a) => a.ability?.name?.toLowerCase() === 'constitution'
-			);
-			let baseCon = conAbility?.value || 10;
+			// Initialize service if needed
+			if (!combatService) {
+				combatService = new CombatService();
+			}
+
+			// Character is passed directly as AssembledCharacter, not wrapped in Entity
+			const characterData = character;
+			if (!characterData) {
+				throw new Error('Character data not available');
+			}
+
+			// Get all saves from the service
+			const allSaves = combatService.getAllSaves(characterData);
 			
-			// Check for ABP ability bonuses
-			if (character.abpData?.appliedBonuses) {
-				const conABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'constitution' && b.type === 'inherent'
-				);
-				if (conABP) baseCon += conABP.value;
-			}
-			const conMod = Math.floor((baseCon - 10) / 2);
-
-			// Get DEX modifier for Reflex
-			const dexAbility = character.game_character_ability?.find(
-				(a) => a.ability?.name?.toLowerCase() === 'dexterity'
-			);
-			let baseDex = dexAbility?.value || 10;
-			
-			// Check for ABP ability bonuses
-			if (character.abpData?.appliedBonuses) {
-				const dexABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'dexterity' && b.type === 'inherent'
-				);
-				if (dexABP) baseDex += dexABP.value;
-			}
-			const dexMod = Math.floor((baseDex - 10) / 2);
-
-			// Get WIS modifier for Will
-			const wisAbility = character.game_character_ability?.find(
-				(a) => a.ability?.name?.toLowerCase() === 'wisdom'
-			);
-			let baseWis = wisAbility?.value || 10;
-			
-			// Check for ABP ability bonuses
-			if (character.abpData?.appliedBonuses) {
-				const wisABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'wisdom' && b.type === 'inherent'
-				);
-				if (wisABP) baseWis += wisABP.value;
-			}
-			const wisMod = Math.floor((baseWis - 10) / 2);
-
-			// Get base saves from character data
-			const baseFort = character.base_fortitude_save || 0;
-			const baseRef = character.base_reflex_save || 0;
-			const baseWill = character.base_will_save || 0;
-
-			// Get ABP resistance bonus
-			let resistanceBonus = 0;
-			if (character.abpData?.appliedBonuses) {
-				const resistanceABP = character.abpData.appliedBonuses.find(
-					b => b.target === 'saves' && b.type === 'resistance'
-				);
-				if (resistanceABP) resistanceBonus = resistanceABP.value;
-			}
-
-			// Build save data
+			// Update state
 			saves = {
-				fortitude: {
-					label: 'Fortitude',
-					total: baseFort + conMod + resistanceBonus,
-					modifiers: [
-						{ source: 'Base Save', value: baseFort },
-						{ source: 'CON Modifier', value: conMod },
-						...(resistanceBonus ? [{ source: 'Resistance (ABP)', value: resistanceBonus }] : [])
-					]
-				},
-				reflex: {
-					label: 'Reflex',
-					total: baseRef + dexMod + resistanceBonus,
-					modifiers: [
-						{ source: 'Base Save', value: baseRef },
-						{ source: 'DEX Modifier', value: dexMod },
-						...(resistanceBonus ? [{ source: 'Resistance (ABP)', value: resistanceBonus }] : [])
-					]
-				},
-				will: {
-					label: 'Will',
-					total: baseWill + wisMod + resistanceBonus,
-					modifiers: [
-						{ source: 'Base Save', value: baseWill },
-						{ source: 'WIS Modifier', value: wisMod },
-						...(resistanceBonus ? [{ source: 'Resistance (ABP)', value: resistanceBonus }] : [])
-					]
-				}
+				fortitude: allSaves.fortitude,
+				reflex: allSaves.reflex,
+				will: allSaves.will
 			};
 
 			isLoading = false;
@@ -153,25 +92,24 @@
 	}
 
 	/**
-	 * Get a specific save's breakdown
-	 */
-	async function getSaveBreakdown(saveType: SaveType): Promise<ValueWithBreakdown | null> {
-		if (!character) {
-			return null;
-		}
-
-		// Return the save data we already have
-		return saves[saveType];
-	}
-
-	/**
 	 * Handle selecting a save to show breakdown
 	 */
-	async function handleSelectSave(saveType: SaveType) {
-		const breakdown = await getSaveBreakdown(saveType);
-		if (breakdown) {
-			onSelectValue(breakdown);
-		}
+	function handleSelectSave(saveType: SaveType) {
+		const saveData = saves[saveType];
+		if (!saveData) return;
+
+		// Convert to ValueWithBreakdown format
+		const breakdown: ValueWithBreakdown = {
+			label: saveData.label,
+			total: saveData.total,
+			modifiers: saveData.modifiers.map(mod => ({
+				source: mod.source,
+				value: mod.value,
+				type: mod.type || 'untyped'
+			}))
+		};
+
+		onSelectValue(breakdown);
 	}
 
 	// Helper to format a numeric bonus with +/-

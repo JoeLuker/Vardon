@@ -19,13 +19,15 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '$lib/domain/types/supabase';
 
 // Handle both browser (Vite) and Node.js (SSR) environments
-const supabaseUrl = typeof import.meta.env !== 'undefined' 
-	? import.meta.env.VITE_SUPABASE_URL 
-	: process.env.VITE_SUPABASE_URL;
-	
-const supabaseAnonKey = typeof import.meta.env !== 'undefined'
-	? import.meta.env.VITE_SUPABASE_ANON_KEY
-	: process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl =
+	typeof import.meta.env !== 'undefined'
+		? import.meta.env.VITE_SUPABASE_URL
+		: process.env.VITE_SUPABASE_URL;
+
+const supabaseAnonKey =
+	typeof import.meta.env !== 'undefined'
+		? import.meta.env.VITE_SUPABASE_ANON_KEY
+		: process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
 	console.error('Supabase environment variables missing:', {
@@ -33,7 +35,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 		key: !!supabaseAnonKey,
 		env: typeof import.meta.env !== 'undefined' ? 'Vite' : 'Node'
 	});
-	throw new Error('Missing Supabase environment variables. Please check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+	throw new Error(
+		'Missing Supabase environment variables. Please check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY'
+	);
 }
 
 // Internal client instance for GameRulesAPI

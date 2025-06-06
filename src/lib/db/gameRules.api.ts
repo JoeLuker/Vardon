@@ -414,7 +414,7 @@ export class GameRulesAPI {
 
 	/** Debug mode flag */
 	private debug: boolean;
-	
+
 	/** Promise that resolves when database is ready */
 	private dbInitPromise: Promise<void>;
 
@@ -876,7 +876,7 @@ export class GameRulesAPI {
 	async getCompleteCharacterData(characterId: number): Promise<GameRules.Complete.Character> {
 		// Wait for database initialization to complete
 		await this.dbInitPromise;
-		
+
 		if (this.debug) {
 			console.log(`[GameRulesAPI] Getting complete data for character ${characterId}`);
 		}
@@ -1214,11 +1214,19 @@ export class GameRulesAPI {
 		try {
 			// The Unix Way: Log operation start with timestamp
 			const startTime = Date.now();
-			logger.info('GameRulesAPI', 'getCharacterByFileOperation', `Starting character load for ID ${characterId}`, { characterId, startTime });
+			logger.info(
+				'GameRulesAPI',
+				'getCharacterByFileOperation',
+				`Starting character load for ID ${characterId}`,
+				{ characterId, startTime }
+			);
 
 			// Get file path
 			const path = this.getFileSystemPath('character', characterId);
-			logger.debug('GameRulesAPI', 'getCharacterByFileOperation', `Character file path: ${path}`, { characterId, path });
+			logger.debug('GameRulesAPI', 'getCharacterByFileOperation', `Character file path: ${path}`, {
+				characterId,
+				path
+			});
 
 			// The Unix Way: Check for necessary filesystem resources first
 			if (!this.hasDbCapability) {
@@ -1528,8 +1536,12 @@ export class GameRulesAPI {
 	 */
 	private async createCharacterFile(characterId: number, characterData: any): Promise<boolean> {
 		try {
-			logger.info('GameRulesAPI', 'createCharacterFile', `Starting character file creation for ID ${characterId}`);
-			
+			logger.info(
+				'GameRulesAPI',
+				'createCharacterFile',
+				`Starting character file creation for ID ${characterId}`
+			);
+
 			// Make sure parent directories exist
 			this.ensureCharacterDirectoryExists(characterId);
 
@@ -1539,7 +1551,12 @@ export class GameRulesAPI {
 
 			// Ensure character data is valid
 			if (!characterData) {
-				logger.error('GameRulesAPI', 'createCharacterFile', `Invalid character data for ID ${characterId}`, { characterId, characterData });
+				logger.error(
+					'GameRulesAPI',
+					'createCharacterFile',
+					`Invalid character data for ID ${characterId}`,
+					{ characterId, characterData }
+				);
 				return false;
 			}
 
@@ -1553,19 +1570,28 @@ export class GameRulesAPI {
 				}
 			};
 
-			logger.debug('GameRulesAPI', 'createCharacterFile', `Enhanced data prepared`, { 
+			logger.debug('GameRulesAPI', 'createCharacterFile', `Enhanced data prepared`, {
 				originalDataKeys: Object.keys(characterData || {}),
-				enhancedDataSize: JSON.stringify(enhancedData).length 
+				enhancedDataSize: JSON.stringify(enhancedData).length
 			});
 
 			// For existing files, we'll update instead of removing them
 			// since they might have open file descriptors
 			if (this.kernel.exists(characterPath)) {
-				logger.info('GameRulesAPI', 'createCharacterFile', `Updating existing character file at ${characterPath}`);
+				logger.info(
+					'GameRulesAPI',
+					'createCharacterFile',
+					`Updating existing character file at ${characterPath}`
+				);
 				const fd = this.kernel.open(characterPath, OpenMode.WRITE);
 
 				if (fd < 0) {
-					logger.error('GameRulesAPI', 'createCharacterFile', `Failed to open character file for update: ${fd}`, { characterPath, fileDescriptor: fd });
+					logger.error(
+						'GameRulesAPI',
+						'createCharacterFile',
+						`Failed to open character file for update: ${fd}`,
+						{ characterPath, fileDescriptor: fd }
+					);
 					return false;
 				}
 
@@ -1574,11 +1600,21 @@ export class GameRulesAPI {
 					const writeResult = this.kernel.write(fd, enhancedData);
 
 					if (writeResult !== 0) {
-						logger.error('GameRulesAPI', 'createCharacterFile', `Failed to write to character file: ${writeResult}`, { characterPath, writeResult });
+						logger.error(
+							'GameRulesAPI',
+							'createCharacterFile',
+							`Failed to write to character file: ${writeResult}`,
+							{ characterPath, writeResult }
+						);
 						return false;
 					}
 
-					logger.info('GameRulesAPI', 'createCharacterFile', `Successfully updated existing character file`, { characterPath });
+					logger.info(
+						'GameRulesAPI',
+						'createCharacterFile',
+						`Successfully updated existing character file`,
+						{ characterPath }
+					);
 					return true;
 				} finally {
 					// Always close the file descriptor
@@ -1586,15 +1622,24 @@ export class GameRulesAPI {
 				}
 			} else {
 				// Create a new file with the enhanced data
-				logger.info('GameRulesAPI', 'createCharacterFile', `Creating new character file at ${characterPath}`);
+				logger.info(
+					'GameRulesAPI',
+					'createCharacterFile',
+					`Creating new character file at ${characterPath}`
+				);
 				const createResult = await this.kernel.create(characterPath, enhancedData);
 
 				if (!createResult.success) {
-					logger.error('GameRulesAPI', 'createCharacterFile', `Failed to create character file: ${createResult.errorMessage}`, { 
-						characterPath, 
-						errorCode: createResult.errorCode,
-						errorMessage: createResult.errorMessage 
-					});
+					logger.error(
+						'GameRulesAPI',
+						'createCharacterFile',
+						`Failed to create character file: ${createResult.errorMessage}`,
+						{
+							characterPath,
+							errorCode: createResult.errorCode,
+							errorMessage: createResult.errorMessage
+						}
+					);
 					return false;
 				}
 
@@ -1603,11 +1648,22 @@ export class GameRulesAPI {
 					this.verifyCharacterFile(characterId, characterPath);
 				}
 
-				logger.info('GameRulesAPI', 'createCharacterFile', `Successfully created new character file`, { characterPath });
+				logger.info(
+					'GameRulesAPI',
+					'createCharacterFile',
+					`Successfully created new character file`,
+					{ characterPath }
+				);
 				return true;
 			}
 		} catch (error) {
-			logger.error('GameRulesAPI', 'createCharacterFile', `Error creating/updating character file`, { characterId }, error as Error);
+			logger.error(
+				'GameRulesAPI',
+				'createCharacterFile',
+				`Error creating/updating character file`,
+				{ characterId },
+				error as Error
+			);
 			return false;
 		}
 	}

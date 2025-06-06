@@ -99,6 +99,7 @@ vardon/
 Vardon uses a sophisticated YAML data management system that preserves complex cross-references across multiple files. Unlike standard YAML processing, this system allows anchors and aliases to work across file boundaries.
 
 **How it works:**
+
 - `data/split/00-anchors.yaml` - Contains ALL anchor definitions (the "symbol table")
 - `data/split/*.yaml` - Individual data sections with alias references (`*anchor_name`)
 - Split files are intentionally "incomplete" YAML that reference the anchor file
@@ -121,8 +122,9 @@ npm run yaml:load
 ```
 
 This approach allows you to:
+
 - ✅ Edit large datasets in manageable chunks
-- ✅ Preserve complex ID relationships across files  
+- ✅ Preserve complex ID relationships across files
 - ✅ Maintain referential integrity
 - ✅ Work with files that would be unwieldy as a single document
 
