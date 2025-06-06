@@ -59,46 +59,88 @@
 			const conAbility = character.game_character_ability?.find(
 				(a) => a.ability?.name?.toLowerCase() === 'constitution'
 			);
-			const conMod = Math.floor(((conAbility?.value || 10) - 10) / 2);
+			let baseCon = conAbility?.value || 10;
+			
+			// Check for ABP ability bonuses
+			if (character.abpData?.appliedBonuses) {
+				const conABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'constitution' && b.type === 'inherent'
+				);
+				if (conABP) baseCon += conABP.value;
+			}
+			const conMod = Math.floor((baseCon - 10) / 2);
 
 			// Get DEX modifier for Reflex
 			const dexAbility = character.game_character_ability?.find(
 				(a) => a.ability?.name?.toLowerCase() === 'dexterity'
 			);
-			const dexMod = Math.floor(((dexAbility?.value || 10) - 10) / 2);
+			let baseDex = dexAbility?.value || 10;
+			
+			// Check for ABP ability bonuses
+			if (character.abpData?.appliedBonuses) {
+				const dexABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'dexterity' && b.type === 'inherent'
+				);
+				if (dexABP) baseDex += dexABP.value;
+			}
+			const dexMod = Math.floor((baseDex - 10) / 2);
 
 			// Get WIS modifier for Will
 			const wisAbility = character.game_character_ability?.find(
 				(a) => a.ability?.name?.toLowerCase() === 'wisdom'
 			);
-			const wisMod = Math.floor(((wisAbility?.value || 10) - 10) / 2);
+			let baseWis = wisAbility?.value || 10;
+			
+			// Check for ABP ability bonuses
+			if (character.abpData?.appliedBonuses) {
+				const wisABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'wisdom' && b.type === 'inherent'
+				);
+				if (wisABP) baseWis += wisABP.value;
+			}
+			const wisMod = Math.floor((baseWis - 10) / 2);
 
 			// Get base saves from character data
 			const baseFort = character.base_fortitude_save || 0;
 			const baseRef = character.base_reflex_save || 0;
 			const baseWill = character.base_will_save || 0;
 
+			// Get ABP resistance bonus
+			let resistanceBonus = 0;
+			if (character.abpData?.appliedBonuses) {
+				const resistanceABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'saves' && b.type === 'resistance'
+				);
+				if (resistanceABP) resistanceBonus = resistanceABP.value;
+			}
+
 			// Build save data
 			saves = {
 				fortitude: {
-					total: baseFort + conMod,
-					breakdown: [
-						{ name: 'Base Save', value: baseFort },
-						{ name: 'CON Modifier', value: conMod }
+					label: 'Fortitude',
+					total: baseFort + conMod + resistanceBonus,
+					modifiers: [
+						{ source: 'Base Save', value: baseFort },
+						{ source: 'CON Modifier', value: conMod },
+						...(resistanceBonus ? [{ source: 'Resistance (ABP)', value: resistanceBonus }] : [])
 					]
 				},
 				reflex: {
-					total: baseRef + dexMod,
-					breakdown: [
-						{ name: 'Base Save', value: baseRef },
-						{ name: 'DEX Modifier', value: dexMod }
+					label: 'Reflex',
+					total: baseRef + dexMod + resistanceBonus,
+					modifiers: [
+						{ source: 'Base Save', value: baseRef },
+						{ source: 'DEX Modifier', value: dexMod },
+						...(resistanceBonus ? [{ source: 'Resistance (ABP)', value: resistanceBonus }] : [])
 					]
 				},
 				will: {
-					total: baseWill + wisMod,
-					breakdown: [
-						{ name: 'Base Save', value: baseWill },
-						{ name: 'WIS Modifier', value: wisMod }
+					label: 'Will',
+					total: baseWill + wisMod + resistanceBonus,
+					modifiers: [
+						{ source: 'Base Save', value: baseWill },
+						{ source: 'WIS Modifier', value: wisMod },
+						...(resistanceBonus ? [{ source: 'Resistance (ABP)', value: resistanceBonus }] : [])
 					]
 				}
 			};

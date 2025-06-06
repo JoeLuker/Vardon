@@ -64,12 +64,32 @@
 			const dexAbility = character.game_character_ability?.find(
 				(a) => a.ability?.name?.toLowerCase() === 'dexterity'
 			);
-			const dexMod = Math.floor(((dexAbility?.value || 10) - 10) / 2);
+			let baseDex = dexAbility?.value || 10;
+			
+			// Check for ABP ability bonuses
+			if (character.abpData?.appliedBonuses) {
+				const dexABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'dexterity' && b.type === 'inherent'
+				);
+				if (dexABP) baseDex += dexABP.value;
+			}
+			
+			const dexMod = Math.floor((baseDex - 10) / 2);
 
 			const strAbility = character.game_character_ability?.find(
 				(a) => a.ability?.name?.toLowerCase() === 'strength'
 			);
-			const strMod = Math.floor(((strAbility?.value || 10) - 10) / 2);
+			let baseStr = strAbility?.value || 10;
+			
+			// Check for ABP ability bonuses
+			if (character.abpData?.appliedBonuses) {
+				const strABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'strength' && b.type === 'inherent'
+				);
+				if (strABP) baseStr += strABP.value;
+			}
+			
+			const strMod = Math.floor((baseStr - 10) / 2);
 
 			// Get character level and size
 			const characterLevel = character.level || 1;
@@ -79,37 +99,61 @@
 			const baseAC = 10;
 			const armorBonus = character.armor_bonus || 0;
 			const shieldBonus = character.shield_bonus || 0;
-			const naturalArmor = character.natural_armor || 0;
+			let naturalArmor = character.natural_armor || 0;
+			
+			// Get ABP bonuses
+			let deflectionBonus = 0;
+			let abpNaturalArmor = 0;
+			
+			if (character.abpData?.appliedBonuses) {
+				// Deflection bonus
+				const deflectionABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'ac' && b.type === 'deflection'
+				);
+				if (deflectionABP) deflectionBonus = deflectionABP.value;
+				
+				// Natural armor bonus (toughening)
+				const naturalABP = character.abpData.appliedBonuses.find(
+					b => b.target === 'ac' && b.type === 'natural'
+				);
+				if (naturalABP) abpNaturalArmor = naturalABP.value;
+			}
+			
+			// Add ABP natural armor to total
+			naturalArmor += abpNaturalArmor;
 			
 			// Build combat stats
 			combatStats = {
 				ac: {
 					label: 'Armor Class',
-					total: baseAC + dexMod + armorBonus + shieldBonus + naturalArmor,
+					total: baseAC + dexMod + armorBonus + shieldBonus + naturalArmor + deflectionBonus,
 					modifiers: [
 						{ source: 'Base', value: baseAC },
 						{ source: 'DEX Modifier', value: dexMod },
 						{ source: 'Armor', value: armorBonus },
 						{ source: 'Shield', value: shieldBonus },
-						{ source: 'Natural Armor', value: naturalArmor }
+						{ source: 'Natural Armor', value: naturalArmor },
+						...(deflectionBonus ? [{ source: 'Deflection (ABP)', value: deflectionBonus }] : [])
 					]
 				},
 				touch_ac: {
 					label: 'Touch AC',
-					total: baseAC + dexMod,
+					total: baseAC + dexMod + deflectionBonus,
 					modifiers: [
 						{ source: 'Base', value: baseAC },
-						{ source: 'DEX Modifier', value: dexMod }
+						{ source: 'DEX Modifier', value: dexMod },
+						...(deflectionBonus ? [{ source: 'Deflection (ABP)', value: deflectionBonus }] : [])
 					]
 				},
 				flat_footed_ac: {
 					label: 'Flat-Footed AC',
-					total: baseAC + armorBonus + shieldBonus + naturalArmor,
+					total: baseAC + armorBonus + shieldBonus + naturalArmor + deflectionBonus,
 					modifiers: [
 						{ source: 'Base', value: baseAC },
 						{ source: 'Armor', value: armorBonus },
 						{ source: 'Shield', value: shieldBonus },
-						{ source: 'Natural Armor', value: naturalArmor }
+						{ source: 'Natural Armor', value: naturalArmor },
+						...(deflectionBonus ? [{ source: 'Deflection (ABP)', value: deflectionBonus }] : [])
 					]
 				},
 				cmb: {

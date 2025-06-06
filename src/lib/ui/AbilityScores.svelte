@@ -84,7 +84,18 @@
 					if (ability.key === 'constitution') racialMod = -2;
 				}
 				
-				const totalValue = baseValue + racialMod;
+				// Check for ABP bonuses to this ability
+				let abpBonus = 0;
+				if (character.abpData?.appliedBonuses) {
+					const abpMod = character.abpData.appliedBonuses.find(
+						b => b.target === ability.key && b.type === 'inherent'
+					);
+					if (abpMod) {
+						abpBonus = abpMod.value;
+					}
+				}
+				
+				const totalValue = baseValue + racialMod + abpBonus;
 				const modifier = Math.floor((totalValue - 10) / 2);
 				
 				newScores.push({
@@ -142,6 +153,20 @@
 					source: 'Tengu Ancestry',
 					value: -2,
 					type: 'racial'
+				});
+			}
+		}
+		
+		// Add ABP bonuses
+		if (character.abpData?.appliedBonuses) {
+			const abpMod = character.abpData.appliedBonuses.find(
+				b => b.target === ability.name.toLowerCase() && b.type === 'inherent'
+			);
+			if (abpMod) {
+				breakdown.modifiers.push({
+					source: `ABP - ${abpMod.source}`,
+					value: abpMod.value,
+					type: 'inherent'
 				});
 			}
 		}

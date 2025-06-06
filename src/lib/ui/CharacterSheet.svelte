@@ -14,6 +14,8 @@
 	import Saves from './Saves.svelte';
 	import ACStats from './ACStats.svelte';
 	import Skills from './Skills.svelte';
+	import ABPDisplay from './ABPDisplay.svelte';
+	import ABPChoiceDialog from './ABPChoiceDialog.svelte';
 
 	// Constants
 	const KERNEL_FILE = '/v_dev/kernel';
@@ -38,6 +40,7 @@
 	let kernelError = $state<string | null>(null);
 	let selectedValue = $state<ValueWithBreakdown | null>(null);
 	let isBreakdownOpen = $state(false);
+	let showABPChoiceDialog = $state(false);
 
 	// Initialize kernel on component mount if not provided
 	onMount(async () => {
@@ -128,6 +131,11 @@
 				<Skills {character} {kernel} onSelectValue={handleSelectValue} />
 			</div>
 
+			<!-- ABP Display -->
+			{#if character}
+				<ABPDisplay {character} />
+			{/if}
+
 			<div class="card bg-muted/30 p-4">
 				<h2 class="card-title">Feats</h2>
 				<p class="text-muted-foreground">Feats component will be implemented soon</p>
@@ -180,6 +188,11 @@
 				</button>
 			</div>
 		</div>
+	{/if}
+	
+	<!-- ABP Choice Dialog -->
+	{#if character}
+		<ABPChoiceDialog {character} {kernel} bind:open={showABPChoiceDialog} />
 	{/if}
 {/if}
 
