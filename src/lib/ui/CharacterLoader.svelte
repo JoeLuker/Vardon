@@ -165,12 +165,21 @@
 				throw new Error(`Invalid character data received from device. ${errorDetails}`);
 			}
 
+			// Calculate totalLevel from class levels
+			const totalLevel = loadedCharacter.game_character_class?.reduce(
+				(sum, classEntry) => sum + (classEntry.level || 0),
+				0
+			) || 0;
+			
+			// Add totalLevel to the character data
+			loadedCharacter.totalLevel = totalLevel;
+			
 			// Log successful character data for debugging
 			console.log(`[CharacterLoader] Loaded character successfully:`, {
 				id: loadedCharacter.id,
 				name: loadedCharacter.name,
-				classes: loadedCharacter.game_character_class?.map((c) => c.class?.name) || [],
-				level: loadedCharacter.totalLevel || '?'
+				classes: loadedCharacter.game_character_class?.map((c) => `${c.class?.name} ${c.level}`).join(', ') || [],
+				totalLevel: loadedCharacter.totalLevel
 			});
 
 			// Add preloaded data if available
@@ -309,9 +318,9 @@
 			console.log(`${getTimestamp()} - Character loaded successfully:`, {
 				id: character.id,
 				name: character.name,
-				classes: character.game_character_class?.map((c) => c.class?.name) || [],
+				classes: character.game_character_class?.map((c) => `${c.class?.name} ${c.level}`).join(', ') || [],
 				ancestry: character.game_character_ancestry?.[0]?.ancestry?.name,
-				level: character.totalLevel
+				totalLevel: character.totalLevel
 			});
 
 			dispatch('loaded', character);

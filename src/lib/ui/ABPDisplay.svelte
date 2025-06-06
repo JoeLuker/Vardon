@@ -58,7 +58,12 @@
 		if (character?.abpData) {
 			logger.debug('ABPDisplay', 'render', 'ABP data loaded', {
 				nodeCount: character.abpData.nodes?.length || 0,
-				bonusCount: character.abpData.appliedBonuses?.length || 0
+				bonusCount: character.abpData.appliedBonuses?.length || 0,
+				totalLevel: character.totalLevel,
+				classes: character.game_character_class?.map(c => ({
+					name: c.class?.name,
+					level: c.level
+				}))
 			});
 		}
 	});
@@ -117,6 +122,11 @@
 				<!-- Level-based Summary -->
 				<div class="text-xs text-muted-foreground border-t pt-2">
 					<p>Character Level: {character.totalLevel || 1}</p>
+					{#if character.game_character_class?.length}
+						<p class="text-xs">
+							Classes: {character.game_character_class.map(c => `${c.class?.name || 'Unknown'} ${c.level}`).join(', ')}
+						</p>
+					{/if}
 					{#if character.totalLevel < 3}
 						<p>ABP bonuses begin at level 3</p>
 					{:else if character.totalLevel < 19}
