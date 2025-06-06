@@ -116,11 +116,11 @@
 
 				<!-- Level-based Summary -->
 				<div class="text-xs text-muted-foreground border-t pt-2">
-					<p>Character Level: {character.level || 1}</p>
-					{#if character.level < 3}
+					<p>Character Level: {character.totalLevel || 1}</p>
+					{#if character.totalLevel < 3}
 						<p>ABP bonuses begin at level 3</p>
-					{:else if character.level < 19}
-						<p>Next ABP bonus at level {getNextABPLevel(character.level)}</p>
+					{:else if character.totalLevel < 19}
+						<p>Next ABP bonus at level {getNextABPLevel(character.totalLevel)}</p>
 					{:else}
 						<p>Maximum ABP progression reached!</p>
 					{/if}

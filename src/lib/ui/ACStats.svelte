@@ -92,7 +92,7 @@
 			const strMod = Math.floor((baseStr - 10) / 2);
 
 			// Get character level and size
-			const characterLevel = character.level || 1;
+			const characterLevel = character.totalLevel || 1;
 			const bab = character.base_attack_bonus || 0;
 			
 			// Calculate AC values

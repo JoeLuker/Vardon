@@ -62,7 +62,7 @@
 	let availableChoices = $derived(() => {
 		if (!character) return [];
 		
-		const level = character.level || 1;
+		const level = character.totalLevel || 1;
 		const existingChoices = new Set(
 			character.abpData?.nodes?.map(node => node.name) || []
 		);
@@ -137,7 +137,7 @@
 		<DialogHeader>
 			<DialogTitle>Automatic Bonus Progression Choices</DialogTitle>
 			<DialogDescription>
-				Select your progression bonuses for level {character?.level || 1}
+				Select your progression bonuses for level {character?.totalLevel || 1}
 			</DialogDescription>
 		</DialogHeader>
 		
